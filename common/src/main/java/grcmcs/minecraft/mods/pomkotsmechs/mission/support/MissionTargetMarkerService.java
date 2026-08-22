@@ -23,6 +23,7 @@ import java.util.UUID;
 public final class MissionTargetMarkerService {
     public static final int SYNC_INTERVAL_TICKS = 10;
     public static final String HIDE_MARKER_TAG = "pomkots_mission_hide_marker";
+    public static final String HOSTILE_MARKER_TAG = "pomkots_mission_hostile_marker";
     private static final float POMKOTS_MONSTER_EXTRA_HEIGHT = 1.5F;
 
     private MissionTargetMarkerService() { }
@@ -50,7 +51,8 @@ public final class MissionTargetMarkerService {
                         || entity instanceof ItemEntity
                         || entity instanceof CutsceneCameraEntity
                         || entity.getTags().contains(HIDE_MARKER_TAG)) continue;
-                targets.add(new Target(entity, entity instanceof Enemy
+                targets.add(new Target(entity, entity.getTags().contains(HOSTILE_MARKER_TAG)
+                        || entity instanceof Enemy
                         || PilotDisposition.isHostilePilot(entity)
                         || PilotDisposition.hasHostilePilot(entity)));
             }
@@ -94,7 +96,9 @@ public final class MissionTargetMarkerService {
 
     private static float displayHeight(Entity entity) {
         if (entity instanceof MissionMarkerEntity marker) {
-            return marker.markerMode() == MissionMarkerEntity.REACHED_AREA ? marker.maxY() : 2.5F;
+            if (marker.markerMode() == MissionMarkerEntity.REACHED_AREA) return marker.maxY();
+            if (marker.markerMode() == MissionMarkerEntity.POSITION) return marker.displayHeight();
+            return 2.5F;
         }
         if (entity instanceof GenericPomkotsMonster) {
             return entity.getBbHeight() + POMKOTS_MONSTER_EXTRA_HEIGHT;

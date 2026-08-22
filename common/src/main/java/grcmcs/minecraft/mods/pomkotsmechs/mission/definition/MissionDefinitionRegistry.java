@@ -34,10 +34,10 @@ public final class MissionDefinitionRegistry {
             "player_vehicle_health_below", "transport_ship_reached", "transport_ship_stuck"
     );
     private static final Set<String> SUPPORTED_EVENTS = Set.of(
-            "noop", "radio", "spawn_entities", "spawn_piloted_mech", "activate_entities",
+            "noop", "radio", "spawn_entities", "spawn_piloted_mech", "spawn_mech", "activate_entities",
             "teleport_players", "drop_item", "command",
             "mission_presentation", "bgm", "mission_effect", "cutscene",
-            "spawn_transport_ship", "transport_ship_control"
+            "spawn_transport_ship", "transport_ship_control", "position_marker"
     );
     private static volatile Map<ResourceLocation, MissionDefinition> definitions = Map.of();
 

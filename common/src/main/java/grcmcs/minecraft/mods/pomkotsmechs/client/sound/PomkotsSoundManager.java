@@ -29,8 +29,11 @@ public class PomkotsSoundManager {
      */
     public static String playSound(String id, SoundEvent soundEvent, SoundConfig config) {
         // 既に同じIDで再生中の場合は停止
-        if (activeSounds.get(id) != null) {
-            return id;
+        PomkotsSoundInstance existing = activeSounds.get(id);
+        if (existing != null) {
+            if (!existing.isStopped() && !existing.isFadingOut()) return id;
+            existing.stopImmediately();
+            activeSounds.remove(id);
         }
 
         PomkotsSoundInstance sound = new PomkotsSoundInstance(soundEvent, config);
@@ -78,7 +81,7 @@ public class PomkotsSoundManager {
      */
     public static void stopAllSounds(int entId, boolean fadeOut) {
         for (String id : activeSounds.keySet().toArray(new String[0])) {
-            if (id.startsWith(entId + "")) {
+            if (id.startsWith(entId + ":")) {
                 stopSound(id, fadeOut);
             }
         }

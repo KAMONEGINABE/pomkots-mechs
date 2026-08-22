@@ -52,7 +52,7 @@ public class MashuItem extends BasePartsItem.WeaponArm {
                 world.addFreshEntity(be);
 
             } else {
-                mechInterface.playSoundEffect(PomkotsMechs.SE_RIFLE.get());
+                mechInterface.playSoundEffect(PomkotsMechs.SE_BEAM1.get());
             }
         }
     }

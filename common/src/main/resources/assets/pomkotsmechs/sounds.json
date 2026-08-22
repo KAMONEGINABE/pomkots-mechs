@@ -252,6 +252,11 @@
       "pomkotsmechs:se_beam2"
     ]
   },
+  "se_beam2_loop": {
+    "sounds": [
+      "pomkotsmechs:se_beam2_loop"
+    ]
+  },
   "se_charge": {
     "sounds": [
       "pomkotsmechs:se_charge"

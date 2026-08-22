@@ -1,0 +1,56 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.reusable_laser.pulse": {
+			"animation_length": 1,
+			"bones": {
+				"beam_core": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"1.0": {
+							"vector": [0, 0, -720]
+						}
+					}
+				},
+				"beam_outer": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"1.0": {
+							"vector": [0, 0, 720]
+						}
+					}
+				}
+			}
+		},
+		"animation.reusable_laser.sustain": {
+			"animation_length": 1,
+			"bones": {
+				"beam_core": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"1.0": {
+							"vector": [0, 0, -720]
+						}
+					}
+				},
+				"beam_outer": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"1.0": {
+							"vector": [0, 0, 720]
+						}
+					}
+				}
+			}
+		}
+	},
+	"geckolib_format_version": 2
+}

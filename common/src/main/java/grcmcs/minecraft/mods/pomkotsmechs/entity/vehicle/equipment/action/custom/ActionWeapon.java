@@ -108,7 +108,13 @@ public class ActionWeapon extends Action {
         if (motion.getType().equals(Motion.MotionType.CONTINUOUS)) {
             return owner.canWork(false);
         } else if (motion.getType().equals(Motion.MotionType.CHARGE)) {
-            return currentActionTick <= fireStartTick + maxActionTick;
+            int postReleaseTicks = maxActionTick;
+            if (motion == Motion.CHARGE_LASER) {
+                postReleaseTicks = fireStartTick >= 40
+                        ? Motion.CHARGE_LASER_SUSTAIN_POST_RELEASE_TICKS
+                        : Motion.CHARGE_LASER_PULSE_POST_RELEASE_TICKS;
+            }
+            return currentActionTick <= fireStartTick + postReleaseTicks;
         } else {
             return currentActionTick <= maxActionTick;
         }
@@ -283,8 +289,17 @@ public class ActionWeapon extends Action {
             return owner.isSuperBoost();
         }
 
+        public boolean isCharging() {
+            return action.isCharging();
+        }
+
         public float[] getShootingAngle(Entity ent, boolean useTarget) {
             return owner.getShootingAngle(ent, useTarget, true);
+        }
+
+        /** Uses the exact same camera raycast path as PMVC01's normal weapon aiming. */
+        public Vec3 getCameraTargetPosition() {
+            return owner.getCameraTargetPositionForWeapon();
         }
 
         public float getFallFlyingTicks() {
@@ -305,6 +320,14 @@ public class ActionWeapon extends Action {
 
         public void playSoundEffect(SoundEvent event) {
             owner.playSoundPublic(event);
+        }
+
+        public void startLoopSound(String key, SoundEvent event) {
+            owner.startWeaponLoopSound(key, event);
+        }
+
+        public void stopLoopSound(String key) {
+            owner.stopWeaponLoopSound(key);
         }
 
         public void addHitParticles(Entity e) {

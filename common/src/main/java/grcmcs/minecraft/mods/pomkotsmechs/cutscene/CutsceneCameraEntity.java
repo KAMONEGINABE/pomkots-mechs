@@ -115,7 +115,7 @@ public final class CutsceneCameraEntity extends LivingEntity {
             beginLinearSession(target, 0);
         } else if (definition.type().equals("aerial_approach")) {
             initializeAerialApproach(viewer);
-        } else if (definition.type().equals("direct_approach")) {
+        } else if (usesDirectApproachPhase()) {
             initializeDirectApproach(viewer);
         } else {
             updateCamera(target);
@@ -135,7 +135,7 @@ public final class CutsceneCameraEntity extends LivingEntity {
             activated = true;
             NetworkManager.sendToPlayer(viewer, PomkotsMechs.id(PomkotsMechs.PACKET_CUTSCENE_START),
                     new FriendlyByteBuf(Unpooled.buffer()));
-            if (definition.type().equals("direct_approach")) {
+            if (usesDirectApproachPhase()) {
                 // Give the client one render interval in forced first person so
                 // direct_approach can start from the angle that was actually shown.
                 cameraSwitchPending = true;
@@ -173,6 +173,10 @@ public final class CutsceneCameraEntity extends LivingEntity {
         }
         if (definition.type().equals("direct_approach")) {
             tickDirectApproach(viewer, target);
+            return;
+        }
+        if (definition.type().equals("direct_approach_orbit")) {
+            tickDirectApproachOrbit(viewer, target);
             return;
         }
 
@@ -299,6 +303,53 @@ public final class CutsceneCameraEntity extends LivingEntity {
             endFadeStarted = true;
             forcedClosingTicks = CutsceneService.END_TRANSITION_FADE_TICKS;
         }
+    }
+
+    private void tickDirectApproachOrbit(ServerPlayer viewer, Vec3 target) {
+        CutsceneDefinition.DirectApproach direct = definition.directApproach();
+        if (directTick < direct.durationTicks()) {
+            updateDirectApproachPosition(target, direct);
+            directTick++;
+        } else {
+            if (directTick == direct.durationTicks()) {
+                Vec3 relative = position().subtract(target);
+                angle = Math.atan2(relative.z, relative.x);
+            }
+            angle += angularSpeed;
+            updateCamera(target);
+            directTick++;
+        }
+
+        remainingTicks--;
+        hasImpulse = true;
+        if (remainingTicks <= 0 && !endFadeStarted) {
+            CutsceneService.sendEndScreenFade(viewer);
+            endFadeStarted = true;
+            forcedClosingTicks = CutsceneService.END_TRANSITION_FADE_TICKS;
+        }
+    }
+
+    private void updateDirectApproachPosition(
+            Vec3 target, CutsceneDefinition.DirectApproach direct) {
+        double movementProgress = directTick < direct.movementDelayTicks()
+                ? 0.0D
+                : smoothProgress(
+                        (directTick - direct.movementDelayTicks() + 1.0D)
+                                / (direct.durationTicks() - direct.movementDelayTicks()));
+        double rotationProgress = smoothProgress(
+                (directTick + 1.0D) / direct.rotationDurationTicks());
+        Vec3 position = directStartPosition.lerp(directApproachEnd(target, direct), movementProgress);
+        setPos(position);
+
+        ViewRotation targetView = viewRotation(position, target);
+        setFixedView(
+                Mth.rotLerp((float) rotationProgress, directStartYaw, targetView.yaw()),
+                Mth.lerp((float) rotationProgress, directStartPitch, targetView.pitch()));
+    }
+
+    private boolean usesDirectApproachPhase() {
+        return definition.type().equals("direct_approach")
+                || definition.type().equals("direct_approach_orbit");
     }
 
     private Vec3 directApproachEnd(Vec3 target, CutsceneDefinition.DirectApproach direct) {

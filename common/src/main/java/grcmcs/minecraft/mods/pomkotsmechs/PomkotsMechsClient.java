@@ -27,6 +27,7 @@ import grcmcs.minecraft.mods.pomkotsmechs.client.input.MechCameraHandler;
 import grcmcs.minecraft.mods.pomkotsmechs.client.input.UserInteractionManager;
 import grcmcs.minecraft.mods.pomkotsmechs.client.misc.ClientHudShake;
 import grcmcs.minecraft.mods.pomkotsmechs.client.misc.ClientScreenShake;
+import grcmcs.minecraft.mods.pomkotsmechs.client.misc.ClientElevatorRider;
 import grcmcs.minecraft.mods.pomkotsmechs.client.particles.*;
 import grcmcs.minecraft.mods.pomkotsmechs.client.renderer.*;
 import grcmcs.minecraft.mods.pomkotsmechs.client.renderer.misc.BlockPlacementPreviewRenderer;
@@ -313,6 +314,10 @@ public class PomkotsMechsClient {
 		EntityRendererRegistry.register(PomkotsMechs.ELEVATOR, (context)->{
 			return new ElevatorEntityRenderer(context);
 		});
+		EntityRendererRegistry.register(PomkotsMechs.GENERIC_ELEVATOR, GenericElevatorEntityRenderer::new);
+		EntityRendererRegistry.register(PomkotsMechs.REUSABLE_LASER, ReusableLaserEntityRenderer::new);
+		grcmcs.minecraft.mods.pomkotsmechs.entity.misc.GenericElevatorEntity
+				.setClientTickHandler(ClientElevatorRider::onElevatorTick);
 
 		EntityRendererRegistry.register(PomkotsMechs.BOSSBOX, (context)->{
 			return new BossBoxEntityRenderer(context);

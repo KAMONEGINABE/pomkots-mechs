@@ -85,6 +85,7 @@
   "item.pomkotsmechs.kasumi": "Kasumi (Arm Weapon)",
   "item.pomkotsmechs.kawasemi": "Kawasemi (Shoulder Weapon)",
   "item.pomkotsmechs.mashu": "Mashu (Arm Weapon)",
+  "item.pomkotsmechs.kutara": "Kutara (Arm Weapon)",
   "item.pomkotsmechs.mukudori": "Mukudori (Shoulder Weapon)",
   "item.pomkotsmechs.nosuri": "Nosuri (Shoulder Weapon)",
   "item.pomkotsmechs.tsubame": "Tsubame (Shoulder Weapon)",
@@ -528,4 +529,5 @@
 , "mission.pomkotsmechs.sample.basic.complete": "The external definition sample completed successfully"
 , "radio.pomkotsmechs.sample.operator": "Sample Operator"
 , "radio.pomkotsmechs.sample.welcome": "External radio definitions are working correctly."
+, "block.pomkotsmechs.elevator_controller": "Elevator Controller"
 }

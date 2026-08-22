@@ -14,6 +14,8 @@ import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.PomkotsVehicleBase;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.Action;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.ActionController;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.custom.ActionWeapon;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.custom.Motion;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.turret.Pmvt01Entity;
 import grcmcs.minecraft.mods.pomkotsmechs.items.parts.BasePartsItem;
 import net.minecraft.client.Camera;
@@ -263,7 +265,7 @@ public class PomkotsHud implements ClientGuiEvent.RenderHud {
 
         if (rArm != null ) {
             prevCTRightArm = curCTRightArm;
-            curCTRightArm = rArm.currentCoolTime;
+            curCTRightArm = getHudCoolTime(rArm);
             maxCTRightArm = rArm.maxCoolTime;
 
         } else {
@@ -272,7 +274,7 @@ public class PomkotsHud implements ClientGuiEvent.RenderHud {
 
         if (lArm != null ) {
             prevCTLeftArm = curCTLeftArm;
-            curCTLeftArm = lArm.currentCoolTime;
+            curCTLeftArm = getHudCoolTime(lArm);
             maxCTLeftArm = lArm.maxCoolTime;
 
         } else {
@@ -281,7 +283,7 @@ public class PomkotsHud implements ClientGuiEvent.RenderHud {
 
         if (rShoulder != null ) {
             prevCTRightShoulder = curCTRightShoulder;
-            curCTRightShoulder = rShoulder.currentCoolTime;
+            curCTRightShoulder = getHudCoolTime(rShoulder);
             maxCTRightShoulder = rShoulder.maxCoolTime;
 
         } else {
@@ -291,12 +293,23 @@ public class PomkotsHud implements ClientGuiEvent.RenderHud {
 
         if (lShoulder != null ) {
             prevCTLeftShoulder = curCTLeftShoulder;
-            curCTLeftShoulder = lShoulder.currentCoolTime;
+            curCTLeftShoulder = getHudCoolTime(lShoulder);
             maxCTLeftShoulder = lShoulder.maxCoolTime;
 
         } else {
             prevCTLeftShoulder = curCTLeftShoulder = maxCTLeftShoulder = 1;
         }
+    }
+
+    private int getHudCoolTime(Action action) {
+        // Kutara remains unavailable for the full charge/fire action even when
+        // its ordinary cooldown counter has already reached zero.
+        if (action instanceof ActionWeapon weapon
+                && weapon.getMotion() == Motion.CHARGE_LASER
+                && weapon.isInAction()) {
+            return action.maxCoolTime;
+        }
+        return action.currentCoolTime;
     }
 
     private void renderHudNormal(PomkotsVehicleBase protobot, GuiGraphics guiGraphics, float tickDelta) {

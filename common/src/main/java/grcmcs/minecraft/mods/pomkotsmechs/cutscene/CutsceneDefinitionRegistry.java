@@ -43,7 +43,8 @@ public final class CutsceneDefinitionRegistry {
                 String type = GsonHelper.getAsString(json, "type");
                 boolean startFade = GsonHelper.getAsBoolean(json, "start_fade", true);
                 if (!type.equals("orbit") && !type.equals("linear_sessions")
-                        && !type.equals("aerial_approach") && !type.equals("direct_approach")) {
+                        && !type.equals("aerial_approach") && !type.equals("direct_approach")
+                        && !type.equals("direct_approach_orbit")) {
                     throw new IllegalArgumentException("Unsupported cutscene type: " + type);
                 }
                 if (type.equals("orbit")) {
@@ -109,7 +110,10 @@ public final class CutsceneDefinitionRegistry {
                     loaded.put(id, new CutsceneDefinition(id, type, duration, 0, 0, 0,
                             false, List.of(), false, aerial, null, startFade));
                 } else {
-                    int duration = GsonHelper.getAsInt(json, "duration_ticks");
+                    boolean approachOrbit = type.equals("direct_approach_orbit");
+                    int duration = approachOrbit
+                            ? GsonHelper.getAsInt(json, "approach_duration_ticks")
+                            : GsonHelper.getAsInt(json, "duration_ticks");
                     int rotationDuration = GsonHelper.getAsInt(
                             json, "rotation_duration_ticks", Math.min(40, duration));
                     int movementDelay = GsonHelper.getAsInt(json, "movement_delay_ticks", 4);
@@ -133,8 +137,24 @@ public final class CutsceneDefinitionRegistry {
                     var direct = new CutsceneDefinition.DirectApproach(
                             duration, rotationDuration, movementDelay,
                             approachDistance, targetHeight);
-                    loaded.put(id, new CutsceneDefinition(id, type, duration, 0, 0, 0,
-                            false, List.of(), false, null, direct, startFade));
+                    if (approachOrbit) {
+                        int orbitDuration = GsonHelper.getAsInt(json, "orbit_duration_ticks");
+                        double speed = GsonHelper.getAsDouble(json, "angular_speed_degrees", 1.0D);
+                        if (orbitDuration <= 0 || duration + orbitDuration > 12000) {
+                            throw new IllegalArgumentException("Invalid orbit_duration_ticks");
+                        }
+                        if (speed <= 0.0D || speed > 45.0D) {
+                            throw new IllegalArgumentException("Invalid angular_speed_degrees");
+                        }
+                        loaded.put(id, new CutsceneDefinition(
+                                id, type, duration + orbitDuration,
+                                approachDistance, targetHeight, speed,
+                                GsonHelper.getAsBoolean(json, "clockwise", false),
+                                List.of(), false, null, direct, startFade));
+                    } else {
+                        loaded.put(id, new CutsceneDefinition(id, type, duration, 0, 0, 0,
+                                false, List.of(), false, null, direct, startFade));
+                    }
                 }
             } catch (Exception e) {
                 throw new IOException("Failed to load cutscene definition " + id + " from " + file, e);

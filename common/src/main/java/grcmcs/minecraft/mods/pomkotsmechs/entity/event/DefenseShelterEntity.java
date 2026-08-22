@@ -51,11 +51,28 @@ public class DefenseShelterEntity extends LivingEntity implements GeoEntity {
 
     @Override
     public void tick() {
+        float fixedYaw = getYRot();
         setNoGravity(true);
         setDeltaMovement(Vec3.ZERO);
         super.tick();
+        lockRotation(fixedYaw);
         setDeltaMovement(Vec3.ZERO);
         setBoundingBox(makeBoundingBox());
+    }
+
+    /**
+     * LivingEntity normally lets its body rotation follow its entity rotation
+     * gradually. This entity is a stationary structure, so that interpolation
+     * makes a shelter spawned at 90 degrees appear to stop at an intermediate
+     * angle. Keep every rotation value aligned with the configured spawn yaw.
+     */
+    private void lockRotation(float yaw) {
+        setYRot(yaw);
+        yRotO = yaw;
+        yBodyRot = yaw;
+        yBodyRotO = yaw;
+        yHeadRot = yaw;
+        yHeadRotO = yaw;
     }
 
     @Override

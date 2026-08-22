@@ -21,7 +21,8 @@ public final class CutsceneService {
     public static boolean play(ServerPlayer viewer, CutsceneDefinition definition, Vec3 target, Entity targetEntity) {
         if (!definition.type().equals("orbit") && !definition.type().equals("linear_sessions")
                 && !definition.type().equals("aerial_approach")
-                && !definition.type().equals("direct_approach")) {
+                && !definition.type().equals("direct_approach")
+                && !definition.type().equals("direct_approach_orbit")) {
             throw new IllegalArgumentException("Unsupported cutscene type: " + definition.type());
         }
         CutsceneCameraEntity camera = new CutsceneCameraEntity(PomkotsMechs.CUTSCENE_CAMERA.get(), viewer.serverLevel());

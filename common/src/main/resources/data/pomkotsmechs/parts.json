@@ -634,6 +634,25 @@
         {"pomkotsmechs:p_titanium_ingot": 32, "minecraft:iron_ingot": 32, "minecraft:netherite_ingot": 8, "minecraft:diamond": 32}
       ]
     },
+    "kutara": {
+      "type": "weapon",
+      "description": "Three-stage charge laser cannon on shoulder",
+      "weight": 500,
+      "level_param": [
+        {"damage": 40},
+        {"damage": 50},
+        {"damage": 60},
+        {"damage": 70},
+        {"damage": 80}
+      ],
+      "recipes": [
+        {"pomkotsmechs:p_titanium_ingot": 32, "minecraft:redstone": 32, "minecraft:diamond": 8},
+        {"pomkotsmechs:p_titanium_ingot": 20, "minecraft:redstone": 20, "minecraft:diamond": 2},
+        {"pomkotsmechs:p_titanium_ingot": 24, "minecraft:redstone": 24, "minecraft:diamond": 4},
+        {"pomkotsmechs:p_titanium_ingot": 28, "minecraft:redstone": 28, "minecraft:diamond": 6},
+        {"pomkotsmechs:p_titanium_ingot": 32, "minecraft:redstone": 32, "minecraft:diamond": 8}
+      ]
+    },
     "tenpou": {
       "type": "weapon",
       "description": "Knuckle",

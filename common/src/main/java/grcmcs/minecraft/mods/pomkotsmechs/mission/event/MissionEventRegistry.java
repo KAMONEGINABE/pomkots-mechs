@@ -23,6 +23,7 @@ import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.GenericPomkotsMonster;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.boss.BaseBossEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.mob.BaseSmallMonsterEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.event.TransportShipEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
 import grcmcs.minecraft.mods.pomkotsmechs.items.circuits.CircuitItemStackHelper;
 import grcmcs.minecraft.mods.pomkotsmechs.items.circuits.core.CircuitInstance;
 import grcmcs.minecraft.mods.pomkotsmechs.items.circuits.core.CircuitModifier;
@@ -80,6 +81,7 @@ public final class MissionEventRegistry {
         register("radio", MissionEventRegistry::radio);
         register("spawn_entities", MissionEventRegistry::spawnEntities);
         register("spawn_piloted_mech", MissionEventRegistry::spawnPilotedMech);
+        register("spawn_mech", MissionEventRegistry::spawnMech);
         register("activate_entities", MissionEventRegistry::activateEntities);
         register("teleport_players", MissionEventRegistry::teleportPlayers);
         register("drop_item", MissionEventRegistry::dropItem);
@@ -90,6 +92,7 @@ public final class MissionEventRegistry {
         register("cutscene", MissionEventRegistry::cutscene);
         register("spawn_transport_ship", MissionEventRegistry::spawnTransportShip);
         register("transport_ship_control", MissionEventRegistry::controlTransportShip);
+        register("position_marker", MissionEventRegistry::positionMarker);
     }
 
     private MissionEventRegistry() {
@@ -471,22 +474,7 @@ public final class MissionEventRegistry {
                 pilotData, "texture", PomkotsMechs.id("textures/entity/pilot/mech_pilot_wide.png").toString());
 
         JsonObject mechData = GsonHelper.getAsJsonObject(data, "mech");
-        ItemStack[] equipment = new ItemStack[12];
-        JsonObject parts = GsonHelper.getAsJsonObject(mechData, "parts");
-        equipment[0] = requiredItem(parts, "head");
-        equipment[1] = requiredItem(parts, "body");
-        equipment[2] = requiredItem(parts, "arms");
-        equipment[3] = requiredItem(parts, "legs");
-        equipment[4] = requiredItem(parts, "generator");
-        equipment[5] = requiredItem(parts, "booster");
-        JsonObject weapons = mechData.has("weapons")
-                ? GsonHelper.getAsJsonObject(mechData, "weapons") : new JsonObject();
-        equipment[6] = optionalItem(weapons, "right_hand");
-        equipment[7] = optionalItem(weapons, "left_hand");
-        equipment[8] = optionalItem(weapons, "right_shoulder");
-        equipment[9] = optionalItem(weapons, "left_shoulder");
-        equipment[10] = optionalItem(weapons, "ext1");
-        equipment[11] = optionalItem(weapons, "ext2");
+        ItemStack[] equipment = mechEquipment(mechData, false);
         ItemStack[] additionalCircuits = additionalCircuits(mechData);
 
         MissionPilotedMechSpawner.Configuration configuration =
@@ -535,6 +523,60 @@ public final class MissionEventRegistry {
             throw new IllegalArgumentException(
                     "spawn_piloted_mech objective_entity must be pilot or mech: " + objectiveEntity);
         }
+    }
+
+    private static void spawnMech(Context context) throws Exception {
+        JsonObject data = context.event().data();
+        String group = GsonHelper.getAsString(data, "group");
+        MissionEntityCleanupPolicy cleanupPolicy = cleanupPolicy(data);
+        MissionPositionResolver.ResolvedPosition resolved =
+                context.resolve(GsonHelper.getAsJsonObject(data, "position"));
+        JsonObject mechData = GsonHelper.getAsJsonObject(data, "mech");
+
+        Pmvc01Entity mech = MissionPilotedMechSpawner.spawnMech(
+                resolved.level(),
+                resolved.position(),
+                GsonHelper.getAsFloat(data, "yaw", 0.0F),
+                mechEquipment(mechData, true),
+                GsonHelper.getAsInt(mechData, "texture_color", 0),
+                GsonHelper.getAsBoolean(mechData, "supply_consumables", false),
+                additionalCircuits(mechData));
+        mech.setBroken(GsonHelper.getAsBoolean(mechData, "broken", false));
+        mech.setLocked(GsonHelper.getAsBoolean(mechData, "locked", false));
+
+        String instanceTag = "pomkots_mission:" + context.instance().instanceId();
+        mech.addTag(instanceTag);
+        mech.addTag("pomkots_mission_group:" + group);
+        if (!GsonHelper.getAsBoolean(data, "show_marker", true)) {
+            mech.addTag(MissionTargetMarkerService.HIDE_MARKER_TAG);
+        }
+        context.instance().markGroupSpawned(group);
+        context.instance().trackEntity(group, mech.getUUID(), cleanupPolicy, null);
+    }
+
+    private static ItemStack[] mechEquipment(JsonObject mechData, boolean allowMissingParts) {
+        ItemStack[] equipment = new ItemStack[12];
+        JsonObject parts = mechData.has("parts")
+                ? GsonHelper.getAsJsonObject(mechData, "parts") : new JsonObject();
+        equipment[0] = partItem(parts, "head", allowMissingParts);
+        equipment[1] = partItem(parts, "body", allowMissingParts);
+        equipment[2] = partItem(parts, "arms", allowMissingParts);
+        equipment[3] = partItem(parts, "legs", allowMissingParts);
+        equipment[4] = partItem(parts, "generator", allowMissingParts);
+        equipment[5] = partItem(parts, "booster", allowMissingParts);
+        JsonObject weapons = mechData.has("weapons")
+                ? GsonHelper.getAsJsonObject(mechData, "weapons") : new JsonObject();
+        equipment[6] = optionalItem(weapons, "right_hand");
+        equipment[7] = optionalItem(weapons, "left_hand");
+        equipment[8] = optionalItem(weapons, "right_shoulder");
+        equipment[9] = optionalItem(weapons, "left_shoulder");
+        equipment[10] = optionalItem(weapons, "ext1");
+        equipment[11] = optionalItem(weapons, "ext2");
+        return equipment;
+    }
+
+    private static ItemStack partItem(JsonObject parts, String key, boolean allowMissing) {
+        return allowMissing ? optionalItem(parts, key) : requiredItem(parts, key);
     }
 
     private static ItemStack[] additionalCircuits(JsonObject mechData) {
@@ -615,9 +657,9 @@ public final class MissionEventRegistry {
     }
 
     private static ItemStack requiredItem(JsonObject object, String key) {
-        if (!object.has(key)) throw new IllegalArgumentException("Missing piloted mech item: " + key);
+        if (!object.has(key)) throw new IllegalArgumentException("Missing mission mech item: " + key);
         ItemStack stack = itemStack(object.get(key).getAsString());
-        if (stack.isEmpty()) throw new IllegalArgumentException("Piloted mech item must not be empty: " + key);
+        if (stack.isEmpty()) throw new IllegalArgumentException("Mission mech item must not be empty: " + key);
         return stack;
     }
 
@@ -838,6 +880,47 @@ public final class MissionEventRegistry {
         if (resolved.level().addFreshEntity(marker)) {
             context.instance().trackEntity("__marker_item_" + group, marker.getUUID());
         }
+    }
+
+    private static void positionMarker(Context context) throws Exception {
+        JsonObject data = context.event().data();
+        String group = GsonHelper.getAsString(data, "group");
+        float displayHeight = GsonHelper.getAsFloat(data, "display_height", 0.0F);
+        if (displayHeight < -128.0F || displayHeight > 256.0F) {
+            throw new IllegalArgumentException("position_marker display_height is out of range");
+        }
+        boolean hostile = GsonHelper.getAsBoolean(data, "hostile", false);
+        JsonObject position = GsonHelper.getAsJsonObject(data, "position");
+        List<MissionPositionResolver.ResolvedPosition> resolvedPositions;
+        try {
+            resolvedPositions = MissionPositionResolver.resolveAllForSpawn(
+                    context.server(), context.instance(), context.owner(), position);
+        } catch (MissionPositionResolver.ResolutionException e) {
+            throw new ExpectedEventFailure(e.playerMessage());
+        }
+
+        context.instance().markGroupSpawned(group);
+        for (MissionPositionResolver.ResolvedPosition resolved : resolvedPositions) {
+            if (!MissionChunkManager.contains(context.instance(), resolved)) {
+                throw new ExpectedEventFailure(Component.translatable(
+                        "mission.pomkotsmechs.error.position_outside_loaded_areas",
+                        resolved.position().toString()));
+            }
+            Vec3 pos = resolved.position();
+            MissionMarkerEntity marker = new MissionMarkerEntity(
+                    PomkotsMechs.MISSION_MARKER.get(), resolved.level());
+            marker.configurePositionMarker(displayHeight);
+            marker.setPos(pos.x, pos.y, pos.z);
+            marker.addTag("pomkots_mission:" + context.instance().instanceId());
+            marker.addTag("pomkots_mission_group:" + group);
+            marker.addTag("pomkots_mission_marker:" + context.instance().instanceId());
+            if (hostile) marker.addTag(MissionTargetMarkerService.HOSTILE_MARKER_TAG);
+            if (!resolved.level().addFreshEntity(marker)) {
+                throw new IllegalStateException("Could not add position marker at " + pos);
+            }
+            context.instance().trackEntity(group, marker.getUUID());
+        }
+        context.savedData().setDirty();
     }
 
     private static void command(Context context) {

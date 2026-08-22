@@ -16,6 +16,7 @@ import java.util.UUID;
 public final class MissionMarkerEntity extends Entity {
     public static final int ITEM_ARROW = 0;
     public static final int REACHED_AREA = 1;
+    public static final int POSITION = 2;
 
     private static final EntityDataAccessor<Integer> MODE =
             SynchedEntityData.defineId(MissionMarkerEntity.class, EntityDataSerializers.INT);
@@ -35,6 +36,8 @@ public final class MissionMarkerEntity extends Entity {
             SynchedEntityData.defineId(MissionMarkerEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> CLOSING =
             SynchedEntityData.defineId(MissionMarkerEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Float> DISPLAY_HEIGHT =
+            SynchedEntityData.defineId(MissionMarkerEntity.class, EntityDataSerializers.FLOAT);
     private int closingTicks;
 
     public MissionMarkerEntity(EntityType<?> type, Level level) {
@@ -58,6 +61,11 @@ public final class MissionMarkerEntity extends Entity {
         entityData.set(MAX_Z, maxZ);
     }
 
+    public void configurePositionMarker(float displayHeight) {
+        entityData.set(MODE, POSITION);
+        entityData.set(DISPLAY_HEIGHT, displayHeight);
+    }
+
     public int markerMode() { return entityData.get(MODE); }
     public float minX() { return entityData.get(MIN_X); }
     public float minY() { return entityData.get(MIN_Y); }
@@ -66,6 +74,7 @@ public final class MissionMarkerEntity extends Entity {
     public float maxY() { return entityData.get(MAX_Y); }
     public float maxZ() { return entityData.get(MAX_Z); }
     public boolean isClosing() { return entityData.get(CLOSING); }
+    public float displayHeight() { return entityData.get(DISPLAY_HEIGHT); }
     public int closingTicks() { return closingTicks; }
 
     public void beginClosing() {
@@ -101,6 +110,7 @@ public final class MissionMarkerEntity extends Entity {
         entityData.define(MAX_Y, 1.0F);
         entityData.define(MAX_Z, 0.5F);
         entityData.define(CLOSING, false);
+        entityData.define(DISPLAY_HEIGHT, 0.0F);
     }
 
     @Override protected void readAdditionalSaveData(CompoundTag tag) { }

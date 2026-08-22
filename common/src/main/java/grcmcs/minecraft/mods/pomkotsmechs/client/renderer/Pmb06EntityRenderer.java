@@ -32,11 +32,7 @@ public class Pmb06EntityRenderer extends GeoEntityRenderer<Pmb06Entity> {
         if (laserBeamBone == null) {
             return;
         }
-        if (entity.getLaserLength() > 0) {
-            laserBeamBone.setScaleZ(entity.getLaserLength());
-        } else {
-            laserBeamBone.setScaleZ(1);
-        }
+        laserBeamBone.setHidden(true);
     }
 
     @Override

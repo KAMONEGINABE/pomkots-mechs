@@ -118,6 +118,10 @@ public class PomkotsSoundInstance extends AbstractTickableSoundInstance {
         this.looping = false;
     }
 
+    public boolean isFadingOut() {
+        return isFadingOut;
+    }
+
     public void stopImmediately() {
         this.stop();
     }

@@ -18,35 +18,39 @@ public final class MissionPilotedMechSpawner {
     private MissionPilotedMechSpawner() {
     }
 
+    public static Pmvc01Entity spawnMech(
+            ServerLevel level,
+            Vec3 position,
+            float yaw,
+            ItemStack[] equipment,
+            int textureColor,
+            boolean supplyConsumables,
+            ItemStack[] additionalCircuits
+    ) {
+        Pmvc01Entity mech = new Pmvc01Entity(PomkotsMechs.PMVC01.get(), level);
+        try {
+            configureMech(mech, position, yaw, equipment, textureColor,
+                    supplyConsumables, additionalCircuits);
+            if (!level.addFreshEntity(mech)) {
+                throw new IllegalStateException("Could not add mission mech");
+            }
+            return mech;
+        } catch (RuntimeException exception) {
+            if (!mech.isRemoved()) mech.discard();
+            throw exception;
+        }
+    }
+
     public static Result spawn(ServerLevel level, Vec3 position, float yaw, Configuration configuration) {
         Pmvc01Entity mech = new Pmvc01Entity(PomkotsMechs.PMVC01.get(), level);
         MechPilotEntity pilot = new MechPilotEntity(PomkotsMechs.MECH_PILOT.get(), level);
         try {
-            setRotation(mech, yaw);
+            configureMech(mech, position, yaw, configuration.mechEquipment(),
+                    configuration.textureColor(), configuration.supplyConsumables(),
+                    configuration.additionalCircuits());
             setRotation(pilot, yaw);
-            mech.setPos(position);
             pilot.setPos(position);
-            mech.setShouldSave(false);
             pilot.setShouldSave(false);
-
-            ItemStack[] equipment = configuration.mechEquipment();
-            if (equipment.length != 12) {
-                throw new IllegalArgumentException("Piloted mech equipment must contain exactly 12 slots");
-            }
-            for (int slot = 0; slot < equipment.length; slot++) {
-                mech.setItem(slot, equipment[slot].copy());
-            }
-            ItemStack[] additionalCircuits = configuration.additionalCircuits();
-            int circuitCount = Math.min(18, additionalCircuits.length);
-            for (int slot = 0; slot < circuitCount; slot++) {
-                mech.setItem(
-                        Pmvc01Entity.CONTAINER_ADDITIONAL_CIRCUIT_START_INDEX + slot,
-                        additionalCircuits[slot].copy());
-            }
-            mech.setTextureColor(configuration.textureColor());
-            if (configuration.supplyConsumables()) supplyConsumables(mech);
-            mech.setChanged();
-            mech.setHealth(mech.getMaxHealth());
 
             pilot.setItemInHand(InteractionHand.MAIN_HAND, configuration.license().copy());
             pilot.setItemInHand(InteractionHand.OFF_HAND, configuration.role().copy());
@@ -77,6 +81,36 @@ public final class MissionPilotedMechSpawner {
             if (!mech.isRemoved()) mech.discard();
             throw exception;
         }
+    }
+
+    private static void configureMech(
+            Pmvc01Entity mech,
+            Vec3 position,
+            float yaw,
+            ItemStack[] equipment,
+            int textureColor,
+            boolean supplyConsumables,
+            ItemStack[] additionalCircuits
+    ) {
+        if (equipment.length != 12) {
+            throw new IllegalArgumentException("Mission mech equipment must contain exactly 12 slots");
+        }
+        setRotation(mech, yaw);
+        mech.setPos(position);
+        mech.setShouldSave(false);
+        for (int slot = 0; slot < equipment.length; slot++) {
+            mech.setItem(slot, equipment[slot].copy());
+        }
+        int circuitCount = Math.min(18, additionalCircuits.length);
+        for (int slot = 0; slot < circuitCount; slot++) {
+            mech.setItem(
+                    Pmvc01Entity.CONTAINER_ADDITIONAL_CIRCUIT_START_INDEX + slot,
+                    additionalCircuits[slot].copy());
+        }
+        mech.setTextureColor(textureColor);
+        if (supplyConsumables) supplyConsumables(mech);
+        mech.setChanged();
+        mech.setHealth(mech.getMaxHealth());
     }
 
     private static void supplyConsumables(Pmvc01Entity mech) {

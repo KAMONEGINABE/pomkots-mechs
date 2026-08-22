@@ -150,8 +150,13 @@ public final class MissionTargetMarkerHud {
         Entity entity = mc.level.getEntity(marker.entityId());
         if (entity != null && entity.getUUID().equals(marker.uuid())) {
             if (entity instanceof MissionMarkerEntity missionMarker) {
-                return missionMarker.markerMode() == MissionMarkerEntity.REACHED_AREA
-                        ? missionMarker.maxY() : 2.5F;
+                if (missionMarker.markerMode() == MissionMarkerEntity.REACHED_AREA) {
+                    return missionMarker.maxY();
+                }
+                if (missionMarker.markerMode() == MissionMarkerEntity.POSITION) {
+                    return missionMarker.displayHeight();
+                }
+                return 2.5F;
             }
             if (entity instanceof GenericPomkotsMonster) {
                 return entity.getBbHeight() + POMKOTS_MONSTER_EXTRA_HEIGHT;

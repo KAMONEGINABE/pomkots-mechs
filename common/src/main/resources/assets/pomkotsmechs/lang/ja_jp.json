@@ -71,6 +71,7 @@
   "item.pomkotsmechs.kasumi": "Kasumi (Arm Weapon)",
   "item.pomkotsmechs.kawasemi": "Kawasemi (Shoulder Weapon)",
   "item.pomkotsmechs.mashu": "Mashu (Arm Weapon)",
+  "item.pomkotsmechs.kutara": "Kutara (Arm Weapon)",
   "item.pomkotsmechs.mukudori": "Mukudori (Shoulder Weapon)",
   "item.pomkotsmechs.nosuri": "Nosuri (Shoulder Weapon)",
   "item.pomkotsmechs.tsubame": "Tsubame (Shoulder Weapon)",
@@ -613,12 +614,40 @@
   "mission.pomkotsmechs.chapter_03_mission_01.radio_05_03.message": "あたしは楽しかったけどな！",
   "mission.pomkotsmechs.chapter_03_mission_01.radio_06_01.message": "よっし到着だ！お疲れさん！",
   "mission.pomkotsmechs.chapter_03_mission_01.radio_06_02.message": "中々いいセンスだったぜ。一杯おごろう！",
-  "mission.pomkotsmechs.chapter_03_mission_01.radio_06_03.message": "だな！今後もよろしく頼むぜ！"
+  "mission.pomkotsmechs.chapter_03_mission_01.radio_06_03.message": "だな！今後もよろしく頼むぜ！",
 
+  "mission.pomkotsmechs.chapter_03_mission_02.name": "回収ミッション",
+  "mission.pomkotsmechs.chapter_03_mission_02.objective": "廃倉庫からMechを回収せよ！",
+  "mission.pomkotsmechs.chapter_03_mission_02.success.message": "Mechの回収に成功した！",
+  "mission.pomkotsmechs.chapter_03_mission_02.failed.message": "Mechの回収に失敗した…",
+  "mission.pomkotsmechs.chapter_03_mission_02.briefing_01": "洋上の廃工場に高性能Mechの遺品が残っている事が確認された",
+  "mission.pomkotsmechs.chapter_03_mission_02.briefing_02": "ただ、周辺/内部を多数の敵性Mechが防衛しており、回収班が近寄れない",
+  "mission.pomkotsmechs.chapter_03_mission_02.briefing_03": "君には廃工場の周辺/内部をクリアし、安全を確保してほしい！",
+  "mission.pomkotsmechs.chapter_03_mission_02.stage_01.objective": "廃工場周辺の敵性Mechを排除せよ！",
+  "mission.pomkotsmechs.chapter_03_mission_02.stage_02.objective": "廃工場内部に侵入し、回収ルートを確保せよ！",
+  "mission.pomkotsmechs.chapter_03_mission_02.stage_03.objective": "急襲してきた大型敵性Mechを排除せよ！",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_01_01.message": "まずは廃工場周辺の安全を確保してくれ！",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_01_02.message": "素早い仕事だ、素晴らしい。廃工場の入り口をマーキングしたので向かってくれ！",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_01_03.message": "ここからは狭いエリアになる。Mechを降機して内部に侵入してくれ",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_01_04.message": "まずはターゲットが格納されたコンテナを確認するんだ！",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_02_01.message": "よし、このコンテナの防壁を解除するレバーが2か所あるはずだ",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_02_02.message": "まずは2階のレバーを発見し、起動してくれ！",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_02_03.message": "首尾よく行ったみたいだな。次は屋上のレバーを探して起動してくれ！",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_02_04.message": "流石だな！1階のコンテナが解放されているはずだ、中身を確認してくれ！",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_02_05.message": "これは…凄い機体だな…。回収班を向かわせるので、自分のMechに戻って暫く待機していてくれ",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_03_01.message": "緊急事態だ！！大型の敵性Mechが急速に接近している！！",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_03_02.message": "迎え撃ってくれ！",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_03_03.message": "ターゲットの沈黙を確認。お疲れさまでした",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_03_04.message": "よう兄弟、相変わらずいい仕事してるみたいだな。お届け物の回収に来たぜ！",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_03_05.message": "こりゃぁ大した代物だ…。Astonaigeが喜びそうだな！",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_03_06.message": "激しいミッションだったな…お疲れ様！いいセンスだ！",
+  "mission.pomkotsmechs.chapter_03_mission_02.radio_03_07.message": "一旦、仮拠点に帰投してくれ！",
+  
 
-, "mission.pomkotsmechs.sample.basic.name": "外部定義の基本サンプル"
-, "mission.pomkotsmechs.sample.basic.objective": "サンプル演出が完了するまで待機せよ"
-, "mission.pomkotsmechs.sample.basic.complete": "外部定義のサンプルが正常に完了しました"
-, "radio.pomkotsmechs.sample.operator": "サンプルオペレーター"
-, "radio.pomkotsmechs.sample.welcome": "外部無線定義は正常に動作しています。"
+  "mission.pomkotsmechs.sample.basic.name": "外部定義の基本サンプル",
+  "mission.pomkotsmechs.sample.basic.objective": "サンプル演出が完了するまで待機せよ",
+  "mission.pomkotsmechs.sample.basic.complete": "外部定義のサンプルが正常に完了しました",
+  "radio.pomkotsmechs.sample.operator": "サンプルオペレーター",
+  "radio.pomkotsmechs.sample.welcome": "外部無線定義は正常に動作しています。",
+  "block.pomkotsmechs.elevator_controller": "エレベーター制御ブロック"
 }

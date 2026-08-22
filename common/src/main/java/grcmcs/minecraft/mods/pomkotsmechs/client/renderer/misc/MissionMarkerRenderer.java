@@ -26,7 +26,7 @@ public final class MissionMarkerRenderer extends EntityRenderer<MissionMarkerEnt
                     entity.minX(), entity.minY(), entity.minZ(),
                     entity.maxX(), Mth.lerp(closing, entity.maxY(), entity.minY()), entity.maxZ(),
                     Math.max(0, Math.round(82 * (1.0F - closing))));
-        } else {
+        } else if (entity.markerMode() == MissionMarkerEntity.ITEM_ARROW) {
             renderSidePanels(poseStack.last(), panels,
                     -0.35F, 0.0F, -0.35F,
                     0.35F, 2.5F, 0.35F, 82);

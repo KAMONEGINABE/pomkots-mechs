@@ -10,6 +10,8 @@ import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.BulletGrenade
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.BulletMachineEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.MissileGenericEnemyEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.MissileGenericEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.ReusableLaserEmitter;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.ReusableLaserEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -503,27 +505,31 @@ public class Pmb06Entity extends BaseBossEntity {
             this.triggerAnim("action_controller", "hadoho");
             targetPosHistory.clear();
             laserLookAtPos = target.position();
+            stopActiveLaser();
+            sustainedLaserSpawned = false;
 
         } else if (action.onEndOfAction()) {
-            this.setLaserLength(0);
+            stopActiveLaser();
 
         } else if (action.currentActionTick < 32) {
             laserLookAtPos = target.position();
 
-        } else if (action.currentActionTick == 32) {
-            this.setLaserLength(1);
-
-        } else if (action.currentActionTick > 35 && action.currentActionTick < 74 && action.currentActionTick % 3 == 0) {
+        } else if (action.currentActionTick > 35 && action.currentActionTick < 74) {
             if (targetPosHistory.size() > 7) {
                 laserLookAtPos = targetPosHistory.get(targetPosHistory.size() - 6);
             }
-            this.fireLaser(
-                    this.position().add(0, this.getLaserHeight(), 0), // start pos
-                    laserLookAtPos, // end pos
-                    getMechData().laserDamage / 2, // damage
-                    2 // explosion scale
-            );
-            this.setLaserLength((int)currentLaserLength);
+            Vec3 start = this.position().add(0, this.getLaserHeight(), 0);
+            if (!sustainedLaserSpawned && (activeLaser == null || activeLaser.isRemoved())) {
+                if (level() instanceof ServerLevel serverLevel) activeLaser = ReusableLaserEmitter.sustained(
+                        serverLevel, this, start, laserLookAtPos,
+                        3.0F, 200.0F, getMechData().laserDamage / 2,
+                        38, 3, 2);
+                sustainedLaserSpawned = activeLaser != null;
+            } else {
+                if (activeLaser != null && !activeLaser.isRemoved()) {
+                    activeLaser.setEndpoints(start, laserLookAtPos);
+                }
+            }
 
         }
 
@@ -535,11 +541,20 @@ public class Pmb06Entity extends BaseBossEntity {
     }
 
     private float getLaserHeight() {
-        return 5.5F;
+        return 10.5F;
 //        return 3.6F;
     }
 
     private Vec3 laserLookAtPos = Vec3.ZERO;
+    private ReusableLaserEntity activeLaser;
+    private boolean sustainedLaserSpawned;
+
+    private void stopActiveLaser() {
+        if (activeLaser != null && !activeLaser.isRemoved()) {
+            activeLaser.discard();
+        }
+        activeLaser = null;
+    }
     private Vec3 laserStart;
     private Vec3 laserEnd;
     private Vec3 laserDirection;

@@ -8,11 +8,14 @@ import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.boss.goal.SimpleBossWal
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.ExplosionEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.BulletGrenadeEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.MissileGenericEnemyEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.ReusableLaserEmitter;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.ReusableLaserEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -65,7 +68,7 @@ public class Pmb05Entity extends BaseBossEntity {
                         100            // 最大追跡時間（10秒）
                 ),
                 AI_MODE_ALL,
-                20
+                5
         );
 
         this.registerActionGoal(
@@ -114,25 +117,24 @@ public class Pmb05Entity extends BaseBossEntity {
         if (action.onStartOfAction()) {
             this.triggerAnim("action_controller", "laser_short");
             laserLookAtPos = target.position();
-            this.setLaserLength(1);
+            stopActiveLaser();
 
         } else if (action.currentActionTick < 14) {
             laserLookAtPos = target.position();
 
-        } else if (action.currentActionTick == 14) {
-            this.setLaserLength(1);
-
         } else if (action.currentActionTick == 17) {
-            this.fireLaser(
-                    this.position().add(0, this.getEyeHeight(), 0), // start pos
+            if (level() instanceof ServerLevel serverLevel) activeLaser = ReusableLaserEmitter.pulse(
+                    serverLevel, this,
+                    this.position().add(0, this.getEyeHeight() - 3.0F, 0), // start pos
                     laserLookAtPos, // end pos
+                    1.5F, 200.0F,
                     getMechData().laserDamage, // damage
+                    12,
                     6 // explosion scale
             );
-            this.setLaserLength((int)currentLaserLength);
 
         } else if (action.onEndOfAction()) {
-            this.setLaserLength(0);
+            stopActiveLaser();
         }
 
         this.lookControl.setLookAt(laserLookAtPos);
@@ -151,33 +153,41 @@ public class Pmb05Entity extends BaseBossEntity {
             this.triggerAnim("action_controller", "laser_long");
             targetPosHistory.clear();
             laserLookAtPos = target.position();
+            stopActiveLaser();
 
         } else if (action.currentActionTick < 14) {
             laserLookAtPos = target.position();
 
-        } else if (action.currentActionTick == 14) {
-            this.setLaserLength(1);
-
-        } else if (action.currentActionTick > 17 && action.currentActionTick < 50 && action.currentActionTick % 3 == 0) {
+        } else if (action.currentActionTick > 17 && action.currentActionTick < 50) {
             if (targetPosHistory.size() > 6) {
                 laserLookAtPos = targetPosHistory.get(targetPosHistory.size() - 5);
             }
-            this.fireLaser(
-                    this.position().add(0, this.getEyeHeight(), 0), // start pos
-                    laserLookAtPos, // end pos
-                    getMechData().laserDamage / 3, // damage
-                    2 // explosion scale
-            );
-            this.setLaserLength((int)currentLaserLength);
+            Vec3 start = this.position().add(0, this.getEyeHeight() - 3.0F, 0);
+            if (activeLaser == null || activeLaser.isRemoved()) {
+                if (level() instanceof ServerLevel serverLevel) activeLaser = ReusableLaserEmitter.sustained(
+                        serverLevel, this, start, laserLookAtPos,
+                        1.5F, 200.0F, getMechData().laserDamage / 3,
+                        32, 3, 2);
+            } else {
+                activeLaser.setEndpoints(start, laserLookAtPos);
+            }
 
         } else if (action.onEndOfAction()) {
-            this.setLaserLength(0);
+            stopActiveLaser();
         }
 
         this.lookControl.setLookAt(laserLookAtPos);
     }
 
     private Vec3 laserLookAtPos = Vec3.ZERO;
+    private ReusableLaserEntity activeLaser;
+
+    private void stopActiveLaser() {
+        if (activeLaser != null && !activeLaser.isRemoved()) {
+            activeLaser.discard();
+        }
+        activeLaser = null;
+    }
     private Vec3 laserStart;
     private Vec3 laserEnd;
     private Vec3 laserDirection;

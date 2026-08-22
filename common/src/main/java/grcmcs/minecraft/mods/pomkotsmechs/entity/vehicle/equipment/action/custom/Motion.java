@@ -4,6 +4,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 public abstract class Motion {
+    /** Post-release action lengths used by the three-stage laser motion. */
+    public static int CHARGE_LASER_PULSE_POST_RELEASE_TICKS = 16;
+    public static int CHARGE_LASER_SUSTAIN_POST_RELEASE_TICKS = 91;
+
     protected int maxActionTick;
     protected int interval;
     protected Set<Integer> actualFireTick;
@@ -390,6 +394,36 @@ public abstract class Motion {
         public boolean concurrentAvailable() {
             return true;
         }
+    }.init();
+
+    public static Motion CHARGE_LASER = new Motion() {
+        public Motion init() {
+            // The fire input release fixes fireStartTick. Keep the rifle pose
+            // long enough for a 40-tick sustained beam to finish naturally.
+              maxActionTick = CHARGE_LASER_SUSTAIN_POST_RELEASE_TICKS;
+            interval = -1;
+            actualFireTick = new HashSet<>();
+            actualFireTick.add(Integer.MAX_VALUE - maxActionTick - 1);
+            return this;
+        }
+
+        @Override public MotionType getType() { return MotionType.CHARGE; }
+
+        @Override
+        public String getAnimationName(ActionWeapon act, String side) {
+            if (act.isCharging()) {
+                return "animation.pmv01.nop";
+            }
+            if (act.getFireStartTick() >= 40) {
+                if (act.getCurrentActionTick() <= act.getFireStartTick() + 10) {
+                    return "animation.pmv01.w_laser_sustain_start_" + side;
+                }
+                return "animation.pmv01.w_laser_sustain_" + side;
+            }
+            return "animation.pmv01.w_rifle_" + side;
+        }
+
+        @Override public boolean concurrentAvailable() { return true; }
     }.init();
 
     public static Motion MULTI_MISSILE = new Motion() {

@@ -102,6 +102,7 @@ import java.util.*;
 import java.util.function.Supplier;
 
 public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInventoryScreen, Container, MenuProvider {
+    public static double KUTARA_SUSTAIN_RECOIL_SPEED = 0.06D;
     private static final int WATER_WAKE_PARTICLES_PER_FOOT = 8;
     private static final double PARTICLE_FULL_DISTANCE_SQR = 100.0D * 100.0D;
     private static final double PARTICLE_HALF_DISTANCE_SQR = 150.0D * 150.0D;
@@ -244,7 +245,12 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         this.tickAmmos();
         this.resetAllActionsWhenNotActive();
         super.tick();
-        applyHoveringHorizontalDrag();
+        if (isKutaraSustainMovementLocked()) {
+            setNoGravity(true);
+            setDeltaMovement(Vec3.ZERO);
+        } else {
+            applyHoveringHorizontalDrag();
+        }
 
         if (this.isServerSide()) {
             if (this.isBoundToRail()) {
@@ -276,6 +282,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                 }
             }
         } else {
+            updateClientMovementLoopSounds();
             if (this.onGround()) {
                 if (this.actionController.getAction(ACT_EVASION).isInAction()) {
                     spawnMovingParticles(6, 3, true);
@@ -287,6 +294,33 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         }
 
         handleElectricStun();
+    }
+
+    /**
+     * Loop-sound lifecycle must be driven by entity ticks, not GeckoLib render
+     * predicates: animation controllers may stop evaluating while off-screen.
+     */
+    private void updateClientMovementLoopSounds() {
+        if (!level().isClientSide) return;
+
+        DriverInput driverInput = getDriverInput();
+        if (isGattai()) {
+            stopSoundEffectWithFade("boost");
+            stopSoundEffectWithFade("dash");
+        } else if (isSuperBoost()) {
+            playSoundEffectWithFade("boost", PomkotsMechs.SE_BOOST.get(), 0.8F, 20, 10);
+            stopSoundEffectWithFade("dash");
+        } else if (driverInput != null && driverInput.isJumpPressed()
+                && isInAirInternal() && !getBooster().isEmpty()) {
+            playSoundEffectWithFade("boost", PomkotsMechs.SE_BOOST.get(), 0.6F, 40, 10);
+            stopSoundEffectWithFade("dash");
+        } else if (isBoost() && (onGround() || inAirTicks < 10)) {
+            playSoundEffectWithFade("dash", PomkotsMechs.SE_DASH.get(), 0.6F, 20, 10);
+            stopSoundEffectWithFade("boost");
+        } else {
+            stopSoundEffectWithFade("boost");
+            stopSoundEffectWithFade("dash");
+        }
     }
 
     public void startArena(LivingEntity target) {
@@ -831,6 +865,12 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     @Override
     protected void applyPlayerInput(DriverInput driverInput) {
         if (!isBroken()) {
+            if (isKutaraSustainMovementLocked()) {
+                // Keep facing/aim and weapon inputs, but suppress translation actions.
+                getUserIntentionForDirectionFromKey(driverInput);
+                this.applyPlayerInputWeapons(driverInput);
+                return;
+            }
             handleWingmanCommand(driverInput);
             getUserIntentionForDirectionFromKey(driverInput);
 
@@ -1200,6 +1240,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         } else {
             return hitResult.getLocation();
         }
+    }
+
+    public Vec3 getCameraTargetPositionForWeapon() {
+        return getCameraTargetPosition(this.getDrivingPassenger());
     }
 
     public BlockHitResult performBlockRaycast(LivingEntity player, double maxDistance) {
@@ -1670,7 +1714,8 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     }
 
     public boolean consumeEnergy(int dec) {
-        return this.useEnergy(dec);
+        int adjustedCost = Math.max(0, (int)(dec * modifiedMechStatus.stats().energyCost()));
+        return this.useEnergy(adjustedCost);
     }
 
     @Override
@@ -1908,8 +1953,6 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             DriverInput driverInput = this.getDriverInput();
 
             if (this.isSuperBoost()) {
-                this.playSoundEffectWithFade("boost", PomkotsMechs.SE_BOOST.get(),0.8F, 20, 10);
-
                 return event.setAndContinue(RawAnimation.begin().thenPlay("animation." + getMechName() + ".booster_super"));
 
             } else if (this.actionController.getAction(ACT_EVASION).isInAction()) {
@@ -1926,18 +1969,9 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                 }
                 return PlayState.CONTINUE;
             } else if (driverInput != null && driverInput.isJumpPressed() && this.isInAirInternal() && !this.getBooster().isEmpty()) {
-                this.playSoundEffectWithFade("boost", PomkotsMechs.SE_BOOST.get(),0.6F, 40, 10);
-
                 return event.setAndContinue(RawAnimation.begin().thenPlay("animation." + getMechName() + ".booster_vertical"));
 
             } else if (this.isBoost()) {
-                if (onGround() || inAirTicks < 10) {
-                    this.playSoundEffectWithFade("dash", PomkotsMechs.SE_DASH.get(),0.6F, 20, 10);
-                } else {
-                    this.stopSoundEffectWithFade("dash");
-                }
-                this.stopSoundEffectWithFade("boost");
-
                 if (this.forwardIntention > 0) {
                     return event.setAndContinue(RawAnimation.begin().thenPlay("animation." + getMechName() + ".booster_dash_front"));
                 } else if (this.sidewayIntention > 0) {
@@ -1949,7 +1983,6 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                 }
             }
 
-            this.stopAllSoundEffectWithFade();
             return PlayState.STOP;
 
         }).setSoundKeyframeHandler(soundKeyframeEvent -> {
@@ -2135,6 +2168,33 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         return null;
     }
 
+    private RawAnimation getWeaponActionAnimation(ActionWeapon action, String side) {
+        if (action.getMotion() == Motion.CHARGE_LASER) {
+            String prefix = "animation.pmv01.w_laser_shoulder_";
+            if (action.isCharging()) {
+                return RawAnimation.begin()
+                        .thenPlay(prefix + "open_" + side)
+                        .thenLoop(prefix + "charge_" + side);
+            }
+
+            if (action.getFireStartTick() >= 40) {
+                int closeStartTick = action.getFireStartTick()
+                        + Motion.CHARGE_LASER_SUSTAIN_POST_RELEASE_TICKS - 6;
+                if (action.getCurrentActionTick() >= closeStartTick) {
+                    return RawAnimation.begin().thenPlay(prefix + "close_" + side);
+                }
+                return RawAnimation.begin()
+                        .thenPlay(prefix + "shot_" + side)
+                        .thenLoop(prefix + "shot_sustain_" + side);
+            }
+
+            return RawAnimation.begin()
+                    .thenPlay(prefix + "shot_" + side)
+                    .thenPlay(prefix + "close_" + side);
+        }
+        return RawAnimation.begin().thenPlay(action.getMotion().getAnimationName(action, side));
+    }
+
     @Override
     protected void addExtraAnimationController(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "right_hand", 0, event -> {
@@ -2164,7 +2224,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                     event.getController().forceAnimationReset();
                 }
 
-                return event.setAndContinue(RawAnimation.begin().thenPlay(act.getMotion().getAnimationName(act, "right")));
+                return event.setAndContinue(getWeaponActionAnimation(act, "right"));
             } else {
                 if (act.getMotion().getType() == Motion.MotionType.TOGGLE && act.isToggleOnStart()) {
                     return event.setAndContinue(RawAnimation.begin().thenPlayAndHold(act.getMotion().getAnimationName(act, "right")));
@@ -2191,7 +2251,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                     event.getController().forceAnimationReset();
                 }
 
-                return event.setAndContinue(RawAnimation.begin().thenPlay(act.getMotion().getAnimationName(act, "left")));
+                return event.setAndContinue(getWeaponActionAnimation(act, "left"));
             } else {
                 if (act.getMotion().getType() == Motion.MotionType.TOGGLE && act.isToggleOn()) {
                     return event.setAndContinue(RawAnimation.begin().thenPlayAndHold(act.getMotion().getAnimationName(act, "left")));
@@ -2218,7 +2278,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                     event.getController().forceAnimationReset();
                 }
 
-                return event.setAndContinue(RawAnimation.begin().thenPlay(act.getMotion().getAnimationName(act, "right")));
+                return event.setAndContinue(getWeaponActionAnimation(act, "right"));
             } else {
                 if (act.getMotion().getType() == Motion.MotionType.TOGGLE && act.isToggleOnStart()) {
                     return event.setAndContinue(RawAnimation.begin().thenPlayAndHold(act.getMotion().getAnimationName(act, "right")));
@@ -2245,7 +2305,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                     event.getController().forceAnimationReset();
                 }
 
-                return event.setAndContinue(RawAnimation.begin().thenPlay(act.getMotion().getAnimationName(act, "left")));
+                return event.setAndContinue(getWeaponActionAnimation(act, "left"));
             } else {
                 if (act.getMotion().getType() == Motion.MotionType.TOGGLE && act.isToggleOnStart()) {
                     return event.setAndContinue(RawAnimation.begin().thenPlayAndHold(act.getMotion().getAnimationName(act, "left")));
@@ -3255,6 +3315,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     protected static final EntityDataAccessor<Boolean> IS_GLIDING = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
     protected static final EntityDataAccessor<Boolean> IS_HOVERING = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Integer> KUTARA_SUSTAIN_ACTIVE_SLOTS = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
 
 
     @Override
@@ -3319,8 +3380,31 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         this.entityData.define(BUILD_MODE, false);
         this.entityData.define(IS_GLIDING, false);
         this.entityData.define(IS_HOVERING, false);
+        this.entityData.define(KUTARA_SUSTAIN_ACTIVE_SLOTS, 0);
 
         this.entityData.define(HAVING_ENTITY, Optional.empty());
+    }
+
+    public void setKutaraSustainActive(int weaponSlot, boolean active) {
+        int bit = 1 << weaponSlot;
+        int slots = entityData.get(KUTARA_SUSTAIN_ACTIVE_SLOTS);
+        int updated = active ? slots | bit : slots & ~bit;
+        if (updated == slots) return;
+        entityData.set(KUTARA_SUSTAIN_ACTIVE_SLOTS, updated);
+
+        if (active) {
+            actionController.setBoost(false);
+            setSuperBoost(false);
+            setNoGravity(true);
+            setDeltaMovement(Vec3.ZERO);
+            hasImpulse = true;
+        } else if (updated == 0 && !isHovering() && !isSuperBoost()) {
+            setNoGravity(false);
+        }
+    }
+
+    public boolean isKutaraSustainMovementLocked() {
+        return entityData.get(KUTARA_SUSTAIN_ACTIVE_SLOTS) != 0;
     }
 
     protected void syncAllParameter2Client() {
@@ -3805,6 +3889,28 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     @Override
     public void travel(Vec3 pos) {
+        if (isKutaraSustainMovementLocked()) {
+            LivingEntity pilot = this.getDrivingPassenger();
+            if (pilot != null) {
+                setYRot(pilot.getYRot());
+                setXRot(pilot.getXRot() * 0.5F);
+                setYBodyRot(getYRot());
+                setYHeadRot(getYRot());
+            }
+            boolean grounded = onGround();
+            setNoGravity(!grounded);
+            Vec3 recoil = Vec3.directionFromRotation(0.0F, getYRot())
+                    .scale(-KUTARA_SUSTAIN_RECOIL_SPEED);
+            if (grounded) {
+                // Keep grounded recoil strictly horizontal. The small downward
+                // component prevents no-gravity sustain transitions from
+                // making the mech hover just above uneven terrain.
+                recoil = new Vec3(recoil.x, -0.08D, recoil.z);
+            }
+            setDeltaMovement(recoil);
+            move(MoverType.SELF, recoil);
+            return;
+        }
         if (!isBroken()) {
             if (this.isSuperBoost()) {
                 ItemStack sb = getSuperBoostUnit();
@@ -4052,6 +4158,14 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     protected void stopSoundEffectWithFade(String key) {
         key = this.getId() + ":" + key;
         PomkotsSoundManager.stopSound(key, true);
+    }
+
+    public void startWeaponLoopSound(String key, SoundEvent event) {
+        playSoundEffectWithFade(key, event, 1.0F, 0, 4);
+    }
+
+    public void stopWeaponLoopSound(String key) {
+        stopSoundEffectWithFade(key);
     }
 
     protected void stopAllSoundEffectWithFade() {
