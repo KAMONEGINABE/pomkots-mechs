@@ -4,6 +4,7 @@ import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -66,7 +67,7 @@ public class PomkotsLeverBlock extends BaseEntityBlock {
                 le.playAnimation();
                 return InteractionResult.CONSUME;
             } else {
-                le.use((ServerLevel)level, pos);
+                le.use((ServerLevel)level, pos, (ServerPlayer) player);
                 return InteractionResult.CONSUME;
             }
         } else {
@@ -83,5 +84,14 @@ public class PomkotsLeverBlock extends BaseEntityBlock {
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.ENTITYBLOCK_ANIMATED;
+    }
+
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
+            Level level, BlockState state, BlockEntityType<T> type) {
+        return level.isClientSide ? null : createTickerHelper(
+                type,
+                PomkotsMechs.POMKOTS_LEVER_BLOCK_ENTITY.get(),
+                PomkotsLeverBlockEntity::serverTick);
     }
 }

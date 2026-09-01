@@ -307,6 +307,36 @@
 					}
 				}
 			}
+		},
+		"animation.kutara.fire_sustain": {
+			"loop": true,
+			"animation_length": 0.5,
+			"bones": {
+				"charge": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.5": {
+							"vector": [0, 360, 0]
+						}
+					},
+					"position": {
+						"vector": [0, -24, 0]
+					},
+					"scale": {
+						"0.0": {
+							"vector": [30, 40, 30]
+						},
+						"0.25": {
+							"vector": [25, 30, 25]
+						},
+						"0.5": {
+							"vector": [30, 40, 30]
+						}
+					}
+				}
+			}
 		}
 	},
 	"geckolib_format_version": 2

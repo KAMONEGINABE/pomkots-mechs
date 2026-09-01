@@ -54,6 +54,8 @@ public class Pmc01Entity extends GenericPomkotsMonsterPercistant implements GeoE
     private int countDownForDiscard = -1;
 
     private float dropDistance = 100;
+    private Vec3 missionFlightTarget;
+    private Vec3 missionDropTrigger;
     private MissionSpawnContext missionSpawnContext;
 
     public Pmc01Entity(EntityType<? extends Monster> entityType, Level level) {
@@ -178,9 +180,8 @@ public class Pmc01Entity extends GenericPomkotsMonsterPercistant implements GeoE
                     living.yHeadRotO = yaw;
                 }
 
-                if (this.getTarget() != null
-                        && this.container != null
-                        && !isFartherThanXZ(this, this.getTarget(), this.dropDistance)
+                if (this.container != null
+                        && hasReachedDropTrigger()
                         && isBelowGroundNotWater(this.level(), this.blockPosition())
                 ) {
                     if (this.container instanceof Mob mob) {
@@ -205,6 +206,40 @@ public class Pmc01Entity extends GenericPomkotsMonsterPercistant implements GeoE
         double dz = a.getZ() - b.getZ();
         double distSqr = dx * dx + dz * dz;
         return distSqr >= n * n; // 距離n以上ならtrue
+    }
+
+    private static boolean isFartherThanXZ(Vec3 a, Vec3 b, double n) {
+        double dx = a.x - b.x;
+        double dz = a.z - b.z;
+        return dx * dx + dz * dz >= n * n;
+    }
+
+    private boolean hasReachedDropTrigger() {
+        if (missionDropTrigger != null) {
+            return !isFartherThanXZ(position(), missionDropTrigger, dropDistance);
+        }
+        return getTarget() != null && !isFartherThanXZ(this, getTarget(), dropDistance);
+    }
+
+    public void setMissionFlightTarget(Vec3 target) {
+        missionFlightTarget = target;
+    }
+
+    public boolean hasMissionFlightTarget() {
+        return missionFlightTarget != null;
+    }
+
+    public Vec3 getMissionFlightTarget() {
+        return missionFlightTarget;
+    }
+
+    public void setMissionDropTrigger(Vec3 position, float xzDistance) {
+        missionDropTrigger = position;
+        dropDistance = Math.max(0.0F, xzDistance);
+    }
+
+    public float getDropDistance() {
+        return dropDistance;
     }
 
     public static boolean isBelowGroundNotWater(Level level, BlockPos startPos) {
@@ -233,6 +268,16 @@ public class Pmc01Entity extends GenericPomkotsMonsterPercistant implements GeoE
         super.addAdditionalSaveData(compound);
         compound.putString(PomkotsMechs.nbtName("ContainerType"), containerType);
         compound.putFloat(PomkotsMechs.nbtName("DropDistance"), dropDistance);
+        if (missionFlightTarget != null) {
+            compound.putDouble(PomkotsMechs.nbtName("MissionFlightTargetX"), missionFlightTarget.x);
+            compound.putDouble(PomkotsMechs.nbtName("MissionFlightTargetY"), missionFlightTarget.y);
+            compound.putDouble(PomkotsMechs.nbtName("MissionFlightTargetZ"), missionFlightTarget.z);
+        }
+        if (missionDropTrigger != null) {
+            compound.putDouble(PomkotsMechs.nbtName("MissionDropTriggerX"), missionDropTrigger.x);
+            compound.putDouble(PomkotsMechs.nbtName("MissionDropTriggerY"), missionDropTrigger.y);
+            compound.putDouble(PomkotsMechs.nbtName("MissionDropTriggerZ"), missionDropTrigger.z);
+        }
 
         if (containerUUID != null) {
             compound.putUUID(PomkotsMechs.nbtName("ContainerUUID"), containerUUID);
@@ -293,6 +338,24 @@ public class Pmc01Entity extends GenericPomkotsMonsterPercistant implements GeoE
         } else {
             dropDistance = 100F;
         }
+
+        String flightX = PomkotsMechs.nbtName("MissionFlightTargetX");
+        String flightY = PomkotsMechs.nbtName("MissionFlightTargetY");
+        String flightZ = PomkotsMechs.nbtName("MissionFlightTargetZ");
+        missionFlightTarget = compound.contains(flightX, Tag.TAG_ANY_NUMERIC)
+                && compound.contains(flightY, Tag.TAG_ANY_NUMERIC)
+                && compound.contains(flightZ, Tag.TAG_ANY_NUMERIC)
+                ? new Vec3(compound.getDouble(flightX), compound.getDouble(flightY), compound.getDouble(flightZ))
+                : null;
+
+        String dropX = PomkotsMechs.nbtName("MissionDropTriggerX");
+        String dropY = PomkotsMechs.nbtName("MissionDropTriggerY");
+        String dropZ = PomkotsMechs.nbtName("MissionDropTriggerZ");
+        missionDropTrigger = compound.contains(dropX, Tag.TAG_ANY_NUMERIC)
+                && compound.contains(dropY, Tag.TAG_ANY_NUMERIC)
+                && compound.contains(dropZ, Tag.TAG_ANY_NUMERIC)
+                ? new Vec3(compound.getDouble(dropX), compound.getDouble(dropY), compound.getDouble(dropZ))
+                : null;
 
         if (compound.contains(PomkotsMechs.nbtName("MonsterHealthModifier"))) {
             healthModifier = compound.getFloat(PomkotsMechs.nbtName("MonsterHealthModifier"));

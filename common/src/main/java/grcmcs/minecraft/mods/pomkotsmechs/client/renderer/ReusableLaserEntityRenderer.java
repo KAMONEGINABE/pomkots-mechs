@@ -76,11 +76,11 @@ public final class ReusableLaserEntityRenderer extends GeoEntityRenderer<Reusabl
         super.actuallyRender(poseStack, entity, model, renderType, bufferSource, buffer,
                 isReRender, partialTick, 0xF000F0, packedOverlay, red, green, blue, alpha);
         if (core != null) core.setHidden(false);
-        if (!isReRender) renderRedHalo(poseStack, bufferSource, entity, direction, partialTick);
+        if (!isReRender) renderHalo(poseStack, bufferSource, entity, direction, partialTick);
     }
 
-    private void renderRedHalo(PoseStack poseStack, MultiBufferSource bufferSource,
-                               ReusableLaserEntity entity, Vec3 direction, float partialTick) {
+    private void renderHalo(PoseStack poseStack, MultiBufferSource bufferSource,
+                            ReusableLaserEntity entity, Vec3 direction, float partialTick) {
         if (direction.lengthSqr() < 1.0E-8D || entity.getBeamLength() <= 0.0F) return;
 
         Vec3 origin = entity.getInterpolatedRenderPosition(partialTick);
@@ -95,22 +95,26 @@ public final class ReusableLaserEntityRenderer extends GeoEntityRenderer<Reusabl
         double outerRadius = innerRadius + Math.max(0.35D, entity.getBeamWidth() * 0.65D) * widthScale;
         Vec3 end = direction.scale(entity.getBeamLength());
         VertexConsumer halo = bufferSource.getBuffer(MissionMarkerRenderTypes.GLOWING_PANELS);
+        int color = entity.getHaloColor();
+        int red = color >> 16 & 0xFF;
+        int green = color >> 8 & 0xFF;
+        int blue = color & 0xFF;
 
-        renderHaloStrip(halo, poseStack, end, side.scale(innerRadius), side.scale(outerRadius));
-        renderHaloStrip(halo, poseStack, end, side.scale(-innerRadius), side.scale(-outerRadius));
+        renderHaloStrip(halo, poseStack, end, side.scale(innerRadius), side.scale(outerRadius), red, green, blue);
+        renderHaloStrip(halo, poseStack, end, side.scale(-innerRadius), side.scale(-outerRadius), red, green, blue);
     }
 
     private static void renderHaloStrip(VertexConsumer buffer, PoseStack poseStack, Vec3 end,
-                                        Vec3 inner, Vec3 outer) {
+                                        Vec3 inner, Vec3 outer, int red, int green, int blue) {
         var pose = poseStack.last().pose();
-        // Outer edge is fully transparent; the faint red is concentrated at the core silhouette.
+        // Outer edge is fully transparent; the faint color is concentrated at the core silhouette.
         buffer.vertex(pose, (float) outer.x, (float) outer.y, (float) outer.z)
-                .color(255, 20, 12, 0).endVertex();
+                .color(red, green, blue, 0).endVertex();
         buffer.vertex(pose, (float) (end.x + outer.x), (float) (end.y + outer.y), (float) (end.z + outer.z))
-                .color(255, 20, 12, 0).endVertex();
+                .color(red, green, blue, 0).endVertex();
         buffer.vertex(pose, (float) (end.x + inner.x), (float) (end.y + inner.y), (float) (end.z + inner.z))
-                .color(255, 20, 12, 72).endVertex();
+                .color(red, green, blue, 72).endVertex();
         buffer.vertex(pose, (float) inner.x, (float) inner.y, (float) inner.z)
-                .color(255, 20, 12, 72).endVertex();
+                .color(red, green, blue, 72).endVertex();
     }
 }

@@ -53,7 +53,8 @@ public class SuwaItem extends BasePartsItem.WeaponShoulder {
 
                 // オフセット位置から大体の銃口の座標を決める（モデル位置からとるとクラサバ同期がめんどい…）
                 var muzzlPos = new Vec3(1.6 * mechInterface.isRight(), 5.7, 4F);
-                muzzlPos = muzzlPos.yRot((float) Math.toRadians((-1.0) * mechInterface.getYRot()));
+                muzzlPos = mechInterface.getAimAdjustedMuzzleOffset(muzzlPos,
+                        new Vec3(1.6 * mechInterface.isRight(), 5.7, 0.0F));
                 be.setPos(offset.add(muzzlPos));
 
                 float[] angle = mechInterface.getShootingAngle(be, true);
@@ -68,7 +69,9 @@ public class SuwaItem extends BasePartsItem.WeaponShoulder {
                         mechInterface.getMechEntity(),
                         mechInterface.getAttachPoint(),
                         12.0D,
-                        new Vec3(1.6 * mechInterface.isRight(), 5.7, 4F)
+                        mechInterface.getAimAdjustedLocalMuzzleOffset(
+                                new Vec3(1.6 * mechInterface.isRight(), 5.7, 4F),
+                                new Vec3(1.6 * mechInterface.isRight(), 5.7, 0.0F))
                 );
                 if (tick % 5 == 1) {
                     mechInterface.playSoundEffect(PomkotsMechs.SE_GATLING_EVENT.get());
@@ -121,6 +124,11 @@ public class SuwaItem extends BasePartsItem.WeaponShoulder {
     @Override
     public WeaponAttachPoint getWeaponAttachPoint() {
         return WeaponAttachPoint.ATTACH_POINT_SHOULDER;
+    }
+
+    @Override
+    public boolean usesShoulderPitchAiming() {
+        return true;
     }
 
     @Override

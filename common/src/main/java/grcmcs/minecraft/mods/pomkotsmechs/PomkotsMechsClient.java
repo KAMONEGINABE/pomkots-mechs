@@ -23,6 +23,7 @@ import grcmcs.minecraft.mods.pomkotsmechs.client.hud.MissionObjectiveHud;
 import grcmcs.minecraft.mods.pomkotsmechs.client.hud.MissionPresentationHud;
 import grcmcs.minecraft.mods.pomkotsmechs.client.hud.MissionTargetMarkerHud;
 import grcmcs.minecraft.mods.pomkotsmechs.client.hud.MissionTargetMarkerManager;
+import grcmcs.minecraft.mods.pomkotsmechs.client.hud.MissionAlertOverlay;
 import grcmcs.minecraft.mods.pomkotsmechs.client.input.MechCameraHandler;
 import grcmcs.minecraft.mods.pomkotsmechs.client.input.UserInteractionManager;
 import grcmcs.minecraft.mods.pomkotsmechs.client.misc.ClientHudShake;
@@ -475,12 +476,14 @@ public class PomkotsMechsClient {
 		ClientGuiEvent.RENDER_HUD.register(new PomkotsHud());
 		ClientGuiEvent.RENDER_HUD.register(MissionObjectiveHud.INSTANCE::render);
 		ClientGuiEvent.RENDER_HUD.register(MissionTargetMarkerHud.INSTANCE::render);
+		ClientGuiEvent.RENDER_HUD.register(MissionAlertOverlay.INSTANCE::render);
 		// 最後に登録し、既存のMech HUDより前面へ描画する。
 		ClientGuiEvent.RENDER_HUD.register(RadioCommunicationHud.INSTANCE::renderHud);
 		ClientGuiEvent.RENDER_HUD.register(MissionPresentationHud.INSTANCE::render);
 		ClientTickEvent.CLIENT_POST.register(RadioCommunicationManager::tick);
 		ClientTickEvent.CLIENT_POST.register(MissionHudManager::tick);
 		ClientTickEvent.CLIENT_POST.register(MissionTargetMarkerManager::tick);
+		ClientTickEvent.CLIENT_POST.register(MissionAlertOverlay.INSTANCE::tick);
 		ClientTickEvent.CLIENT_POST.register(PomkotsSoundManager::cleanup);
 		ClientTickEvent.CLIENT_POST.register(MechCameraHandler::tick);
 		ClientTickEvent.CLIENT_POST.register(ClientHudShake::tick);
@@ -559,6 +562,12 @@ public class PomkotsMechsClient {
 			float intensity = hasShake ? buf.readFloat() : 0.0F;
 			int duration = hasShake ? buf.readVarInt() : 0;
 			float frequency = hasShake ? buf.readFloat() : 0.0F;
+			boolean hasAlertOverlay = buf.readBoolean();
+			int alertColor = hasAlertOverlay ? buf.readInt() : 0;
+			float alertMaxAlpha = hasAlertOverlay ? buf.readFloat() : 0.0F;
+			int alertDuration = hasAlertOverlay ? buf.readVarInt() : 0;
+			int alertPeriod = hasAlertOverlay ? buf.readVarInt() : 0;
+			int alertEdgeFade = hasAlertOverlay ? buf.readVarInt() : 0;
 			context.queue(() -> {
 				Minecraft minecraft = Minecraft.getInstance();
 				if (minecraft.level == null || !minecraft.level.dimension().location().equals(dimension)) return;
@@ -572,6 +581,10 @@ public class PomkotsMechsClient {
 					} else {
 						ClientHudShake.addShake(intensity);
 					}
+				}
+				if (hasAlertOverlay) {
+					MissionAlertOverlay.INSTANCE.start(
+							alertColor, alertMaxAlpha, alertDuration, alertPeriod, alertEdgeFade);
 				}
 			});
 		});

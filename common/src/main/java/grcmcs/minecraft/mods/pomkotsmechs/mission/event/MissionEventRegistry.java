@@ -21,6 +21,7 @@ import grcmcs.minecraft.mods.pomkotsmechs.mission.definition.MissionDefinition;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.MissionMarkerEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.GenericPomkotsMonster;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.boss.BaseBossEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.carrier.Pmc01Entity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.mob.BaseSmallMonsterEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.event.TransportShipEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
@@ -254,8 +255,29 @@ public final class MissionEventRegistry {
         if (shake != null && (frequency <= 0.0F || frequency > 10.0F)) {
             throw new IllegalArgumentException("screen_shake.frequency must be greater than 0 and at most 10");
         }
-        if (sound == null && shake == null) {
-            throw new IllegalArgumentException("mission_effect requires sound or screen_shake");
+
+        JsonObject alert = data.has("alert_overlay")
+                ? GsonHelper.getAsJsonObject(data, "alert_overlay") : null;
+        int alertColor = alert == null ? 0 : parseRgbColor(GsonHelper.getAsString(alert, "color", "#FF1800"));
+        float alertMaxAlpha = alert == null ? 0.0F : GsonHelper.getAsFloat(alert, "max_alpha", 0.32F);
+        int alertDuration = alert == null ? 0 : GsonHelper.getAsInt(alert, "duration_ticks", 100);
+        int alertPeriod = alert == null ? 0 : GsonHelper.getAsInt(alert, "period_ticks", 20);
+        int alertEdgeFade = alert == null ? 0 : GsonHelper.getAsInt(alert, "edge_fade_ticks", 5);
+        if (alert != null && (alertMaxAlpha <= 0.0F || alertMaxAlpha > 1.0F)) {
+            throw new IllegalArgumentException("alert_overlay.max_alpha must be greater than 0 and at most 1");
+        }
+        if (alert != null && (alertDuration <= 0 || alertDuration > 72000)) {
+            throw new IllegalArgumentException("alert_overlay.duration_ticks must be between 1 and 72000");
+        }
+        if (alert != null && (alertPeriod <= 0 || alertPeriod > 1200)) {
+            throw new IllegalArgumentException("alert_overlay.period_ticks must be between 1 and 1200");
+        }
+        if (alert != null && (alertEdgeFade < 0 || alertEdgeFade > alertDuration / 2)) {
+            throw new IllegalArgumentException(
+                    "alert_overlay.edge_fade_ticks must be between 0 and half of duration_ticks");
+        }
+        if (sound == null && shake == null && alert == null) {
+            throw new IllegalArgumentException("mission_effect requires sound, screen_shake, or alert_overlay");
         }
 
         for (ServerPlayer player : context.targets(targets)) {
@@ -286,8 +308,28 @@ public final class MissionEventRegistry {
                 buffer.writeVarInt(duration);
                 buffer.writeFloat(frequency);
             }
+            buffer.writeBoolean(alert != null);
+            if (alert != null) {
+                buffer.writeInt(alertColor);
+                buffer.writeFloat(alertMaxAlpha);
+                buffer.writeVarInt(alertDuration);
+                buffer.writeVarInt(alertPeriod);
+                buffer.writeVarInt(alertEdgeFade);
+            }
             NetworkManager.sendToPlayer(
                     player, PomkotsMechs.id(PomkotsMechs.PACKET_MISSION_EFFECT), buffer);
+        }
+    }
+
+    private static int parseRgbColor(String value) {
+        String hex = value.startsWith("#") ? value.substring(1) : value;
+        if (hex.length() != 6) {
+            throw new IllegalArgumentException("alert_overlay.color must be a #RRGGBB color");
+        }
+        try {
+            return Integer.parseInt(hex, 16);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("alert_overlay.color must be a #RRGGBB color: " + value);
         }
     }
 
@@ -366,6 +408,9 @@ public final class MissionEventRegistry {
                             "mission.pomkotsmechs.error.spawn_outside_loaded_areas", coordinates));
                 }
                 entity.moveTo(pos.x, pos.y, pos.z, GsonHelper.getAsFloat(entry, "yaw", 0.0F), 0.0F);
+                if (entity instanceof Pmc01Entity carrier) {
+                    configureCarrierRoute(context, entry, resolved.level(), carrier);
+                }
                 entity.setGlowingTag(GsonHelper.getAsBoolean(entry, "glowing", false));
                 entity.addTag("pomkots_mission:" + context.instance().instanceId());
                 entity.addTag("pomkots_mission_group:" + group);
@@ -1045,6 +1090,41 @@ public final class MissionEventRegistry {
         double angle = random.nextDouble() * Math.PI * 2.0D;
         double radius = minRadius + random.nextDouble() * (maxRadius - minRadius);
         return origin.add(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+    }
+
+    private static void configureCarrierRoute(Context context, JsonObject entry,
+                                              ServerLevel spawnLevel, Pmc01Entity carrier) {
+        if (entry.has("flight_target")) {
+            MissionPositionResolver.ResolvedPosition flightTarget =
+                    context.resolve(GsonHelper.getAsJsonObject(entry, "flight_target"));
+            validateCarrierRoutePosition(context, spawnLevel, flightTarget, "flight_target");
+            carrier.setMissionFlightTarget(flightTarget.position());
+        }
+
+        if (entry.has("drop_trigger")) {
+            JsonObject trigger = GsonHelper.getAsJsonObject(entry, "drop_trigger");
+            MissionPositionResolver.ResolvedPosition dropPosition =
+                    context.resolve(GsonHelper.getAsJsonObject(trigger, "position"));
+            validateCarrierRoutePosition(context, spawnLevel, dropPosition, "drop_trigger.position");
+            float distance = GsonHelper.getAsFloat(trigger, "xz_distance", carrier.getDropDistance());
+            if (distance < 0.0F) {
+                throw new IllegalArgumentException("drop_trigger.xz_distance must not be negative");
+            }
+            carrier.setMissionDropTrigger(dropPosition.position(), distance);
+        }
+    }
+
+    private static void validateCarrierRoutePosition(Context context, ServerLevel spawnLevel,
+                                                     MissionPositionResolver.ResolvedPosition position,
+                                                     String field) {
+        if (position.level() != spawnLevel) {
+            throw new IllegalArgumentException(field + " must be in the carrier spawn dimension");
+        }
+        if (!MissionChunkManager.contains(context.instance(), position)) {
+            String coordinates = String.format(Locale.ROOT, "%.1f, %.1f, %.1f",
+                    position.position().x, position.position().y, position.position().z);
+            throw new IllegalArgumentException(field + " is outside loaded_areas: " + coordinates);
+        }
     }
 
     private static LivingEntity resolveInitialTarget(Context context, String target) {

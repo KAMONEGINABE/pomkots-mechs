@@ -17,6 +17,7 @@ import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 
 public class SenzokuItem extends BasePartsItem.WeaponArm {
+    @Override public boolean usesArmPitchAiming() { return true; }
     public SenzokuItem(Properties properties) {
         super(properties);
     }
@@ -45,7 +46,8 @@ public class SenzokuItem extends BasePartsItem.WeaponArm {
 
                         // オフセット位置から大体の銃口の座標を決める（モデル位置からとるとクラサバ同期がめんどい…）
                         var muzzlPos = new Vec3(1.8 * mechInterface.isRight(), 3.0F, 5F);
-                        muzzlPos = muzzlPos.yRot((float) Math.toRadians((-1.0) * mechInterface.getYRot()));
+                        muzzlPos = mechInterface.getAimAdjustedMuzzleOffset(muzzlPos,
+                                new Vec3(1.8 * mechInterface.isRight(), 3.0F, 0.0F));
                         be.setPos(offset.add(muzzlPos));
 
                         float[] angle = randomizeShootingAngle(mechInterface.getShootingAngle(be, true),30,mechInterface.getMechEntity().getRandom());
@@ -60,7 +62,9 @@ public class SenzokuItem extends BasePartsItem.WeaponArm {
                                 mechInterface.getMechEntity(),
                                 mechInterface.getAttachPoint(),
                                 16.0D,
-                                new Vec3(1.8 * mechInterface.isRight(), 3.0F, 5F)
+                                mechInterface.getAimAdjustedLocalMuzzleOffset(
+                                        new Vec3(1.8 * mechInterface.isRight(), 3.0F, 5F),
+                                        new Vec3(1.8 * mechInterface.isRight(), 3.0F, 0.0F))
                         );
                         mechInterface.playSoundEffect(PomkotsMechs.SE_GUN_3.get());
                     }

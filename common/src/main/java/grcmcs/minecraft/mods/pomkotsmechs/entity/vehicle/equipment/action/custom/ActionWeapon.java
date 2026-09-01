@@ -229,6 +229,16 @@ public class ActionWeapon extends Action {
 
         }
 
+        public Vec3 getAimAdjustedMuzzleOffset(Vec3 localMuzzle, Vec3 localMount) {
+            return getAimAdjustedLocalMuzzleOffset(localMuzzle, localMount)
+                    .yRot(-owner.getYRot() * Mth.DEG_TO_RAD);
+        }
+
+        public Vec3 getAimAdjustedLocalMuzzleOffset(Vec3 localMuzzle, Vec3 localMount) {
+            float pitch = owner.getWeaponAimPitch() * Mth.DEG_TO_RAD;
+            return localMuzzle.subtract(localMount).xRot(-pitch).add(localMount);
+        }
+
         public Player getPlayer() {
             var v = owner.getDrivingPassenger();
 

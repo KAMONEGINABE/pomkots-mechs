@@ -517,6 +517,16 @@ public abstract class BasePartsItem extends Item implements GeoItem {
         default public boolean isToggleOn(ActionWeapon.WeaponMechInterface context) {
             return false;
         }
+
+        /** Opt-in for procedural pitch posing of shoulder-mounted weapons. */
+        default boolean usesShoulderPitchAiming() {
+            return false;
+        }
+
+        /** Opt-in for procedural pitch posing of arm/hand-mounted weapons. */
+        default boolean usesArmPitchAiming() {
+            return false;
+        }
     }
 
     public static abstract class Weapon extends BasePartsItem implements WeaponInterface {

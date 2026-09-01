@@ -8,6 +8,7 @@ import dev.architectury.networking.NetworkManager;
 import dev.architectury.registry.client.keymappings.KeyMappingRegistry;
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.PomkotsVehicle;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
 import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
 import io.netty.buffer.Unpooled;
 import net.minecraft.client.KeyMapping;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Arrays;
 
 public class UserInteractionManager {
     public static final Logger LOGGER = LoggerFactory.getLogger(PomkotsMechs.MODID);
@@ -66,6 +68,12 @@ public class UserInteractionManager {
 
     private final TargetLocker targetLocker = TargetLocker.getInstance();
     private short prevDriverInput = 0;
+    private final float[] lastSentAimPitch = {
+            Float.NaN, Float.NaN, Float.NaN, Float.NaN
+    };
+    private long lastAimPitchSendTick = Long.MIN_VALUE;
+    private static final int AIM_PITCH_SYNC_INTERVAL_TICKS = 3;
+    private static final float AIM_PITCH_SYNC_THRESHOLD_DEGREES = 0.5F;
 
     public UserInteractionManager() {
     }
@@ -144,8 +152,12 @@ public class UserInteractionManager {
                         var driverInput = new DriverInput(keyPressStatus);
                         targetLocker.tick(driverInput, bot);
                     }
+                    if (client.player.getVehicle() instanceof Pmvc01Entity mech) {
+                        sendAimPitchIfNeeded(mech);
+                    }
                 } else {
                     targetLocker.clearLockTargets();
+                    Arrays.fill(lastSentAimPitch, Float.NaN);
                 }
             }
         });
@@ -156,5 +168,28 @@ public class UserInteractionManager {
         buf.writeShort(keyPressStatus);
         NetworkManager.sendToServer(PomkotsMechs.id(PomkotsMechs.PACKET_DRIVER_INPUT), buf);
 
+    }
+
+    private void sendAimPitchIfNeeded(Pmvc01Entity mech) {
+        long gameTime = mech.level().getGameTime();
+        if (gameTime - lastAimPitchSendTick < AIM_PITCH_SYNC_INTERVAL_TICKS) return;
+
+        float[] pitches = new float[4];
+        boolean changed = false;
+        for (int index = 0; index < pitches.length; index++) {
+            int slot = Pmvc01Entity.INV_WEAPON_RIGHT_HAND + index;
+            pitches[index] = mech.getWeaponAimPitch(slot);
+            if (!Float.isFinite(lastSentAimPitch[index])
+                    || Math.abs(pitches[index] - lastSentAimPitch[index]) >= AIM_PITCH_SYNC_THRESHOLD_DEGREES) {
+                changed = true;
+            }
+        }
+        if (!changed) return;
+
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        for (float pitch : pitches) buf.writeFloat(pitch);
+        NetworkManager.sendToServer(PomkotsMechs.id(PomkotsMechs.PACKET_MECH_AIM_PITCH), buf);
+        System.arraycopy(pitches, 0, lastSentAimPitch, 0, pitches.length);
+        lastAimPitchSendTick = gameTime;
     }
 }

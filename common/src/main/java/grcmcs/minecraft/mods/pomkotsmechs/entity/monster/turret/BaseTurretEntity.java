@@ -4,6 +4,8 @@ import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.GenericPomkotsMonster;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.GenericPomkotsMonsterPercistant;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.carrier.goal.NearestEntityTargetGoal;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.npc.pilot.PilotDisposition;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -32,7 +34,8 @@ public abstract class BaseTurretEntity extends GenericPomkotsMonsterPercistant i
     public enum TargetEntityType {
         PLAYER(0, "player"),
         POMKOTS_MONSTERS(1, "hostile_mechs"),
-        HOSTILE_MOBS(2, "hostile_mobs");
+        HOSTILE_MOBS(2, "hostile_mobs"),
+        ALLIED_MECHS(3, "allied_mechs");
 
         private final int num;
         private final String serializedName;
@@ -64,6 +67,7 @@ public abstract class BaseTurretEntity extends GenericPomkotsMonsterPercistant i
                 case "player", "players" -> PLAYER;
                 case "hostile_mechs", "enemy_mechs", "pomkots_monsters" -> POMKOTS_MONSTERS;
                 case "hostile_mobs" -> HOSTILE_MOBS;
+                case "allied_mechs", "friendly_mechs" -> ALLIED_MECHS;
                 default -> {
                     PomkotsMechs.LOGGER.warn(
                             "Unknown turret target entity type '{}'; falling back to player", value);
@@ -106,6 +110,12 @@ public abstract class BaseTurretEntity extends GenericPomkotsMonsterPercistant i
         if (this.targetEntityType == TargetEntityType.POMKOTS_MONSTERS) {
             this.targetSelector.addGoal(1, new NearestEntityTargetGoal<>(this, GenericPomkotsMonster.class, false,
                     livingEntity -> !(livingEntity instanceof BaseTurretEntity)));
+        } else if (this.targetEntityType == TargetEntityType.ALLIED_MECHS) {
+            this.targetSelector.addGoal(1, new NearestEntityTargetGoal<>(this, Pmvc01Entity.class, false,
+                    livingEntity -> livingEntity instanceof Pmvc01Entity mech
+                            && mech.getDrivingPassenger() != null
+                            && !PilotDisposition.hasHostilePilot(mech)
+                            && !mech.isBroken()));
         } else {
             this.targetSelector.addGoal(1, new NearestEntityTargetGoal<>(this, Player.class, false, false));
         }

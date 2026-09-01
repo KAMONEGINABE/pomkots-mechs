@@ -71,6 +71,8 @@ public final class ReusableLaserEntity extends Entity implements GeoEntity {
             ReusableLaserEntity.class, EntityDataSerializers.OPTIONAL_UUID);
     private static final EntityDataAccessor<Integer> OWNER_ID = SynchedEntityData.defineId(
             ReusableLaserEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> HALO_COLOR = SynchedEntityData.defineId(
+            ReusableLaserEntity.class, EntityDataSerializers.INT);
 
     private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
     private float damage;
@@ -94,7 +96,7 @@ public final class ReusableLaserEntity extends Entity implements GeoEntity {
 
     public void configure(Entity owner, Vec3 start, Vec3 target, Mode mode, float width,
                           float maxRange, float damage, int durationTicks,
-                          int damageIntervalTicks, int explosionScale) {
+                          int damageIntervalTicks, int explosionScale, int haloColor) {
         setPos(start);
         setTargetPosition(target);
         setMode(mode);
@@ -107,6 +109,7 @@ public final class ReusableLaserEntity extends Entity implements GeoEntity {
         entityData.set(DURATION, this.durationTicks);
         this.damageIntervalTicks = Math.max(1, damageIntervalTicks);
         this.explosionScale = Math.max(0, explosionScale);
+        entityData.set(HALO_COLOR, haloColor & 0xFFFFFF);
         updateRotation();
         updateRaycastAndLength();
     }
@@ -147,6 +150,7 @@ public final class ReusableLaserEntity extends Entity implements GeoEntity {
 
     public float getBeamLength() { return entityData.get(BEAM_LENGTH); }
     public float getBeamWidth() { return entityData.get(BEAM_WIDTH); }
+    public int getHaloColor() { return entityData.get(HALO_COLOR); }
 
     @Override
     public void tick() {
@@ -261,6 +265,14 @@ public final class ReusableLaserEntity extends Entity implements GeoEntity {
             if (hitEntity.getBoundingBox().inflate(width).clip(position(), end).isEmpty()) continue;
             if (!damagedTargets.add(actualTarget.getUUID())) continue;
 
+            // Lasers intentionally deal damage at their configured interval
+            // instead of being throttled by vanilla LivingEntity i-frames.
+            if (actualTarget instanceof LivingEntity livingTarget) {
+                livingTarget.invulnerableTime = 0;
+            }
+            if (hitEntity != actualTarget && hitEntity instanceof LivingEntity livingHitBox) {
+                livingHitBox.invulnerableTime = 0;
+            }
             ProjectileUtil.hurt(hitEntity, null, owner == null ? this : owner, damage);
         }
     }
@@ -384,6 +396,7 @@ public final class ReusableLaserEntity extends Entity implements GeoEntity {
         entityData.define(DIRECTION_Z, 1.0F);
         entityData.define(OWNER_UUID, Optional.empty());
         entityData.define(OWNER_ID, -1);
+        entityData.define(HALO_COLOR, ReusableLaserEmitter.HALO_RED);
     }
 
     @Override protected void readAdditionalSaveData(CompoundTag tag) { }

@@ -1556,6 +1556,7 @@ public class PomkotsMechs {
 	public static final String PACKET_MISSION_EFFECT = "mission_effect";
 
 	public static final String PACKET_DRIVER_INPUT = "kpm";
+	public static final String PACKET_MECH_AIM_PITCH = "map";
 	public static final String PACKET_LOCK_SOFT = "ls";
 	public static final String PACKET_UNLOCK_SOFT = "uls";
 	public static final String PACKET_LOCK_HARD = "lh";
@@ -1677,6 +1678,24 @@ public class PomkotsMechs {
 				if (Utils.isRidingPomkotsControllable(player)) {
 					Entity vehicle = player.getVehicle();
 					((PomkotsControllable) vehicle).setDriverInput(new DriverInput(keyPressStatus));
+				}
+			});
+		});
+
+		NetworkManager.registerReceiver(NetworkManager.Side.C2S, PomkotsMechs.id(PACKET_MECH_AIM_PITCH), (buf, context) -> {
+			Player player = context.getPlayer();
+			float[] pitches = new float[4];
+			for (int index = 0; index < pitches.length; index++) {
+				pitches[index] = buf.readFloat();
+			}
+
+			context.queue(() -> {
+				if (player.getVehicle() instanceof grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity mech) {
+					for (int index = 0; index < pitches.length; index++) {
+						mech.setSyncedWeaponAimPitch(
+								grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity.INV_WEAPON_RIGHT_HAND + index,
+								pitches[index]);
+					}
 				}
 			});
 		});

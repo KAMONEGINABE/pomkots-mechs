@@ -13,6 +13,7 @@ import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 
 public class UguisuItem extends BasePartsItem.WeaponArm {
+    @Override public boolean usesArmPitchAiming() { return true; }
     public UguisuItem(Properties properties) {
         super(properties);
     }
@@ -38,7 +39,9 @@ public class UguisuItem extends BasePartsItem.WeaponArm {
                 for (int i = 0; i < targets.size(); i++) {
 
                     if (mechInterface.consumeAmmoFromServerSide(1)) {
-                        var worldMuzzlPos = muzzlPos.add(1 * (i / 2 - 0.5),1 * (i % 2),0).yRot((float) Math.toRadians((-1.0) * mechInterface.getYRot()));
+                        var localMuzzlPos = muzzlPos.add(1 * (i / 2 - 0.5), 1 * (i % 2), 0);
+                        var worldMuzzlPos = mechInterface.getAimAdjustedMuzzleOffset(localMuzzlPos,
+                                new Vec3(1.8 * mechInterface.isRight(), 3.0F, 0.0F));
 
                         MissileGenericEntity be = new MissileGenericEntity(PomkotsMechs.MISSILE_GENERIC.get(), world, mechInterface.getMechEntity(),
                                 (LivingEntity) targets.get(i),

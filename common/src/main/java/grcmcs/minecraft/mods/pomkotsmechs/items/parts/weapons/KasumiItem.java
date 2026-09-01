@@ -24,6 +24,7 @@ import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class KasumiItem extends BasePartsItem.WeaponArm {
+    @Override public boolean usesArmPitchAiming() { return true; }
     public KasumiItem(Properties properties) {
         super(properties);
         SingletonGeoAnimatable.registerSyncedAnimatable(this);
@@ -53,7 +54,8 @@ public class KasumiItem extends BasePartsItem.WeaponArm {
 
                 // オフセット位置から大体の銃口の座標を決める（モデル位置からとるとクラサバ同期がめんどい…）
                 var muzzlPos = new Vec3(1.8 * mechInterface.isRight(), 3.0F, 5F);
-                muzzlPos = muzzlPos.yRot((float) Math.toRadians((-1.0) * mechInterface.getYRot()));
+                muzzlPos = mechInterface.getAimAdjustedMuzzleOffset(muzzlPos,
+                        new Vec3(1.8 * mechInterface.isRight(), 3.0F, 0.0F));
                 be.setPos(offset.add(muzzlPos));
 
                 float[] angle = mechInterface.getShootingAngle(be, true);
@@ -68,7 +70,9 @@ public class KasumiItem extends BasePartsItem.WeaponArm {
                         mechInterface.getMechEntity(),
                         mechInterface.getAttachPoint(),
                         12.0D,
-                        new Vec3(1.8 * mechInterface.isRight(), 3.0F, 5F)
+                        mechInterface.getAimAdjustedLocalMuzzleOffset(
+                                new Vec3(1.8 * mechInterface.isRight(), 3.0F, 5F),
+                                new Vec3(1.8 * mechInterface.isRight(), 3.0F, 0.0F))
                 );
                 if (tick % 5 == 1) {
                     mechInterface.playSoundEffect(PomkotsMechs.SE_GATLING_EVENT.get());

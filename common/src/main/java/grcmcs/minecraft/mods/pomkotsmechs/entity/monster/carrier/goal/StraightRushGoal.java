@@ -1,5 +1,6 @@
 package grcmcs.minecraft.mods.pomkotsmechs.entity.monster.carrier.goal;
 
+import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.carrier.Pmc01Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -51,7 +52,16 @@ public class StraightRushGoal extends Goal {
     }
 
     private boolean hasTarget() {
-        return mob.getTarget() != null && mob.getTarget().isAlive();
+        return targetPosition() != null;
+    }
+
+    private Vec3 targetPosition() {
+        if (mob instanceof Pmc01Entity carrier && carrier.hasMissionFlightTarget()) {
+            return carrier.getMissionFlightTarget();
+        }
+        return mob.getTarget() != null && mob.getTarget().isAlive()
+                ? mob.getTarget().position()
+                : null;
     }
 
     @Override
@@ -113,7 +123,8 @@ public class StraightRushGoal extends Goal {
         }
 
         Vec3 mobPos = mob.position();
-        Vec3 targetPos = mob.getTarget().position();
+        Vec3 targetPos = targetPosition();
+        if (targetPos == null) return;
 
         // 現在のY座標を固定
         fixedYLevel = mobPos.y;

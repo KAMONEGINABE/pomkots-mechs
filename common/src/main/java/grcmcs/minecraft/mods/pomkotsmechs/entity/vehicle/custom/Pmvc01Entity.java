@@ -34,6 +34,7 @@ import grcmcs.minecraft.mods.pomkotsmechs.items.parts.BasePartsItem;
 import grcmcs.minecraft.mods.pomkotsmechs.items.parts.CachedBoneFinder;
 import grcmcs.minecraft.mods.pomkotsmechs.items.parts.extension.*;
 import grcmcs.minecraft.mods.pomkotsmechs.items.parts.weapons.AmagiItem;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.weapons.KutaraItem;
 import grcmcs.minecraft.mods.pomkotsmechs.items.parts.weapons.ShoutouItem;
 import grcmcs.minecraft.mods.pomkotsmechs.mission.runtime.MissionManager;
 import grcmcs.minecraft.mods.pomkotsmechs.misc.scan.ScanUtils;
@@ -127,6 +128,8 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     private int inAirTicks = 0;
     private float prevHealth = 0;
     private int damageSoundCooldown = 0;
+    private final float[] clientWeaponAimPitch = new float[4];
+    private final float[] clientWeaponAimPitchO = new float[4];
     private MechAutoController mechAutoController = null;
     private MechStatus modifiedMechStatus = new MechStatus();
 
@@ -193,11 +196,23 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                     lockTargets.clearLockTargets();
                 } else {
                     mechAutoController.tick();
+                    syncWeaponAimPitchForAllSlots();
+                }
+            }
+            if (driver == null) {
+                for (int slot = INV_WEAPON_RIGHT_HAND; slot <= INV_WEAPON_LEFT_SHOULDER; slot++) {
+                    setSyncedWeaponAimPitch(slot, 0.0F);
                 }
             }
         }
 
         if (this.isClientSide()) {
+            for (int slot = INV_WEAPON_RIGHT_HAND; slot <= INV_WEAPON_LEFT_SHOULDER; slot++) {
+                int index = slot - INV_WEAPON_RIGHT_HAND;
+                clientWeaponAimPitchO[index] = clientWeaponAimPitch[index];
+                clientWeaponAimPitch[index] = Mth.lerp(
+                        0.5F, clientWeaponAimPitch[index], getSyncedWeaponAimPitch(slot));
+            }
             if (damageSoundCooldown > 0) {
                 damageSoundCooldown--;
             }
@@ -1168,7 +1183,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     }
 
     public Vec3 getShootingOffset() {
-        return this.posHistory.getFirst();
+        return this.posHistory.isEmpty() ? this.position() : this.posHistory.getFirst();
     }
 
     public Vec3 getPosHistory(int index) {
@@ -1244,6 +1259,98 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     public Vec3 getCameraTargetPositionForWeapon() {
         return getCameraTargetPosition(this.getDrivingPassenger());
+    }
+
+    /** Pitch shared by procedural weapon posing and muzzle-offset rotation. */
+    public float getWeaponAimPitch() {
+        return getWeaponAimPitch(INV_WEAPON_RIGHT_HAND);
+    }
+
+    public float getWeaponAimPitch(int weaponSlot) {
+        Vec3 target = getWeaponStackForSlot(weaponSlot).getItem() instanceof KutaraItem
+                ? getCameraTargetPosition(this.getDrivingPassenger())
+                : getTargetPos(false);
+        Vec3 direction = target.subtract(getShootingOffset());
+        double horizontal = Math.sqrt(direction.x * direction.x + direction.z * direction.z);
+        return Mth.clamp((float) -Math.toDegrees(Math.atan2(direction.y, horizontal)), -60.0F, 60.0F);
+    }
+
+    private void syncWeaponAimPitchForAllSlots() {
+        for (int slot = INV_WEAPON_RIGHT_HAND; slot <= INV_WEAPON_LEFT_SHOULDER; slot++) {
+            setSyncedWeaponAimPitch(slot, getWeaponAimPitch(slot));
+        }
+    }
+
+    public void setSyncedWeaponAimPitch(int weaponSlot, float pitch) {
+        if (!Float.isFinite(pitch)) return;
+        float clamped = Mth.clamp(pitch, -60.0F, 60.0F);
+        EntityDataAccessor<Float> accessor = getWeaponAimPitchAccessor(weaponSlot);
+        if (Math.abs(clamped - entityData.get(accessor)) < 0.1F) return;
+        entityData.set(accessor, clamped);
+    }
+
+    public float getSyncedWeaponAimPitch(int weaponSlot) {
+        return entityData.get(getWeaponAimPitchAccessor(weaponSlot));
+    }
+
+    /** Local pilots get zero-latency aim; remote players and NPCs use synced aim. */
+    public float getVisualWeaponAimPitch(int weaponSlot) {
+        if (isClientSide() && getDrivingPassenger() instanceof LocalPlayer) {
+            return getWeaponAimPitch(weaponSlot);
+        }
+        int index = Mth.clamp(weaponSlot - INV_WEAPON_RIGHT_HAND, 0, 3);
+        float partialTick = isClientSide() ? Minecraft.getInstance().getFrameTime() : 1.0F;
+        return Mth.lerp(partialTick, clientWeaponAimPitchO[index], clientWeaponAimPitch[index]);
+    }
+
+    private ItemStack getWeaponStackForSlot(int weaponSlot) {
+        return switch (weaponSlot) {
+            case INV_WEAPON_RIGHT_HAND -> getRightArmWeapon();
+            case INV_WEAPON_LEFT_HAND -> getLeftArmWeapon();
+            case INV_WEAPON_RIGHT_SHOULDER -> getRightShoulderWeapon();
+            case INV_WEAPON_LEFT_SHOULDER -> getLeftShoulderWeapon();
+            default -> ItemStack.EMPTY;
+        };
+    }
+
+    public boolean isWeaponSlotInAction(int inventorySlot) {
+        return switch (inventorySlot) {
+            case INV_WEAPON_RIGHT_HAND -> actionController.getAction(ACT_RIGHT_HAND).isInAction();
+            case INV_WEAPON_LEFT_HAND -> actionController.getAction(ACT_LEFT_HAND).isInAction();
+            case INV_WEAPON_RIGHT_SHOULDER -> actionController.getAction(ACT_RIGHT_SHOULDER).isInAction();
+            case INV_WEAPON_LEFT_SHOULDER -> actionController.getAction(ACT_LEFT_SHOULDER).isInAction();
+            default -> false;
+        };
+    }
+
+    public Motion getWeaponSlotMotion(int inventorySlot) {
+        return switch (inventorySlot) {
+            case INV_WEAPON_RIGHT_HAND -> ((ActionWeapon) actionController.getAction(ACT_RIGHT_HAND)).getMotion();
+            case INV_WEAPON_LEFT_HAND -> ((ActionWeapon) actionController.getAction(ACT_LEFT_HAND)).getMotion();
+            case INV_WEAPON_RIGHT_SHOULDER -> ((ActionWeapon) actionController.getAction(ACT_RIGHT_SHOULDER)).getMotion();
+            case INV_WEAPON_LEFT_SHOULDER -> ((ActionWeapon) actionController.getAction(ACT_LEFT_SHOULDER)).getMotion();
+            default -> null;
+        };
+    }
+
+    public boolean isWeaponSlotShoulderPitchAimingEnabled(int inventorySlot) {
+        ItemStack stack = switch (inventorySlot) {
+            case INV_WEAPON_RIGHT_SHOULDER -> getRightShoulderWeapon();
+            case INV_WEAPON_LEFT_SHOULDER -> getLeftShoulderWeapon();
+            default -> ItemStack.EMPTY;
+        };
+        return stack.getItem() instanceof BasePartsItem.WeaponInterface weapon
+                && weapon.usesShoulderPitchAiming();
+    }
+
+    public boolean isWeaponSlotArmPitchAimingEnabled(int inventorySlot) {
+        ItemStack stack = switch (inventorySlot) {
+            case INV_WEAPON_RIGHT_HAND -> getRightArmWeapon();
+            case INV_WEAPON_LEFT_HAND -> getLeftArmWeapon();
+            default -> ItemStack.EMPTY;
+        };
+        return stack.getItem() instanceof BasePartsItem.WeaponInterface weapon
+                && weapon.usesArmPitchAiming();
     }
 
     public BlockHitResult performBlockRaycast(LivingEntity player, double maxDistance) {
@@ -1877,7 +1984,9 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<PomkotsVehicleBase>(this, "controller", 0, event -> {
+        controllers.add(new AnimationController<PomkotsVehicleBase>(this, "controller", 3, event -> {
+            recoverBrokenMainAnimationTransition(event);
+
             //@JOKE
             if (this.actionController.getAction(ACT_GATTAI).isInAction()) {
                 if (this.actionController.getAction(ACT_GATTAI).isOnStart()) {
@@ -2021,6 +2130,24 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         }));
 
         addExtraAnimationController(controllers);
+    }
+
+    /**
+     * GeckoLib 4.x can retain the requested RawAnimation while losing both the
+     * resolved animation and its queue when the client world time jumps
+     * backwards on rejoin. A non-zero transition then leaves the controller
+     * stopped in the model bind pose, and setting the same RawAnimation does
+     * not rebuild it unless a reload is requested.
+     */
+    private void recoverBrokenMainAnimationTransition(AnimationState<PomkotsVehicleBase> event) {
+        AnimationController<PomkotsVehicleBase> controller = event.getController();
+
+        if (this.level().isClientSide()
+                && controller.getAnimationState() == AnimationController.State.STOPPED
+                && controller.getCurrentRawAnimation() != null
+                && controller.getCurrentAnimation() == null) {
+            controller.forceAnimationReset();
+        }
     }
 
     //@JOKE
@@ -3316,6 +3443,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     protected static final EntityDataAccessor<Boolean> IS_GLIDING = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
     protected static final EntityDataAccessor<Boolean> IS_HOVERING = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
     protected static final EntityDataAccessor<Integer> KUTARA_SUSTAIN_ACTIVE_SLOTS = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+    protected static final EntityDataAccessor<Float> WEAPON_AIM_PITCH_RIGHT_HAND = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
+    protected static final EntityDataAccessor<Float> WEAPON_AIM_PITCH_LEFT_HAND = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
+    protected static final EntityDataAccessor<Float> WEAPON_AIM_PITCH_RIGHT_SHOULDER = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
+    protected static final EntityDataAccessor<Float> WEAPON_AIM_PITCH_LEFT_SHOULDER = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
 
 
     @Override
@@ -3381,6 +3512,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         this.entityData.define(IS_GLIDING, false);
         this.entityData.define(IS_HOVERING, false);
         this.entityData.define(KUTARA_SUSTAIN_ACTIVE_SLOTS, 0);
+        this.entityData.define(WEAPON_AIM_PITCH_RIGHT_HAND, 0.0F);
+        this.entityData.define(WEAPON_AIM_PITCH_LEFT_HAND, 0.0F);
+        this.entityData.define(WEAPON_AIM_PITCH_RIGHT_SHOULDER, 0.0F);
+        this.entityData.define(WEAPON_AIM_PITCH_LEFT_SHOULDER, 0.0F);
 
         this.entityData.define(HAVING_ENTITY, Optional.empty());
     }
@@ -3405,6 +3540,15 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     public boolean isKutaraSustainMovementLocked() {
         return entityData.get(KUTARA_SUSTAIN_ACTIVE_SLOTS) != 0;
+    }
+
+    private EntityDataAccessor<Float> getWeaponAimPitchAccessor(int weaponSlot) {
+        return switch (weaponSlot) {
+            case INV_WEAPON_LEFT_HAND -> WEAPON_AIM_PITCH_LEFT_HAND;
+            case INV_WEAPON_RIGHT_SHOULDER -> WEAPON_AIM_PITCH_RIGHT_SHOULDER;
+            case INV_WEAPON_LEFT_SHOULDER -> WEAPON_AIM_PITCH_LEFT_SHOULDER;
+            default -> WEAPON_AIM_PITCH_RIGHT_HAND;
+        };
     }
 
     protected void syncAllParameter2Client() {

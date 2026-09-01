@@ -103,7 +103,8 @@ public class KutaraItem extends BasePartsItem.WeaponShoulder {
             ReusableLaserEntity laser = ReusableLaserEmitter.sustained(
                     level, mech.getMechEntity(), start, target,
                     1.0F, MAX_RANGE, baseDamage * SUSTAIN_DAMAGE_MULTIPLIER,
-                    SUSTAIN_DURATION_TICKS, SUSTAIN_DAMAGE_INTERVAL_TICKS, 0);
+                    SUSTAIN_DURATION_TICKS, SUSTAIN_DAMAGE_INTERVAL_TICKS, 0,
+                    ReusableLaserEmitter.HALO_BLUE);
             if (laser != null) {
                 ACTIVE_LASERS.put(getLaserSlotKey(mech), laser.getId());
                 mech.getMechEntity().setKutaraSustainActive(mech.getWeaponItemSlot(), true);
@@ -114,7 +115,7 @@ public class KutaraItem extends BasePartsItem.WeaponShoulder {
                     new PulseBurst(2, level.getGameTime() + CHARGE_2_BURST_INTERVAL_TICKS));
         } else {
             ReusableLaserEmitter.pulse(level, mech.getMechEntity(), start, target,
-                    0.35F, MAX_RANGE, baseDamage, 12, 0);
+                    0.35F, MAX_RANGE, baseDamage, 12, 0, ReusableLaserEmitter.HALO_BLUE);
         }
     }
 
@@ -142,7 +143,7 @@ public class KutaraItem extends BasePartsItem.WeaponShoulder {
                 getDamage(mech.getItemStack()), getWeaponCategory());
         ReusableLaserEmitter.pulse(level, mech.getMechEntity(),
                 getMuzzlePosition(mech), getCrosshairTarget(mech),
-                1.0F, MAX_RANGE, damage, 12, 0);
+                1.0F, MAX_RANGE, damage, 12, 0, ReusableLaserEmitter.HALO_BLUE);
     }
 
     private void updateSustainedLaser(ActionWeapon.WeaponMechInterface mech) {
@@ -186,8 +187,9 @@ public class KutaraItem extends BasePartsItem.WeaponShoulder {
     }
 
     private Vec3 getMuzzlePosition(ActionWeapon.WeaponMechInterface mech) {
-        Vec3 muzzle = new Vec3(1.5D * mech.isRight(), 5.7D, 5.5D)
-                .yRot((float) Math.toRadians(-mech.getYRot()));
+        Vec3 mount = new Vec3(1.5D * mech.isRight(), 5.0D, 0.0D);
+        Vec3 muzzle = mech.getAimAdjustedMuzzleOffset(
+                new Vec3(1.5D * mech.isRight(), 5.7D, 5.0D), mount);
         return mech.getOffset().add(muzzle);
     }
 
@@ -224,6 +226,7 @@ public class KutaraItem extends BasePartsItem.WeaponShoulder {
     }
 
     @Override public WeaponAttachPoint getWeaponAttachPoint() { return WeaponAttachPoint.ATTACH_POINT_SHOULDER; }
+    @Override public boolean usesShoulderPitchAiming() { return true; }
     @Override public WeaponCategory getWeaponCategory() { return WeaponCategory.RIFLE; }
     @Override public Motion getMotion() { return Motion.CHARGE_LASER; }
     @Override public int getCoolTime() { return COOLDOWN_TICKS; }
@@ -246,7 +249,7 @@ public class KutaraItem extends BasePartsItem.WeaponShoulder {
                         .thenLoop("animation.kutara.idle"))
                 .triggerableAnim("fire_sustain", RawAnimation.begin()
                         .thenPlay("animation.kutara.fire")
-                        .thenLoop("animation.kutara.charge3")));
+                        .thenLoop("animation.kutara.fire_sustain")));
     }
 
     private record LaserSlotKey(UUID mechId, int weaponSlot) { }
