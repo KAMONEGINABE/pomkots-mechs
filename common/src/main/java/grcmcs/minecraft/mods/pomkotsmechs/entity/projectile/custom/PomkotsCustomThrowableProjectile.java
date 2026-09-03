@@ -11,6 +11,9 @@ import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -25,6 +28,12 @@ import java.util.function.Predicate;
 
 public abstract class PomkotsCustomThrowableProjectile extends PomkotsThrowableProjectile {
     private static final double WATER_IMPACT_VIEW_DISTANCE = 200.0D;
+    private static final EntityDataAccessor<Float> PREDICTION_VELOCITY_X =
+            SynchedEntityData.defineId(PomkotsCustomThrowableProjectile.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> PREDICTION_VELOCITY_Y =
+            SynchedEntityData.defineId(PomkotsCustomThrowableProjectile.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> PREDICTION_VELOCITY_Z =
+            SynchedEntityData.defineId(PomkotsCustomThrowableProjectile.class, EntityDataSerializers.FLOAT);
 
     public enum RangeCategory {
         OPTIMAL            ((short)0),
@@ -78,6 +87,17 @@ public abstract class PomkotsCustomThrowableProjectile extends PomkotsThrowableP
         this.setOldPosAndRot();
 
         if (this.level().isClientSide) {
+            // Collision and damage remain server-authoritative, but advance the visual
+            // entity locally between position packets. LevelRenderer then interpolates
+            // old -> current position with partialTick instead of displaying a projectile
+            // that waits at each synchronized position.
+            Vec3 movement = usesClientLinearPrediction()
+                    ? getPredictionVelocity()
+                    : this.getDeltaMovement();
+            if (movement.lengthSqr() > 1.0E-10D) {
+                this.setDeltaMovement(movement);
+                this.setPos(this.position().add(movement));
+            }
             return;
         }
 
@@ -91,6 +111,62 @@ public abstract class PomkotsCustomThrowableProjectile extends PomkotsThrowableP
         if (!performSubStepMovement()) {
             return;
         }
+    }
+
+    /** Whether this short-lived projectile can be predicted exactly from its velocity. */
+    protected boolean usesClientLinearPrediction() {
+        return false;
+    }
+
+    protected final void defineLinearPredictionData() {
+        this.entityData.define(PREDICTION_VELOCITY_X, 0.0F);
+        this.entityData.define(PREDICTION_VELOCITY_Y, 0.0F);
+        this.entityData.define(PREDICTION_VELOCITY_Z, 0.0F);
+    }
+
+    private Vec3 getPredictionVelocity() {
+        return new Vec3(
+                this.entityData.get(PREDICTION_VELOCITY_X),
+                this.entityData.get(PREDICTION_VELOCITY_Y),
+                this.entityData.get(PREDICTION_VELOCITY_Z));
+    }
+
+    @Override
+    public void shoot(double x, double y, double z, float velocity, float inaccuracy) {
+        super.shoot(x, y, z, velocity, inaccuracy);
+        syncPredictionVelocity();
+    }
+
+    @Override
+    public void shootFromRotation(Entity shooter, float xRot, float yRot, float zRotOffset,
+                                  float velocity, float inaccuracy) {
+        super.shootFromRotation(shooter, xRot, yRot, zRotOffset, velocity, inaccuracy);
+        // Most existing callers pass the projectile itself as `shooter`. Vanilla then
+        // adds that entity's movement after shoot(), so capture the true final velocity
+        // here rather than leaving the pre-addition value synchronized.
+        syncPredictionVelocity();
+    }
+
+    private void syncPredictionVelocity() {
+        if (!this.level().isClientSide && usesClientLinearPrediction()) {
+            Vec3 movement = this.getDeltaMovement();
+            this.entityData.set(PREDICTION_VELOCITY_X, (float) movement.x);
+            this.entityData.set(PREDICTION_VELOCITY_Y, (float) movement.y);
+            this.entityData.set(PREDICTION_VELOCITY_Z, (float) movement.z);
+        }
+    }
+
+    @Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot,
+                       int lerpSteps, boolean teleport) {
+        if (this.level().isClientSide && this.tickCount > 0 && usesClientLinearPrediction()) {
+            // Do not let delayed position packets fight the client-side visual prediction.
+            // Server-authoritative impact and removal packets are still handled normally.
+            this.setYRot(yRot);
+            this.setXRot(xRot);
+            return;
+        }
+        super.lerpTo(x, y, z, yRot, xRot, lerpSteps, teleport);
     }
 
     protected boolean performSubStepMovement() {

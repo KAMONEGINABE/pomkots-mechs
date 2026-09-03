@@ -11,16 +11,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class BulletMachineEntity extends PomkotsCustomDecayedThrowableProjectile implements GeoEntity, GeoAnimatable {
-    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
+public class BulletMachineEntity extends PomkotsCustomDecayedThrowableProjectile {
 
     public BulletMachineEntity(EntityType<? extends ThrowableProjectile> entityType, Level level) {
         this(entityType, level, null, 20, BattleBalance.MECH_MACHINEGUN_LARGE_DAMAGE, 2);
@@ -55,18 +47,12 @@ public class BulletMachineEntity extends PomkotsCustomDecayedThrowableProjectile
 
     @Override
     protected void defineSynchedData() {
+        defineLinearPredictionData();
     }
 
     @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "rotation", 0, event -> {
-            return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation.bullet.idle"));
-        }));
-    }
-
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return this.geoCache;
+    protected boolean usesClientLinearPrediction() {
+        return true;
     }
 
     @Override
