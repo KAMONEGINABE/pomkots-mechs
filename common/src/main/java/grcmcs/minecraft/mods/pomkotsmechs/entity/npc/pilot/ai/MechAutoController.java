@@ -20,9 +20,13 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public class MechAutoController {
@@ -50,8 +54,30 @@ public class MechAutoController {
     private static final double GUARD_OBJECTIVE_RETURN_DISTANCE = 100.0D;
     private static final double GUARD_ENGAGEMENT_RANGE = 150.0D;
     private static final double GUARD_FOLLOW_EVASION_MIN_DISTANCE = 100.0D;
+    private static final int LOS_CHECK_INTERVAL_TICKS = 4;
+    private static final int LOS_RECOVERY_TRIGGER_TICKS = 24;
+    private static final int LOS_RECOVERED_STABLE_TICKS = 8;
+    private static final int LOS_RECOVERY_REEVALUATE_MIN_TICKS = 20;
+    private static final int LOS_RECOVERY_REEVALUATE_VARIANCE_TICKS = 20;
+    private static final int LOS_RECOVERY_STUCK_CHECK_TICKS = 12;
+    private static final double LOS_RECOVERY_STUCK_DISTANCE_SQR = 0.5D * 0.5D;
+    private static final double[] LOS_RECOVERY_SEARCH_RADII = {12.0D, 24.0D, 36.0D};
 
     private int verticalStuckTick;
+    private int lostSightTicks;
+    private int recoveredSightTicks;
+    private boolean recoveryVerticalAscending;
+    private boolean recoveryForcedBoost;
+    private boolean lineOfSightRecovery;
+    private boolean cachedCombatLineOfSight = true;
+    private int nextLineOfSightCheckTick;
+    private int nextRecoveryEvaluationTick;
+    private int nextRecoveryProgressCheckTick;
+    private UUID lineOfSightTargetId;
+    private Vec3 recoveryWaypoint;
+    private Vec3 recoveryDirection;
+    private Vec3 recoveryProgressPosition;
+    private Vec3 smoothedTargetVelocity = Vec3.ZERO;
 
     private final LivingEntity pilot;
     private final Pmvc01Entity mech;
@@ -202,6 +228,7 @@ public class MechAutoController {
 
         refreshMissionTargetState();
         if (role == PilotRole.GUARD && tickMissionGuardian(currentInput)) {
+            applyCombatRun(currentInput);
             applyActiveHoverBoost(currentInput);
             applyFrequentHoverEvasion(currentInput);
             mech.setDriverInput(currentInput);
@@ -222,6 +249,7 @@ public class MechAutoController {
             }
         }
 
+        applyCombatRun(currentInput);
         applyActiveHoverBoost(currentInput);
         applyFrequentHoverEvasion(currentInput);
 
@@ -607,6 +635,17 @@ public class MechAutoController {
         return best;
     }
 
+    private void applyCombatRun(DriverInput input) {
+        if (mode != SystemMode.COMBAT) return;
+        boolean moving = input.isForwardPressed() || input.isBackPressed()
+                || input.isLeftPressed() || input.isRightPressed();
+        if (moving) {
+            startBoosting();
+        } else {
+            stopBoosting();
+        }
+    }
+
     private boolean isInSameMissionInstance(Entity candidate) {
         String missionTag = null;
         for (String tag : mech.getTags()) {
@@ -919,15 +958,21 @@ public class MechAutoController {
             return;
         }
 
-        if (isBeyondTargetReturnDistance()) {
-            curMovePattern = null;
-            updateRotation(target);
-            setMovementToward(target.position(), input);
-            updateWeapons(input);
+        updateRotation(target);
+
+        if (tickLineOfSightRecovery(input)) {
+            if (cachedCombatLineOfSight) {
+                updateWeapons(input);
+            }
             return;
         }
 
-        updateRotation(target);
+        if (isBeyondTargetReturnDistance()) {
+            curMovePattern = null;
+            setMovementToward(target.position(), input);
+            if (cachedCombatLineOfSight) updateWeapons(input);
+            return;
+        }
 
         updateVerticalStuck();
 
@@ -935,7 +980,230 @@ public class MechAutoController {
 
         curMovePattern.tick(input);
 
-        updateWeapons(input);
+        if (cachedCombatLineOfSight) updateWeapons(input);
+    }
+
+    /** Sparse ray tests and local AABB probes, without vanilla mob navigation. */
+    private boolean tickLineOfSightRecovery(DriverInput input) {
+        if (target == null) {
+            resetLineOfSightRecovery();
+            return false;
+        }
+
+        if (!target.getUUID().equals(lineOfSightTargetId)) {
+            resetLineOfSightRecovery();
+            lineOfSightTargetId = target.getUUID();
+            nextLineOfSightCheckTick = mech.tickCount;
+        }
+
+        smoothedTargetVelocity = smoothedTargetVelocity.scale(0.75D)
+                .add(target.getDeltaMovement().scale(0.25D));
+
+        if (mech.tickCount >= nextLineOfSightCheckTick) {
+            // Visibility is about the target's current body. Prediction is
+            // reserved for choosing a useful future firing position.
+            cachedCombatLineOfSight = hasCombatLineOfSight(mech.getEyePosition(), target.getEyePosition());
+            nextLineOfSightCheckTick = mech.tickCount + LOS_CHECK_INTERVAL_TICKS;
+            if (cachedCombatLineOfSight) {
+                lostSightTicks = 0;
+                if (lineOfSightRecovery) recoveredSightTicks += LOS_CHECK_INTERVAL_TICKS;
+            } else {
+                recoveredSightTicks = 0;
+                lostSightTicks += LOS_CHECK_INTERVAL_TICKS;
+            }
+        }
+
+        if (!lineOfSightRecovery) {
+            if (lostSightTicks < LOS_RECOVERY_TRIGGER_TICKS) return false;
+            lineOfSightRecovery = true;
+            curMovePattern = null;
+            recoveryWaypoint = null;
+            recoveryProgressPosition = mech.position();
+            nextRecoveryEvaluationTick = mech.tickCount;
+            nextRecoveryProgressCheckTick = mech.tickCount + LOS_RECOVERY_STUCK_CHECK_TICKS;
+        } else if (recoveredSightTicks >= LOS_RECOVERED_STABLE_TICKS) {
+            resetLineOfSightRecovery();
+            return false;
+        }
+
+        if (mech.tickCount >= nextRecoveryProgressCheckTick) {
+            if (recoveryProgressPosition != null
+                    && mech.position().distanceToSqr(recoveryProgressPosition) < LOS_RECOVERY_STUCK_DISTANCE_SQR) {
+                recoveryWaypoint = null;
+                nextRecoveryEvaluationTick = mech.tickCount;
+                // Do not undo the previous movement and bounce between two
+                // points. Turn sideways to search around the obstacle instead.
+                if (recoveryDirection != null) {
+                    recoveryDirection = new Vec3(
+                            -recoveryDirection.z, 0.0D, recoveryDirection.x).normalize();
+                }
+                input.setEvasionPressed(true);
+            }
+            recoveryProgressPosition = mech.position();
+            nextRecoveryProgressCheckTick = mech.tickCount + LOS_RECOVERY_STUCK_CHECK_TICKS;
+        }
+
+        Vec3 predictedTarget = predictedTargetAimPoint();
+        double signedHeightDifference = predictedTarget.y - mech.getEyeY();
+        boolean ceilingBlocked = signedHeightDifference > 8.0D && !hasVerticalClearance(mech.position());
+
+        if (mech.tickCount >= nextRecoveryEvaluationTick || recoveryWaypoint == null
+                || !isShortRoutePassable(recoveryWaypoint)) {
+            recoveryWaypoint = chooseLineOfSightRecoveryWaypoint(predictedTarget, ceilingBlocked);
+            nextRecoveryEvaluationTick = mech.tickCount
+                    + LOS_RECOVERY_REEVALUATE_MIN_TICKS
+                    + random.nextInt(LOS_RECOVERY_REEVALUATE_VARIANCE_TICKS + 1);
+        }
+
+        if (recoveryWaypoint != null) {
+            Vec3 delta = recoveryWaypoint.subtract(mech.position());
+            if (delta.horizontalDistanceSqr() > 2.0D * 2.0D) {
+                setMovementToward(recoveryWaypoint, input);
+                recoveryDirection = new Vec3(delta.x, 0.0D, delta.z).normalize();
+            } else {
+                // The waypoint was reached successfully. Continue stepping in
+                // the same direction on the next tick, which lets the mech
+                // walk out from beneath roofs wider than one search radius.
+                recoveryWaypoint = null;
+                nextRecoveryEvaluationTick = mech.tickCount;
+                recoveryProgressPosition = mech.position();
+                nextRecoveryProgressCheckTick = mech.tickCount + LOS_RECOVERY_STUCK_CHECK_TICKS;
+            }
+        } else {
+            setMovementToward(predictedTarget, input);
+        }
+
+        boolean movingHorizontally = input.isForwardPressed() || input.isBackPressed()
+                || input.isLeftPressed() || input.isRightPressed();
+        if (movingHorizontally) {
+            startBoosting();
+            recoveryForcedBoost = true;
+        }
+
+        // A ceiling switches recovery to horizontal edge-seeking. A lower
+        // target never causes a jump; lateral movement opens a downward angle.
+        boolean canClimb = signedHeightDifference > 8.0D
+                && !ceilingBlocked && hasVerticalClearance(mech.position());
+        input.setJumpPressed(updateRecoveryVerticalBoost(canClimb));
+        return true;
+    }
+
+    private boolean updateRecoveryVerticalBoost(boolean canClimb) {
+        if (!canClimb) {
+            recoveryVerticalAscending = false;
+            return false;
+        }
+
+        int energyPerTick = Math.max(0, mech.getEnergyConsumeVertical());
+        int reserve = Math.max(energyPerTick * 6, Math.round(mech.getMaxEnergy() * 0.15F));
+        if (recoveryVerticalAscending) {
+            if (mech.getEnergy() <= reserve) {
+                recoveryVerticalAscending = false;
+                return false;
+            }
+            return true;
+        }
+
+        int requiredToStart = Math.min(
+                mech.getMaxEnergy(),
+                Math.max(reserve + energyPerTick * 12, Math.round(mech.getMaxEnergy() * 0.85F)));
+        if (mech.getEnergy() < requiredToStart) return false;
+        recoveryVerticalAscending = true;
+        return true;
+    }
+
+    private Vec3 predictedTargetAimPoint() {
+        if (target == null) return mech.position();
+        double predictionTicks = Mth.clamp(mech.distanceTo(target) / 4.0D, 5.0D, 20.0D);
+        Vec3 prediction = smoothedTargetVelocity.scale(predictionTicks);
+        if (prediction.lengthSqr() > 30.0D * 30.0D) prediction = prediction.normalize().scale(30.0D);
+        return target.getEyePosition().add(prediction);
+    }
+
+    private boolean hasCombatLineOfSight(Vec3 start, Vec3 end) {
+        return mech.level().clip(new ClipContext(
+                start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mech)).getType()
+                == HitResult.Type.MISS;
+    }
+
+    private Vec3 chooseLineOfSightRecoveryWaypoint(Vec3 predictedTarget, boolean escapingCeiling) {
+        Vec3 toTarget = new Vec3(predictedTarget.x - mech.getX(), 0.0D, predictedTarget.z - mech.getZ());
+        if (toTarget.lengthSqr() < 1.0E-4D) {
+            toTarget = recoveryDirection != null
+                    ? recoveryDirection : Vec3.directionFromRotation(0.0F, mech.getYRot());
+        }
+        toTarget = toTarget.normalize();
+        Vec3 side = new Vec3(-toTarget.z, 0.0D, toTarget.x);
+        Vec3[] directions = {
+                toTarget, side, side.scale(-1.0D),
+                toTarget.add(side).normalize(), toTarget.subtract(side).normalize(),
+                toTarget.scale(-1.0D).add(side).normalize(),
+                toTarget.scale(-1.0D).subtract(side).normalize(), toTarget.scale(-1.0D)
+        };
+
+        Vec3 best = null;
+        double bestScore = -Double.MAX_VALUE;
+        for (double radius : LOS_RECOVERY_SEARCH_RADII) {
+            for (Vec3 direction : directions) {
+                Vec3 candidate = mech.position().add(direction.scale(radius));
+                if (!isShortRoutePassable(candidate)) continue;
+
+                boolean overheadClear = hasVerticalClearance(candidate);
+                boolean candidateLineOfSight = hasCombatLineOfSight(
+                        candidate.add(0.0D, mech.getEyeHeight(), 0.0D), predictedTarget);
+                double score = candidateLineOfSight ? 1000.0D : 0.0D;
+                if (escapingCeiling && overheadClear) score += 400.0D;
+                score -= Math.abs(candidate.distanceTo(predictedTarget) - preferredCombatDistance) * 0.4D;
+                score -= radius * 0.15D;
+                if (recoveryDirection != null) score += direction.dot(recoveryDirection) * 140.0D;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = candidate;
+                }
+            }
+            if (best != null && bestScore >= (escapingCeiling ? 1300.0D : 900.0D)) break;
+        }
+        return best;
+    }
+
+    private boolean isShortRoutePassable(Vec3 destination) {
+        Vec3 delta = destination.subtract(mech.position());
+        AABB box = mech.getBoundingBox();
+        for (int i = 1; i <= 3; i++) {
+            double fraction = i / 3.0D;
+            if (!mech.level().noCollision(mech,
+                    box.move(delta.x * fraction, 0.0D, delta.z * fraction))) return false;
+        }
+        return true;
+    }
+
+    private boolean hasVerticalClearance(Vec3 position) {
+        Vec3 horizontalOffset = new Vec3(position.x - mech.getX(), 0.0D, position.z - mech.getZ());
+        AABB box = mech.getBoundingBox().move(horizontalOffset);
+        double probeHeight = Math.max(8.0D, mech.getBbHeight() * 1.5D);
+        for (int i = 1; i <= 3; i++) {
+            if (!mech.level().noCollision(
+                    mech, box.move(0.0D, probeHeight * i / 3.0D, 0.0D))) return false;
+        }
+        return true;
+    }
+
+    private void resetLineOfSightRecovery() {
+        lostSightTicks = 0;
+        recoveredSightTicks = 0;
+        recoveryVerticalAscending = false;
+        if (recoveryForcedBoost) {
+            stopBoosting();
+            recoveryForcedBoost = false;
+        }
+        lineOfSightRecovery = false;
+        cachedCombatLineOfSight = true;
+        lineOfSightTargetId = null;
+        recoveryWaypoint = null;
+        recoveryDirection = null;
+        recoveryProgressPosition = null;
+        smoothedTargetVelocity = Vec3.ZERO;
     }
 
     private Vec3 getActionRangeHomeWhenOutside() {

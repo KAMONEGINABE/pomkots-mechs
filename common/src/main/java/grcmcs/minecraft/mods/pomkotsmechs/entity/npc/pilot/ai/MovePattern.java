@@ -235,11 +235,7 @@ public abstract class MovePattern {
 
             tick++;
 
-            setMove(
-                    0F,
-                    1F,
-                    input
-            );
+            setMove(0F, 1F, input);
         }
 
         @Override
@@ -377,6 +373,9 @@ public abstract class MovePattern {
     }
 
     public static class VerticalApproachPattern extends MovePattern {
+        private boolean verticalAscending;
+        private float ceilingEscapeStrafe;
+
         public VerticalApproachPattern(
                 LivingEntity pilot,
                 Pmvc01Entity mech,
@@ -394,6 +393,7 @@ public abstract class MovePattern {
 
             // 4～6秒くらい継続
             maxTicks = 80 + random.nextInt(40);
+            ceilingEscapeStrafe = random.nextBoolean() ? 1.0F : -1.0F;
         }
 
         @Override
@@ -407,14 +407,57 @@ public abstract class MovePattern {
             tick++;
 
             // 常に前進
-            setMove(
-                    0F,
-                    1F,
-                    input
-            );
+            double signedYDifference = target == null ? 0.0D : target.getY() - mech.getY();
+            if (signedYDifference > 0.0D) {
+                double probeHeight = Math.max(8.0D, mech.getBbHeight() * 1.5D);
+                boolean overheadClear = true;
+                for (int i = 1; i <= 3; i++) {
+                    if (!mech.level().noCollision(
+                            mech,
+                            mech.getBoundingBox().move(0.0D, probeHeight * i / 3.0D, 0.0D))) {
+                        overheadClear = false;
+                        break;
+                    }
+                }
+                if (overheadClear) {
+                    setMove(0.0F, 1.0F, input);
+                    input.setJumpPressed(updateVerticalBoost(true));
+                } else {
+                    verticalAscending = false;
+                    setMove(ceilingEscapeStrafe, 0.15F, input);
+                    input.setJumpPressed(false);
+                }
+            } else {
+                float strafe = (tick / 30) % 2 == 0 ? 0.8F : -0.8F;
+                setMove(strafe, 0.35F, input);
+                input.setJumpPressed(false);
+            }
 
             // 常にジャンプ押しっぱ
-            input.setJumpPressed(true);
+        }
+
+        private boolean updateVerticalBoost(boolean overheadClear) {
+            if (!overheadClear) {
+                verticalAscending = false;
+                return false;
+            }
+
+            int energyPerTick = Math.max(0, mech.getEnergyConsumeVertical());
+            int reserve = Math.max(energyPerTick * 6, Math.round(mech.getMaxEnergy() * 0.15F));
+            if (verticalAscending) {
+                if (mech.getEnergy() <= reserve) {
+                    verticalAscending = false;
+                    return false;
+                }
+                return true;
+            }
+
+            int requiredToStart = Math.min(
+                    mech.getMaxEnergy(),
+                    Math.max(reserve + energyPerTick * 12, Math.round(mech.getMaxEnergy() * 0.85F)));
+            if (mech.getEnergy() < requiredToStart) return false;
+            verticalAscending = true;
+            return true;
         }
 
         @Override
