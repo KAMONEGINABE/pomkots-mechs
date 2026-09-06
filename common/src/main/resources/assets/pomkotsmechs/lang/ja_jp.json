@@ -687,5 +687,6 @@
   "mission.pomkotsmechs.sample.basic.complete": "外部定義のサンプルが正常に完了しました",
   "radio.pomkotsmechs.sample.operator": "サンプルオペレーター",
   "radio.pomkotsmechs.sample.welcome": "外部無線定義は正常に動作しています。",
-  "block.pomkotsmechs.elevator_controller": "エレベーター制御ブロック"
+  "block.pomkotsmechs.elevator_controller": "エレベーター制御ブロック",
+  "block.pomkotsmechs.gate_horizontal_controller": "水平ゲート制御ブロック"
 }

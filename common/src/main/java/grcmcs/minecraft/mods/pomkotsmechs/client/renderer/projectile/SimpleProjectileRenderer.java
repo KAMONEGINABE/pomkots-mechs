@@ -21,17 +21,28 @@ public class SimpleProjectileRenderer<T extends Entity> extends EntityRenderer<T
     private final ResourceLocation texture;
     private final float scale;
     private final boolean followsRotation;
+    private final boolean usesVelocityYaw;
 
     protected SimpleProjectileRenderer(EntityRendererProvider.Context context,
                                        EntityModel<T> model,
                                        ResourceLocation texture,
                                        float scale,
                                        boolean followsRotation) {
+        this(context, model, texture, scale, followsRotation, false);
+    }
+
+    protected SimpleProjectileRenderer(EntityRendererProvider.Context context,
+                                       EntityModel<T> model,
+                                       ResourceLocation texture,
+                                       float scale,
+                                       boolean followsRotation,
+                                       boolean usesVelocityYaw) {
         super(context);
         this.model = model;
         this.texture = texture;
         this.scale = scale;
         this.followsRotation = followsRotation;
+        this.usesVelocityYaw = usesVelocityYaw;
         this.shadowRadius = 0.0F;
     }
 
@@ -46,12 +57,14 @@ public class SimpleProjectileRenderer<T extends Entity> extends EntityRenderer<T
             float pitch = velocity.lengthSqr() > 1.0E-10D
                     ? (float) -Math.toDegrees(Math.atan2(velocity.y, horizontal))
                     : entity.getXRot();
-            // Keep Minecraft's interpolated entity yaw. Reconstructing yaw from velocity
-            // introduces a model-coordinate offset for these legacy projectile meshes.
-            poseStack.mulPose(Axis.YP.rotationDegrees(entityYaw));
+            float yaw = usesVelocityYaw && velocity.lengthSqr() > 1.0E-10D
+                    ? (float)Math.toDegrees(Math.atan2(velocity.x, velocity.z))
+                    : entityYaw;
+            poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
             poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
         }
 
+        model.setupAnim(entity, 0.0F, 0.0F, entity.tickCount + partialTick, 0.0F, 0.0F);
         VertexConsumer buffer = buffers.getBuffer(RenderType.entityCutoutNoCull(texture));
         model.renderToBuffer(poseStack, buffer, FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
                 1.0F, 1.0F, 1.0F, 1.0F);

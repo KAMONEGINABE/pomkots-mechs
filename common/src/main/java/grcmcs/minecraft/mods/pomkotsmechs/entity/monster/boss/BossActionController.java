@@ -15,13 +15,24 @@ public class BossActionController {
         private int currentLoopNum = 0;
 
         private boolean continueFlag = false;
+        private final boolean controlsMovement;
 
         Consumer<BossAction> tickInAction;
 
         BossAction(int maxCoolTick, int maxActionTick, Consumer<BossAction> tickInAction) {
+            this(maxCoolTick, maxActionTick, true, tickInAction);
+        }
+
+        BossAction(int maxCoolTick, int maxActionTick, boolean controlsMovement,
+                   Consumer<BossAction> tickInAction) {
             this.currentCoolTick = this.maxCoolTick = maxCoolTick;
             this.maxActionTick = maxActionTick;
+            this.controlsMovement = controlsMovement;
             this.tickInAction = tickInAction;
+        }
+
+        public boolean controlsMovement() {
+            return controlsMovement;
         }
 
         public void tick() {
@@ -138,6 +149,15 @@ public class BossActionController {
     public boolean isInActionAll() {
         for(BossAction action: actionMap.values()) {
             if (action.isInAction()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isMovementControlledActionInProgress() {
+        for (BossAction action : actionMap.values()) {
+            if (action.isInAction() && action.controlsMovement()) {
                 return true;
             }
         }

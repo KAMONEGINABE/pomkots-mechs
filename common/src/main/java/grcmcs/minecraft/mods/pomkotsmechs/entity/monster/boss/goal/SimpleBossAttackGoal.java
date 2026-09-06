@@ -28,7 +28,9 @@ public class SimpleBossAttackGoal extends BaseBossGoal {
         super(mob);
         this.action = action;
         this.adjustRotation = adjustRotation;
-        this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
+        this.setFlags(action.controlsMovement()
+                ? EnumSet.of(Flag.MOVE, Flag.LOOK)
+                : EnumSet.of(Flag.LOOK));
         this.maxRepeatNum = repeatNum;
         this.rotateOnSamePlace = rotateOnSamePlace;
     }

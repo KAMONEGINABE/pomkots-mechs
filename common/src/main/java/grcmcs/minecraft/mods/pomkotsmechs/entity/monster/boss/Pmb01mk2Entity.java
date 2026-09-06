@@ -572,7 +572,7 @@ public class Pmb01mk2Entity extends BaseBossEntity {
 
     private final AnimationController<Pmb01mk2Entity> base = new AnimationController<>(this, "basic_move", 0, event -> {
         if (!trigger.isPlayingTriggeredAnimation()) {
-            if (this.getAiMode() == AI_MODE_INACTIVE) {
+            if (this.getAiMode() == AI_MODE_INACTIVE && !this.isInactiveStanding()) {
                 return event.setAndContinue(RawAnimation.begin().thenLoop("animation.pmb01.inactive"));
             } else if (event.isMoving()) {
                 if (!this.isNoGravity()) {

@@ -221,6 +221,9 @@ public class PomkotsMechsClient {
 		EntityRendererRegistry.register(PomkotsMechs.MISSILE_GENERIC_LARGE, (context)->{
 			return new MissileGenericEntityRenderer(context);
 		});
+		EntityRendererRegistry.register(PomkotsMechs.MISSILE_SPLITTING, (context)->{
+			return new MissileGenericEntityRenderer(context);
+		});
 		EntityRendererRegistry.register(PomkotsMechs.MISSILE_VERTICAL, (context)->{
 			return new MissileBaseEntityRenderer(context);
 		});
@@ -316,6 +319,8 @@ public class PomkotsMechsClient {
 			return new ElevatorEntityRenderer(context);
 		});
 		EntityRendererRegistry.register(PomkotsMechs.GENERIC_ELEVATOR, GenericElevatorEntityRenderer::new);
+		EntityRendererRegistry.register(PomkotsMechs.ELEVATOR_LARGE, LargeElevatorEntityRenderer::new);
+		EntityRendererRegistry.register(PomkotsMechs.GATE_HORIZONTAL, HorizontalGateEntityRenderer::new);
 		EntityRendererRegistry.register(PomkotsMechs.REUSABLE_LASER, ReusableLaserEntityRenderer::new);
 		grcmcs.minecraft.mods.pomkotsmechs.entity.misc.GenericElevatorEntity
 				.setClientTickHandler(ClientElevatorRider::onElevatorTick);

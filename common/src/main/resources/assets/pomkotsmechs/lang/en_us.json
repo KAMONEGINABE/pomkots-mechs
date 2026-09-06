@@ -530,4 +530,5 @@
 , "radio.pomkotsmechs.sample.operator": "Sample Operator"
 , "radio.pomkotsmechs.sample.welcome": "External radio definitions are working correctly."
 , "block.pomkotsmechs.elevator_controller": "Elevator Controller"
+, "block.pomkotsmechs.gate_horizontal_controller": "Horizontal Gate Controller"
 }

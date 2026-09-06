@@ -19,6 +19,8 @@ import dev.architectury.networking.NetworkManager;
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import grcmcs.minecraft.mods.pomkotsmechs.mission.definition.MissionDefinition;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.MissionMarkerEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.block.elevator.GenericElevatorControllerBlockEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.block.elevator.HorizontalGateControllerBlockEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.GenericPomkotsMonster;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.boss.BaseBossEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.carrier.Pmc01Entity;
@@ -94,6 +96,8 @@ public final class MissionEventRegistry {
         register("spawn_transport_ship", MissionEventRegistry::spawnTransportShip);
         register("transport_ship_control", MissionEventRegistry::controlTransportShip);
         register("position_marker", MissionEventRegistry::positionMarker);
+        register("elevator_control", MissionEventRegistry::controlElevator);
+        register("gate_horizontal_control", MissionEventRegistry::controlHorizontalGate);
     }
 
     private MissionEventRegistry() {
@@ -107,6 +111,34 @@ public final class MissionEventRegistry {
 
     private static void register(String path, Handler handler) {
         HANDLERS.put(PomkotsMechs.id(path), handler);
+    }
+
+    private static void controlElevator(Context context) {
+        JsonObject data = context.event().data();
+        String action = GsonHelper.getAsString(data, "action", "start");
+        if (!"start".equals(action)) {
+            throw new IllegalArgumentException("Unsupported elevator_control action: " + action);
+        }
+        String controllerId = GsonHelper.getAsString(data, "controller_id").trim();
+        ServerLevel level = context.resolve(anchorPosition()).level();
+        if (!GenericElevatorControllerBlockEntity.triggerById(level, controllerId)) {
+            throw new ExpectedEventFailure(Component.literal(
+                    "Elevator could not be started: " + controllerId));
+        }
+    }
+
+    private static void controlHorizontalGate(Context context) {
+        JsonObject data = context.event().data();
+        String action = GsonHelper.getAsString(data, "action", "toggle");
+        if (!"toggle".equals(action)) {
+            throw new IllegalArgumentException("Unsupported gate_horizontal_control action: " + action);
+        }
+        String controllerId = GsonHelper.getAsString(data, "controller_id").trim();
+        ServerLevel level = context.resolve(anchorPosition()).level();
+        if (!HorizontalGateControllerBlockEntity.triggerById(level, controllerId)) {
+            throw new ExpectedEventFailure(Component.literal(
+                    "Horizontal gate could not be started: " + controllerId));
+        }
     }
 
     private static void radio(Context context) {
@@ -407,7 +439,13 @@ public final class MissionEventRegistry {
                     throw new ExpectedEventFailure(Component.translatable(
                             "mission.pomkotsmechs.error.spawn_outside_loaded_areas", coordinates));
                 }
-                entity.moveTo(pos.x, pos.y, pos.z, GsonHelper.getAsFloat(entry, "yaw", 0.0F), 0.0F);
+                float spawnYaw = GsonHelper.getAsFloat(entry, "yaw", 0.0F);
+                entity.moveTo(pos.x, pos.y, pos.z, spawnYaw, 0.0F);
+                if (entity instanceof BaseBossEntity boss) {
+                    // Inactive bosses do not run the normal Mob look/body update, so
+                    // synchronize every render-facing yaw value at spawn time.
+                    boss.rotateDegree(spawnYaw);
+                }
                 if (entity instanceof Pmc01Entity carrier) {
                     configureCarrierRoute(context, entry, resolved.level(), carrier);
                 }
@@ -430,6 +468,7 @@ public final class MissionEventRegistry {
                             GsonHelper.getAsBoolean(entry, "suppress_health_stage_drops", false));
                     boss.setSuppressDeathDrops(
                             GsonHelper.getAsBoolean(entry, "suppress_death_drops", false));
+                    configureBossState(entry, boss);
                 }
                 if (entity instanceof LivingEntity living && entry.has("max_health")) {
                     double maxHealth = GsonHelper.getAsDouble(entry, "max_health");
@@ -732,9 +771,6 @@ public final class MissionEventRegistry {
             throw new IllegalArgumentException("Unsupported activate_entities ai_mode: " + aiMode);
         }
 
-        MissionPositionResolver.ResolvedPosition resolved =
-                context.resolve(GsonHelper.getAsJsonObject(selector, "position"));
-        double radius = GsonHelper.getAsDouble(selector, "radius", 40.0D);
         int limit = Math.max(1, GsonHelper.getAsInt(selector, "limit", 1));
         String group = GsonHelper.getAsString(data, "group");
         String onFailure = GsonHelper.getAsString(data, "on_failure", "restore");
@@ -744,14 +780,38 @@ public final class MissionEventRegistry {
         boolean preserveHealth = GsonHelper.getAsBoolean(data, "preserve_health_on_restore", true);
         float initialHate = GsonHelper.getAsFloat(data, "initial_hate", 50.0F);
         boolean activate = GsonHelper.getAsBoolean(data, "activate", true);
+        String activationMode = GsonHelper.getAsString(data, "activation_mode", "boot");
+        if (!activationMode.equals("boot") && !activationMode.equals("instant")) {
+            throw new IllegalArgumentException("Unknown activate_entities activation_mode: " + activationMode);
+        }
 
-        AABB searchArea = AABB.ofSize(resolved.position(), radius * 2.0D, radius * 2.0D, radius * 2.0D);
-        List<BaseBossEntity> bosses = resolved.level().getEntitiesOfClass(BaseBossEntity.class, searchArea,
-                        boss -> boss.isAlive() && boss.getAiMode() == BaseBossEntity.AI_MODE_INACTIVE)
-                .stream()
-                .sorted(java.util.Comparator.comparingDouble(boss -> boss.distanceToSqr(resolved.position())))
-                .limit(limit)
-                .toList();
+        List<BaseBossEntity> bosses;
+        if (selector.has("group")) {
+            String selectorGroup = GsonHelper.getAsString(selector, "group");
+            bosses = context.instance().trackedEntityGroups().getOrDefault(selectorGroup, java.util.Set.of())
+                    .stream()
+                    .map(id -> findLoadedEntity(context.server(), id))
+                    .filter(BaseBossEntity.class::isInstance)
+                    .map(BaseBossEntity.class::cast)
+                    .filter(boss -> boss.isAlive()
+                            && boss.getAiMode() == BaseBossEntity.AI_MODE_INACTIVE)
+                    .limit(limit)
+                    .toList();
+        } else {
+            MissionPositionResolver.ResolvedPosition resolved =
+                    context.resolve(GsonHelper.getAsJsonObject(selector, "position"));
+            double radius = GsonHelper.getAsDouble(selector, "radius", 40.0D);
+            AABB searchArea = AABB.ofSize(
+                    resolved.position(), radius * 2.0D, radius * 2.0D, radius * 2.0D);
+            bosses = resolved.level().getEntitiesOfClass(BaseBossEntity.class, searchArea,
+                            boss -> boss.isAlive()
+                                    && boss.getAiMode() == BaseBossEntity.AI_MODE_INACTIVE)
+                    .stream()
+                    .sorted(java.util.Comparator.comparingDouble(
+                            boss -> boss.distanceToSqr(resolved.position())))
+                    .limit(limit)
+                    .toList();
+        }
         if (bosses.isEmpty()) {
             throw new ExpectedEventFailure(Component.translatable(
                     "mission.pomkotsmechs.error.activate_boss_not_found"));
@@ -775,12 +835,41 @@ public final class MissionEventRegistry {
 
             boss.addTag("pomkots_mission:" + context.instance().instanceId());
             boss.addTag("pomkots_mission_group:" + group);
-            context.instance().trackEntity(
-                    group, boss.getUUID(), MissionEntityCleanupPolicy.RESTORE_ON_FAILURE, restoreData);
+            if (context.instance().trackedEntityCleanup().containsKey(boss.getUUID())) {
+                // A boss spawned by this mission already has its intended cleanup policy.
+                // Add the activation group without replacing DISCARD/KEEP with restore semantics.
+                context.instance().addTrackedEntityToGroup(group, boss.getUUID());
+            } else {
+                context.instance().trackEntity(
+                        group, boss.getUUID(), MissionEntityCleanupPolicy.RESTORE_ON_FAILURE, restoreData);
+            }
             if (activate) {
-                boss.boot();
+                if (activationMode.equals("instant")) {
+                    boss.activateImmediately();
+                } else {
+                    boss.boot();
+                }
                 for (ServerPlayer target : targets) boss.addHateToEntity(target, initialHate);
             }
+        }
+    }
+
+    private static void configureBossState(JsonObject entry, BaseBossEntity boss) {
+        if (!entry.has("boss_state")) return;
+
+        JsonObject state = GsonHelper.getAsJsonObject(entry, "boss_state");
+        String inactivePose = GsonHelper.getAsString(state, "inactive_pose", "down");
+        switch (inactivePose) {
+            case "down" -> boss.setInactiveStanding(false);
+            case "standing" -> boss.setInactiveStanding(true);
+            default -> throw new IllegalArgumentException(
+                    "Unknown boss_state inactive_pose: " + inactivePose);
+        }
+
+        boolean activated = GsonHelper.getAsBoolean(state, "activated", true);
+        boss.setActivated(activated);
+        if (!activated) {
+            boss.setAiMode(BaseBossEntity.AI_MODE_INACTIVE);
         }
     }
 

@@ -27,6 +27,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -63,6 +64,7 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
     protected final BossActionController actionController;
     protected final List<BossHitBoxEntity> hitBoxes = new ArrayList<>();
     public final GoalDice goalDice;
+    public final GoalDice movementGoalDice;
 
     protected HateTargetGoal hateTargetGoal = null;
 
@@ -86,6 +88,7 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
         this.setYRot(0F);
 //        this.noCulling = true;
         this.goalDice = new GoalDice(this);
+        this.movementGoalDice = new GoalDice(this);
 
         this.registerTargetSelectorGoals();
     }
@@ -148,6 +151,7 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
 
         if (this.isServerSide()) {
             goalDice.tick();
+            movementGoalDice.tick();
 
             if (!this.onGround() && !this.isNoGravity()) {
                 this.push(0, -0.18 * 0.9800000190734863D, 0);
@@ -156,13 +160,23 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
     }
 
     protected void registerActionGoal(BaseBossGoal goal, int[] availableMode, int weight) {
+        goal.bindGoalDice(this.goalDice, false);
         this.goalSelector.addGoal(1, goal);
         this.goalDice.registerGoal(goal, availableMode, -1, -1, weight);
     }
 
     protected void registerActionGoal(BaseBossGoal goal, int[] availableMode, float availableDistanceMin, float availableDistanceMax, int weight) {
+        goal.bindGoalDice(this.goalDice, false);
         this.goalSelector.addGoal(1, goal);
         this.goalDice.registerGoal(goal, availableMode, availableDistanceMin, availableDistanceMax, weight);
+    }
+
+    protected void registerMovementGoal(BaseBossGoal goal, int[] availableMode, int weight) {
+        goal.bindGoalDice(this.movementGoalDice, true);
+        // Movement runs below attacks. A movement-controlling attack owns MOVE and
+        // preempts it; ranged attacks omit MOVE and run alongside it.
+        this.goalSelector.addGoal(2, goal);
+        this.movementGoalDice.registerGoal(goal, availableMode, -1, -1, weight);
     }
 
     public abstract void registerControllers(AnimatableManager.ControllerRegistrar controllers);
@@ -233,6 +247,20 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
     public void boot() {
         this.bootTicks = getBootAnimationTicks();
         this.postBootWaitTicks = -1;
+    }
+
+    public void activateImmediately() {
+        boolean playStandingActivationSound = !this.isActivated && this.isInactiveStanding();
+        this.isActivated = true;
+        this.bootTicks = -1;
+        this.postBootWaitTicks = -1;
+        this.waitTicks = 0;
+        this.setAiMode(AI_MODE_BATTLE_PHASE_1);
+        this.setNoAi(false);
+        if (playStandingActivationSound && !this.level().isClientSide) {
+            this.level().playSound(null, this.blockPosition(), PomkotsMechs.SE_SCAN1.get(),
+                    SoundSource.HOSTILE, 1.0F, 1.0F);
+        }
     }
 
     protected int getBootAnimationTicks() {
@@ -526,6 +554,7 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putBoolean(PomkotsMechs.nbtName("BossActivated"), isActivated);
+        compound.putBoolean(PomkotsMechs.nbtName("BossInactiveStanding"), isInactiveStanding());
         compound.putBoolean(PomkotsMechs.nbtName("IsCarrying"), isCarrying);
         compound.putBoolean(PomkotsMechs.nbtName("SuppressHealthStageDrops"), suppressHealthStageDrops);
         compound.putBoolean(PomkotsMechs.nbtName("SuppressDeathDrops"), suppressDeathDrops);
@@ -546,6 +575,8 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
         } else {
             isCarrying = false;
         }
+
+        setInactiveStanding(compound.getBoolean(PomkotsMechs.nbtName("BossInactiveStanding")));
 
         suppressHealthStageDrops = compound.getBoolean(PomkotsMechs.nbtName("SuppressHealthStageDrops"));
         suppressDeathDrops = compound.getBoolean(PomkotsMechs.nbtName("SuppressDeathDrops"));
@@ -580,6 +611,7 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
     private static final EntityDataAccessor<Boolean> MODE = SynchedEntityData.defineId(BaseBossEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> AI_MODE = SynchedEntityData.defineId(BaseBossEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> STUN_POINT = SynchedEntityData.defineId(BaseBossEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> INACTIVE_STANDING = SynchedEntityData.defineId(BaseBossEntity.class, EntityDataSerializers.BOOLEAN);
 
 
     @Override
@@ -588,6 +620,15 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
         this.entityData.define(MODE, true);
         this.entityData.define(AI_MODE, AI_MODE_BATTLE_PHASE_1);
         this.entityData.define(STUN_POINT, 0);
+        this.entityData.define(INACTIVE_STANDING, false);
+    }
+
+    public void setInactiveStanding(boolean value) {
+        this.entityData.set(INACTIVE_STANDING, value);
+    }
+
+    public boolean isInactiveStanding() {
+        return this.entityData.get(INACTIVE_STANDING);
     }
 
     private void setMainMode(boolean value) {

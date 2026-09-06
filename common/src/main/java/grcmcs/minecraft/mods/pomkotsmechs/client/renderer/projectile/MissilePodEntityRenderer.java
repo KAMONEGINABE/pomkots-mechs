@@ -9,13 +9,10 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
-import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 
 public class MissilePodEntityRenderer extends GeoEntityRenderer<MissilePodEntity> {
     public MissilePodEntityRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new MissilePodEntityModel());
-
-        addRenderLayer(new AutoGlowingGeoLayer<>(this));
     }
 
     @Override

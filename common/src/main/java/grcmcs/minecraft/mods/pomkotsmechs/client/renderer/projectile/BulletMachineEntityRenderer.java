@@ -8,6 +8,6 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 public class BulletMachineEntityRenderer extends SimpleProjectileRenderer<BulletMachineEntity> {
     public BulletMachineEntityRenderer(EntityRendererProvider.Context context, float scale) {
         super(context, new MachineProjectileModel<>(),
-                PomkotsMechs.id("textures/entity/projectile/bulletmachine.png"), scale, true);
+                PomkotsMechs.id("textures/entity/projectile/bulletmachine.png"), scale, true, true);
     }
 }

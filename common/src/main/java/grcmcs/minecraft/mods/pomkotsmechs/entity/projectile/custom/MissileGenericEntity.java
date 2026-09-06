@@ -12,22 +12,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.*;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class MissileGenericEntity extends PomkotsCustomThrowableProjectile implements GeoEntity, GeoAnimatable {
+public class MissileGenericEntity extends PomkotsCustomThrowableProjectile {
     /** falseにすると旧追尾処理へ即座に戻せる。 */
     private static final boolean USE_ADAPTIVE_HOMING = true;
     private static final float PLAYER_TURN_RATE_DEG = 3.0F;
     private static final float MOB_TURN_RATE_DEG = 7.0F;
     private static final float SMALL_MOB_TURN_RATE_DEG = 9.0F;
-    protected final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
-
     protected float speed;
     protected float maxRotationAnglePerTick = 3;
 
@@ -39,6 +30,12 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
     private boolean straight = false;
 
     private Vec3 prevClientPos = null;
+    private Vec3 clientInterpolationTarget = null;
+    private int clientInterpolationSteps = 0;
+    private static final double CLIENT_SNAP_DISTANCE_SQR = 32.0D * 32.0D;
+    private static final float CLIENT_ROTATION_SMOOTHING = 0.45F;
+    private static final double SMOKE_FULL_DISTANCE_SQR = 200.0D * 200.0D;
+    private static final double SMOKE_MAX_DISTANCE_SQR = 250.0D * 250.0D;
 
     private float totalRotatedDeg = 0f;        // 累積回転角
     private Vec3 lastDirection = null;          // 前tickの方向
@@ -318,8 +315,8 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
             double pitch = Math.toDegrees(Math.atan2(velocity.y, horizontalDistance));
             this.setXRot((float) pitch);
 
-            this.yRotO = this.getYRot();
-            this.xRotO = this.getXRot();
+            // Do not collapse old/current rotation here. The client renderer needs
+            // both values to interpolate homing turns between game ticks.
         }
     }
 
@@ -338,6 +335,9 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
     }
 
     public void clientTick() {
+        advanceClientVisualPosition();
+        updateClientVisualRotation();
+
         Vec3 currentPos = this.position();
 
         if (prevClientPos != null) {
@@ -347,8 +347,70 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
         prevClientPos = currentPos;
     }
 
+    @Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot,
+                       int lerpSteps, boolean teleport) {
+        if (!this.level().isClientSide || this.tickCount == 0) {
+            super.lerpTo(x, y, z, yRot, xRot, lerpSteps, teleport);
+            return;
+        }
+
+        int steps = Math.max(1, lerpSteps);
+        Vec3 serverPosition = new Vec3(x, y, z);
+        Vec3 velocity = this.getDeltaMovement();
+
+        // The received position represents an already elapsed server state. Aim at
+        // where that state will be after the interpolation window, avoiding a visible
+        // pull backwards while still remaining anchored to server updates.
+        this.clientInterpolationTarget = serverPosition.add(velocity.scale(steps));
+        this.clientInterpolationSteps = steps;
+
+        if (this.position().distanceToSqr(serverPosition) > CLIENT_SNAP_DISTANCE_SQR) {
+            this.setPos(serverPosition);
+            this.clientInterpolationTarget = serverPosition.add(velocity.scale(steps));
+        }
+    }
+
+    private void advanceClientVisualPosition() {
+        if (clientInterpolationTarget != null && clientInterpolationSteps > 0) {
+            Vec3 remaining = clientInterpolationTarget.subtract(this.position());
+            this.setPos(this.position().add(remaining.scale(1.0D / clientInterpolationSteps)));
+            clientInterpolationSteps--;
+            if (clientInterpolationSteps == 0) {
+                clientInterpolationTarget = null;
+            }
+            return;
+        }
+
+        Vec3 velocity = this.getDeltaMovement();
+        if (velocity.lengthSqr() > 1.0E-10D) {
+            this.setPos(this.position().add(velocity));
+        }
+    }
+
+    private void updateClientVisualRotation() {
+        Vec3 velocity = this.getDeltaMovement();
+        if (velocity.lengthSqr() <= 1.0E-10D) {
+            return;
+        }
+
+        float targetYaw = (float) Math.toDegrees(Math.atan2(velocity.x, velocity.z));
+        double horizontal = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+        float targetPitch = (float) Math.toDegrees(Math.atan2(velocity.y, horizontal));
+        this.setYRot(Mth.rotLerp(CLIENT_ROTATION_SMOOTHING, this.getYRot(), targetYaw));
+        this.setXRot(Mth.lerp(CLIENT_ROTATION_SMOOTHING, this.getXRot(), targetPitch));
+    }
+
     private void spawnSmokeBetween(Vec3 from, Vec3 to) {
         Level level = this.level();
+
+        double nearestPlayerDistanceSqr = Double.MAX_VALUE;
+        for (Player player : level.players()) {
+            nearestPlayerDistanceSqr = Math.min(nearestPlayerDistanceSqr, player.distanceToSqr(this));
+        }
+        if (nearestPlayerDistanceSqr >= SMOKE_MAX_DISTANCE_SQR) {
+            return;
+        }
 
         Vec3 diff = to.subtract(from);
         double length = diff.length();
@@ -358,12 +420,13 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
         Vec3 dir = diff.normalize();
 
         // ★ 間隔（ブロック単位）
-        double spacing = 0.5;
+        boolean distant = nearestPlayerDistanceSqr > SMOKE_FULL_DISTANCE_SQR;
+        double spacing = distant ? 2.0D : 1.0D;
+        int maxParticles = distant ? 1 : 2;
+        int count = Math.min(maxParticles, Math.max(1, (int)Math.ceil(length / spacing)));
 
-        int count = (int)(length / spacing);
-
-        for (int i = 0; i <= count; i++) {
-            double d = i * spacing;
+        for (int i = 1; i <= count; i++) {
+            double d = length * i / count;
             Vec3 pos = from.add(dir.scale(d));
 
             level.addAlwaysVisibleParticle(
@@ -426,18 +489,6 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
 
     @Override
     protected void defineSynchedData() {
-    }
-
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "rotation", 0, event -> {
-            return event.setAndContinue(RawAnimation.begin().thenPlay("animation.missile.start").thenPlayAndHold("animation.missile.idle"));
-        }));
-    }
-
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return this.geoCache;
     }
 
     public float getHitDamage() {

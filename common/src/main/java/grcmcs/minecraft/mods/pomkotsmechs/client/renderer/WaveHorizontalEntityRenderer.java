@@ -2,7 +2,6 @@ package grcmcs.minecraft.mods.pomkotsmechs.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import grcmcs.minecraft.mods.pomkotsmechs.client.model.MissileGenericEntityModel;
 import grcmcs.minecraft.mods.pomkotsmechs.client.model.WaveHorizontalEntityModel;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.WaveHorizontalEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.MissileGenericEntity;

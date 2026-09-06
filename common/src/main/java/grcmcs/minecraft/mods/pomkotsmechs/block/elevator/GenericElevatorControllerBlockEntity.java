@@ -25,6 +25,7 @@ public final class GenericElevatorControllerBlockEntity extends BlockEntity {
     public static final String NBT_ENDPOINT = PomkotsMechs.nbtName("ElevatorEndpoint");
     public static final String NBT_PLATFORM_OFFSET = PomkotsMechs.nbtName("ElevatorPlatformOffset");
     public static final String NBT_LINKED_OFFSET = PomkotsMechs.nbtName("ElevatorLinkedOffset");
+    public static final String NBT_ELEVATOR_TYPE = PomkotsMechs.nbtName("ElevatorType");
     public static final String ENDPOINT_START = "start";
     public static final String ENDPOINT_END = "end";
 
@@ -37,6 +38,7 @@ public final class GenericElevatorControllerBlockEntity extends BlockEntity {
     private BlockPos platformOffset = new BlockPos(0, 1, 0);
     private BlockPos linkedOffset;
     private UUID elevatorUuid;
+    private boolean largeElevator;
     private boolean wasPowered;
     private String registeredId = "";
     private Endpoint registeredEndpoint = Endpoint.NONE;
@@ -65,16 +67,32 @@ public final class GenericElevatorControllerBlockEntity extends BlockEntity {
         }
     }
 
-    private void triggerElevator() {
+    private boolean triggerElevator() {
         GenericElevatorEntity elevator = findElevator();
-        if (elevator != null) elevator.beginMove();
+        return elevator != null && elevator.beginMove();
+    }
+
+    /** Starts either endpoint's platform by controller ID. Used by mission events. */
+    public static boolean triggerById(ServerLevel level, String controllerId) {
+        if (controllerId == null || controllerId.isBlank()) return false;
+        BlockPos controllerPos = lookup(level, controllerId.trim(), Endpoint.START);
+        if (controllerPos == null) controllerPos = lookup(level, controllerId.trim(), Endpoint.END);
+        if (controllerPos == null) return false;
+        if (!(level.getBlockEntity(controllerPos) instanceof GenericElevatorControllerBlockEntity controller)) {
+            return false;
+        }
+        controller.resolveLinkedController();
+        if (controller.endpoint == Endpoint.START) controller.ensureElevator();
+        return controller.triggerElevator();
     }
 
     private void ensureElevator() {
         if (!(level instanceof ServerLevel serverLevel) || linkedPos == null || controllerId.isEmpty()) return;
         if (findElevator() != null) return;
 
-        GenericElevatorEntity elevator = PomkotsMechs.GENERIC_ELEVATOR.get().create(serverLevel);
+        GenericElevatorEntity elevator = (usesLargeElevator()
+                ? PomkotsMechs.ELEVATOR_LARGE.get()
+                : PomkotsMechs.GENERIC_ELEVATOR.get()).create(serverLevel);
         if (elevator == null) return;
         BlockPos linkedPlatform = linkedPos.above();
         if (serverLevel.getBlockEntity(linkedPos) instanceof GenericElevatorControllerBlockEntity linked) {
@@ -82,7 +100,11 @@ public final class GenericElevatorControllerBlockEntity extends BlockEntity {
         }
         elevator.configure(controllerId, worldPosition, linkedPos, platformPos(), linkedPlatform, blockYaw());
         BlockPos spawn = platformPos();
-        elevator.moveTo(spawn.getX() + 0.5D, spawn.getY() + 0.2D, spawn.getZ() + 0.5D);
+        double horizontalOffset = elevator.platformHorizontalCenterOffset();
+        elevator.moveTo(
+                spawn.getX() + horizontalOffset,
+                spawn.getY() + 0.2D,
+                spawn.getZ() + horizontalOffset);
         if (!serverLevel.addFreshEntity(elevator)) return;
         setElevatorUuidForPair(elevator.getUUID());
     }
@@ -92,7 +114,8 @@ public final class GenericElevatorControllerBlockEntity extends BlockEntity {
         if (elevatorUuid != null) {
             Entity entity = serverLevel.getEntity(elevatorUuid);
             if (entity instanceof GenericElevatorEntity elevator
-                    && elevator.matchesController(controllerId)) return elevator;
+                    && elevator.matchesController(controllerId)
+                    && elevator.isLargeVariant() == usesLargeElevator()) return elevator;
         }
 
         GenericElevatorEntity nearby = findNear(serverLevel, platformPos());
@@ -110,8 +133,16 @@ public final class GenericElevatorControllerBlockEntity extends BlockEntity {
     private GenericElevatorEntity findNear(ServerLevel level, BlockPos pos) {
         AABB area = new AABB(pos).inflate(5.0D, 4.0D, 5.0D);
         return level.getEntitiesOfClass(GenericElevatorEntity.class, area,
-                        elevator -> elevator.matchesController(controllerId))
+                        elevator -> elevator.matchesController(controllerId)
+                                && elevator.isLargeVariant() == usesLargeElevator())
                 .stream().findFirst().orElse(null);
+    }
+
+    private boolean usesLargeElevator() {
+        if (largeElevator) return true;
+        return linkedPos != null && level != null
+                && level.getBlockEntity(linkedPos) instanceof GenericElevatorControllerBlockEntity linked
+                && linked.largeElevator;
     }
 
     private void setElevatorUuidForPair(UUID uuid) {
@@ -212,6 +243,7 @@ public final class GenericElevatorControllerBlockEntity extends BlockEntity {
         super.saveAdditional(tag);
         tag.putString(NBT_CONTROLLER_ID, controllerId);
         tag.putString(NBT_ENDPOINT, endpoint.serializedName);
+        tag.putString(NBT_ELEVATOR_TYPE, largeElevator ? "large" : "normal");
         tag.put(NBT_PLATFORM_OFFSET, NbtUtils.writeBlockPos(platformOffset));
         if (linkedOffset != null) tag.put(NBT_LINKED_OFFSET, NbtUtils.writeBlockPos(linkedOffset));
         if (linkedPos != null) tag.putLong(PomkotsMechs.nbtName("ElevatorLinkedPos"), linkedPos.asLong());
@@ -224,6 +256,7 @@ public final class GenericElevatorControllerBlockEntity extends BlockEntity {
         super.load(tag);
         controllerId = tag.getString(NBT_CONTROLLER_ID).trim();
         endpoint = Endpoint.parse(tag.getString(NBT_ENDPOINT));
+        largeElevator = "large".equalsIgnoreCase(tag.getString(NBT_ELEVATOR_TYPE));
         platformOffset = tag.contains(NBT_PLATFORM_OFFSET, Tag.TAG_COMPOUND)
                 ? NbtUtils.readBlockPos(tag.getCompound(NBT_PLATFORM_OFFSET)) : new BlockPos(0, 1, 0);
         linkedOffset = tag.contains(NBT_LINKED_OFFSET, Tag.TAG_COMPOUND)

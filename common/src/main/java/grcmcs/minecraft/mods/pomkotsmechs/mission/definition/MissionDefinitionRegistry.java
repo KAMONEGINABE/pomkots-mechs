@@ -37,7 +37,8 @@ public final class MissionDefinitionRegistry {
             "noop", "radio", "spawn_entities", "spawn_piloted_mech", "spawn_mech", "activate_entities",
             "teleport_players", "drop_item", "command",
             "mission_presentation", "bgm", "mission_effect", "cutscene",
-            "spawn_transport_ship", "transport_ship_control", "position_marker"
+            "spawn_transport_ship", "transport_ship_control", "position_marker",
+            "elevator_control", "gate_horizontal_control"
     );
     private static volatile Map<ResourceLocation, MissionDefinition> definitions = Map.of();
 

@@ -41,7 +41,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 /** A reusable two-endpoint elevator controlled by GenericElevatorControllerBlockEntity. */
-public final class GenericElevatorEntity extends LivingEntity implements GeoEntity {
+public class GenericElevatorEntity extends LivingEntity implements GeoEntity {
     private static Consumer<GenericElevatorEntity> clientTickHandler = elevator -> { };
     private static final float WIDTH = 6.5F;
     private static final float HEIGHT = 0.5F;
@@ -95,6 +95,19 @@ public final class GenericElevatorEntity extends LivingEntity implements GeoEnti
 
     public boolean matchesController(String id) {
         return !controllerId.isEmpty() && controllerId.equals(id);
+    }
+
+    /** Used by the shared controller to avoid pairing a normal and large platform. */
+    public boolean isLargeVariant() {
+        return false;
+    }
+
+    /**
+     * Odd/fractional platforms are centered on a block, while an even-sized
+     * platform is centered on the boundary between blocks.
+     */
+    public double platformHorizontalCenterOffset() {
+        return 0.5D;
     }
 
     public boolean isMoving() {
@@ -203,7 +216,9 @@ public final class GenericElevatorEntity extends LivingEntity implements GeoEnti
         Set<Entity> roots = new LinkedHashSet<>();
         carriedEntityGraceTicks.replaceAll((uuid, ticks) -> ticks - 1);
         for (Entity entity : level().getEntities(this, search,
-                candidate -> !candidate.isSpectator() && !candidate.isRemoved())) {
+                candidate -> !candidate.isSpectator()
+                        && !candidate.isRemoved()
+                        && !(candidate instanceof HorizontalGateEntity))) {
             Entity root = entity.getRootVehicle();
             AABB rootBox = root.getBoundingBox();
             if (root != this
@@ -226,6 +241,7 @@ public final class GenericElevatorEntity extends LivingEntity implements GeoEnti
                 Map.Entry<UUID, Integer> entry = iterator.next();
                 Entity entity = serverLevel.getEntity(entry.getKey());
                 if (entry.getValue() <= 0 || entity == null || entity.isRemoved()
+                        || entity instanceof HorizontalGateEntity
                         || isJumpingAway(entity, box)
                         || !isStillNearPlatform(entity, box)) {
                     iterator.remove();
@@ -260,8 +276,12 @@ public final class GenericElevatorEntity extends LivingEntity implements GeoEnti
         return platformPosition(controller.equals(startController) ? startPlatform : endPlatform);
     }
 
-    private static Vec3 platformPosition(BlockPos platform) {
-        return new Vec3(platform.getX() + 0.5D, platform.getY() + 0.2D, platform.getZ() + 0.5D);
+    private Vec3 platformPosition(BlockPos platform) {
+        double horizontalOffset = platformHorizontalCenterOffset();
+        return new Vec3(
+                platform.getX() + horizontalOffset,
+                platform.getY() + 0.2D,
+                platform.getZ() + horizontalOffset);
     }
 
     public boolean isStoppedOnGround() {
@@ -280,6 +300,11 @@ public final class GenericElevatorEntity extends LivingEntity implements GeoEnti
     public void setFixedYaw(float yaw) {
         entityData.set(FIXED_YAW, yaw);
         lockYaw();
+        refreshDimensions();
+        // refreshDimensions() recreates a square horizontal box from
+        // EntityDimensions. LargeElevatorEntity overrides makeBoundingBox() to
+        // restore its real 32 x 16 rectangular footprint.
+        setBoundingBox(makeBoundingBox());
     }
 
     private void lockYaw() {

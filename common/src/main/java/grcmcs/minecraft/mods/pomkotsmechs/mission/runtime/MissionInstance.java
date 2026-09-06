@@ -137,6 +137,10 @@ public final class MissionInstance {
         trackedEntityGroups.computeIfAbsent(group, ignored -> new HashSet<>()).add(entityId);
         trackEntityForCleanup(group, entityId, policy, restoreData);
     }
+    public void addTrackedEntityToGroup(String group, UUID entityId) {
+        spawnedGroups.add(group);
+        trackedEntityGroups.computeIfAbsent(group, ignored -> new HashSet<>()).add(entityId);
+    }
     public void trackEntityForCleanup(
             UUID entityId,
             MissionEntityCleanupPolicy policy,

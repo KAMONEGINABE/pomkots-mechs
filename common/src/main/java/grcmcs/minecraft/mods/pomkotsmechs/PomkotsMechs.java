@@ -20,6 +20,8 @@ import grcmcs.minecraft.mods.pomkotsmechs.block.*;
 import grcmcs.minecraft.mods.pomkotsmechs.block.arena.*;
 import grcmcs.minecraft.mods.pomkotsmechs.block.elevator.GenericElevatorControllerBlock;
 import grcmcs.minecraft.mods.pomkotsmechs.block.elevator.GenericElevatorControllerBlockEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.block.elevator.HorizontalGateControllerBlock;
+import grcmcs.minecraft.mods.pomkotsmechs.block.elevator.HorizontalGateControllerBlockEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.block.migration.AssetAnchorBlock;
 import grcmcs.minecraft.mods.pomkotsmechs.block.migration.AssetAnchorBlockEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.block.mission.MissionAnchorBlock;
@@ -40,6 +42,8 @@ import grcmcs.minecraft.mods.pomkotsmechs.entity.event.TransportShipEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.BlockPlacementPreviewEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.ElevatorEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.GenericElevatorEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.LargeElevatorEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.HorizontalGateEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.PlacementPreviewEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.MissionMarkerEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.boss.*;
@@ -226,6 +230,7 @@ public class PomkotsMechs {
 
 	public static final RegistrySupplier<EntityType<MissileGenericEntity>> MISSILE_GENERIC = registerEntityType("missilegeneric", MissileGenericEntity::new, MobCategory.MISC, 2F, 2F);
 	public static final RegistrySupplier<EntityType<MissileGenericLargeEntity>> MISSILE_GENERIC_LARGE = registerEntityType("missilegenericlarge", MissileGenericLargeEntity::new, MobCategory.MISC, 2F, 2F);
+	public static final RegistrySupplier<EntityType<SplittingMissileEntity>> MISSILE_SPLITTING = registerEntityType("missilesplitting", SplittingMissileEntity::new, MobCategory.MISC, 2F, 2F);
 
 	public static final RegistrySupplier<EntityType<MissileVerticalEntity>> MISSILE_VERTICAL = registerEntityType("missilevertical", MissileVerticalEntity::new, MobCategory.MISC, 1F, 1F);
 	public static final RegistrySupplier<EntityType<MissileHorizontalEntity>> MISSILE_HORIZONTAL = registerEntityType("missilehorizontal", MissileHorizontalEntity::new, MobCategory.MISC, 1F, 1F);
@@ -286,6 +291,22 @@ public class PomkotsMechs {
 					.clientTrackingRange(30)
 					.updateInterval(1)
 					.build(id("generic_elevator").toString())
+	);
+	public static final RegistrySupplier<EntityType<LargeElevatorEntity>> ELEVATOR_LARGE = ENTITIES.register(
+			"elevator_large",
+			() -> EntityType.Builder.<LargeElevatorEntity>of(LargeElevatorEntity::new, MobCategory.MISC)
+					.sized(32.0F, 1.0F)
+					.clientTrackingRange(40)
+					.updateInterval(1)
+					.build(id("elevator_large").toString())
+	);
+	public static final RegistrySupplier<EntityType<HorizontalGateEntity>> GATE_HORIZONTAL = ENTITIES.register(
+			"gate_horizontal",
+			() -> EntityType.Builder.<HorizontalGateEntity>of(HorizontalGateEntity::new, MobCategory.MISC)
+					.sized(16.0F, 1.0F)
+					.clientTrackingRange(40)
+					.updateInterval(1)
+					.build(id("gate_horizontal").toString())
 	);
 	public static final RegistrySupplier<EntityType<ReusableLaserEntity>> REUSABLE_LASER = ENTITIES.register(
 			"reusable_laser",
@@ -455,6 +476,7 @@ public class PomkotsMechs {
 	public static final RegistrySupplier<Block> ARENA_TELEPORT_BLOCK = BLOCKS.register("arena_teleport_block", ()-> new ArenaTeleportBlock());
 	public static final RegistrySupplier<Block> MISSION_ANCHOR_BLOCK = BLOCKS.register("mission_anchor", MissionAnchorBlock::new);
 	public static final RegistrySupplier<Block> GENERIC_ELEVATOR_CONTROLLER_BLOCK = BLOCKS.register("elevator_controller", GenericElevatorControllerBlock::new);
+	public static final RegistrySupplier<Block> HORIZONTAL_GATE_CONTROLLER_BLOCK = BLOCKS.register("gate_horizontal_controller", HorizontalGateControllerBlock::new);
 
 	public static final RegistrySupplier<Block> ASSET_ANCHOR = BLOCKS.register("asset_anchor", ()-> new AssetAnchorBlock());
 
@@ -485,6 +507,7 @@ public class PomkotsMechs {
 	public static final RegistrySupplier<BlockEntityType<ArenaTeleportBlockEntity>> ARENA_TELEPORT_BLOCK_ENTITY = BLOCK_ENTITIES.register("arena_teleport_block_entity", () -> BlockEntityType.Builder.of(ArenaTeleportBlockEntity::new, ARENA_TELEPORT_BLOCK.get()).build(null));
 	public static final RegistrySupplier<BlockEntityType<MissionAnchorBlockEntity>> MISSION_ANCHOR_BLOCK_ENTITY = BLOCK_ENTITIES.register("mission_anchor", () -> BlockEntityType.Builder.of(MissionAnchorBlockEntity::new, MISSION_ANCHOR_BLOCK.get()).build(null));
 	public static final RegistrySupplier<BlockEntityType<GenericElevatorControllerBlockEntity>> GENERIC_ELEVATOR_CONTROLLER_BLOCK_ENTITY = BLOCK_ENTITIES.register("elevator_controller", () -> BlockEntityType.Builder.of(GenericElevatorControllerBlockEntity::new, GENERIC_ELEVATOR_CONTROLLER_BLOCK.get()).build(null));
+	public static final RegistrySupplier<BlockEntityType<HorizontalGateControllerBlockEntity>> HORIZONTAL_GATE_CONTROLLER_BLOCK_ENTITY = BLOCK_ENTITIES.register("gate_horizontal_controller", () -> BlockEntityType.Builder.of(HorizontalGateControllerBlockEntity::new, HORIZONTAL_GATE_CONTROLLER_BLOCK.get()).build(null));
 
 	public static final RegistrySupplier<BlockEntityType<AssetAnchorBlockEntity>> ASSET_ANCHOR_BE = BLOCK_ENTITIES.register("asset_anchor_block_entity", () -> BlockEntityType.Builder.of(AssetAnchorBlockEntity::new, ASSET_ANCHOR.get()).build(null));
 
@@ -559,6 +582,7 @@ public class PomkotsMechs {
 	public static final RegistrySupplier<Item> ARENA_TELEPORT_BLOCK_ITEM = ITEMS.register("arena_teleport", () -> new BlockItem(ARENA_TELEPORT_BLOCK.get(), new Item.Properties().stacksTo(64)));
 	public static final RegistrySupplier<Item> MISSION_ANCHOR_BLOCK_ITEM = ITEMS.register("mission_anchor", () -> new BlockItem(MISSION_ANCHOR_BLOCK.get(), new Item.Properties().stacksTo(64)));
 	public static final RegistrySupplier<Item> GENERIC_ELEVATOR_CONTROLLER_BLOCK_ITEM = ITEMS.register("elevator_controller", () -> new BlockItem(GENERIC_ELEVATOR_CONTROLLER_BLOCK.get(), new Item.Properties().stacksTo(64)));
+	public static final RegistrySupplier<Item> HORIZONTAL_GATE_CONTROLLER_BLOCK_ITEM = ITEMS.register("gate_horizontal_controller", () -> new BlockItem(HORIZONTAL_GATE_CONTROLLER_BLOCK.get(), new Item.Properties().stacksTo(64)));
 
 	public static final RegistrySupplier<Item> ASSET_ANCHOR_ITEM = ITEMS.register("asset_anchor", () -> new BlockItem(ASSET_ANCHOR.get(), new Item.Properties().stacksTo(64)));
 
@@ -1205,6 +1229,7 @@ public class PomkotsMechs {
 								output.accept(new ItemStack(ARENA_TELEPORT_BLOCK_ITEM.get()));
 								output.accept(new ItemStack(MISSION_ANCHOR_BLOCK_ITEM.get()));
 								output.accept(new ItemStack(GENERIC_ELEVATOR_CONTROLLER_BLOCK_ITEM.get()));
+								output.accept(new ItemStack(HORIZONTAL_GATE_CONTROLLER_BLOCK_ITEM.get()));
 
 								output.accept(new ItemStack(ASSET_ANCHOR_ITEM.get()));
 
@@ -1288,11 +1313,11 @@ public class PomkotsMechs {
 	public static final RegistrySupplier<SoundEvent> SE_REGISTER = SOUNDS.register(id("se_register"), () -> SoundEvent.createVariableRangeEvent(id("se_register")));
 	public static final RegistrySupplier<SoundEvent> SE_BEEP = SOUNDS.register(id("se_beep"), () -> SoundEvent.createVariableRangeEvent(id("se_beep")));
 	public static final RegistrySupplier<SoundEvent> SE_COIN = SOUNDS.register(id("se_coin"), () -> SoundEvent.createVariableRangeEvent(id("se_coin")));
-	public static final RegistrySupplier<SoundEvent> SE_ELEVATOR = SOUNDS.register(id("se_elevator"), () -> SoundEvent.createVariableRangeEvent(id("se_elevator")));
+	public static final RegistrySupplier<SoundEvent> SE_ELEVATOR = SOUNDS.register(id("se_elevator"), () -> SoundEvent.createFixedRangeEvent(id("se_elevator"), 128.0F));
 	public static final RegistrySupplier<SoundEvent> SE_CHEERS = SOUNDS.register(id("se_cheers"), () -> SoundEvent.createVariableRangeEvent(id("se_cheers")));
 	public static final RegistrySupplier<SoundEvent> SE_ARENA_END = SOUNDS.register(id("se_arena_end"), () -> SoundEvent.createVariableRangeEvent(id("se_arena_end")));
 	public static final RegistrySupplier<SoundEvent> SE_ARENA_START = SOUNDS.register(id("se_arena_start"), () -> SoundEvent.createVariableRangeEvent(id("se_arena_start")));
-	public static final RegistrySupplier<SoundEvent> SE_SCAN1 = SOUNDS.register(id("se_scan1"), () -> SoundEvent.createVariableRangeEvent(id("se_scan1")));
+	public static final RegistrySupplier<SoundEvent> SE_SCAN1 = SOUNDS.register(id("se_scan1"), () -> SoundEvent.createFixedRangeEvent(id("se_scan1"), 128.0F));
 	public static final RegistrySupplier<SoundEvent> SE_SCAN2 = SOUNDS.register(id("se_scan2"), () -> SoundEvent.createVariableRangeEvent(id("se_scan2")));
 
 	public static final RegistrySupplier<SoundEvent> SE_PANEL_OPEN = SOUNDS.register(id("se_panel_open"), () -> SoundEvent.createVariableRangeEvent(id("se_panel_open")));
@@ -1454,6 +1479,8 @@ public class PomkotsMechs {
 		EntityAttributeRegistry.register(PLATE::get, PlateEntity::createMobAttributes);
 		EntityAttributeRegistry.register(ELEVATOR::get, ElevatorEntity::createMobAttributes);
 		EntityAttributeRegistry.register(GENERIC_ELEVATOR::get, GenericElevatorEntity::createAttributes);
+		EntityAttributeRegistry.register(ELEVATOR_LARGE::get, GenericElevatorEntity::createAttributes);
+		EntityAttributeRegistry.register(GATE_HORIZONTAL::get, HorizontalGateEntity::createAttributes);
 		EntityAttributeRegistry.register(ARENA_CAMERA::get, ArenaCameraEntity::createMobAttributes);
 		EntityAttributeRegistry.register(CUTSCENE_CAMERA::get, CutsceneCameraEntity::createAttributes);
 
