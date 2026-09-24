@@ -7,6 +7,7 @@ import grcmcs.minecraft.mods.pomkotsmechs.entity.npc.pilot.MechPilotEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
 import grcmcs.minecraft.mods.pomkotsmechs.items.parts.BasePartsItem;
 import grcmcs.minecraft.mods.pomkotsmechs.items.parts.extension.HoverUnitItem;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.extension.SBUnitProtoTypeItem;
 import grcmcs.minecraft.mods.pomkotsmechs.items.pilot.PilotLicenseItem;
 import grcmcs.minecraft.mods.pomkotsmechs.items.pilot.PilotRoleItem;
 import net.minecraft.core.BlockPos;
@@ -62,22 +63,46 @@ public class MechAutoController {
     private static final int LOS_RECOVERY_STUCK_CHECK_TICKS = 12;
     private static final double LOS_RECOVERY_STUCK_DISTANCE_SQR = 0.5D * 0.5D;
     private static final double[] LOS_RECOVERY_SEARCH_RADII = {12.0D, 24.0D, 36.0D};
+    private static final int LOS_RECOVERY_MAX_TICKS = 160;
+    private static final int LOS_RECOVERY_RETRY_COOLDOWN_TICKS = 40;
+    private static final float SUPER_BOOST_ASSAULT_MIN_ENERGY_RATIO = 0.6F;
+    private static final int SUPER_BOOST_ASSAULT_INITIAL_DELAY_TICKS = 200;
+    private static final int SUPER_BOOST_ASSAULT_COOLDOWN_MIN_TICKS = 160;
+    private static final int SUPER_BOOST_ASSAULT_COOLDOWN_VARIANCE_TICKS = 80;
+    private static final double SUPER_BOOST_ASSAULT_NEAR_DISTANCE = 50.0D;
+    private static final double SUPER_BOOST_ASSAULT_FAR_DISTANCE = 150.0D;
+    private static final float SUPER_BOOST_ASSAULT_NEAR_CHANCE = 0.35F;
+    private static final float SUPER_BOOST_ASSAULT_NORMAL_CHANCE = 0.70F;
+    private static final float SUPER_BOOST_ASSAULT_FAR_CHANCE = 0.95F;
+    /** Chance to use the ranged rush when both melee and ranged weapons are equipped. */
+    private static final float SUPER_BOOST_RANGED_ASSAULT_CHANCE_WITH_MELEE = 0.20F;
 
     private int verticalStuckTick;
     private int lostSightTicks;
     private int recoveredSightTicks;
     private boolean recoveryVerticalAscending;
+    private static final int WALL_DETOUR_TICKS = 80;
+    private static final int WALL_CLIMB_MAX_TICKS = 100;
+    private int wallClimbRetryTick;
+    private int wallClimbStartTick = -1;
     private boolean recoveryForcedBoost;
     private boolean lineOfSightRecovery;
     private boolean cachedCombatLineOfSight = true;
     private int nextLineOfSightCheckTick;
     private int nextRecoveryEvaluationTick;
     private int nextRecoveryProgressCheckTick;
+    private int lineOfSightRecoveryStartTick = -1;
+    private int lineOfSightRecoveryCooldownUntilTick;
     private UUID lineOfSightTargetId;
     private Vec3 recoveryWaypoint;
     private Vec3 recoveryDirection;
     private Vec3 recoveryProgressPosition;
     private Vec3 smoothedTargetVelocity = Vec3.ZERO;
+    private Vec3 localDetourDirection;
+    private int nextLocalDetourTick;
+    private int localDetourUntilTick;
+    private int detourSide = 1;
+    private int nextSuperBoostAssaultTick;
 
     private final LivingEntity pilot;
     private final Pmvc01Entity mech;
@@ -231,13 +256,14 @@ public class MechAutoController {
             applyCombatRun(currentInput);
             applyActiveHoverBoost(currentInput);
             applyFrequentHoverEvasion(currentInput);
+            applyLocalMovementSafety(currentInput);
             mech.setDriverInput(currentInput);
             prevInput = currentInput;
             return;
         }
 
         if (mode != SystemMode.COMBAT && applyActionRangeReturn(currentInput)) {
-            curMovePattern = null;
+            clearCurrentMovePattern();
         } else if (commandedRegroup) {
             tickCommandedRegroup(currentInput);
         } else {
@@ -254,6 +280,7 @@ public class MechAutoController {
         applyFrequentHoverEvasion(currentInput);
 
         // 終了処理
+        applyLocalMovementSafety(currentInput);
         mech.setDriverInput(currentInput);
         prevInput = currentInput;
     }
@@ -377,7 +404,7 @@ public class MechAutoController {
 
         Vec3 localDirection = worldDirection
                 .normalize()
-                .yRot((float) Math.toRadians(mech.getYRot()));
+                .yRot((float) Math.toRadians(pilot.getYRot()));
         float strafe = (float) localDirection.x;
         float forward = (float) localDirection.z;
 
@@ -669,7 +696,7 @@ public class MechAutoController {
             followingMissionObjective = true;
             target = null;
             mode = SystemMode.IDLE;
-            curMovePattern = null;
+            clearCurrentMovePattern();
             mech.getLockTargets().lockTargetSoft(null);
             moveGuardianTowardObjective(input);
             return true;
@@ -679,7 +706,7 @@ public class MechAutoController {
                 || target instanceof Pmvc01Entity targetMech && targetMech.isBroken())) {
             target = null;
             mode = SystemMode.IDLE;
-            curMovePattern = null;
+            clearCurrentMovePattern();
             mech.getLockTargets().lockTargetSoft(null);
         }
 
@@ -831,6 +858,15 @@ public class MechAutoController {
         }
 
         if (target != null) {
+            if (this.mode != SystemMode.COMBAT || this.target != target) {
+                // Do not carry the arena's pre-battle IdlePattern (100 ticks)
+                // into combat: attacks already run while that pattern is idle.
+                clearCurrentMovePattern();
+                resetLineOfSightRecovery();
+                localDetourDirection = null;
+                localDetourUntilTick = 0;
+                nextLocalDetourTick = mech.tickCount;
+            }
             this.target = target;
             this.mode = SystemMode.COMBAT;
         }
@@ -839,7 +875,7 @@ public class MechAutoController {
     public void commandRegroup() {
         target = null;
         mode = SystemMode.IDLE;
-        curMovePattern = null;
+        clearCurrentMovePattern();
         commandedRegroup = true;
         commandedRegroupTicks = -1;
         mech.getLockTargets().clearLockTargets();
@@ -852,13 +888,13 @@ public class MechAutoController {
         commandedRegroupTicks = -1;
         target = commandedTarget;
         mode = SystemMode.COMBAT;
-        curMovePattern = null;
+        clearCurrentMovePattern();
     }
 
     private void tickCommandedRegroup(DriverInput input) {
         Player master = findWingmanMaster();
         if (master == null) {
-            curMovePattern = null;
+            clearCurrentMovePattern();
             stopBoosting();
             return;
         }
@@ -879,7 +915,7 @@ public class MechAutoController {
         if (--commandedRegroupTicks <= 0) {
             commandedRegroup = false;
             commandedRegroupTicks = -1;
-            curMovePattern = null;
+            clearCurrentMovePattern();
         }
     }
 
@@ -951,24 +987,32 @@ public class MechAutoController {
 
         Vec3 actionRangeHome = getActionRangeHomeWhenOutside();
         if (actionRangeHome != null) {
-            curMovePattern = null;
+            clearCurrentMovePattern();
             updateRotation(target);
             setMovementToward(actionRangeHome, input);
             updateWeapons(input);
             return;
         }
 
-        updateRotation(target);
+        if (curMovePattern == null || !curMovePattern.controlsAim()) {
+            updateRotation(target);
+        }
 
-        if (tickLineOfSightRecovery(input)) {
+        // The assault owns its pursuit vector from wind-up through impact.
+        // Generic recovery used to discard it around the normal combat-range
+        // boundary immediately after Super Boost activated.
+        boolean superBoostAssaultActive =
+                curMovePattern instanceof MovePattern.SuperBoostAssaultPattern;
+
+        if (!superBoostAssaultActive && tickLineOfSightRecovery(input)) {
             if (cachedCombatLineOfSight) {
                 updateWeapons(input);
             }
             return;
         }
 
-        if (isBeyondTargetReturnDistance()) {
-            curMovePattern = null;
+        if (!superBoostAssaultActive && isBeyondTargetReturnDistance()) {
+            clearCurrentMovePattern();
             setMovementToward(target.position(), input);
             if (cachedCombatLineOfSight) updateWeapons(input);
             return;
@@ -1015,8 +1059,11 @@ public class MechAutoController {
 
         if (!lineOfSightRecovery) {
             if (lostSightTicks < LOS_RECOVERY_TRIGGER_TICKS) return false;
+            if (mech.tickCount < lineOfSightRecoveryCooldownUntilTick) return false;
             lineOfSightRecovery = true;
-            curMovePattern = null;
+            lineOfSightRecoveryStartTick = mech.tickCount;
+            wallClimbRetryTick = mech.tickCount + WALL_DETOUR_TICKS;
+            clearCurrentMovePattern();
             recoveryWaypoint = null;
             recoveryProgressPosition = mech.position();
             nextRecoveryEvaluationTick = mech.tickCount;
@@ -1024,20 +1071,31 @@ public class MechAutoController {
         } else if (recoveredSightTicks >= LOS_RECOVERED_STABLE_TICKS) {
             resetLineOfSightRecovery();
             return false;
+        } else if (lineOfSightRecoveryStartTick >= 0
+                && mech.tickCount - lineOfSightRecoveryStartTick >= LOS_RECOVERY_MAX_TICKS) {
+            // Recovery must never monopolize combat indefinitely. Return to the
+            // normal movement table for a while so it can try a genuinely
+            // different approach. Weapons still require a real line of sight.
+            resetLineOfSightRecovery();
+            cachedCombatLineOfSight = false;
+            lineOfSightTargetId = target.getUUID();
+            nextLineOfSightCheckTick = mech.tickCount;
+            lineOfSightRecoveryCooldownUntilTick =
+                    mech.tickCount + LOS_RECOVERY_RETRY_COOLDOWN_TICKS;
+            return false;
         }
 
         if (mech.tickCount >= nextRecoveryProgressCheckTick) {
             if (recoveryProgressPosition != null
                     && mech.position().distanceToSqr(recoveryProgressPosition) < LOS_RECOVERY_STUCK_DISTANCE_SQR) {
                 recoveryWaypoint = null;
-                nextRecoveryEvaluationTick = mech.tickCount;
                 // Do not undo the previous movement and bounce between two
                 // points. Turn sideways to search around the obstacle instead.
                 if (recoveryDirection != null) {
                     recoveryDirection = new Vec3(
                             -recoveryDirection.z, 0.0D, recoveryDirection.x).normalize();
                 }
-                input.setEvasionPressed(true);
+                input.setEvasionPressed(false);
             }
             recoveryProgressPosition = mech.position();
             nextRecoveryProgressCheckTick = mech.tickCount + LOS_RECOVERY_STUCK_CHECK_TICKS;
@@ -1045,10 +1103,41 @@ public class MechAutoController {
 
         Vec3 predictedTarget = predictedTargetAimPoint();
         double signedHeightDifference = predictedTarget.y - mech.getEyeY();
-        boolean ceilingBlocked = signedHeightDifference > 8.0D && !hasVerticalClearance(mech.position());
+        boolean overheadClear = hasVerticalClearance(mech.position());
+        boolean ceilingBlocked = !overheadClear;
 
-        if (mech.tickCount >= nextRecoveryEvaluationTick || recoveryWaypoint == null
-                || !isShortRoutePassable(recoveryWaypoint)) {
+        if (wallClimbStartTick >= 0) {
+            if (!overheadClear || mech.tickCount - wallClimbStartTick >= WALL_CLIMB_MAX_TICKS
+                    || !updateRecoveryVerticalBoost(true)) {
+                wallClimbStartTick = -1;
+                recoveryVerticalAscending = false;
+                wallClimbRetryTick = mech.tickCount + WALL_DETOUR_TICKS;
+                recoveryWaypoint = null;
+            } else {
+                // Climb in place until the full body can move past the wall.
+                // Continue boosting while crossing its lip, even with a level target.
+                Vec3 across = predictedTarget.subtract(mech.position()).multiply(1, 0, 1).normalize();
+                clearHorizontalMovement(input);
+                if (across.lengthSqr() > 0.001D
+                        && isShortRoutePassable(mech.position().add(across.scale(4)))) {
+                    setMovementToward(mech.position().add(across.scale(4)), input);
+                }
+                input.setJumpPressed(true);
+                input.setEvasionPressed(false);
+                return true;
+            }
+        }
+        if (mech.tickCount >= wallClimbRetryTick && overheadClear
+                && !mech.getBooster().isEmpty() && !cachedCombatLineOfSight
+                && updateRecoveryVerticalBoost(true)) {
+            wallClimbStartTick = mech.tickCount;
+            clearHorizontalMovement(input);
+            input.setJumpPressed(true);
+            input.setEvasionPressed(false);
+            return true;
+        }
+
+        if (mech.tickCount >= nextRecoveryEvaluationTick) {
             recoveryWaypoint = chooseLineOfSightRecoveryWaypoint(predictedTarget, ceilingBlocked);
             nextRecoveryEvaluationTick = mech.tickCount
                     + LOS_RECOVERY_REEVALUATE_MIN_TICKS
@@ -1070,7 +1159,7 @@ public class MechAutoController {
                 nextRecoveryProgressCheckTick = mech.tickCount + LOS_RECOVERY_STUCK_CHECK_TICKS;
             }
         } else {
-            setMovementToward(predictedTarget, input);
+            clearHorizontalMovement(input);
         }
 
         boolean movingHorizontally = input.isForwardPressed() || input.isBackPressed()
@@ -1169,11 +1258,22 @@ public class MechAutoController {
 
     private boolean isShortRoutePassable(Vec3 destination) {
         Vec3 delta = destination.subtract(mech.position());
-        AABB box = mech.getBoundingBox();
-        for (int i = 1; i <= 3; i++) {
-            double fraction = i / 3.0D;
-            if (!mech.level().noCollision(mech,
-                    box.move(delta.x * fraction, 0.0D, delta.z * fraction))) return false;
+        AABB box = mech.getBoundingBox().deflate(0.01D);
+        int steps = Math.max(1, (int) Math.ceil(delta.horizontalDistance() / 0.75D));
+        double stepHeight = mech.onGround() ? mech.maxUpStep() : 0.0D;
+        double raised = 0.0D;
+        for (int i = 1; i <= steps; i++) {
+            double fraction = i / (double) steps;
+            AABB candidate = box.move(delta.x * fraction, raised, delta.z * fraction);
+            if (!mech.level().noCollision(mech, candidate)) {
+                // Match the entity's physical step allowance instead of treating
+                // the lip around an elevator as an impassable wall.
+                if (raised > 0.0D || stepHeight <= 0.0D
+                        || !mech.level().noCollision(mech, box.expandTowards(0, stepHeight, 0))
+                        || !mech.level().noCollision(mech,
+                        box.move(delta.x * fraction, stepHeight, delta.z * fraction))) return false;
+                raised = stepHeight;
+            }
         }
         return true;
     }
@@ -1182,14 +1282,80 @@ public class MechAutoController {
         Vec3 horizontalOffset = new Vec3(position.x - mech.getX(), 0.0D, position.z - mech.getZ());
         AABB box = mech.getBoundingBox().move(horizontalOffset);
         double probeHeight = Math.max(8.0D, mech.getBbHeight() * 1.5D);
-        for (int i = 1; i <= 3; i++) {
-            if (!mech.level().noCollision(
-                    mech, box.move(0.0D, probeHeight * i / 3.0D, 0.0D))) return false;
+        return mech.level().noCollision(mech,
+                box.deflate(0.01D).expandTowards(0.0D, probeHeight, 0.0D));
+    }
+
+    private void clearHorizontalMovement(DriverInput input) {
+        pilot.xxa = 0;
+        pilot.zza = 0;
+        input.setForwardPressed(false);
+        input.setBackPressed(false);
+        input.setLeftPressed(false);
+        input.setRightPressed(false);
+    }
+
+    /** Final safety pass shared by combat, regrouping, escort and returning home. */
+    private void applyLocalMovementSafety(DriverInput input) {
+        if (input.isJumpPressed() && !hasVerticalClearance(mech.position())) {
+            input.setJumpPressed(false);
+            recoveryVerticalAscending = false;
         }
-        return true;
+        Vec3 requested = new Vec3(pilot.xxa, 0, pilot.zza)
+                .yRot((float) Math.toRadians(-pilot.getYRot()));
+        if (requested.horizontalDistanceSqr() < 0.0001D) return;
+        requested = requested.normalize();
+        double lookAhead = Mth.clamp(mech.getDeltaMovement().horizontalDistance() * 4 + 2, 2, 8);
+        boolean blocked = !isShortRoutePassable(mech.position().add(requested.scale(lookAhead)));
+        boolean detourPassable = localDetourDirection != null
+                && isShortRoutePassable(mech.position().add(localDetourDirection.scale(lookAhead)));
+        if (!blocked && (!detourPassable || mech.tickCount >= localDetourUntilTick)) {
+            localDetourDirection = null;
+            localDetourUntilTick = 0;
+            nextLocalDetourTick = mech.tickCount;
+            return;
+        }
+        // Hold the chosen side in world space even when the combat target moves.
+        if (mech.tickCount >= nextLocalDetourTick) {
+            nextLocalDetourTick = mech.tickCount + 20 + random.nextInt(21);
+            Vec3 basis = localDetourDirection == null ? requested : localDetourDirection;
+            Vec3 selected = null;
+            for (int angle : new int[]{0, 45, 90, 135, 180, -45, -90, -135}) {
+                Vec3 direction = basis.yRot((float) Math.toRadians(angle * detourSide));
+                if (isShortRoutePassable(mech.position().add(direction.scale(lookAhead)))) {
+                    selected = direction;
+                    break;
+                }
+            }
+            localDetourDirection = selected;
+            // Re-evaluation must not continually postpone returning to the
+            // requested direction. Otherwise a backward detour can last forever.
+            if (mech.tickCount >= localDetourUntilTick) {
+                localDetourUntilTick = mech.tickCount + 40;
+            }
+            if (selected == null) detourSide = -detourSide;
+        }
+        clearHorizontalMovement(input);
+        input.setEvasionPressed(false);
+        if (localDetourDirection != null
+                && isShortRoutePassable(mech.position().add(localDetourDirection.scale(lookAhead)))) {
+            Vec3 local = localDetourDirection.yRot((float) Math.toRadians(pilot.getYRot()));
+            pilot.xxa = (float) local.x;
+            pilot.zza = (float) local.z;
+            input.setLeftPressed(local.x > 0.1D);
+            input.setRightPressed(local.x < -0.1D);
+            input.setForwardPressed(local.z > 0.1D);
+            input.setBackPressed(local.z < -0.1D);
+        } else {
+            stopBoosting();
+        }
     }
 
     private void resetLineOfSightRecovery() {
+        wallClimbStartTick = -1;
+        wallClimbRetryTick = 0;
+        lineOfSightRecoveryStartTick = -1;
+        lineOfSightRecoveryCooldownUntilTick = 0;
         lostSightTicks = 0;
         recoveredSightTicks = 0;
         recoveryVerticalAscending = false;
@@ -1219,7 +1385,7 @@ public class MechAutoController {
         target = findCombatTarget();
 
         if (target == null) {
-            curMovePattern = null;
+            clearCurrentMovePattern();
             mech.getLockTargets()
                     .lockTargetSoft(null);
             mode = SystemMode.IDLE;
@@ -1333,6 +1499,13 @@ public class MechAutoController {
             state.burstTick--;
             trigger.accept(true);
 
+            // Cooldown begins when the burst ends, not when it starts. The
+            // old start-based timestamp elapsed during a 3-5 second machine
+            // gun burst and caused the next burst to begin immediately.
+            if (state.burstTick == 0) {
+                state.lastFireTick = gameTime;
+            }
+
             return;
         }
 
@@ -1375,6 +1548,7 @@ public class MechAutoController {
 
     private void updateMovePatternModeCombat() {
         if (curMovePattern == null || curMovePattern.shouldExit()) {
+            if (curMovePattern != null) curMovePattern.stop();
             pilot.xxa = 0;
             pilot.zza = 0;
 
@@ -1395,6 +1569,11 @@ public class MechAutoController {
     }
 
     private MovePattern chooseMovePattern() {
+        MovePattern superBoostAssault = tryChooseSuperBoostAssault();
+        if (superBoostAssault != null) {
+            return superBoostAssault;
+        }
+
         if (verticalStuckTick >= VERTICAL_STUCK_TRIGGER) {
 
             verticalStuckTick = 0;
@@ -1434,6 +1613,90 @@ public class MechAutoController {
                 fallback.patternClass();
 
         return fallback.factory().get();
+    }
+
+    private MovePattern tryChooseSuperBoostAssault() {
+        if (target == null) {
+            return null;
+        }
+
+        if (!hasSuperBoostUnit()) {
+            return null;
+        }
+        if (mech.tickCount < SUPER_BOOST_ASSAULT_INITIAL_DELAY_TICKS) {
+            return null;
+        }
+        if (mech.tickCount < nextSuperBoostAssaultTick) {
+            return null;
+        }
+        if (mech.getMaxEnergy() <= 0) {
+            return null;
+        }
+        if (mech.getEnergy() < mech.getMaxEnergy() * SUPER_BOOST_ASSAULT_MIN_ENERGY_RATIO) {
+            return null;
+        }
+
+        double targetDistance = mech.distanceTo(target);
+        float selectionChance = targetDistance > SUPER_BOOST_ASSAULT_FAR_DISTANCE
+                ? SUPER_BOOST_ASSAULT_FAR_CHANCE
+                : targetDistance < SUPER_BOOST_ASSAULT_NEAR_DISTANCE
+                ? SUPER_BOOST_ASSAULT_NEAR_CHANCE
+                : SUPER_BOOST_ASSAULT_NORMAL_CHANCE;
+        float selectionRoll = random.nextFloat();
+        if (selectionRoll >= selectionChance) {
+            return null;
+        }
+
+        boolean hasMelee = hasWeaponCategory(BasePartsItem.WeaponCategory.MELEE);
+        boolean hasRanged = hasRangedWeapon();
+        if (!hasMelee && !hasRanged) return null;
+
+        // Mixed builds normally perform the melee assault, but sometimes use
+        // the high-speed ranged full burst instead. Melee-only builds never
+        // select it because they would have no weapon to fire.
+        boolean meleeAssault = hasMelee;
+        if (hasMelee && hasRanged
+                && random.nextFloat() < SUPER_BOOST_RANGED_ASSAULT_CHANCE_WITH_MELEE) {
+            meleeAssault = false;
+        }
+
+        nextSuperBoostAssaultTick = mech.tickCount
+                + SUPER_BOOST_ASSAULT_COOLDOWN_MIN_TICKS
+                + random.nextInt(SUPER_BOOST_ASSAULT_COOLDOWN_VARIANCE_TICKS + 1);
+        return new MovePattern.SuperBoostAssaultPattern(
+                pilot, mech, this, preferredCombatDistance, meleeAssault);
+    }
+
+    private boolean hasSuperBoostUnit() {
+        return mech.getExtension1Weapon().getItem() instanceof SBUnitProtoTypeItem
+                || mech.getExtension2Weapon().getItem() instanceof SBUnitProtoTypeItem;
+    }
+
+    private boolean hasRangedWeapon() {
+        return hasAnyWeaponExcept(BasePartsItem.WeaponCategory.MELEE);
+    }
+
+    private boolean hasWeaponCategory(BasePartsItem.WeaponCategory category) {
+        for (ItemStack stack : equippedWeapons()) {
+            if (stack.getItem() instanceof BasePartsItem.Weapon weapon
+                    && weapon.getWeaponCategory() == category) return true;
+        }
+        return false;
+    }
+
+    private boolean hasAnyWeaponExcept(BasePartsItem.WeaponCategory category) {
+        for (ItemStack stack : equippedWeapons()) {
+            if (stack.getItem() instanceof BasePartsItem.Weapon weapon
+                    && weapon.getWeaponCategory() != category) return true;
+        }
+        return false;
+    }
+
+    private ItemStack[] equippedWeapons() {
+        return new ItemStack[]{
+                mech.getRightArmWeapon(), mech.getLeftArmWeapon(),
+                mech.getRightShoulderWeapon(), mech.getLeftShoulderWeapon()
+        };
     }
 
     private int getWeight(
@@ -1522,7 +1785,7 @@ public class MechAutoController {
             if (target == expiredTarget) {
                 target = missionObjective != null && missionObjective.isAlive() ? missionObjective : null;
                 mode = target == null ? SystemMode.IDLE : SystemMode.COMBAT;
-                curMovePattern = null;
+                clearCurrentMovePattern();
             }
         }
     }
@@ -1550,7 +1813,14 @@ public class MechAutoController {
         retaliationUntilTick = mech.tickCount + RETALIATION_MEMORY_TICKS;
         target = attacker;
         mode = SystemMode.COMBAT;
-        curMovePattern = null;
+        clearCurrentMovePattern();
+    }
+
+    private void clearCurrentMovePattern() {
+        if (curMovePattern != null) {
+            curMovePattern.stop();
+            curMovePattern = null;
+        }
     }
 
     void stopBoosting() {

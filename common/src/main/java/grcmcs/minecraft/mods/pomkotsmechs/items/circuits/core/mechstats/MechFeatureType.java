@@ -14,7 +14,13 @@ public enum MechFeatureType {
     /**
      * 壁蹴り / 壁ジャンプ / 壁張り付きなど。
      */
-    WALL_KICK;
+    WALL_KICK,
+
+    /** Allows an arm weapon to be carried in each shoulder slot and swapped in combat. */
+    ARM_WEAPON_RACK,
+
+    /** Demo feature: prevents Super Boost from consuming energy. */
+    SUPER_BOOST_ENERGY_FREE;
 
     public static MechFeatureType byName(
             String name,

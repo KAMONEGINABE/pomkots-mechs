@@ -17,6 +17,9 @@ import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 
 public class TakaoItem extends BasePartsItem.WeaponArm {
+    private static final ShoulderStowTransform SHOULDER_STOW_TRANSFORM =
+            new ShoulderStowTransform(0.0D, 0.0D, 10.0D, 90.0F, 180.0F, 0.0F);
+
     public TakaoItem(Properties properties) {
         super(properties);
     }
@@ -99,6 +102,11 @@ public class TakaoItem extends BasePartsItem.WeaponArm {
     @Override
     public WeaponAttachPoint getWeaponAttachPoint() {
         return WeaponAttachPoint.ATTACH_POINT_HAND;
+    }
+
+    @Override
+    public ShoulderStowTransform getShoulderStowTransform(AttachSide side) {
+        return SHOULDER_STOW_TRANSFORM;
     }
 
     @Override

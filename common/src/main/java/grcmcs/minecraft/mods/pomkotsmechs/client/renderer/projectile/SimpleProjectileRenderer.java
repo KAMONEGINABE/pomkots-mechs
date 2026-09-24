@@ -20,6 +20,7 @@ public class SimpleProjectileRenderer<T extends Entity> extends EntityRenderer<T
     private final EntityModel<T> model;
     private final ResourceLocation texture;
     private final float scale;
+    private final float lengthScale;
     private final boolean followsRotation;
     private final boolean usesVelocityYaw;
 
@@ -28,7 +29,7 @@ public class SimpleProjectileRenderer<T extends Entity> extends EntityRenderer<T
                                        ResourceLocation texture,
                                        float scale,
                                        boolean followsRotation) {
-        this(context, model, texture, scale, followsRotation, false);
+        this(context, model, texture, scale, 1.0F, followsRotation, false);
     }
 
     protected SimpleProjectileRenderer(EntityRendererProvider.Context context,
@@ -37,10 +38,21 @@ public class SimpleProjectileRenderer<T extends Entity> extends EntityRenderer<T
                                        float scale,
                                        boolean followsRotation,
                                        boolean usesVelocityYaw) {
+        this(context, model, texture, scale, 1.0F, followsRotation, usesVelocityYaw);
+    }
+
+    protected SimpleProjectileRenderer(EntityRendererProvider.Context context,
+                                       EntityModel<T> model,
+                                       ResourceLocation texture,
+                                       float scale,
+                                       float lengthScale,
+                                       boolean followsRotation,
+                                       boolean usesVelocityYaw) {
         super(context);
         this.model = model;
         this.texture = texture;
         this.scale = scale;
+        this.lengthScale = lengthScale;
         this.followsRotation = followsRotation;
         this.usesVelocityYaw = usesVelocityYaw;
         this.shadowRadius = 0.0F;
@@ -48,9 +60,8 @@ public class SimpleProjectileRenderer<T extends Entity> extends EntityRenderer<T
 
     @Override
     public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack,
-                       MultiBufferSource buffers, int packedLight) {
+        MultiBufferSource buffers, int packedLight) {
         poseStack.pushPose();
-        poseStack.scale(scale, scale, scale);
         if (followsRotation) {
             Vec3 velocity = entity.getDeltaMovement();
             double horizontal = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
@@ -63,6 +74,8 @@ public class SimpleProjectileRenderer<T extends Entity> extends EntityRenderer<T
             poseStack.mulPose(Axis.YP.rotationDegrees(yaw));
             poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
         }
+        // Apply the longitudinal scale in model-local space after aiming.
+        poseStack.scale(scale, scale, scale * lengthScale);
 
         model.setupAnim(entity, 0.0F, 0.0F, entity.tickCount + partialTick, 0.0F, 0.0F);
         VertexConsumer buffer = buffers.getBuffer(RenderType.entityCutoutNoCull(texture));

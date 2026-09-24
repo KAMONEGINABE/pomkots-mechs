@@ -91,9 +91,17 @@ public abstract class PomkotsCustomThrowableProjectile extends PomkotsThrowableP
             // entity locally between position packets. LevelRenderer then interpolates
             // old -> current position with partialTick instead of displaying a projectile
             // that waits at each synchronized position.
-            Vec3 movement = usesClientLinearPrediction()
-                    ? getPredictionVelocity()
-                    : this.getDeltaMovement();
+            Vec3 movement = this.getDeltaMovement();
+            if (usesClientLinearPrediction()) {
+                Vec3 prediction = getPredictionVelocity();
+                // Forge may tick the freshly spawned entity before its synced
+                // prediction data arrives. Until then, retain the velocity from
+                // the vanilla spawn packet instead of leaving the projectile
+                // hidden at its shooter's muzzle.
+                if (prediction.lengthSqr() > 1.0E-10D) {
+                    movement = prediction;
+                }
+            }
             if (movement.lengthSqr() > 1.0E-10D) {
                 this.setDeltaMovement(movement);
                 this.setPos(this.position().add(movement));
@@ -159,7 +167,8 @@ public abstract class PomkotsCustomThrowableProjectile extends PomkotsThrowableP
     @Override
     public void lerpTo(double x, double y, double z, float yRot, float xRot,
                        int lerpSteps, boolean teleport) {
-        if (this.level().isClientSide && this.tickCount > 0 && usesClientLinearPrediction()) {
+        if (this.level().isClientSide && this.tickCount > 0 && usesClientLinearPrediction()
+                && getPredictionVelocity().lengthSqr() > 1.0E-10D) {
             // Do not let delayed position packets fight the client-side visual prediction.
             // Server-authoritative impact and removal packets are still handled normally.
             this.setYRot(yRot);

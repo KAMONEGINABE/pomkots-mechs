@@ -37,6 +37,10 @@ public class Pmvc01EntityModel extends GeoModel<Pmvc01Entity> {
 
     private void applyArmAimPitch(Pmvc01Entity animatable, int inventorySlot,
                                   String boneName) {
+        // FLIGHT rotates the entire mech to its aiming pitch. Applying the
+        // per-weapon correction as well would rotate the arm a second time and
+        // fight the flight-pose animation authored in Blockbench.
+        if (animatable.isFlightMode()) return;
         float pitch = -animatable.getVisualWeaponAimPitch(inventorySlot) * Mth.DEG_TO_RAD;
         applyAimPitch(boneName, pitch,
                 animatable.isWeaponSlotInAction(inventorySlot)
@@ -45,6 +49,10 @@ public class Pmvc01EntityModel extends GeoModel<Pmvc01Entity> {
 
     private void applyShoulderAimPitch(Pmvc01Entity animatable, int inventorySlot,
                                        String hangerBoneName, String weaponBoneName) {
+        // In FLIGHT mode the full model already follows the firing pitch and
+        // the shoulder stow angle is restored by the flight animation itself.
+        // Do not add the normal-mode shoulder calibration/aim pitch on top.
+        if (animatable.isFlightMode()) return;
         if (!animatable.isWeaponSlotInAction(inventorySlot)) return;
         if (!animatable.isWeaponSlotShoulderPitchAimingEnabled(inventorySlot)) return;
         float pitch = -animatable.getVisualWeaponAimPitch(inventorySlot) * Mth.DEG_TO_RAD;

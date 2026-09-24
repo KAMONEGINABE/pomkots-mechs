@@ -8,6 +8,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 public class BulletRifleEntityRenderer extends SimpleProjectileRenderer<BulletRifleEntity> {
     public BulletRifleEntityRenderer(EntityRendererProvider.Context context) {
         super(context, new SimpleProjectileModel<>(SimpleProjectileModel.rifleLayer().bakeRoot()),
-                PomkotsMechs.id("textures/entity/projectile/bulletrifle.png"), 1.2F, true, true);
+                PomkotsMechs.id("textures/entity/projectile/bulletrifle.png"),
+                1.2F, 1.5F, true, true);
     }
 }

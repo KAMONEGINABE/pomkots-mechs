@@ -8,6 +8,7 @@ import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import grcmcs.minecraft.mods.pomkotsmechs.client.gui.ScreenFadeManager;
 import grcmcs.minecraft.mods.pomkotsmechs.client.input.TargetLocker;
 import grcmcs.minecraft.mods.pomkotsmechs.client.misc.ClientHudShake;
+import grcmcs.minecraft.mods.pomkotsmechs.client.misc.FlightSpeedEffects;
 import grcmcs.minecraft.mods.pomkotsmechs.client.renderer.parts.BasePartsItemRenderer;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.PomkotsCustomThrowableProjectile;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.PomkotsVehicleBase;
@@ -100,6 +101,10 @@ public class PomkotsHud implements ClientGuiEvent.RenderHud {
             } else if (!isActive) {
                 return;
             }
+
+            FlightSpeedEffects.render(guiGraphics,
+                    pl.getVehicle() instanceof Pmvc01Entity flightMech ? flightMech : null,
+                    tickDelta);
 
             if (pl.getVehicle() instanceof PomkotsVehicleBase mech) {
                 if (prevTick != pl.tickCount) {
@@ -427,8 +432,7 @@ public class PomkotsHud implements ClientGuiEvent.RenderHud {
         int blockWidth = 2;
         int blockHeight = 8;
 
-        float ctLerp = Mth.lerp(tickDelta, prevCT, curCT);
-        int cooldownHeight = (int) (blockHeight * (((float)maxCT - ctLerp) / (float)maxCT));
+        int cooldownHeight = getCooldownHeight(prevCT, curCT, maxCT, blockHeight, tickDelta);
 
         guiGraphics.fill(x, y, x + blockWidth, y + blockHeight, BG_COLOR);
         guiGraphics.fill(x, y + blockHeight - cooldownHeight, x + blockWidth, y + blockHeight, FG_COLOR);
@@ -616,11 +620,24 @@ public class PomkotsHud implements ClientGuiEvent.RenderHud {
         int blockWidth = 2;
         int blockHeight = 12;
 
-        float ctLerp = Mth.lerp(tickDelta, prevCT, curCT);
-        int cooldownHeight = (int) (blockHeight * (((float)maxCT - ctLerp) / (float)maxCT));
+        int cooldownHeight = getCooldownHeight(prevCT, curCT, maxCT, blockHeight, tickDelta);
 
         guiGraphics.fill(x, y, x + blockWidth, y + blockHeight, BG_COLOR);
         guiGraphics.fill(x, y + blockHeight - cooldownHeight, x + blockWidth, y + blockHeight, FG_COLOR2);
+    }
+
+    private int getCooldownHeight(int prevCT, int curCT, int maxCT, int blockHeight, float tickDelta) {
+        if (maxCT <= 0) {
+            return blockHeight;
+        }
+
+        // A weapon swap can change maxCT between two rendered frames. Clamp the
+        // previous weapon's cooldown before interpolating against the new one.
+        float clampedPrevious = Mth.clamp((float) prevCT, 0.0F, (float) maxCT);
+        float clampedCurrent = Mth.clamp((float) curCT, 0.0F, (float) maxCT);
+        float ctLerp = Mth.lerp(tickDelta, clampedPrevious, clampedCurrent);
+        float readyRatio = Mth.clamp(((float) maxCT - ctLerp) / (float) maxCT, 0.0F, 1.0F);
+        return Mth.clamp((int) (blockHeight * readyRatio), 0, blockHeight);
     }
 
     private void renderBulletNum(Pmvc01Entity.AmmoManager amm, int x, int y, GuiGraphics guiGraphics) {

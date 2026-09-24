@@ -146,10 +146,12 @@ public class TargetLocker {
     }
 
     public Entity getCrossHairTarget() {
-        var list = getEntitiesAroundPlayer(minecraft.player, 150);
+        double maxDistance = TargetFinder.getLockDistance(minecraft.player);
+        var list = getEntitiesAroundPlayer(minecraft.player, maxDistance);
 
         for (var ent: list) {
-            if (isInLockonTraceRange(ent, COSINE_THRESHOLD2)
+            if (ent.distanceToSqr(minecraft.player) <= maxDistance * maxDistance
+                    && isInLockonTraceRange(ent, COSINE_THRESHOLD2)
                     && minecraft.player.hasLineOfSight(ent)) {
                 return ent;
             }

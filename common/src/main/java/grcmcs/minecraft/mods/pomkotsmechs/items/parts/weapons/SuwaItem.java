@@ -87,7 +87,7 @@ public class SuwaItem extends BasePartsItem.WeaponShoulder {
 
     @Override
     public void startUsing(ActionWeapon.WeaponMechInterface context) {
-        if (!context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
+        if (context.useWeaponMotion() && !context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
             triggerAnim(context.getPlayer(), GeoItem.getOrAssignId(context.getItemStack(), (ServerLevel) context.getWorld()), "Activation", "use");
         }
     }
@@ -144,6 +144,16 @@ public class SuwaItem extends BasePartsItem.WeaponShoulder {
     @Override
     public int getCoolTime() {
         return 20;
+    }
+
+    @Override
+    public FlightRenderTransform getFlightRenderTransform(AttachSide side) {
+        return new FlightRenderTransform(0.0D, 0.0D, 0.0D, 50.0F, 0.0F, 0.0F);
+    }
+
+    @Override
+    public boolean useMechMotionInFlight() {
+        return false;
     }
 
     @Override

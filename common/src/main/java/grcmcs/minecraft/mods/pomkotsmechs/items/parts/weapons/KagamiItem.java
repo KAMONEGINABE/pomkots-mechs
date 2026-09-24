@@ -14,6 +14,9 @@ import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 
 public class KagamiItem extends BasePartsItem.WeaponArm {
+    private static final ShoulderStowTransform SHOULDER_STOW_TRANSFORM =
+            new ShoulderStowTransform(0.0D, 0.0D, 30.0D, 45.0F, 0.0F, 0.0F);
+
     @Override public boolean usesArmPitchAiming() { return true; }
     public KagamiItem(Properties properties) {
         super(properties);
@@ -83,6 +86,11 @@ public class KagamiItem extends BasePartsItem.WeaponArm {
     @Override
     public WeaponAttachPoint getWeaponAttachPoint() {
         return WeaponAttachPoint.ATTACH_POINT_HAND;
+    }
+
+    @Override
+    public ShoulderStowTransform getShoulderStowTransform(AttachSide side) {
+        return SHOULDER_STOW_TRANSFORM;
     }
 
     @Override

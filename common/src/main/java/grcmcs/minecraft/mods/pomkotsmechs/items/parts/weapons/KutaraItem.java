@@ -220,6 +220,7 @@ public class KutaraItem extends BasePartsItem.WeaponShoulder {
     }
 
     private void triggerItemAnimation(ActionWeapon.WeaponMechInterface mech, String animation) {
+        if (!"idle".equals(animation) && !mech.useWeaponMotion()) return;
         if (!(mech.getWorld() instanceof ServerLevel serverLevel) || mech.getPlayer() == null) return;
         triggerAnim(mech.getPlayer(), GeoItem.getOrAssignId(mech.getItemStack(), serverLevel),
                 "Activation", animation);

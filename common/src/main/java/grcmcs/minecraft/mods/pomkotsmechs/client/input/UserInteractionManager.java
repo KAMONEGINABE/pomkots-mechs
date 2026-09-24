@@ -68,6 +68,7 @@ public class UserInteractionManager {
 
     private final TargetLocker targetLocker = TargetLocker.getInstance();
     private short prevDriverInput = 0;
+    private byte prevFlightEvasionDirection = 0;
     private final float[] lastSentAimPitch = {
             Float.NaN, Float.NaN, Float.NaN, Float.NaN
     };
@@ -143,9 +144,19 @@ public class UserInteractionManager {
                         keyPressStatus |= Keys.EVASION.getKeyID();
                     }
 
-                    if (this.prevDriverInput != keyPressStatus) {
-                        sendDriverInput2Server(keyPressStatus);
+                    byte flightEvasionDirection = 0;
+                    if (client.player.getVehicle() instanceof Pmvc01Entity mech
+                            && mech.isFlightMode()
+                            && (keyPressStatus & Keys.EVASION.getKeyID()) != 0) {
+                        flightEvasionDirection = selectFlightEvasionDirection(
+                                keyPressStatus, client.player.input.forwardImpulse,
+                                client.player.input.leftImpulse, prevFlightEvasionDirection);
+                    }
+                    if (this.prevDriverInput != keyPressStatus
+                            || this.prevFlightEvasionDirection != flightEvasionDirection) {
+                        sendDriverInput2Server(keyPressStatus, flightEvasionDirection);
                         this.prevDriverInput = keyPressStatus;
+                        this.prevFlightEvasionDirection = flightEvasionDirection;
                     }
 
                     if (client.player.getVehicle() instanceof PomkotsVehicle bot) {
@@ -157,15 +168,35 @@ public class UserInteractionManager {
                     }
                 } else {
                     targetLocker.clearLockTargets();
+                    prevDriverInput = 0;
+                    prevFlightEvasionDirection = 0;
                     Arrays.fill(lastSentAimPitch, Float.NaN);
                 }
             }
         });
     }
 
-    private void sendDriverInput2Server(short keyPressStatus) {
+    private static byte selectFlightEvasionDirection(short keys, float forward, float left, byte previous) {
+        int vertical = (keys & Keys.FORWARD.getKeyID()) != 0 ? 2
+                : (keys & Keys.BACK.getKeyID()) != 0 ? -2 : 0;
+        int horizontal = (keys & Keys.LEFT.getKeyID()) != 0 ? -1
+                : (keys & Keys.RIGHT.getKeyID()) != 0 ? 1 : 0;
+        if (vertical == 0) return (byte)(horizontal == 0 ? 3 : horizontal);
+        if (horizontal == 0) return (byte)vertical;
+
+        // Analog sticks often report both directions. Require a meaningful
+        // difference before switching axes so small stick noise cannot flip a dodge.
+        float difference = Math.abs(forward) - Math.abs(left);
+        if (difference > 0.12F) return (byte)vertical;
+        if (difference < -0.12F) return (byte)horizontal;
+        if (previous == vertical || previous == horizontal) return previous;
+        return (byte)vertical;
+    }
+
+    private void sendDriverInput2Server(short keyPressStatus, byte flightEvasionDirection) {
         FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
         buf.writeShort(keyPressStatus);
+        buf.writeByte(flightEvasionDirection);
         NetworkManager.sendToServer(PomkotsMechs.id(PomkotsMechs.PACKET_DRIVER_INPUT), buf);
 
     }

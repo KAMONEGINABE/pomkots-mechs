@@ -1,14 +1,10 @@
 package grcmcs.minecraft.mods.pomkotsmechs.entity.monster.turret;
 
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
-import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.GenericPomkotsMonster;
-import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.carrier.goal.NearestEntityTargetGoal;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.turret.goal.ContinuousAttackGoal;
-import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.MissileGenericLargeEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.MissileGenericEntity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -22,6 +18,12 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class Pmt04Entity extends BaseTurretEntity {
     private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
     public static final float DEFAULT_SCALE = 1.0f;
+    private static final int MISSILES_PER_BURST = 6;
+    private static final int SLOTS_PER_ROW = 3;
+    private static final int MISSILE_INTERVAL_TICKS = 3;
+    /** Match PMB02's fast, aggressive missile tuning. */
+    private static final float MISSILE_SPEED_MULTIPLIER = 2.25F;
+    private static final float MISSILE_TURN_RATE_DEG = 7.0F;
 
     @Override
     public String getMechName() {
@@ -35,7 +37,9 @@ public class Pmt04Entity extends BaseTurretEntity {
 
     protected void registerTargetSelectorGoals() {
         super.registerTargetSelectorGoals();
-        this.goalSelector.addGoal(1, new ContinuousAttackGoal(this, 0.8F, 21, 60, 20));
+        // The goal decrements before firing: remaining ticks 18, 15, 12, 9, 6, 3.
+        this.goalSelector.addGoal(1, new ContinuousAttackGoal(this, 0.8F,
+                MISSILES_PER_BURST * MISSILE_INTERVAL_TICKS + 1, 60, MISSILE_INTERVAL_TICKS));
     }
 
     private int curSlot = 0;
@@ -52,21 +56,23 @@ public class Pmt04Entity extends BaseTurretEntity {
     public void doAttack() {
         var target = this.getTarget();
         if (target != null) {
+            float missileSpeed = getMechData().missileSpeed * MISSILE_SPEED_MULTIPLIER;
 
             var offset = this.position();
 
-            // オフセット位置から大体の銃口の座標を決める（モデル位置からとるとクラサバ同期がめんどい…）
-            float slotX = curSlot % 6 * - 1 + 3;
-            curSlot++;
+            int slot = curSlot++ % MISSILES_PER_BURST;
+            float slotX = 1 + slot % SLOTS_PER_ROW;
+            float slotZ = 1 + slot / SLOTS_PER_ROW;
 
-            var muzzlPos = new Vec3(slotX, 2, 0);
+            var muzzlPos = new Vec3(slotX, 2, slotZ);
             muzzlPos = muzzlPos.yRot((float) Math.toRadians((-1.0) * this.getYRot()));
 
-            MissileGenericLargeEntity be = new MissileGenericLargeEntity(PomkotsMechs.MISSILE_GENERIC_LARGE.get(), this.level(), this, target,
-                    getMechData().missileDamage, getMechData().missileSpeed);
+            MissileGenericEntity be = new MissileGenericEntity(PomkotsMechs.MISSILE_GENERIC.get(), this.level(), this, target,
+                    getMechData().missileDamage, missileSpeed);
+            be.setMaxRotationAnglePerTick(MISSILE_TURN_RATE_DEG);
             be.setPos(offset.add(muzzlPos));
 
-            be.shootFromRotation(be, -90, this.getYRot(), this.getFallFlyingTicks(), getMechData().missileSpeed, 0F);
+            be.shootFromRotation(be, -90, this.getYRot(), this.getFallFlyingTicks(), missileSpeed, 0F);
 
             this.level().addFreshEntity(be);
         }

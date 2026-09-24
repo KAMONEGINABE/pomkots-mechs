@@ -428,6 +428,9 @@
   "mech_feature.pomkotsmechs.target_assist_soft": "Target Assist(Weak)",
   "mech_feature.pomkotsmechs.target_assist_hard": "Target Assist(Strong)",
   "mech_feature.pomkotsmechs.wall_kick": "Wall Kick",
+  "mech_feature.pomkotsmechs.arm_weapon_rack": "Arm Weapon Rack",
+  "mech_feature.pomkotsmechs.super_boost_energy_free": "Free Super Boost Energy (Demo)",
+  "circuit_skill.pomkotsmechs.arm_weapon_rack": "Arm Weapon Rack",
   "mission.pomkotsmechs.presentation.complete.title": "MISSION COMPLETE",
   "mission.pomkotsmechs.presentation.failed.title": "MISSION FAILED",
   "mission.pomkotsmechs.presentation.update.title": "MISSION UPDATE",
@@ -531,4 +534,7 @@
 , "radio.pomkotsmechs.sample.welcome": "External radio definitions are working correctly."
 , "block.pomkotsmechs.elevator_controller": "Elevator Controller"
 , "block.pomkotsmechs.gate_horizontal_controller": "Horizontal Gate Controller"
+, "item.pomkotsmechs.flightunit": "Flight Unit (Extension)"
+, "message.pomkotsmechs.flight.requires_airborne": "Flight mode requires sufficient airborne speed"
+, "message.pomkotsmechs.flight.weapon_blocked": "This weapon cannot be used in flight mode"
 }

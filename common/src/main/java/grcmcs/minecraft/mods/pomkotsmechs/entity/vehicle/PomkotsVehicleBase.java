@@ -125,7 +125,8 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
                     }
                     driverInput = new DriverInput(b, prevDriverInput);
                 } else if (driverInput != null){
-                    driverInput = new DriverInput(driverInput.getStatus(), prevDriverInput);
+                    driverInput = new DriverInput(driverInput.getStatus(),
+                            driverInput.getFlightEvasionDirection(), prevDriverInput);
                 }
 
                 if (driverInput != null) {

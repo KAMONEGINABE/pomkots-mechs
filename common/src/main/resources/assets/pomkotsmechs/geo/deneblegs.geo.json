@@ -16,8 +16,13 @@
 					"pivot": [0, 0, 0]
 				},
 				{
-					"name": "hips",
+					"name": "roll",
 					"parent": "root",
+					"pivot": [0, 53, 0]
+				},
+				{
+					"name": "hips",
+					"parent": "roll",
 					"pivot": [0, 31.5, -3]
 				},
 				{

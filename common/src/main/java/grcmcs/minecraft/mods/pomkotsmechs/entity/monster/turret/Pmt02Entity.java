@@ -24,6 +24,9 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class Pmt02Entity extends BaseTurretEntity {
     private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
     public static final float DEFAULT_SCALE = 1.0f;
+    /** Match PMB02's fast, aggressive missile tuning. */
+    private static final float MISSILE_SPEED_MULTIPLIER = 2.25F;
+    private static final float MISSILE_TURN_RATE_DEG = 2.0F;
 
     @Override
     public String getMechName() {
@@ -62,8 +65,10 @@ public class Pmt02Entity extends BaseTurretEntity {
     public void doAttack() {
         var target = this.getTarget();
         if (target != null) {
+            float missileSpeed = getMechData().missileSpeed * MISSILE_SPEED_MULTIPLIER;
             MissileGenericEnemyEntity be = new MissileGenericEnemyEntity(PomkotsMechs.MISSILE_GENERIC.get(), this.level(), this, target,
-                    getMechData().missileDamage, getMechData().missileSpeed * 2);
+                    getMechData().missileDamage, missileSpeed);
+            be.setMaxRotationAnglePerTick(MISSILE_TURN_RATE_DEG);
 
             var offset = this.position();
 
@@ -80,7 +85,7 @@ public class Pmt02Entity extends BaseTurretEntity {
             if (!Utils.isObstructed(this.level(), be, target)) {
                 float[] angle = Utils.getShootingAngle(be, target, true);
 
-                be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), getMechData().missileSpeed, 0F);
+                be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), missileSpeed, 0F);
 
                 this.level().addFreshEntity(be);
             }

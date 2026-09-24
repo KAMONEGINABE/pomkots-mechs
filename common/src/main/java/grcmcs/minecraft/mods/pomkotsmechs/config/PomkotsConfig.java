@@ -24,6 +24,9 @@ public class PomkotsConfig implements ConfigData {
     public boolean targetLockPomkotsVehicles = true;
 
     @ConfigEntry.Gui.Excluded
+    public String flightControlType = "SUPER_BOOST_STYLE";
+
+    @ConfigEntry.Gui.Excluded
     public int missionMaxForcedChunksPerInstance = 1024;
     @ConfigEntry.Gui.Excluded
     public int missionMaxForcedChunksTotal = 2048;

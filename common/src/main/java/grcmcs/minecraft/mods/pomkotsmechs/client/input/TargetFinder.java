@@ -6,6 +6,7 @@ import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.boss.BossHitBoxEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.npc.pilot.PilotDisposition;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.PlateEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.PomkotsVehicleBase;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
@@ -23,7 +24,8 @@ import java.util.Comparator;
 import java.util.List;
 
 public class TargetFinder {
-    private final double maxDistance;
+    public static final double NORMAL_LOCK_DISTANCE = 150.0D;
+    public static final double FLIGHT_LOCK_DISTANCE = 300.0D;
     private final double viewAngle;
     private final float viewAngleCosineThreshold;;
     private final TargetPriority targetPriority;
@@ -32,15 +34,15 @@ public class TargetFinder {
     private Minecraft minecraft = Minecraft.getInstance();
 
     TargetFinder() {
-        maxDistance = 150;
         viewAngle = 10;
         viewAngleCosineThreshold = Mth.cos((float)Math.toRadians(viewAngle));
         targetPriority = new TargetPriority(1D, 1D, 2D);
     }
 
     public LivingEntity findTargetEntity(Player player) {
+        double maxDistance = getLockDistance(player);
         Camera cam = minecraft.gameRenderer.getMainCamera();
-        List<LivingEntity> candidates = getEntitiesInViewDirection(cam, player);
+        List<LivingEntity> candidates = getEntitiesInViewDirection(cam, player, maxDistance);
         Vec3 cameraPos = cam.getPosition();
         Vec3 lookDirection = new Vec3(cam.getLookVector()).normalize();
         List<ScoredCandidate> rankedCandidates = new ArrayList<>(candidates.size());
@@ -58,7 +60,7 @@ public class TargetFinder {
             }
             rankedCandidates.add(new ScoredCandidate(
                     candidate,
-                    targetPriority.calculatePriority(player, candidate)));
+                    targetPriority.calculatePriority(player, candidate, maxDistance)));
         }
 
         rankedCandidates.sort(Comparator.comparingDouble(ScoredCandidate::priority).reversed());
@@ -66,14 +68,19 @@ public class TargetFinder {
         // The highest-priority visible target still wins, but normally only
         // one ray cast is needed. Occluded candidates fall through in order.
         for (ScoredCandidate candidate : rankedCandidates) {
-            if (hasLineOfSight(player, candidate.entity())) {
+            if (hasLineOfSight(player, candidate.entity(), maxDistance)) {
                 return candidate.entity();
             }
         }
         return null;
     }
 
-    private List<LivingEntity> getEntitiesInViewDirection(Camera cam, Player player) {
+    public static double getLockDistance(Player player) {
+        return player != null && player.getVehicle() instanceof Pmvc01Entity mech && mech.isFlightMode()
+                ? FLIGHT_LOCK_DISTANCE : NORMAL_LOCK_DISTANCE;
+    }
+
+    private List<LivingEntity> getEntitiesInViewDirection(Camera cam, Player player, double maxDistance) {
         Level level = player.level();
 
         Vec3 eyePos = cam.getPosition();
@@ -83,7 +90,8 @@ public class TargetFinder {
         AABB roughBox = createDirectionalAABB(eyePos, lookDirection, maxDistance, searchWidth);
 
         return level.getEntitiesOfClass(LivingEntity.class, roughBox, entity -> {
-            return entity != player && !isSelf(entity, player) && isTargetClass(entity);
+            return entity != player && entity.distanceToSqr(eyePos) <= maxDistance * maxDistance
+                    && !isSelf(entity, player) && isTargetClass(entity);
         });
     }
 
@@ -97,7 +105,7 @@ public class TargetFinder {
                 || (PomkotsMechs.CONFIG.targetLockNonPomkotsMobs && entity != null);
     }
 
-    private boolean hasLineOfSight(Entity src, Entity candidate) {
+    private boolean hasLineOfSight(Entity src, Entity candidate, double maxDistance) {
         if (candidate.level() != src.level()) {
             return false;
         } else {

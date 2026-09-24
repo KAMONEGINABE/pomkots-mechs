@@ -1,10 +1,12 @@
 package grcmcs.minecraft.mods.pomkotsmechs.mixin;
 
+import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import grcmcs.minecraft.mods.pomkotsmechs.client.renderer.Pmv03EntityRenderer;
 import grcmcs.minecraft.mods.pomkotsmechs.client.misc.ClientScreenShake;
 import grcmcs.minecraft.mods.pomkotsmechs.client.misc.ClientCutsceneCamera;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.Pmv03Entity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.flight.FlightControlType;
 import grcmcs.minecraft.mods.pomkotsmechs.cutscene.CutsceneCameraEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.misc.arena.core.ArenaCameraEntity;
 import net.minecraft.client.Camera;
@@ -18,6 +20,8 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 @Mixin(value = Camera.class, priority = 100)
 public abstract class CameraMixin {
@@ -63,6 +67,10 @@ public abstract class CameraMixin {
             // プレイヤーが巨大ロボに乗っているかを判定
             if (player.getVehicle() instanceof Pmvc01Entity pmg && !thirdPerson) {
                 Vec3 bonePos = pmg.getMainCameraPosition();
+                if (pmg.isFlightMode() && pomkotsmechs$usesFreeFlightCamera()) {
+					bonePos = grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.flight.FlightOrientation
+							.rotate(pmg.getFlightOrientation(), bonePos);
+				}
 
                 // カメラ位置をボーン位置に設定
                 setPosition(pmg.getPosition(partialTick).add(bonePos));
@@ -72,6 +80,19 @@ public abstract class CameraMixin {
 
                 // カメラ位置をボーン位置に設定
                 setPosition(pmg.getPosition(partialTick).add(bonePos));
+            }
+
+            if (player.getVehicle() instanceof Pmvc01Entity pmg && pmg.isFlightMode()
+                    && pomkotsmechs$usesFreeFlightCamera()) {
+				if (thirdPerson) {
+					Quaternionf orientation = pmg.getFlightOrientation();
+					Vec3 forward = grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.flight.FlightOrientation.forward(orientation);
+					Vec3 up = grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.flight.FlightOrientation.up(orientation);
+					double sign = inverse ? 1.0D : -1.0D;
+					setPosition(pmg.getPosition(partialTick)
+							.add(up.scale(4.0D)).add(forward.scale(14.0D * sign)));
+				}
+                pomkotsmechs$applyFlightRotation(camera, pmg.getFlightOrientation());
             }
             ClientCutsceneCamera.rememberRenderedRotation(
                     camera.getYRot(), camera.getXRot());
@@ -87,6 +108,22 @@ public abstract class CameraMixin {
                     camera.getYRot() + shake.yaw(),
                     camera.getXRot() + shake.pitch());
         }
+    }
+
+    private static void pomkotsmechs$applyFlightRotation(Camera camera, Quaternionf orientation) {
+        CameraAccessor accessor = (CameraAccessor)camera;
+        Quaternionf cameraRotation = accessor.pomkotsmechs$getRotation();
+        cameraRotation.set(orientation).normalize();
+        accessor.pomkotsmechs$getForwards().set(0.0F, 0.0F, 1.0F).rotate(cameraRotation);
+        accessor.pomkotsmechs$getUp().set(0.0F, 1.0F, 0.0F).rotate(cameraRotation);
+        accessor.pomkotsmechs$getLeft().set(1.0F, 0.0F, 0.0F).rotate(cameraRotation);
+        accessor.setYRot(grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.flight.FlightOrientation.yawDegrees(cameraRotation));
+        accessor.setXRot(grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.flight.FlightOrientation.pitchDegrees(cameraRotation));
+    }
+
+    private static boolean pomkotsmechs$usesFreeFlightCamera() {
+        return FlightControlType.fromName(PomkotsMechs.CONFIG.flightControlType)
+                == FlightControlType.SIMPLE_FLIGHT_SIM;
     }
 
     private static void pomkotsmechs$lookAt(Camera camera, Vec3 target) {

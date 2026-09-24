@@ -90,7 +90,7 @@ public class TsurugiItem extends BasePartsItem.WeaponArm {
 
     @Override
     public void startUsing(ActionWeapon.WeaponMechInterface mechInterface) {
-        if (!mechInterface.getWorld().isClientSide && mechInterface.getPlayer() != null && mechInterface.getItemStack() != null) {
+        if (mechInterface.useWeaponMotion() && !mechInterface.getWorld().isClientSide && mechInterface.getPlayer() != null && mechInterface.getItemStack() != null) {
             triggerAnim(mechInterface.getPlayer(), GeoItem.getOrAssignId(mechInterface.getItemStack(), (ServerLevel) mechInterface.getWorld()), "Activation", "use");
         }
     }

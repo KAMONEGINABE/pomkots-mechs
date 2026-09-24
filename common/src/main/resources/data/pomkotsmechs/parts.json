@@ -1170,6 +1170,15 @@
         {"pomkotsmechs:blue_print_glider_unit": 1, "pomkotsmechs:p_titanium_ingot": 16, "minecraft:iron_ingot": 16, "minecraft:coal": 16, "minecraft:redstone": 16, "pomkotsmechs:materials/heavy_mech_booster_debris": 8, "pomkotsmechs:materials/heavy_mech_circuit_board": 8}
       ]
     },
+    "flightunit": {
+      "type": "extension",
+      "description": "Flight Unit",
+      "weight": 0,
+      "level_param": [
+        {}
+      ],
+      "recipes": []
+    },
     "magazinerifle": {
       "type": "magazine",
       "description": "Magazine for Rifle",

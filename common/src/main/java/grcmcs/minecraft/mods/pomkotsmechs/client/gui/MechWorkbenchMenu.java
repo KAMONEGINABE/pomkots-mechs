@@ -8,6 +8,10 @@ import grcmcs.minecraft.mods.pomkotsmechs.items.circuits.CircuitItem;
 import grcmcs.minecraft.mods.pomkotsmechs.items.circuits.CircuitItemStackHelper;
 import grcmcs.minecraft.mods.pomkotsmechs.items.circuits.core.CircuitPrefix;
 import grcmcs.minecraft.mods.pomkotsmechs.items.parts.BasePartsItem;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.extension.BuilderUnitItem;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.extension.FlightUnitItem;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.extension.GliderUnitItem;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.extension.HoverUnitItem;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -39,6 +43,7 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
     private ShortDataSlot textureColor = new ShortDataSlot();
     private ShortDataSlot menuMode = new ShortDataSlot();
     private final DataSlot inventoryRevision = DataSlot.standalone();
+    private final DataSlot armWeaponRackEnabled = DataSlot.standalone();
 
     private MechWorkbenchBlockEntity accessor = null;
     private boolean openedFromDatapad = false;
@@ -62,6 +67,7 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
         this.openedFromDatapad = openedFromDataPad;
 
         this.addDataSlot(inventoryRevision);
+        this.addDataSlot(armWeaponRackEnabled);
 
         int offsetX = 136; // 左寄せ調整（通常44→8）
         int offsetY = 210; // ⚠️ GUIを下にずらす (4行分)
@@ -74,10 +80,16 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
         addSlotInternal(5, offsetX, offsetY, mechInventory, item->item instanceof BasePartsItem.Booster, mode, false);
         addSlotInternal(6, offsetX, offsetY, mechInventory, item->item instanceof BasePartsItem.WeaponArm, mode, false);
         addSlotInternal(7, offsetX, offsetY, mechInventory, item->item instanceof BasePartsItem.WeaponArm, mode, false);
-        addSlotInternal(8, offsetX, offsetY, mechInventory, item->item instanceof BasePartsItem.WeaponShoulder, mode, false);
-        addSlotInternal(9, offsetX, offsetY, mechInventory, item->item instanceof BasePartsItem.WeaponShoulder, mode, false);
-        addSlotInternal(10, offsetX, offsetY, mechInventory, item->item instanceof BasePartsItem.Extension, mode, false);
-        addSlotInternal(11, offsetX, offsetY, mechInventory, item->item instanceof BasePartsItem.Extension, mode, false);
+        addSlotInternal(8, offsetX, offsetY, mechInventory, item -> item instanceof BasePartsItem.WeaponShoulder
+                || (isArmWeaponRackEnabled() && item instanceof BasePartsItem.WeaponArm), mode, false);
+        addSlotInternal(9, offsetX, offsetY, mechInventory, item -> item instanceof BasePartsItem.WeaponShoulder
+                || (isArmWeaponRackEnabled() && item instanceof BasePartsItem.WeaponArm), mode, false);
+        addSlotInternal(10, offsetX, offsetY, mechInventory,
+                item -> item instanceof BasePartsItem.Extension
+                        && areExtensionUnitsCompatible(item, mechInventory.getItem(11).getItem()), mode, false);
+        addSlotInternal(11, offsetX, offsetY, mechInventory,
+                item -> item instanceof BasePartsItem.Extension
+                        && areExtensionUnitsCompatible(item, mechInventory.getItem(10).getItem()), mode, false);
 
         int offsetAmmoX;
         int offsetAmmoY;
@@ -155,6 +167,7 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
         }
 
         this.mech = mech;
+        if (mech != null) armWeaponRackEnabled.set(mech.hasArmWeaponRack() ? 1 : 0);
         this.accessor = consoleAccessor;
     }
 
@@ -353,6 +366,16 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
         }
     };
 
+    private static boolean areExtensionUnitsCompatible(Item candidate, Item installed) {
+        boolean candidateFlightFamily = candidate instanceof FlightUnitItem
+                || candidate instanceof HoverUnitItem || candidate instanceof GliderUnitItem
+                || candidate instanceof BuilderUnitItem;
+        boolean installedFlightFamily = installed instanceof FlightUnitItem
+                || installed instanceof HoverUnitItem || installed instanceof GliderUnitItem
+                || installed instanceof BuilderUnitItem;
+        return !candidateFlightFamily || !installedFlightFamily;
+    }
+
     private static class MechCustomSlot extends Slot {
         protected final int mode;
 
@@ -517,6 +540,7 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
 
     @Override
     public void broadcastChanges() {
+        if (mech != null) armWeaponRackEnabled.set(mech.hasArmWeaponRack() ? 1 : 0);
         super.broadcastChanges();
 
         boolean changed = false;
@@ -1019,5 +1043,9 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
 
     public int getInventoryRevision() {
         return inventoryRevision.get();
+    }
+
+    public boolean isArmWeaponRackEnabled() {
+        return armWeaponRackEnabled.get() != 0;
     }
 }

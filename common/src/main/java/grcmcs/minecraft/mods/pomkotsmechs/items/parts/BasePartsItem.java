@@ -481,6 +481,25 @@ public abstract class BasePartsItem extends Item implements GeoItem {
     }
 
     public static interface WeaponInterface {
+        /** Local render offset in Blockbench pixels and rotation in degrees. */
+        record FlightRenderTransform(double offsetX, double offsetY, double offsetZ,
+                                     float rotationX, float rotationY, float rotationZ) {
+            public static final FlightRenderTransform IDENTITY =
+                    new FlightRenderTransform(0.0D, 0.0D, 0.0D, 0.0F, 0.0F, 0.0F);
+        }
+
+        record ShoulderStowTransform(
+                double offsetX,
+                double offsetY,
+                double offsetZ,
+                float rotationX,
+                float rotationY,
+                float rotationZ
+        ) {
+            public static final ShoulderStowTransform DEFAULT =
+                    new ShoulderStowTransform(0.0D, 0.0D, 10.0D, 0.0F, 0.0F, 0.0F);
+        }
+
         public enum WeaponAttachPoint {
             ATTACH_POINT_HAND("hand"),
             ATTACH_POINT_ARM("arm"),
@@ -527,6 +546,34 @@ public abstract class BasePartsItem extends Item implements GeoItem {
         default boolean usesArmPitchAiming() {
             return false;
         }
+
+        /** Whether this weapon can be started while the mech is in FLIGHT mode. */
+        default boolean canUseInFlight() {
+            return true;
+        }
+
+        /** Applied only to this weapon's rendering in FLIGHT mode. */
+        default FlightRenderTransform getFlightRenderTransform(AttachSide side) {
+            return FlightRenderTransform.IDENTITY;
+        }
+
+        /** Whether firing plays the mech's weapon motion in FLIGHT mode. */
+        default boolean useMechMotionInFlight() {
+            return true;
+        }
+
+        /** Whether firing plays the weapon item's own motion in FLIGHT mode. */
+        default boolean useWeaponMotionInFlight() {
+            return true;
+        }
+
+        /**
+         * Additional transform used only while an arm weapon is physically on the shoulder rack.
+         * Offsets use Blockbench pixels and rotations use degrees.
+         */
+        default ShoulderStowTransform getShoulderStowTransform(AttachSide side) {
+            return ShoulderStowTransform.DEFAULT;
+        }
     }
 
     public static abstract class Weapon extends BasePartsItem implements WeaponInterface {
@@ -557,6 +604,11 @@ public abstract class BasePartsItem extends Item implements GeoItem {
 
         public PartsCategory getPartsCategory() {
             return PartsCategory.WEAPON;
+        }
+
+        @Override
+        public boolean canUseInFlight() {
+            return getWeaponCategory() != WeaponCategory.MELEE;
         }
     }
 

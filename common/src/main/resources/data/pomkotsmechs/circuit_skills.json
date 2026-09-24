@@ -15,6 +15,34 @@
       ]
     },
     {
+      "id": "pomkotsmechs:arm_weapon_rack",
+      "display_name": "Arm Weapon Rack",
+      "category": "utility",
+      "tier": 2,
+      "minimum_rarity": "rare",
+      "weight": 30,
+      "effects": [
+        {
+          "feature": "arm_weapon_rack",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "pomkotsmechs:super_boost_energy_free_demo",
+      "display_name": "Infinite Super Boost (Demo)",
+      "category": "utility",
+      "tier": 3,
+      "minimum_rarity": "epic",
+      "weight": 1,
+      "effects": [
+        {
+          "feature": "super_boost_energy_free",
+          "enabled": true
+        }
+      ]
+    },
+    {
       "id": "pomkotsmechs:rifle_attack_up_1",
       "display_name": "Rifle Attack Up I",
       "category": "offence",

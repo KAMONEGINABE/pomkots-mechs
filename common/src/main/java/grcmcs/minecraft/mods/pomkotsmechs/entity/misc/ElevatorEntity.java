@@ -104,7 +104,12 @@ public class ElevatorEntity extends LivingEntity implements GeoEntity, GeoAnimat
     public void tick() {
         setNoGravity(true);
 
+        // Platform motion is controlled by moveVelocity. LivingEntity travel
+        // must not integrate knockback or other residual velocity as well.
+        setDeltaMovement(Vec3.ZERO);
+
         super.tick();
+        setDeltaMovement(Vec3.ZERO);
 
         lockYaw();
 

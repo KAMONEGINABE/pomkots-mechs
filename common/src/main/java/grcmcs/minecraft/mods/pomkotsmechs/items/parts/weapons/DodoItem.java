@@ -81,7 +81,7 @@ public class DodoItem extends BasePartsItem.WeaponShoulder{
 
     @Override
     public void startUsing(ActionWeapon.WeaponMechInterface context) {
-        if (!context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
+        if (context.useWeaponMotion() && !context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
             triggerAnim(context.getPlayer(), GeoItem.getOrAssignId(context.getItemStack(), (ServerLevel) context.getWorld()), "Activation", "use");
         }
     }
@@ -114,6 +114,11 @@ public class DodoItem extends BasePartsItem.WeaponShoulder{
     @Override
     public Motion getMotion() {
         return Motion.LARGE_MISSILE;
+    }
+    
+    @Override
+    public boolean useMechMotionInFlight() {
+        return false;
     }
 
     @Override

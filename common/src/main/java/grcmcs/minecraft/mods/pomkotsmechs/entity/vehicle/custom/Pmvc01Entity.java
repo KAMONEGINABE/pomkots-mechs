@@ -18,9 +18,14 @@ import grcmcs.minecraft.mods.pomkotsmechs.entity.npc.pilot.MechPilotEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.ExplosionEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.PomkotsVehicleBase;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.rail.*;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.flight.FlightMode;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.flight.FlightMovementController;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.flight.FlightOrientation;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.flight.SuperBoostStyleFlightController;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.Action;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.ActionController;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.custom.ActionWeapon;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.custom.ArmWeaponSwapAction;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.custom.Motion;
 import grcmcs.minecraft.mods.pomkotsmechs.items.RepairKitItem;
 import grcmcs.minecraft.mods.pomkotsmechs.items.pilot.PilotRoleItem;
@@ -90,6 +95,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
+import org.joml.Matrix4f;
+import org.joml.Vector4f;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -110,6 +118,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     private static final double PARTICLE_QUARTER_DISTANCE_SQR = 200.0D * 200.0D;
     private static final double GROUND_PARTICLE_DENSITY = 0.7D;
     private static final double WINGMAN_COMMAND_RANGE = 150.0D;
+    private static final int FLIGHT_TRANSFORM_APPLY_TICK = 5;
+    private static final int FLIGHT_TRANSFORM_TOTAL_TICKS = 10;
+    /** NORMAL -> FLIGHT skips the procedural somersault at or above this speed (blocks/tick). */
+    public static double FLIGHT_TRANSFORM_NO_FLIP_SPEED = 4.5D;
     public static final float DEFAULT_SCALE = 1f;
     public static final int CONTAINER_SIZE = 82;
     public static final int CONTAINER_GENERAL_ITEM_START_INDEX = 27;
@@ -126,12 +138,47 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     private int fuel = 0;
     private int inAirTicks = 0;
+    /**
+     * Keeps the client-side landing edge alive long enough for GeckoLib's
+     * render controller to observe it after the entity tick has completed.
+     */
+    private int clientLandingAnimationTicks = 0;
     private float prevHealth = 0;
     private int damageSoundCooldown = 0;
+    /** Hover mode that was active immediately before starting Super Boost. */
+    private boolean restoreHoveringAfterSuperBoost = false;
+    /** Server-only lifetime flag for the finite NPC assault move. */
+    private boolean npcSuperBoostAssaultActive = false;
+    private double flightCruiseSpeed = FlightMovementController.MAX_CRUISE_SPEED;
+    private static final double FLIGHT_SUPER_BOOST_SPEED_MULTIPLIER = 2.0D;
+    private static final int FLIGHT_SUPER_BOOST_WINDUP_TICKS = 14;
+    private static final int FLIGHT_SUPER_BOOST_ENERGY_SYNC_INTERVAL_TICKS = 5;
+    private int flightSuperBoostWindupTicks;
+    private boolean clientFlightSuperBoostChargingPrevious;
+    private float clientFlightTurnBank;
+    private float clientFlightTurnBankO;
+    private boolean clientFlightTransitionServerActive;
+    private boolean clientFlightTransitionVisualActive;
+    private int clientFlightTransitionVisualTick;
+    private int clientFlightTransitionVisualTickO;
+    private FlightMode clientFlightTransitionFrom = FlightMode.NORMAL;
+    private FlightMode clientFlightTransitionTo = FlightMode.NORMAL;
+    private Vec3 clientSeatRenderedBoneOffset = Vec3.ZERO;
+    private float clientSeatRenderedYaw;
+    private float clientSeatRenderedPitch;
+    private float clientSeatRenderedFlip;
+    private float clientSeatRenderedRoll;
+    private boolean hasClientSeatRenderedBoneOffset;
     private final float[] clientWeaponAimPitch = new float[4];
     private final float[] clientWeaponAimPitchO = new float[4];
     private MechAutoController mechAutoController = null;
     private MechStatus modifiedMechStatus = new MechStatus();
+
+    // Temporary diagnostics for the intermittent player-controlled movement hitch.
+    // Ten ticks matches the reported hitch cadence without flooding the log every tick.
+    private static final boolean MOVEMENT_DIAGNOSTICS = true;
+    private static final int MOVEMENT_DIAGNOSTIC_INTERVAL_TICKS = 10;
+    private Vec3 previousMovementDiagnosticPosition;
 
     private BlockPlacementPreviewEntity blockPreviewEntity = null;
 
@@ -156,6 +203,66 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         return boneFinder;
     }
 
+    /**
+     * Stores the seat offset calculated from GeckoLib's completed bone matrices.
+     * The renderer has already applied flight pitch, transition flips and bank
+     * when this value is captured, so it must not be reconstructed here.
+     */
+    public void setClientSeatRenderPosition(Vec3 renderedBoneOffset, float partialTick) {
+        clientSeatRenderedBoneOffset = renderedBoneOffset;
+        clientSeatRenderedYaw = getFlightSeatVisualYaw(partialTick);
+        clientSeatRenderedPitch = getFlightSeatVisualPitch(partialTick);
+        clientSeatRenderedFlip = getFlightVisualPitchFlip(partialTick);
+        clientSeatRenderedRoll = getFlightSeatVisualRoll(partialTick);
+        hasClientSeatRenderedBoneOffset = true;
+        setClientSeatPos(renderedBoneOffset.add(0.0D, -4.2D, 0.0D));
+    }
+
+    public Vec3 getClientSeatPosForRender(Entity passenger, float partialTick) {
+        if (!hasClientSeatRenderedBoneOffset) return getClientSeatPos(passenger);
+
+        Matrix4f sampledRotation = createFlightSeatRotation(
+                clientSeatRenderedYaw, clientSeatRenderedPitch,
+                clientSeatRenderedFlip, clientSeatRenderedRoll);
+        Matrix4f currentRotation = createFlightSeatRotation(
+                getFlightSeatVisualYaw(partialTick), getFlightSeatVisualPitch(partialTick),
+                getFlightVisualPitchFlip(partialTick), getFlightSeatVisualRoll(partialTick));
+
+        // A direction vector is used deliberately. The seat/root subtraction
+        // has already removed entity translation and the procedural roll pivot,
+        // so applying either again would create a lateral offset.
+        Vector4f offset = new Vector4f(
+                (float) clientSeatRenderedBoneOffset.x,
+                (float) clientSeatRenderedBoneOffset.y,
+                (float) clientSeatRenderedBoneOffset.z,
+                0.0F);
+        sampledRotation.invert().transform(offset);
+        currentRotation.transform(offset);
+        return new Vec3(offset.x, offset.y - 4.2D, offset.z);
+    }
+
+    private float getFlightSeatVisualYaw(float partialTick) {
+        return 180.0F - Mth.rotLerp(partialTick, yBodyRotO, yBodyRot);
+    }
+
+    private float getFlightSeatVisualPitch(float partialTick) {
+        return isFlightMode() ? -Mth.lerp(partialTick, xRotO, getXRot()) : 0.0F;
+    }
+
+    private float getFlightSeatVisualRoll(float partialTick) {
+        return isFlightMode()
+                ? getFlightTurnBank(partialTick) + getFlightVisualRoll(partialTick)
+                : 0.0F;
+    }
+
+    private Matrix4f createFlightSeatRotation(float yaw, float pitch,
+                                              float flip, float roll) {
+        return new Matrix4f()
+                .rotateY(yaw * Mth.DEG_TO_RAD)
+                .rotateX((pitch + flip) * Mth.DEG_TO_RAD)
+                .rotateZ(roll * Mth.DEG_TO_RAD);
+    }
+
     public void setupBoneFinder(BakedGeoModel model) {
         boneFinder.setModel(model);
     }
@@ -171,6 +278,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     @Override
     public void tick() {
+        if (this.isClientSide() && clientLandingAnimationTicks > 0) {
+            clientLandingAnimationTicks--;
+        }
+
         if (MissionManager.discardOrphanedMissionEntity(this)) {
             return;
         }
@@ -228,6 +339,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         }
 
         disableMovementModesWhenBroken();
+        tickFlightState();
 
         // @JOKE
         if (!isBroken() && this.actionController.getAction(ACT_GATTAI).isInAction()) {
@@ -255,11 +367,36 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             if (isHovering() && this.isServerSide()) {
                 this.setNoGravity(true);
             }
+
+            if (isFlightUnitMode() && this.tickCount % 2 == 0) {
+                // Normal operation already consumes one fuel unit. Every other
+                // tick adds the extra half required for the 1.5x flight rate.
+                consumeFlightFuelSurcharge();
+            }
         }
 
         this.tickAmmos();
         this.resetAllActionsWhenNotActive();
+
+        // PomkotsVehicleBase updates onGroundPrev at the end of super.tick().
+        // Preserve PMVC01's pre-physics state here so the landing edge is not
+        // lost before GeckoLib evaluates the animation controller.
+        boolean wasGroundedBeforePhysicsTick = this.onGroundPrev;
+        int airborneTicksBeforePhysicsTick = this.inAirTicks;
         super.tick();
+        updateClientFlightTransitionAnimation();
+        updateClientFlightTurnBank();
+        if (isServerSide() && isFlightMode() && hasFlightCollision()) {
+            setDeltaMovement(getDeltaMovement().scale(0.15D));
+            forceNormalFlightMode();
+        }
+        if (this.isClientSide()
+                && !wasGroundedBeforePhysicsTick
+                && this.onGround()
+                && airborneTicksBeforePhysicsTick > 5) {
+            clientLandingAnimationTicks = 2;
+        }
+        syncArmWeaponSwapActions();
         if (isKutaraSustainMovementLocked()) {
             setNoGravity(true);
             setDeltaMovement(Vec3.ZERO);
@@ -309,6 +446,66 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         }
 
         handleElectricStun();
+        // Diagnostic hook for the intermittent movement hitch. Enable only while investigating.
+        // logMovementDiagnostics();
+    }
+
+    private boolean hasFlightCollision() {
+        if (horizontalCollision || verticalCollision) return true;
+        Vec3 velocity = getDeltaMovement();
+        if (velocity.lengthSqr() < 1.0E-5D) return false;
+        Vec3 start = getBoundingBox().getCenter();
+        double lookAhead = Math.max(2.0D, velocity.length() + getBbWidth() * 0.35D);
+        Vec3 end = start.add(velocity.normalize().scale(lookAhead));
+        BlockHitResult hit = level().clip(new ClipContext(
+                start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        return hit.getType() != HitResult.Type.MISS;
+    }
+
+    private void logMovementDiagnostics() {
+        if (!MOVEMENT_DIAGNOSTICS
+                || this.tickCount % MOVEMENT_DIAGNOSTIC_INTERVAL_TICKS != 0
+                || !(this.getDrivingPassenger() instanceof Player player)) {
+            return;
+        }
+
+        Vec3 position = this.position();
+        Vec3 sampledMovement = this.previousMovementDiagnosticPosition == null
+                ? Vec3.ZERO
+                : position.subtract(this.previousMovementDiagnosticPosition);
+        this.previousMovementDiagnosticPosition = position;
+
+        DriverInput input = this.getDriverInput();
+        String inputBits = input == null
+                ? "null"
+                : "0x" + Integer.toHexString(input.getStatus() & 0xffff);
+        Vec3 velocity = this.getDeltaMovement();
+
+        PomkotsMechs.LOGGER.info(
+                "[PMVC01 Movement] side={}, entityId={}, tick={}, player={}, xxa={}, zza={}, input={}, speed={}, "
+                        + "pos=({}, {}, {}), sampleDelta=({}, {}, {}), velocity=({}, {}, {}), "
+                        + "onGround={}, noGravity={}, hovering={}, boost={}, superBoost={}, localControl={}",
+                this.level().isClientSide ? "CLIENT" : "SERVER",
+                this.getId(),
+                this.tickCount,
+                player.getScoreboardName(),
+                diagnosticRound(player.xxa),
+                diagnosticRound(player.zza),
+                inputBits,
+                diagnosticRound(this.getSpeed()),
+                diagnosticRound(position.x), diagnosticRound(position.y), diagnosticRound(position.z),
+                diagnosticRound(sampledMovement.x), diagnosticRound(sampledMovement.y), diagnosticRound(sampledMovement.z),
+                diagnosticRound(velocity.x), diagnosticRound(velocity.y), diagnosticRound(velocity.z),
+                this.onGround(),
+                this.isNoGravity(),
+                this.isHovering(),
+                this.actionController.isBoost(),
+                this.isSuperBoost(),
+                this.isControlledByLocalInstance());
+    }
+
+    private static double diagnosticRound(double value) {
+        return Math.rint(value * 1000.0D) / 1000.0D;
     }
 
     /**
@@ -321,6 +518,9 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         DriverInput driverInput = getDriverInput();
         if (isGattai()) {
             stopSoundEffectWithFade("boost");
+            stopSoundEffectWithFade("dash");
+        } else if (isFlightMode()) {
+            playSoundEffectWithFade("boost", PomkotsMechs.SE_BOOST.get(), 0.7F, 20, 10);
             stopSoundEffectWithFade("dash");
         } else if (isSuperBoost()) {
             playSoundEffectWithFade("boost", PomkotsMechs.SE_BOOST.get(), 0.8F, 20, 10);
@@ -761,10 +961,16 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     }
 
     public void resetExtensionUnitStatus() {
+        // A full extension reset (broken, out of fuel, dismount, etc.) must
+        // disable every mode instead of restoring the pre-Super-Boost mode.
+        restoreHoveringAfterSuperBoost = false;
+        npcSuperBoostAssaultActive = false;
         setHovering(false);
         this.unbindFromRail();
         this.setSuperBoost(false);
+        stopFlightSuperBoost();
         this.setGliding(false);
+        forceNormalFlightMode();
     }
 
     @Override
@@ -820,6 +1026,8 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     protected static final int ACT_RELOAD_LEFT_SHOULDER = 15;
 
     protected static final int ACT_SCAN = 16;
+    protected static final int ACT_SWAP_RIGHT_ARM_WEAPON = 17;
+    protected static final int ACT_SWAP_LEFT_ARM_WEAPON = 18;
 
     // @JOKE
     protected static final int ACT_GATTAI = 99;
@@ -851,6 +1059,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         this.actionController.registerAction(ACT_RELOAD_LEFT_SHOULDER, new Action(21, 10, 5), ActionController.ActionType.BASE);
 
         this.actionController.registerAction(ACT_SCAN, new Action(100, 2, 20), ActionController.ActionType.BASE);
+        this.actionController.registerAction(ACT_SWAP_RIGHT_ARM_WEAPON,
+                new ArmWeaponSwapAction(() -> swapArmAndShoulderWeapons(true)), ActionController.ActionType.BASE);
+        this.actionController.registerAction(ACT_SWAP_LEFT_ARM_WEAPON,
+                new ArmWeaponSwapAction(() -> swapArmAndShoulderWeapons(false)), ActionController.ActionType.BASE);
 
         // @JOKE
         this.actionController.registerAction(ACT_GATTAI, new Action(60, 5, 60), ActionController.ActionType.BASE);
@@ -880,6 +1092,21 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     @Override
     protected void applyPlayerInput(DriverInput driverInput) {
         if (!isBroken()) {
+            if (isFlightTransitioning()) {
+                getUserIntentionForDirectionFromKey(driverInput);
+                return;
+            }
+            if (isFlightUnitMode()) {
+                getUserIntentionForDirectionFromKey(driverInput);
+                this.applyPlayerInputWeapons(driverInput);
+                if (isFlightMode()) {
+                    applyFlightUnitEvasion(driverInput);
+                } else {
+                    this.applyPlayerInputBoost(driverInput);
+                    applyGerwalkEvasion(driverInput);
+                }
+                return;
+            }
             if (isKutaraSustainMovementLocked()) {
                 // Keep facing/aim and weapon inputs, but suppress translation actions.
                 getUserIntentionForDirectionFromKey(driverInput);
@@ -934,29 +1161,46 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                 actionController.getAction(ACT_PLACE_BLOCK).startAction();
             }
         } else {
-            applyPlayerInputWeapon(
+            updateArmWeaponSwapInputLatch(driverInput, true);
+            updateArmWeaponSwapInputLatch(driverInput, false);
+            updateShoulderInputBlockedByArmAction(driverInput, true);
+            updateShoulderInputBlockedByArmAction(driverInput, false);
+
+            boolean startedSwapRight = !suppressRightWeaponInputUntilRelease
+                    && tryStartArmWeaponSwap(driverInput, true);
+            boolean startedSwapLeft = !suppressLeftWeaponInputUntilRelease
+                    && tryStartArmWeaponSwap(driverInput, false);
+            if (startedSwapRight) suppressRightWeaponInputUntilRelease = true;
+            if (startedSwapLeft) suppressLeftWeaponInputUntilRelease = true;
+
+            boolean swappingRight = suppressRightWeaponInputUntilRelease
+                    || actionController.getAction(ACT_SWAP_RIGHT_ARM_WEAPON).isInAction();
+            boolean swappingLeft = suppressLeftWeaponInputUntilRelease
+                    || actionController.getAction(ACT_SWAP_LEFT_ARM_WEAPON).isInAction();
+
+            if (!swappingRight) applyPlayerInputWeapon(
                     (ActionWeapon)this.actionController.getAction(ACT_RIGHT_HAND),
                     (ActionWeapon)this.actionController.getAction(ACT_LEFT_HAND),
                     driverInput, driverInput.isWeaponRightHandPressed(), driverInput.isWeaponRightHandReleased(), getAmmoManager(INV_WEAPON_RIGHT_HAND));
-            applyPlayerInputWeapon(
+            if (!swappingLeft) applyPlayerInputWeapon(
                     (ActionWeapon)this.actionController.getAction(ACT_LEFT_HAND),
                     (ActionWeapon)this.actionController.getAction(ACT_RIGHT_HAND),
                     driverInput, driverInput.isWeaponLeftHandPressed(), driverInput.isWeaponLeftHandReleased(), getAmmoManager(INV_WEAPON_LEFT_HAND));
-            applyPlayerInputWeapon(
+            if (!swappingRight && !suppressRightShoulderInputUntilRelease) applyPlayerInputWeapon(
                     (ActionWeapon)this.actionController.getAction(ACT_RIGHT_SHOULDER),
                     (ActionWeapon)this.actionController.getAction(ACT_LEFT_SHOULDER),
                     driverInput, driverInput.isWeaponRightShoulderPressed(), driverInput.isWeaponRightShoulderReleased(), getAmmoManager(INV_WEAPON_RIGHT_SHOULDER));
-            applyPlayerInputWeapon(
+            if (!swappingLeft && !suppressLeftShoulderInputUntilRelease) applyPlayerInputWeapon(
                     (ActionWeapon)this.actionController.getAction(ACT_LEFT_SHOULDER),
                     (ActionWeapon)this.actionController.getAction(ACT_RIGHT_SHOULDER),
                     driverInput, driverInput.isWeaponLeftShoulderPressed(), driverInput.isWeaponLeftShoulderReleased(), getAmmoManager(INV_WEAPON_LEFT_SHOULDER));
         }
 
         if (driverInput.isExtension1Released()) {
-            applyPlayerInputExtension(getExtension1Weapon());
+            applyPlayerInputExtension(getExtension1Weapon(), driverInput.isReloadPressed());
         }
         if (driverInput.isExtension2Released()) {
-            applyPlayerInputExtension(getExtension2Weapon());
+            applyPlayerInputExtension(getExtension2Weapon(), driverInput.isReloadPressed());
         }
         if (driverInput.isRepairReleased() && !driverInput.isReloadPressed()) {
             repair();
@@ -1037,6 +1281,16 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     protected void applyPlayerInputWeapon(ActionWeapon act, ActionWeapon actLinked, DriverInput driverInput, boolean isPressed, boolean isReleased, AmmoManager ammoManager) {
         //@JOKE
         if (this.getVehicle() != null) {
+            return;
+        }
+
+        if (isFlightMode() && act.getItemStack().getItem() instanceof BasePartsItem.WeaponInterface weapon
+                && !weapon.canUseInFlight()) {
+            if (act.isInAction()) act.reset();
+            if (isPressed && isServerSide() && getDrivingPassenger() instanceof Player player) {
+                player.displayClientMessage(
+                        Component.translatable("message.pomkotsmechs.flight.weapon_blocked"), true);
+            }
             return;
         }
 
@@ -1123,10 +1377,23 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         return !act.getMotion().concurrentAvailable() && act.isInAction();
     }
 
-    protected void applyPlayerInputExtension(ItemStack extensionStack) {
+    protected void applyPlayerInputExtension(ItemStack extensionStack, boolean reloadHeld) {
         if (!extensionStack.isEmpty()) {
             var extensionItem = extensionStack.getItem();
-            if (extensionItem instanceof HoverUnitItem) {
+            if (extensionItem instanceof FlightUnitItem) {
+                if (this.isServerSide()) {
+                    FlightMode current = getFlightMode();
+                    FlightMode target;
+                    if (reloadHeld) {
+                        target = current == FlightMode.FLIGHT
+                                ? FlightMode.GERWALK : FlightMode.FLIGHT;
+                    } else {
+                        target = current == FlightMode.NORMAL
+                                ? FlightMode.FLIGHT : FlightMode.NORMAL;
+                    }
+                    tryStartFlightTransition(target);
+                }
+            } else if (extensionItem instanceof HoverUnitItem) {
                 setHovering(!isHovering());
             } else if (extensionItem instanceof RailSliderItem) {
                 if (this.isBoundToRail()) {
@@ -1135,13 +1402,24 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                     this.actionController.getAction(ACT_BIND_RAIL).startAction();
                 }
             } else if (extensionItem instanceof SBUnitProtoTypeItem) {
-                if (this.isSuperBoost()) {
+                if (isFlightMode()) {
+                    if (isServerSide()) {
+                        if (isFlightSuperBoost() || isFlightSuperBoostCharging()) {
+                            stopFlightSuperBoost();
+                        } else if (!isOverHeat() && getEnergy() > 0) {
+                            flightSuperBoostWindupTicks = FLIGHT_SUPER_BOOST_WINDUP_TICKS;
+                            this.entityData.set(IS_FLIGHT_SUPER_BOOST_CHARGING, true);
+                        }
+                    }
+                } else if (this.isSuperBoost()) {
                     if (this.isServerSide()) {
                         this.setSuperBoost(false);
                         this.actionController.setBoost(true);
                     }
                 } else if (!this.actionController.getAction(ACT_SUPER_BOOST).isInAction() && !this.isGliding()){
-                    setHovering(false);
+                    if (this.isServerSide()) {
+                        restoreHoveringAfterSuperBoost = isHovering();
+                    }
                     this.actionController.getAction(ACT_SUPER_BOOST).startAction();
 
                     if (this.isServerSide()) {
@@ -1239,6 +1517,14 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     }
 
     protected Vec3 getCameraTargetPosition(Entity cameraEntity) {
+        if (isFlightMode()) {
+            Vec3 start = getShootingOffset().add(0.0D, getBbHeight() * 0.65D, 0.0D);
+            Vec3 direction = FlightOrientation.forward(getFlightOrientation()).normalize();
+            Vec3 end = start.add(direction.scale(300.0D));
+            BlockHitResult blockHit = level().clip(new ClipContext(
+                    start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, this));
+            return blockHit.getType() == HitResult.Type.MISS ? end : blockHit.getLocation();
+        }
         if (cameraEntity == null) {
             cameraEntity = this;
         } else if (cameraEntity instanceof ServerPlayer sp) {
@@ -1264,6 +1550,156 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     /** Pitch shared by procedural weapon posing and muzzle-offset rotation. */
     public float getWeaponAimPitch() {
         return getWeaponAimPitch(INV_WEAPON_RIGHT_HAND);
+    }
+
+    private boolean suppressRightWeaponInputUntilRelease;
+    private boolean suppressLeftWeaponInputUntilRelease;
+    private boolean suppressRightShoulderInputUntilRelease;
+    private boolean suppressLeftShoulderInputUntilRelease;
+
+    private void updateArmWeaponSwapInputLatch(DriverInput input, boolean right) {
+        boolean latched = right
+                ? suppressRightWeaponInputUntilRelease
+                : suppressLeftWeaponInputUntilRelease;
+        if (!latched) return;
+
+        boolean handPressed = right
+                ? input.isWeaponRightHandPressed()
+                : input.isWeaponLeftHandPressed();
+        boolean shoulderPressed = right
+                ? input.isWeaponRightShoulderPressed()
+                : input.isWeaponLeftShoulderPressed();
+        if (!handPressed && !shoulderPressed) {
+            if (right) suppressRightWeaponInputUntilRelease = false;
+            else suppressLeftWeaponInputUntilRelease = false;
+        }
+    }
+
+    private void updateShoulderInputBlockedByArmAction(DriverInput input, boolean right) {
+        boolean shoulderPressed = right
+                ? input.isWeaponRightShoulderPressed()
+                : input.isWeaponLeftShoulderPressed();
+        int shoulderSlot = right ? INV_WEAPON_RIGHT_SHOULDER : INV_WEAPON_LEFT_SHOULDER;
+        // Only the arm weapon stored on the shoulder needs this latch. A normal
+        // shoulder weapon must remain usable while the same-side arm is firing.
+        if (!shoulderPressed || !(getItem(shoulderSlot).getItem() instanceof BasePartsItem.WeaponArm)) {
+            if (right) suppressRightShoulderInputUntilRelease = false;
+            else suppressLeftShoulderInputUntilRelease = false;
+            return;
+        }
+
+        boolean armActionActive = actionController.getAction(
+                right ? ACT_RIGHT_HAND : ACT_LEFT_HAND).isInAction();
+        boolean armReloadActive = actionController.getAction(
+                right ? ACT_RELOAD_RIGHT_HAND : ACT_RELOAD_LEFT_HAND).isInAction();
+        if (armActionActive || armReloadActive) {
+            if (right) suppressRightShoulderInputUntilRelease = true;
+            else suppressLeftShoulderInputUntilRelease = true;
+        }
+    }
+
+    private boolean tryStartArmWeaponSwap(DriverInput input, boolean right) {
+        if (!(getDrivingPassenger() instanceof Player)) return false;
+        boolean justPressed = right
+                ? input.isWeaponRightShoulderJustPressed()
+                : input.isWeaponLeftShoulderJustPressed();
+        if (!justPressed || (!hasArmWeaponRack() && !isArmWeaponRackDeployed(right))) return false;
+
+        int handSlot = right ? INV_WEAPON_RIGHT_HAND : INV_WEAPON_LEFT_HAND;
+        int shoulderSlot = right ? INV_WEAPON_RIGHT_SHOULDER : INV_WEAPON_LEFT_SHOULDER;
+        ItemStack source = isArmWeaponRackDeployed(right) ? getItem(handSlot) : getItem(shoulderSlot);
+        if (!(source.getItem() instanceof BasePartsItem.WeaponArm) || !canSwapArmWeapon(right)) return false;
+
+        boolean started = actionController.getAction(right
+                ? ACT_SWAP_RIGHT_ARM_WEAPON : ACT_SWAP_LEFT_ARM_WEAPON).startAction();
+        if (started) {
+            actionController.getAction(right ? ACT_RIGHT_HAND : ACT_LEFT_HAND).reset();
+            actionController.getAction(right ? ACT_RIGHT_SHOULDER : ACT_LEFT_SHOULDER).reset();
+        }
+        return started;
+    }
+
+    private boolean canSwapArmWeapon(boolean right) {
+        int handAction = right ? ACT_RIGHT_HAND : ACT_LEFT_HAND;
+        int shoulderAction = right ? ACT_RIGHT_SHOULDER : ACT_LEFT_SHOULDER;
+        int handReload = right ? ACT_RELOAD_RIGHT_HAND : ACT_RELOAD_LEFT_HAND;
+        int shoulderReload = right ? ACT_RELOAD_RIGHT_SHOULDER : ACT_RELOAD_LEFT_SHOULDER;
+        return !isBroken()
+                && !actionController.getAction(handAction).isInAction()
+                && !actionController.getAction(shoulderAction).isInAction()
+                && !actionController.getAction(handReload).isInAction()
+                && !actionController.getAction(shoulderReload).isInAction();
+    }
+
+    private void swapArmAndShoulderWeapons(boolean right) {
+        if (!isServerSide()) return;
+        int handSlot = right ? INV_WEAPON_RIGHT_HAND : INV_WEAPON_LEFT_HAND;
+        int shoulderSlot = right ? INV_WEAPON_RIGHT_SHOULDER : INV_WEAPON_LEFT_SHOULDER;
+        int handAmmoSlot = right ? INV_AMMO_RA : INV_AMMO_LA;
+        int shoulderAmmoSlot = right ? INV_AMMO_RS : INV_AMMO_LS;
+        ItemStack hand = getItem(handSlot);
+        ItemStack shoulder = getItem(shoulderSlot);
+        ItemStack handAmmo = getItem(handAmmoSlot);
+        ItemStack shoulderAmmo = getItem(shoulderAmmoSlot);
+
+        // AmmoManager instances belong to equipment slots, so move the loaded-weapon
+        // state with the stacks before re-evaluating the destination magazines.
+        getAmmoManager(handSlot).swapWeaponStateWith(getAmmoManager(shoulderSlot));
+        setChestVehicleItem(handSlot, shoulder);
+        setChestVehicleItem(shoulderSlot, hand);
+        setChestVehicleItem(handAmmoSlot, shoulderAmmo);
+        setChestVehicleItem(shoulderAmmoSlot, handAmmo);
+        setArmWeaponRackDeployed(right, !isArmWeaponRackDeployed(right));
+        actionController.getAction(right ? ACT_RIGHT_HAND : ACT_LEFT_HAND).currentCoolTime = 0;
+        actionController.getAction(right ? ACT_RIGHT_SHOULDER : ACT_LEFT_SHOULDER).currentCoolTime = 0;
+        syncAllParameter2Client();
+        initializeAmmoManager(true);
+    }
+
+    public boolean hasArmWeaponRack() {
+        return entityData.get(HAS_ARM_WEAPON_RACK);
+    }
+
+    public boolean hasFreeSuperBoostEnergy() {
+        return entityData.get(HAS_FREE_SUPER_BOOST_ENERGY);
+    }
+
+    public boolean isArmWeaponRackDeployed(boolean right) {
+        int bit = right ? 1 : 2;
+        return (entityData.get(ARM_WEAPON_RACK_DEPLOYED_SIDES) & bit) != 0;
+    }
+
+    private void setArmWeaponRackDeployed(boolean right, boolean deployed) {
+        int bit = right ? 1 : 2;
+        int state = entityData.get(ARM_WEAPON_RACK_DEPLOYED_SIDES);
+        entityData.set(ARM_WEAPON_RACK_DEPLOYED_SIDES,
+                deployed ? state | bit : state & ~bit);
+    }
+
+    public boolean isArmWeaponSwapInProgress(boolean right) {
+        int bit = right ? 1 : 2;
+        return (entityData.get(ARM_WEAPON_SWAP_ACTIVE_SIDES) & bit) != 0
+                || actionController.getAction(right
+                ? ACT_SWAP_RIGHT_ARM_WEAPON : ACT_SWAP_LEFT_ARM_WEAPON).isInAction();
+    }
+
+    private void syncArmWeaponSwapActions() {
+        if (isServerSide()) {
+            int activeSides = 0;
+            if (actionController.getAction(ACT_SWAP_RIGHT_ARM_WEAPON).isInAction()) activeSides |= 1;
+            if (actionController.getAction(ACT_SWAP_LEFT_ARM_WEAPON).isInAction()) activeSides |= 2;
+            entityData.set(ARM_WEAPON_SWAP_ACTIVE_SIDES, activeSides);
+        }
+
+        int activeSides = entityData.get(ARM_WEAPON_SWAP_ACTIVE_SIDES);
+        if ((activeSides & 1) != 0) {
+            actionController.getAction(ACT_RIGHT_HAND).reset();
+            actionController.getAction(ACT_RIGHT_SHOULDER).reset();
+        }
+        if ((activeSides & 2) != 0) {
+            actionController.getAction(ACT_LEFT_HAND).reset();
+            actionController.getAction(ACT_LEFT_SHOULDER).reset();
+        }
     }
 
     public float getWeaponAimPitch(int weaponSlot) {
@@ -1392,6 +1828,8 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     private static final double HOVER_VERTICAL_STIFFNESS = 0.4D;
     private static final double HOVER_VERTICAL_DAMPING = 0.4D;
     private static final double HOVER_MAX_VERTICAL_SPEED = 0.8D;
+    private static final double GLIDER_TARGET_DESCENT_SPEED = -0.2D;
+    private static final double GLIDER_DESCENT_RESPONSE = 0.25D;
 
     @Override
     protected float getWalkSpeed(){
@@ -1548,26 +1986,14 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             } else if (driverInput.isJumpPressed() && !this.getBooster().isEmpty()) {
 //                if (this.isServerSide()) this.setNoGravity(true);
 
-                if (!tryVerticalBoost()) {
-                    if (isServerSide()) {
-                        var delta = this.getDeltaMovement();
-                        if (isGliding() && delta.y < 0) {
-                            this.setDeltaMovement(delta.x, -0.2, delta.z);
-                        } else {
-                            this.push(0, -0.18 * 0.9800000190734863D, 0);
-                        }
-                    }
+                if (!tryVerticalBoost() && isServerSide() && !isGliding()) {
+                    this.push(0, -0.18 * 0.9800000190734863D, 0);
                 }
             } else if (isServerSide()){
                 if (isHovering()) {
                     this.handleHovering();
-                } else if (!isBoundToRail()) {
-                    var delta = this.getDeltaMovement();
-                    if (isGliding() && delta.y < 0) {
-                        this.setDeltaMovement(delta.x, -0.2, delta.z);
-                    } else {
-                        this.push(0, -0.18 * 0.9800000190734863D, 0);
-                    }
+                } else if (!isBoundToRail() && !isGliding()) {
+                    this.push(0, -0.18 * 0.9800000190734863D, 0);
                 }
             }
         } else {
@@ -1780,6 +2206,56 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     @Override
     public int getEnergy() {
         return (int)this.energy;
+    }
+
+    private void applyFlightUnitEvasion(DriverInput input) {
+        Action evasion = this.actionController.getAction(ACT_EVASION);
+        if (!input.isEvasionPressed() || evasion.isInAction() || evasion.isInCooltime()) return;
+
+        int direction = input.getFlightEvasionDirection();
+        if (direction == 0) {
+            // NPC inputs and the client-side animation path still work without
+            // analog data; player input on the server carries the chosen axis.
+            if (input.isForwardPressed()) direction = 2;
+            else if (input.isBackPressed()) direction = -2;
+            else if (input.isLeftPressed()) direction = -1;
+            else if (input.isRightPressed()) direction = 1;
+            else direction = 3;
+        }
+
+        if (useEnergy(this.getEnergyConsumeEvasion()) && evasion.startAction()) {
+            if (isServerSide()) this.entityData.set(FLIGHT_EVASION_DIRECTION, direction);
+        }
+    }
+
+    private void applyGerwalkEvasion(DriverInput input) {
+        Action evasion = this.actionController.getAction(ACT_EVASION);
+        if (evasion.isInAction() || evasion.isInCooltime()) return;
+
+        int verticalDirection = 0;
+        if (input.isJumpPressed() && input.isForwardPressed()) verticalDirection = 2;
+        else if (input.isJumpPressed() && input.isBackPressed()) verticalDirection = -2;
+
+        if (verticalDirection != 0) {
+            if (useEnergy(this.getEnergyConsumeEvasion()) && evasion.startAction()) {
+                if (isServerSide()) this.entityData.set(FLIGHT_EVASION_DIRECTION, verticalDirection);
+            }
+            return;
+        }
+
+        // Horizontal GERWALK evasion uses the ordinary PMVC01 path so its
+        // equipped booster, energy consumption and boost state stay canonical.
+        if (input.isEvasionPressed()) {
+            if (isServerSide()) this.entityData.set(FLIGHT_EVASION_DIRECTION, 0);
+            this.applyPlayerInputEvasion(input);
+        }
+    }
+
+    /** Starts a preconfigured NPC mech with its finalized generator capacity. */
+    public void refillEnergy() {
+        this.energy = Math.max(0, this.getMaxEnergy());
+        this.setOverHeat(false);
+        this.overHeatCooltime = 0;
     }
 
     public int getOverHeatCooltime() {
@@ -2003,6 +2479,9 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                 );
             }
 
+            PlayState flightAnimation = controlFlightAnimation(event);
+            if (flightAnimation != null) return flightAnimation;
+
             if (this.actionController.getAction(ACT_DEACTIVATE).isInAction()) {
                 if (this.actionController.getAction(ACT_DEACTIVATE).isOnStart()) {
                     event.getController().forceAnimationReset();
@@ -2061,7 +2540,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
             DriverInput driverInput = this.getDriverInput();
 
-            if (this.isSuperBoost()) {
+            if (this.isSuperBoost() || isFlightSuperBoost()) {
                 return event.setAndContinue(RawAnimation.begin().thenPlay("animation." + getMechName() + ".booster_super"));
 
             } else if (this.actionController.getAction(ACT_EVASION).isInAction()) {
@@ -2129,7 +2608,81 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             return PlayState.STOP;
         }));
 
+        // The main controller keeps the GERWALK pose and its deployed wings.
+        // This controller only overlays the body/leg motion of a boosted dodge.
+        controllers.add(new AnimationController<>(this, "gerwalk_evasion", 0, event -> {
+            Action evasion = this.actionController.getAction(ACT_EVASION);
+            if (isGerwalkMode() && evasion.isInAction()
+                    && this.entityData.get(FLIGHT_EVASION_DIRECTION) == 0) {
+                if (evasion.isOnStart()) event.getController().forceAnimationReset();
+                return event.setAndContinue(RawAnimation.begin()
+                        .thenPlay("animation." + getMechName() + ".evasion"));
+            }
+            return PlayState.STOP;
+        }));
+
         addExtraAnimationController(controllers);
+    }
+
+    private PlayState controlFlightAnimation(AnimationState<PomkotsVehicleBase> event) {
+        if (isFlightTransitioning()) {
+            if (getFlightTransitionTick() == 1) event.getController().forceAnimationReset();
+            FlightMode from = getFlightTransitionFrom();
+            FlightMode to = getFlightTransitionTo();
+            String animation = null;
+            if (from == FlightMode.NORMAL && to == FlightMode.FLIGHT) {
+                animation = "animation.pmv01.flight_transform_normal_to_flight";
+            } else if (from == FlightMode.FLIGHT && to == FlightMode.NORMAL) {
+                animation = "animation.pmv01.flight_transform_flight_to_normal";
+            } else if (from == FlightMode.FLIGHT && to == FlightMode.GERWALK) {
+                animation = "animation.pmv01.flight_transform_flight_to_gerwalk";
+            } else if (from == FlightMode.GERWALK && to == FlightMode.FLIGHT) {
+                animation = "animation.pmv01.flight_transform_gerwalk_to_flight";
+            } else if (from == FlightMode.GERWALK && to == FlightMode.NORMAL) {
+                animation = "animation.pmv01.flight_transform_gerwalk_to_normal";
+            }
+            if (animation != null) {
+                return event.setAndContinue(RawAnimation.begin().thenPlayAndHold(animation));
+            }
+        }
+
+        if (isFlightMode()) {
+            if (this.actionController.getAction(ACT_EVASION).isInAction()) {
+                int direction = this.entityData.get(FLIGHT_EVASION_DIRECTION);
+                String dodgeAnimation = switch (direction) {
+                    case -1 -> "animation.pmv01.flight_roll_left";
+                    case 1 -> "animation.pmv01.flight_roll_right";
+                    case 2 -> "animation.pmv01.flight_dodge_up";
+                    case -2 -> "animation.pmv01.flight_dodge_down";
+                    case 3 -> "animation.pmv01.flight_accelerate";
+                    default -> null;
+                };
+                if (dodgeAnimation != null) {
+                    return event.setAndContinue(RawAnimation.begin().thenPlayAndHold(dodgeAnimation));
+                }
+            }
+            return event.setAndContinue(RawAnimation.begin().thenLoop("animation.pmv01.flight_cruise"));
+        }
+
+        if (isGerwalkMode()) {
+            if (this.actionController.getAction(ACT_EVASION).isInAction()) {
+                int direction = this.entityData.get(FLIGHT_EVASION_DIRECTION);
+                if (direction == 2) {
+                    return event.setAndContinue(RawAnimation.begin()
+                            .thenPlay("animation.pmv01.flight_gerwalk_dodge_up"));
+                } else if (direction == -2) {
+                    return event.setAndContinue(RawAnimation.begin()
+                            .thenPlay("animation.pmv01.flight_gerwalk_dodge_down"));
+                }
+            }
+            DriverInput input = getDriverInput();
+            boolean moving = input != null && (input.isForwardPressed() || input.isBackPressed()
+                    || input.isLeftPressed() || input.isRightPressed());
+            return event.setAndContinue(RawAnimation.begin().thenLoop(moving
+                    ? "animation.pmv01.flight_gerwalk_move"
+                    : "animation.pmv01.flight_gerwalk_idle"));
+        }
+        return null;
     }
 
     /**
@@ -2230,6 +2783,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     @Override
     protected PlayState controllAnimationFlyingMotion(AnimationState<PomkotsVehicleBase> event) {
+        if (isFlightMode()) {
+            return event.setAndContinue(RawAnimation.begin()
+                    .thenPlayAndHold("animation." + getMechName() + ".nop"));
+        }
         var anim = event.getController().getCurrentAnimation();
 
         if (anim != null && anim.animation() != null && ("animation." + getMechName() + ".onground").equals(anim.animation().name()) && !event.getController().hasAnimationFinished()) {
@@ -2249,7 +2806,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     }
 
     protected boolean justLanded(Entity ent) {
-        return this.onGround() && !this.onGroundPrev && inAirTicks > 5;
+        return clientLandingAnimationTicks > 0;
     }
 
     private boolean isInAirInternal() {
@@ -2258,6 +2815,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     @Override
     protected PlayState controllAnimationRotation(AnimationState<PomkotsVehicleBase> event) {
+        if (isFlightMode()) {
+            return event.setAndContinue(RawAnimation.begin()
+                    .thenPlayAndHold("animation." + getMechName() + ".nop"));
+        }
         if (event.isMoving()) {
             if (this.isInAirInternal() && !this.actionController.isBoost() && !this.actionController.getAction(ACT_EVASION).isInAction()) {
                 if (this.forwardIntention > 0) {
@@ -2322,9 +2883,20 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         return RawAnimation.begin().thenPlay(action.getMotion().getAnimationName(action, side));
     }
 
+    private boolean suppressMechWeaponMotionInFlight(ActionWeapon action) {
+        return isFlightMode()
+                && action.getItemStack() != null
+                && action.getItemStack().getItem() instanceof BasePartsItem.WeaponInterface weapon
+                && !weapon.useMechMotionInFlight();
+    }
+
     @Override
     protected void addExtraAnimationController(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "right_hand", 0, event -> {
+            if (isArmWeaponSwapInProgress(true)) {
+                return event.setAndContinue(RawAnimation.begin().thenPlayAndHold(
+                        "animation." + getMechName() + ".nop"));
+            }
             if (this.isBuildMode()) {
                 var act = this.actionController.getAction(ACT_PLACE_BLOCK);
                 if (act.isInAction()) {
@@ -2346,6 +2918,9 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             }
 
             var act = (ActionWeapon)this.actionController.getAction(ACT_RIGHT_HAND);
+            if (suppressMechWeaponMotionInFlight(act)) {
+                return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + getMechName() + ".nop"));
+            }
             if (act.isInAction()) {
                 if (act.isOnStart()) {
                     event.getController().forceAnimationReset();
@@ -2364,6 +2939,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         }));
 
         controllers.add(new AnimationController<>(this, "left_hand", 0, event -> {
+            if (isArmWeaponSwapInProgress(false)) {
+                return event.setAndContinue(RawAnimation.begin().thenPlayAndHold(
+                        "animation." + getMechName() + ".nop"));
+            }
             var relAct = this.actionController.getAction(ACT_RELOAD_LEFT_HAND);
             if (relAct.isInAction()) {
                 if (relAct.isOnStart()) {
@@ -2373,6 +2952,9 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             }
 
             var act = (ActionWeapon)this.actionController.getAction(ACT_LEFT_HAND);
+            if (suppressMechWeaponMotionInFlight(act)) {
+                return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + getMechName() + ".nop"));
+            }
             if (act.isInAction()) {
                 if (act.isOnStart()) {
                     event.getController().forceAnimationReset();
@@ -2391,6 +2973,12 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         }));
 
         controllers.add(new AnimationController<>(this, "right_shoulder", 1, event -> {
+            var swapAct = this.actionController.getAction(ACT_SWAP_RIGHT_ARM_WEAPON);
+            if (isArmWeaponSwapInProgress(true)) {
+                if (swapAct.isOnStart()) event.getController().forceAnimationReset();
+                return event.setAndContinue(RawAnimation.begin().thenPlay(
+                        "animation." + getMechName() + ".w_arm_weapon_swap_right"));
+            }
             var relAct = this.actionController.getAction(ACT_RELOAD_RIGHT_SHOULDER);
             if (relAct.isInAction()) {
                 if (relAct.isOnStart()) {
@@ -2400,6 +2988,9 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             }
 
             var act = (ActionWeapon)this.actionController.getAction(ACT_RIGHT_SHOULDER);
+            if (suppressMechWeaponMotionInFlight(act)) {
+                return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + getMechName() + ".nop"));
+            }
             if (act.isInAction()) {
                 if (act.isOnStart()) {
                     event.getController().forceAnimationReset();
@@ -2418,6 +3009,12 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         }));
 
         controllers.add(new AnimationController<>(this, "left_shoulder", 1, event -> {
+            var swapAct = this.actionController.getAction(ACT_SWAP_LEFT_ARM_WEAPON);
+            if (isArmWeaponSwapInProgress(false)) {
+                if (swapAct.isOnStart()) event.getController().forceAnimationReset();
+                return event.setAndContinue(RawAnimation.begin().thenPlay(
+                        "animation." + getMechName() + ".w_arm_weapon_swap_left"));
+            }
             var relAct = this.actionController.getAction(ACT_RELOAD_LEFT_SHOULDER);
             if (relAct.isInAction()) {
                 if (relAct.isOnStart()) {
@@ -2427,6 +3024,9 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             }
 
             var act = (ActionWeapon)this.actionController.getAction(ACT_LEFT_SHOULDER);
+            if (suppressMechWeaponMotionInFlight(act)) {
+                return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + getMechName() + ".nop"));
+            }
             if (act.isInAction()) {
                 if (act.isOnStart()) {
                     event.getController().forceAnimationReset();
@@ -2445,6 +3045,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     }
 
     public void spawnReloadParticles(Vec3 spawnLocalPos, boolean isRightArm) {
+        spawnReloadParticles(spawnLocalPos, isRightArm, true);
+    }
+
+    private void spawnReloadParticles(Vec3 spawnLocalPos, boolean isRightArm, boolean ejectMagazine) {
         Vec3 lookVec = this.getLookAngle();
 
         var origin = spawnLocalPos.yRot((float) Math.toRadians((-1.0) * this.getYRot()));
@@ -2482,7 +3086,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         }
 
         // ===== 空マガジン（黒い四角） =====
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < (ejectMagazine ? 1 : 0); i++) {
             Vec3 dir = right.scale(0.3 + rand.nextDouble() * 0.2);
 
             var partType = PomkotsMechs.MAGAZINE_LEFT.get();
@@ -2538,6 +3142,13 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                 spawnReloadParticles(new Vec3(-1.5,5,-2), true);
             } else if ("left_shoulder".equals(event.getController().getName())) {
                 spawnReloadParticles(new Vec3(1.5,5,-2), false);
+            }
+            this.playSoundEffect(PomkotsMechs.SE_RELOAD.get(), 1F);
+        } else if ("se_weapon_swap".equals(sound)) {
+            if ("right_shoulder".equals(event.getController().getName())) {
+                spawnReloadParticles(new Vec3(-2,4,1.5), true, false);
+            } else if ("left_shoulder".equals(event.getController().getName())) {
+                spawnReloadParticles(new Vec3(2,4,1.5), false, false);
             }
             this.playSoundEffect(PomkotsMechs.SE_RELOAD.get(), 1F);
         }
@@ -2664,6 +3275,8 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
         compound.putBoolean(PomkotsMechs.nbtName("IsBroken"), isBroken());
         compound.putBoolean(PomkotsMechs.nbtName("IsLocked"), isLocked());
+        compound.putInt(PomkotsMechs.nbtName("ArmWeaponRackDeployedSides"),
+                entityData.get(ARM_WEAPON_RACK_DEPLOYED_SIDES));
     }
 
     private void addChestVehicleSaveData(CompoundTag compoundTag) {
@@ -2692,6 +3305,17 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         this.fuel = compound.getInt(PomkotsMechs.nbtName("FuelNow"));
         this.setBroken(compound.getBoolean(PomkotsMechs.nbtName("IsBroken")));
         this.setLocked(compound.getBoolean(PomkotsMechs.nbtName("IsLocked")));
+        entityData.set(ARM_WEAPON_RACK_DEPLOYED_SIDES,
+                compound.getInt(PomkotsMechs.nbtName("ArmWeaponRackDeployedSides")));
+        // Flight attitude is intentionally transient. Never resume an
+        // unloaded entity in a rolled or inverted state.
+        entityData.set(FLIGHT_MODE, FlightMode.NORMAL.ordinal());
+        entityData.set(FLIGHT_TRANSITION_TICK, 0);
+        entityData.set(FLIGHT_QX, 0.0F);
+        entityData.set(FLIGHT_QY, 0.0F);
+        entityData.set(FLIGHT_QZ, 0.0F);
+        entityData.set(FLIGHT_QW, 1.0F);
+        setNoGravity(false);
     }
 
     void readChestVehicleSaveData(CompoundTag compoundTag) {
@@ -3355,6 +3979,20 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             return reloadTicks;
         }
 
+        private void swapWeaponStateWith(AmmoManager other) {
+            int otherBulletNum = other.bulletNum;
+            int otherBulletNumPerMagazine = other.bulletNumPerMagazine;
+            int otherReloadTicks = other.reloadTicks;
+
+            other.bulletNum = this.bulletNum;
+            other.bulletNumPerMagazine = this.bulletNumPerMagazine;
+            other.reloadTicks = this.reloadTicks;
+
+            this.bulletNum = otherBulletNum;
+            this.bulletNumPerMagazine = otherBulletNumPerMagazine;
+            this.reloadTicks = otherReloadTicks;
+        }
+
         private int serialize() {
             int result = 0;
 
@@ -3412,6 +4050,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     protected static final EntityDataAccessor<Boolean> HAS_LOCK_SOFT = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
     protected static final EntityDataAccessor<Boolean> HAS_LOCK_HARD = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Boolean> HAS_ARM_WEAPON_RACK = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Boolean> HAS_FREE_SUPER_BOOST_ENERGY = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Integer> ARM_WEAPON_RACK_DEPLOYED_SIDES = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+    protected static final EntityDataAccessor<Integer> ARM_WEAPON_SWAP_ACTIVE_SIDES = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
 
     protected static final EntityDataAccessor<Integer> RELOAD_RA = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
     protected static final EntityDataAccessor<Integer> RELOAD_LA = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
@@ -3433,6 +4075,9 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     protected static final EntityDataAccessor<Boolean> IS_OVER_HEAT = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
 
     protected static final EntityDataAccessor<Boolean> IS_SUPER_BOOST = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Boolean> IS_FLIGHT_SUPER_BOOST = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Boolean> IS_FLIGHT_SUPER_BOOST_CHARGING = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Float> FLIGHT_SUPER_BOOST_ENERGY_SNAPSHOT = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
 
     protected static final EntityDataAccessor<Boolean> SHOW_PLAYER_INV_SLOT = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
 
@@ -3442,6 +4087,16 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     protected static final EntityDataAccessor<Boolean> IS_GLIDING = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
     protected static final EntityDataAccessor<Boolean> IS_HOVERING = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Integer> FLIGHT_MODE = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+    protected static final EntityDataAccessor<Integer> FLIGHT_TRANSITION_FROM = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+    protected static final EntityDataAccessor<Integer> FLIGHT_TRANSITION_TO = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+    protected static final EntityDataAccessor<Integer> FLIGHT_TRANSITION_TICK = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+    protected static final EntityDataAccessor<Boolean> FLIGHT_TRANSITION_SKIP_FLIP = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Float> FLIGHT_QX = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
+    protected static final EntityDataAccessor<Float> FLIGHT_QY = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
+    protected static final EntityDataAccessor<Float> FLIGHT_QZ = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
+    protected static final EntityDataAccessor<Float> FLIGHT_QW = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
+    protected static final EntityDataAccessor<Integer> FLIGHT_EVASION_DIRECTION = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
     protected static final EntityDataAccessor<Integer> KUTARA_SUSTAIN_ACTIVE_SLOTS = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
     protected static final EntityDataAccessor<Float> WEAPON_AIM_PITCH_RIGHT_HAND = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
     protected static final EntityDataAccessor<Float> WEAPON_AIM_PITCH_LEFT_HAND = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
@@ -3484,6 +4139,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
         this.entityData.define(HAS_LOCK_SOFT, false);
         this.entityData.define(HAS_LOCK_HARD, false);
+        this.entityData.define(HAS_ARM_WEAPON_RACK, false);
+        this.entityData.define(HAS_FREE_SUPER_BOOST_ENERGY, false);
+        this.entityData.define(ARM_WEAPON_RACK_DEPLOYED_SIDES, 0);
+        this.entityData.define(ARM_WEAPON_SWAP_ACTIVE_SIDES, 0);
 
         this.entityData.define(RELOAD_RA, 0);
         this.entityData.define(RELOAD_LA, 0);
@@ -3505,12 +4164,25 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         this.entityData.define(IS_OVER_HEAT, false);
 
         this.entityData.define(IS_SUPER_BOOST, false);
+        this.entityData.define(IS_FLIGHT_SUPER_BOOST, false);
+        this.entityData.define(IS_FLIGHT_SUPER_BOOST_CHARGING, false);
+        this.entityData.define(FLIGHT_SUPER_BOOST_ENERGY_SNAPSHOT, Float.NaN);
 
         this.entityData.define(SHOW_PLAYER_INV_SLOT, false);
 
         this.entityData.define(BUILD_MODE, false);
         this.entityData.define(IS_GLIDING, false);
         this.entityData.define(IS_HOVERING, false);
+        this.entityData.define(FLIGHT_MODE, FlightMode.NORMAL.ordinal());
+        this.entityData.define(FLIGHT_TRANSITION_FROM, FlightMode.NORMAL.ordinal());
+        this.entityData.define(FLIGHT_TRANSITION_TO, FlightMode.NORMAL.ordinal());
+        this.entityData.define(FLIGHT_TRANSITION_TICK, 0);
+        this.entityData.define(FLIGHT_TRANSITION_SKIP_FLIP, false);
+        this.entityData.define(FLIGHT_QX, 0.0F);
+        this.entityData.define(FLIGHT_QY, 0.0F);
+        this.entityData.define(FLIGHT_QZ, 0.0F);
+        this.entityData.define(FLIGHT_QW, 1.0F);
+        this.entityData.define(FLIGHT_EVASION_DIRECTION, 0);
         this.entityData.define(KUTARA_SUSTAIN_ACTIVE_SLOTS, 0);
         this.entityData.define(WEAPON_AIM_PITCH_RIGHT_HAND, 0.0F);
         this.entityData.define(WEAPON_AIM_PITCH_LEFT_HAND, 0.0F);
@@ -3631,6 +4303,9 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
         this.entityData.set(HAS_LOCK_SOFT, hasSoftLockCircuit() || mechStatus.features().isEnabled(MechFeatureType.TARGET_ASSIST_SOFT));
         this.entityData.set(HAS_LOCK_HARD, hasHardLockCircuit() || mechStatus.features().isEnabled(MechFeatureType.TARGET_ASSIST_HARD));
+        this.entityData.set(HAS_ARM_WEAPON_RACK, mechStatus.features().isEnabled(MechFeatureType.ARM_WEAPON_RACK));
+        this.entityData.set(HAS_FREE_SUPER_BOOST_ENERGY,
+                mechStatus.features().isEnabled(MechFeatureType.SUPER_BOOST_ENERGY_FREE));
 
 //        this.entityData.set(DURABILITY, param.durability);
 //        this.entityData.set(WEIGHT, param.weight);
@@ -3884,8 +4559,26 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
     public void setSuperBoost(boolean flag) {
         if (this.isServerSide()) {
             this.entityData.set(IS_SUPER_BOOST, flag);
-            this.setNoGravity(flag);
+            // Hover mode may remain enabled underneath Super Boost. Returning
+            // from Super Boost must therefore retain hover gravity handling.
+            this.setNoGravity(flag || isHovering());
+            if (!flag && restoreHoveringAfterSuperBoost) {
+                restoreHoveringAfterSuperBoost = false;
+                this.setHovering(true);
+            }
         }
+    }
+
+    /** Safely aborts an NPC-controlled Super Boost wind-up or active flight. */
+    public void cancelSuperBoost() {
+        if (!isServerSide()) return;
+        this.actionController.getAction(ACT_SUPER_BOOST).reset();
+        this.setSuperBoost(false);
+        this.actionController.setBoost(false);
+    }
+
+    public void setNpcSuperBoostAssaultActive(boolean active) {
+        if (isServerSide()) this.npcSuperBoostAssaultActive = active;
     }
 
     public boolean isShowPlayerInventory() {
@@ -3931,6 +4624,243 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     protected void setGliding(boolean b) {
         this.entityData.set(IS_GLIDING, b);
+        if (!b && !isHovering() && !isSuperBoost() && !isFlightUnitMode()) {
+            setNoGravity(false);
+        }
+    }
+
+    public FlightMode getFlightMode() {
+        return FlightMode.fromId(this.entityData.get(FLIGHT_MODE));
+    }
+
+    public boolean isFlightUnitMode() {
+        return getFlightMode() != FlightMode.NORMAL;
+    }
+
+    public boolean isFlightMode() {
+        return getFlightMode() == FlightMode.FLIGHT;
+    }
+
+    public boolean isFlightSuperBoost() {
+        return this.entityData.get(IS_FLIGHT_SUPER_BOOST);
+    }
+
+    public boolean isFlightSuperBoostCharging() {
+        return this.entityData.get(IS_FLIGHT_SUPER_BOOST_CHARGING);
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (isClientSide() && FLIGHT_SUPER_BOOST_ENERGY_SNAPSHOT.equals(key)) {
+            float snapshot = this.entityData.get(FLIGHT_SUPER_BOOST_ENERGY_SNAPSHOT);
+            if (Float.isFinite(snapshot)) this.energy = snapshot;
+        }
+    }
+
+    public boolean isGerwalkMode() {
+        return getFlightMode() == FlightMode.GERWALK;
+    }
+
+    public boolean hasFlightUnit() {
+        return getExtension1Weapon().getItem() instanceof FlightUnitItem
+                || getExtension2Weapon().getItem() instanceof FlightUnitItem;
+    }
+
+    public boolean isFlightTransitioning() {
+        return this.entityData.get(FLIGHT_TRANSITION_TICK) > 0;
+    }
+
+    public FlightMode getFlightTransitionFrom() {
+        return FlightMode.fromId(this.entityData.get(FLIGHT_TRANSITION_FROM));
+    }
+
+    public FlightMode getFlightTransitionTo() {
+        return FlightMode.fromId(this.entityData.get(FLIGHT_TRANSITION_TO));
+    }
+
+    public int getFlightTransitionTick() {
+        return this.entityData.get(FLIGHT_TRANSITION_TICK);
+    }
+
+    public Quaternionf getFlightOrientation() {
+        return FlightOrientation.normalized(
+                this.entityData.get(FLIGHT_QX), this.entityData.get(FLIGHT_QY),
+                this.entityData.get(FLIGHT_QZ), this.entityData.get(FLIGHT_QW));
+    }
+
+    public void setFlightOrientation(Quaternionf orientation) {
+        Quaternionf normalized = new Quaternionf(orientation).normalize();
+        this.entityData.set(FLIGHT_QX, normalized.x);
+        this.entityData.set(FLIGHT_QY, normalized.y);
+        this.entityData.set(FLIGHT_QZ, normalized.z);
+        this.entityData.set(FLIGHT_QW, normalized.w);
+        if (isFlightMode()) {
+            float yaw = FlightOrientation.yawDegrees(normalized);
+            float pitch = FlightOrientation.pitchDegrees(normalized);
+            setYRot(yaw);
+            setXRot(pitch);
+            setYBodyRot(yaw);
+            setYHeadRot(yaw);
+        }
+    }
+
+    private void tryStartFlightTransition(FlightMode target) {
+        if (target == getFlightMode() || isFlightTransitioning() || !hasFlightUnit()) return;
+        if (target == FlightMode.FLIGHT) {
+            Vec3 velocity = getDeltaMovement();
+            double horizontalSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+            if (onGround() || isInWaterOrBubble() || horizontalSpeed < 0.30D) {
+                if (getDrivingPassenger() instanceof Player player) {
+                    player.displayClientMessage(
+                            Component.translatable("message.pomkotsmechs.flight.requires_airborne"), true);
+                }
+                return;
+            }
+        }
+
+        FlightMode current = getFlightMode();
+        this.entityData.set(FLIGHT_TRANSITION_SKIP_FLIP,
+                current == FlightMode.NORMAL && target == FlightMode.FLIGHT
+                        && getDeltaMovement().length() >= FLIGHT_TRANSFORM_NO_FLIP_SPEED);
+        this.entityData.set(FLIGHT_TRANSITION_FROM, current.ordinal());
+        this.entityData.set(FLIGHT_TRANSITION_TO, target.ordinal());
+        this.entityData.set(FLIGHT_TRANSITION_TICK, 1);
+        setBoost(false);
+        setSuperBoost(false);
+        stopFlightSuperBoost();
+        setGliding(false);
+        setHovering(false);
+    }
+
+    private void tickFlightState() {
+        if (isClientSide()) {
+            boolean charging = isFlightSuperBoostCharging();
+            if (charging && !clientFlightSuperBoostChargingPrevious) {
+                spawnFlightSuperBoostChargeEffect();
+            }
+            clientFlightSuperBoostChargingPrevious = charging;
+            if (isFlightSuperBoost() && !hasFreeSuperBoostEnergy()) {
+                ItemStack unit = getSuperBoostUnit();
+                if (unit.getItem() instanceof BasePartsItem part) {
+                    energy = Math.max(0.0F, energy - getFlightSuperBoostEnergyCost(part, unit));
+                }
+            }
+            return;
+        }
+
+        if (isFlightSuperBoostCharging()) {
+            if (!isFlightMode() || isFlightTransitioning() || isBroken()
+                    || getDrivingPassenger() == null || getSuperBoostUnit().isEmpty()
+                    || isOverHeat() || getEnergy() <= 0) {
+                stopFlightSuperBoost();
+            } else if (--flightSuperBoostWindupTicks <= 0) {
+                this.entityData.set(IS_FLIGHT_SUPER_BOOST_CHARGING, false);
+                this.entityData.set(IS_FLIGHT_SUPER_BOOST, true);
+                syncFlightSuperBoostEnergy();
+            }
+        }
+
+        if (isFlightSuperBoost()) {
+            ItemStack superBoostUnit = getSuperBoostUnit();
+            if (!isFlightMode() || isFlightTransitioning() || isBroken()
+                    || getDrivingPassenger() == null
+                    || !(superBoostUnit.getItem() instanceof BasePartsItem part)) {
+                stopFlightSuperBoost();
+            } else if (!hasFreeSuperBoostEnergy()) {
+                int cost = getFlightSuperBoostEnergyCost(part, superBoostUnit);
+                if (isOverHeat() || (cost > 0 && getEnergy() <= cost)) {
+                    stopFlightSuperBoost();
+                } else {
+                    useEnergy(cost);
+                    if (tickCount % FLIGHT_SUPER_BOOST_ENERGY_SYNC_INTERVAL_TICKS == 0) {
+                        syncFlightSuperBoostEnergy();
+                    }
+                }
+            }
+        }
+
+        if ((!hasFlightUnit() || isBroken() || getDrivingPassenger() == null
+                || (isFlightUnitMode() && isInWaterOrBubble())) && isFlightUnitMode()) {
+            forceNormalFlightMode();
+            return;
+        }
+
+        int transitionTick = getFlightTransitionTick();
+        if (transitionTick <= 0) return;
+
+        if (transitionTick == FLIGHT_TRANSFORM_APPLY_TICK) {
+            FlightMode target = getFlightTransitionTo();
+            this.entityData.set(FLIGHT_MODE, target.ordinal());
+            if (target == FlightMode.FLIGHT) {
+                LivingEntity pilot = getDrivingPassenger();
+                Quaternionf initial = FlightOrientation.fromVanillaRotation(
+                        pilot != null ? pilot.getYRot() : getYRot(),
+                        pilot != null ? pilot.getXRot() : getXRot());
+                setFlightOrientation(initial);
+                // Flight speed is fixed for now. Keep the cruise-speed field and
+                // controller API in place so variable throttle can be restored later.
+                flightCruiseSpeed = FlightMovementController.MAX_CRUISE_SPEED;
+            }
+            setNoGravity(target != FlightMode.NORMAL);
+        }
+
+        if (transitionTick >= FLIGHT_TRANSFORM_TOTAL_TICKS) {
+            this.entityData.set(FLIGHT_TRANSITION_TICK, 0);
+        } else {
+            this.entityData.set(FLIGHT_TRANSITION_TICK, transitionTick + 1);
+        }
+    }
+
+    private void stopFlightSuperBoost() {
+        if (!isServerSide()) return;
+        boolean wasActive = isFlightSuperBoost();
+        this.entityData.set(IS_FLIGHT_SUPER_BOOST, false);
+        this.entityData.set(IS_FLIGHT_SUPER_BOOST_CHARGING, false);
+        flightSuperBoostWindupTicks = 0;
+        if (wasActive) syncFlightSuperBoostEnergy();
+    }
+
+    private void syncFlightSuperBoostEnergy() {
+        if (isServerSide()) {
+            this.entityData.set(FLIGHT_SUPER_BOOST_ENERGY_SNAPSHOT, energy);
+        }
+    }
+
+    private static int getFlightSuperBoostEnergyCost(BasePartsItem part, ItemStack unit) {
+        int normalCost = part.getEnergyConsumePerTick(unit);
+        if (normalCost <= 0) return 0;
+        int previousFlightCost = Math.max(1, (normalCost + 1) / 2);
+        return (previousFlightCost * 3 + 1) / 2;
+    }
+
+    private void spawnFlightSuperBoostChargeEffect() {
+        playSoundEffect(PomkotsMechs.SE_BOOST_CHARGE.get(), 1.0F);
+        Vec3 center = new Vec3(0, 3.4, -4).yRot(
+                (float)Math.toRadians(-getYRot())).add(position());
+        for (int i = 0; i < 20; i++) {
+            level().addParticle(PomkotsMechs.SPIRAL.get(),
+                    center.x + (level().random.nextDouble() - 0.5D) * 3.0D,
+                    center.y + level().random.nextDouble() * 3.0D,
+                    center.z + (level().random.nextDouble() - 0.5D) * 3.0D,
+                    getId(), 0, 0);
+        }
+    }
+
+    private void consumeFlightFuelSurcharge() {
+        if (!consumeFuel()) forceNormalFlightMode();
+    }
+
+    private void forceNormalFlightMode() {
+        if (!isServerSide()) return;
+        this.entityData.set(FLIGHT_MODE, FlightMode.NORMAL.ordinal());
+        this.entityData.set(FLIGHT_TRANSITION_FROM, FlightMode.NORMAL.ordinal());
+        this.entityData.set(FLIGHT_TRANSITION_TO, FlightMode.NORMAL.ordinal());
+        this.entityData.set(FLIGHT_TRANSITION_TICK, 0);
+        this.entityData.set(FLIGHT_EVASION_DIRECTION, 0);
+        stopFlightSuperBoost();
+        this.flightCruiseSpeed = FlightMovementController.MAX_CRUISE_SPEED;
+        if (!isHovering() && !isGliding() && !isSuperBoost()) setNoGravity(false);
     }
 
     public static class MechParam {
@@ -4033,6 +4963,55 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     @Override
     public void travel(Vec3 pos) {
+        applyGliderDescentBeforeTravel();
+
+        if (isFlightMode()) {
+            setNoGravity(true);
+            // Variable throttle via W/S is temporarily disabled. Flight mode
+            // always uses the current maximum cruise speed.
+            flightCruiseSpeed = FlightMovementController.MAX_CRUISE_SPEED;
+            LivingEntity pilot = getDrivingPassenger();
+            if (pilot == null) {
+                forceNormalFlightMode();
+                return;
+            }
+
+            Quaternionf orientation = SuperBoostStyleFlightController.orientation(pilot);
+            setFlightOrientation(orientation);
+            double speed = flightCruiseSpeed * (isFlightSuperBoost()
+                    ? FLIGHT_SUPER_BOOST_SPEED_MULTIPLIER : 1.0D);
+            Vec3 velocity = SuperBoostStyleFlightController.velocity(pilot, speed);
+            if (this.actionController.getAction(ACT_EVASION).isInAction()) {
+                int direction = this.entityData.get(FLIGHT_EVASION_DIRECTION);
+                if (Math.abs(direction) == 1) {
+                    velocity = velocity.add(FlightOrientation.right(orientation).scale(-direction * 2.70D));
+                } else if (Math.abs(direction) == 2) {
+                    velocity = velocity.add(FlightOrientation.up(orientation).scale(Math.signum(direction) * 2.70D));
+                } else if (direction == 3) {
+                    velocity = velocity.add(FlightOrientation.forward(orientation).scale(2.70D));
+                }
+            }
+            setDeltaMovement(velocity);
+            hasImpulse = true;
+            super.travelBypass(Vec3.ZERO);
+            return;
+        }
+
+        if (isGerwalkMode()) {
+            setNoGravity(true);
+            if (this.actionController.getAction(ACT_EVASION).isInAction()) {
+                int direction = this.entityData.get(FLIGHT_EVASION_DIRECTION);
+                if (Math.abs(direction) == 2) {
+                    Vec3 velocity = getDeltaMovement();
+                    setDeltaMovement(velocity.x, Math.signum(direction) * 1.1D, velocity.z);
+                }
+            }
+            // GERWALK intentionally shares ordinary PMVC01/hover movement.
+            // Its only physical differences are no gravity and vertical dodge.
+            travelInternal(pos);
+            return;
+        }
+
         if (isKutaraSustainMovementLocked()) {
             LivingEntity pilot = this.getDrivingPassenger();
             if (pilot != null) {
@@ -4058,7 +5037,9 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         if (!isBroken()) {
             if (this.isSuperBoost()) {
                 ItemStack sb = getSuperBoostUnit();
-                if (!(sb.getItem() instanceof BasePartsItem p) || !this.useEnergy((p.getEnergyConsumePerTick(sb)))) {
+                if (!(sb.getItem() instanceof BasePartsItem p)
+                        || (!hasFreeSuperBoostEnergy() && !npcSuperBoostAssaultActive
+                        && !this.useEnergy(p.getEnergyConsumePerTick(sb)))) {
                     if (isServerSide()) {
                         this.setSuperBoost(false);
                     }
@@ -4066,13 +5047,17 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
                 if (isServerSide()) {
                     // --- クライアントのカメラ方向に進む（360°可）
-                    Player owner = getDrivingPassenger() instanceof Player p ? p : null;
+                    LivingEntity owner = getDrivingPassenger();
                     if (owner == null) return;
 
                     Vec3 look = owner.getLookAngle(); // カメラの向きベクトル（Pitch/Yaw反映済）
-                    Vec3 velocity = look.normalize().scale(4);
+                    // NPC assault boosts trade some homing precision for a much
+                    // faster, more committal charge. Player Super Boost keeps
+                    // its established speed.
+                    double superBoostSpeed = npcSuperBoostAssaultActive ? 6.0D : 4.0D;
+                    Vec3 velocity = look.normalize().scale(superBoostSpeed);
 
-                    // --- サーバ側でも同期させる（tickでsetDeltaMovementを適用）
+                    // Super Boost velocity is authoritative on the server.
                     setDeltaMovement(velocity);
 
                     // --- 向きをカメラ方向に合わせる
@@ -4089,14 +5074,39 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                     this.setNoGravity(true);
 
                     this.hasImpulse = true;
-                    // --- 実際に移動
-                    super.travelBypass(this.position().add(this.getDeltaMovement()));
+
+                    // travel() expects a relative movement-input vector, not an absolute
+                    // world position. Let vanilla physics consume the velocity above once.
+                    // The former position + velocity argument added unintended acceleration
+                    // whose direction depended on the entity's world coordinates.
+                    super.travelBypass(Vec3.ZERO);
                 }
             } else {
                 travelInternal(pos);
             }
         } else {
             super.travelBypass(pos);
+        }
+    }
+
+    /**
+     * Applies glider lift before vanilla consumes velocity for this tick.
+     * The same prediction runs on both sides instead of snapping the server's
+     * downward velocity to a fixed value after movement has already finished.
+     */
+    private void applyGliderDescentBeforeTravel() {
+        if (!isGliding() || onGround()) {
+            return;
+        }
+
+        setNoGravity(true);
+        Vec3 velocity = getDeltaMovement();
+        if (velocity.y < 0.0D) {
+            double verticalSpeed = Mth.lerp(
+                    GLIDER_DESCENT_RESPONSE,
+                    velocity.y,
+                    GLIDER_TARGET_DESCENT_SPEED);
+            setDeltaMovement(velocity.x, verticalSpeed, velocity.z);
         }
     }
 
@@ -4281,6 +5291,152 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     public Action getActionEvasion() {
         return actionController.getAction(ACT_EVASION);
+    }
+
+    public boolean isFlightVerticalEvasion() {
+        return isFlightMode()
+                && Math.abs(this.entityData.get(FLIGHT_EVASION_DIRECTION)) == 2
+                && getActionEvasion().isInFire();
+    }
+
+    public float getFlightVisualRoll(float partialTick) {
+        if (!isFlightMode()) return 0.0F;
+        int direction = this.entityData.get(FLIGHT_EVASION_DIRECTION);
+        if (Math.abs(direction) != 1) return 0.0F;
+        return getFlightVisualFullRotation(partialTick, -direction);
+    }
+
+    /** Prepared X-axis forward somersault; not connected to an input or renderer yet. */
+    public float getFlightVisualForwardFlip(float partialTick) {
+        return getFlightVisualFullRotation(partialTick, 1);
+    }
+
+    /** Prepared X-axis backward somersault; not connected to an input or renderer yet. */
+    public float getFlightVisualBackwardFlip(float partialTick) {
+        return getFlightVisualFullRotation(partialTick, -1);
+    }
+
+    /**
+     * Procedural X-axis rotation used by flight-mode transforms and vertical dodges.
+     * Positive is the forward somersault and negative is the backward somersault.
+     */
+    public float getFlightVisualPitchFlip(float partialTick) {
+        if (isClientSide() && clientFlightTransitionVisualActive) {
+            int direction = getFlightTransitionFlipDirection(
+                    clientFlightTransitionFrom, clientFlightTransitionTo);
+            return direction == 0 ? 0.0F : getFlightVisualFullRotationFromProgress(
+                    getClientFlightTransitionVisualProgress(partialTick), direction);
+        }
+        if (isFlightTransitioning()) {
+            int direction = getFlightTransitionFlipDirection(
+                    getFlightTransitionFrom(), getFlightTransitionTo());
+            if (direction == 0) return 0.0F;
+
+            float duration = Math.max(1.0F, FLIGHT_TRANSFORM_TOTAL_TICKS - 1.0F);
+            float progress = Mth.clamp(
+                    (getFlightTransitionTick() - 1.0F + partialTick) / duration,
+                    0.0F, 1.0F);
+            return getFlightVisualFullRotationFromProgress(progress, direction);
+        }
+
+        int evasionDirection = this.entityData.get(FLIGHT_EVASION_DIRECTION);
+        if (evasionDirection == 2) {
+            // flight/gerwalk dodge up: backward rotation
+            return getFlightVisualBackwardFlip(partialTick);
+        }
+        if (evasionDirection == -2) {
+            // flight/gerwalk dodge down: forward rotation
+            return getFlightVisualForwardFlip(partialTick);
+        }
+        return 0.0F;
+    }
+
+    private int getFlightTransitionFlipDirection(FlightMode from, FlightMode to) {
+        if (from == FlightMode.NORMAL && to == FlightMode.FLIGHT
+                && this.entityData.get(FLIGHT_TRANSITION_SKIP_FLIP)) {
+            return 0;
+        }
+        if ((from == FlightMode.NORMAL && to == FlightMode.FLIGHT)
+                || (from == FlightMode.GERWALK && to == FlightMode.FLIGHT)) {
+            // Axis.X positive appears backward in Minecraft's render space.
+            return -1;
+        }
+        if ((from == FlightMode.FLIGHT && to == FlightMode.NORMAL)
+                || (from == FlightMode.FLIGHT && to == FlightMode.GERWALK)
+                || (from == FlightMode.GERWALK && to == FlightMode.NORMAL)) {
+            return 1;
+        }
+        return 0;
+    }
+
+    private float getFlightVisualFullRotation(float partialTick, int direction) {
+        if (!isFlightUnitMode()) return 0.0F;
+        Action evasion = getActionEvasion();
+        if (!evasion.isInFire()) return 0.0F;
+
+        float duration = Math.max(1.0F, evasion.maxFireTime - 1.0F);
+        float progress = Mth.clamp((evasion.currentFireTime - 1.0F + partialTick) / duration,
+                0.0F, 1.0F);
+        return getFlightVisualFullRotationFromProgress(progress, direction);
+    }
+
+    private float getFlightVisualFullRotationFromProgress(float progress, int direction) {
+        // Match Blockbench's easeOutBack curve without handing +/-360 to a
+        // GeckoLib controller. GeckoLib would interpolate that numeric value
+        // back to zero after the animation and visibly reverse the roll.
+        float shifted = progress - 1.0F;
+        float eased = 1.0F + 2.70158F * shifted * shifted * shifted
+                + 1.70158F * shifted * shifted;
+        return direction * 360.0F * eased;
+    }
+
+    private void updateClientFlightTurnBank() {
+        if (!isClientSide()) return;
+
+        clientFlightTurnBankO = clientFlightTurnBank;
+        float targetBank = 0.0F;
+        if (isFlightMode() && !getActionEvasion().isInAction()) {
+            float yawSpeed = Mth.wrapDegrees(getYRot() - yRotO);
+            targetBank = Mth.clamp(-yawSpeed * 3.0F, -35.0F, 35.0F);
+        }
+        clientFlightTurnBank = Mth.lerp(0.28F, clientFlightTurnBank, targetBank);
+        if (Math.abs(clientFlightTurnBank) < 0.01F) clientFlightTurnBank = 0.0F;
+    }
+
+    public float getFlightTurnBank(float partialTick) {
+        if (!isFlightMode() || getActionEvasion().isInAction()) return 0.0F;
+        return Mth.lerp(partialTick, clientFlightTurnBankO, clientFlightTurnBank);
+    }
+
+    private void updateClientFlightTransitionAnimation() {
+        if (!isClientSide()) return;
+
+        boolean serverActive = getFlightTransitionTick() > 0;
+        if (serverActive && !clientFlightTransitionServerActive) {
+            // Start the visual clock locally. Subsequent server data values are
+            // intentionally not used as animation time because packet delivery
+            // can bunch or skip values and make the procedural rotation stutter.
+            clientFlightTransitionVisualActive = true;
+            clientFlightTransitionVisualTickO = 0;
+            clientFlightTransitionVisualTick = 1;
+            clientFlightTransitionFrom = getFlightTransitionFrom();
+            clientFlightTransitionTo = getFlightTransitionTo();
+        } else if (clientFlightTransitionVisualActive) {
+            if (clientFlightTransitionVisualTick >= FLIGHT_TRANSFORM_TOTAL_TICKS) {
+                clientFlightTransitionVisualActive = false;
+            } else {
+                clientFlightTransitionVisualTickO = clientFlightTransitionVisualTick;
+                clientFlightTransitionVisualTick++;
+            }
+        }
+        clientFlightTransitionServerActive = serverActive;
+    }
+
+    private float getClientFlightTransitionVisualProgress(float partialTick) {
+        float visualTick = Mth.lerp(partialTick,
+                clientFlightTransitionVisualTickO, clientFlightTransitionVisualTick);
+        return Mth.clamp(visualTick / Math.max(1.0F, FLIGHT_TRANSFORM_TOTAL_TICKS),
+                0.0F, 1.0F);
     }
 
     private boolean hasLoopSound = false;

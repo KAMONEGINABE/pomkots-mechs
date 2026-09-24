@@ -21,14 +21,17 @@ public class BasePartsItemRenderer<T extends BasePartsItem> extends GeoItemRende
 
     protected void copy(CachedBoneFinder mech, BakedGeoModel parts, String boneName) {
         GeoBone m = mech.getBone(boneName);
-        GeoBone p = parts.getBone(boneName).get();
+        var pb = parts.getBone(boneName);
 
-        p.setPosX(m.getPosX());
-        p.setPosY(m.getPosY());
-        p.setPosZ(m.getPosZ());
-        p.setRotX(m.getRotX());
-        p.setRotY(m.getRotY());
-        p.setRotZ(m.getRotZ());
+        if (pb.isPresent()) {
+            var p = pb.get();
+            p.setPosX(m.getPosX());
+            p.setPosY(m.getPosY());
+            p.setPosZ(m.getPosZ());
+            p.setRotX(m.getRotX());
+            p.setRotY(m.getRotY());
+            p.setRotZ(m.getRotZ());
+        }
     }
 
     public static class Head<T extends BasePartsItem> extends BasePartsItemRenderer<T> {
@@ -41,6 +44,7 @@ public class BasePartsItemRenderer<T extends BasePartsItem> extends GeoItemRende
             var parent = animatable.getCachedBoneFinder();
             if (parent != null) {
 //                copy(parent, model, "root");
+                copy(parent, model, "roll");
                 copy(parent, model, "hips");
                 copy(parent, model, "spine");
                 copy(parent, model, "body");
@@ -83,6 +87,7 @@ public class BasePartsItemRenderer<T extends BasePartsItem> extends GeoItemRende
             var parent = animatable.getCachedBoneFinder();
             if (parent != null) {
                 copy(parent, model, "root");
+                copy(parent, model, "roll");
                 copy(parent, model, "hips");
                 copy(parent, model, "spine");
                 copy(parent, model, "body");
@@ -110,6 +115,7 @@ public class BasePartsItemRenderer<T extends BasePartsItem> extends GeoItemRende
             var parent = animatable.getCachedBoneFinder();
             if (parent != null) {
 //                copy(parent, model, "root");
+                copy(parent, model, "roll");
                 copy(parent, model, "hips");
                 copy(parent, model, "spine");
                 copy(parent, model, "body");
@@ -136,6 +142,7 @@ public class BasePartsItemRenderer<T extends BasePartsItem> extends GeoItemRende
             var parent = animatable.getCachedBoneFinder();
             if (parent != null) {
                 copy(parent, model, "root");
+                copy(parent, model, "roll");
                 copy(parent, model, "hips");
                 copy(parent, model, "right_upper_leg");
                 copy(parent, model, "right_lower_leg");

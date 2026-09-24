@@ -29,6 +29,7 @@ import grcmcs.minecraft.mods.pomkotsmechs.client.input.UserInteractionManager;
 import grcmcs.minecraft.mods.pomkotsmechs.client.misc.ClientHudShake;
 import grcmcs.minecraft.mods.pomkotsmechs.client.misc.ClientScreenShake;
 import grcmcs.minecraft.mods.pomkotsmechs.client.misc.ClientElevatorRider;
+import grcmcs.minecraft.mods.pomkotsmechs.client.misc.FlightClientController;
 import grcmcs.minecraft.mods.pomkotsmechs.client.particles.*;
 import grcmcs.minecraft.mods.pomkotsmechs.client.renderer.*;
 import grcmcs.minecraft.mods.pomkotsmechs.client.renderer.misc.BlockPlacementPreviewRenderer;
@@ -253,10 +254,12 @@ public class PomkotsMechsClient {
 			return new BulletRifleEntityRenderer(context);
 		});
 		EntityRendererRegistry.register(PomkotsMechs.BULLET_MACHINE, (context)->{
-			return new BulletMachineEntityRenderer(context, 0.4F);
+			// Rifle renderer uses 1.2F: display this at 65% of the rifle size.
+			return new BulletMachineEntityRenderer(context, 1.2F * 0.65F);
 		});
 		EntityRendererRegistry.register(PomkotsMechs.BULLET_MACHINE_LARGE, (context)->{
-			return new BulletMachineEntityRenderer(context, 0.7F);
+			// Gatling round: display at 80% of the rifle size.
+			return new BulletMachineEntityRenderer(context, 1.2F * 0.8F);
 		});
 		EntityRendererRegistry.register(PomkotsMechs.BULLET_GRENADE, (context)->{
 			return new BulletGrenadeEntityRenderer(context);
@@ -320,6 +323,7 @@ public class PomkotsMechsClient {
 		});
 		EntityRendererRegistry.register(PomkotsMechs.GENERIC_ELEVATOR, GenericElevatorEntityRenderer::new);
 		EntityRendererRegistry.register(PomkotsMechs.ELEVATOR_LARGE, LargeElevatorEntityRenderer::new);
+		EntityRendererRegistry.register(PomkotsMechs.ELEVATOR_MIDDLE, grcmcs.minecraft.mods.pomkotsmechs.client.renderer.MiddleElevatorEntityRenderer::new);
 		EntityRendererRegistry.register(PomkotsMechs.GATE_HORIZONTAL, HorizontalGateEntityRenderer::new);
 		EntityRendererRegistry.register(PomkotsMechs.REUSABLE_LASER, ReusableLaserEntityRenderer::new);
 		grcmcs.minecraft.mods.pomkotsmechs.entity.misc.GenericElevatorEntity
@@ -493,6 +497,7 @@ public class PomkotsMechsClient {
 		ClientTickEvent.CLIENT_POST.register(MechCameraHandler::tick);
 		ClientTickEvent.CLIENT_POST.register(ClientHudShake::tick);
 		ClientTickEvent.CLIENT_POST.register(ClientScreenShake::tick);
+		ClientTickEvent.CLIENT_POST.register(FlightClientController::tick);
 		ClientTickEvent.CLIENT_POST.register(ClientElectricSparkEmitter::tick);
 		ClientTickEvent.CLIENT_POST.register(
 				minecraft -> ClientScanManager.clientTick()

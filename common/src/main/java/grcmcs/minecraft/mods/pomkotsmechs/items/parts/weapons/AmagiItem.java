@@ -28,6 +28,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class AmagiItem extends BasePartsItem.WeaponArm {
+    private static final ShoulderStowTransform SHOULDER_STOW_TRANSFORM =
+            new ShoulderStowTransform(0.0D, 0.0D, 0.0D, 0.0F, 0.0F, 0.0F);
+
     public AmagiItem(Properties properties) {
         super(properties);
         SingletonGeoAnimatable.registerSyncedAnimatable(this);
@@ -99,7 +102,7 @@ public class AmagiItem extends BasePartsItem.WeaponArm {
 
     @Override
     public void startUsing(ActionWeapon.WeaponMechInterface context) {
-        if (!context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
+        if (context.useWeaponMotion() && !context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
             triggerAnim(context.getPlayer(), GeoItem.getOrAssignId(context.getItemStack(), (ServerLevel) context.getWorld()), "Activation", "use");
         }
     }
@@ -139,6 +142,11 @@ public class AmagiItem extends BasePartsItem.WeaponArm {
     }
 
     @Override
+    public ShoulderStowTransform getShoulderStowTransform(AttachSide side) {
+        return SHOULDER_STOW_TRANSFORM;
+    }
+
+    @Override
     public WeaponCategory getWeaponCategory() {
         return WeaponCategory.MISC;
     }
@@ -151,6 +159,11 @@ public class AmagiItem extends BasePartsItem.WeaponArm {
     @Override
     public int getCoolTime() {
         return 60;
+    }
+
+    @Override 
+    public boolean canUseInFlight() {
+        return false;
     }
 
     @Override

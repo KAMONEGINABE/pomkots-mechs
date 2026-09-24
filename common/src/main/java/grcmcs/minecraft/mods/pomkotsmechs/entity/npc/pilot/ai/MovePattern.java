@@ -3,10 +3,13 @@ package grcmcs.minecraft.mods.pomkotsmechs.entity.npc.pilot.ai;
 import grcmcs.minecraft.mods.pomkotsmechs.client.input.DriverInput;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.npc.pilot.MechPilotEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.BasePartsItem;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.extension.SBUnitProtoTypeItem;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.function.Supplier;
 
@@ -61,6 +64,13 @@ public abstract class MovePattern {
 
     public boolean shouldExit() {
         return tick >= maxTicks;
+    }
+
+    public boolean controlsAim() {
+        return false;
+    }
+
+    public void stop() {
     }
 
     protected double distanceToTarget() {
@@ -479,6 +489,193 @@ public abstract class MovePattern {
             }
 
             return super.shouldExit();
+        }
+    }
+
+    /**
+     * High-energy assault shared by melee and ranged builds. The launch tracks
+     * with a capped turn rate, then commits so a moving player can still dodge.
+     */
+    public static class SuperBoostAssaultPattern extends MovePattern {
+        private static final int ACTIVATION_TIMEOUT_TICKS = 30;
+        private static final int MAX_ACTIVE_RUSH_TICKS = 100;
+        private static final int MELEE_ATTACK_TICKS = 10;
+        private static final int RANGED_FULL_BURST_TICKS = 30;
+        private static final double RANGED_BRAKE_DISTANCE = 16.0D;
+        // PUNCH weapons such as Kagenobu apply their hit on action tick 10.
+        // NPC assault speed is 6 blocks/tick, so begin the swing roughly 60
+        // blocks before contact and leave a little allowance for the weapon's
+        // forward hit volume. Homing stops here, preserving a dodge window.
+        private static final double MELEE_ATTACK_DISTANCE = 50.0D;
+        private static final double RANGED_ATTACK_DISTANCE = 45.0D;
+        private static final float MAX_YAW_TURN_PER_TICK = 8.0F;
+        private static final float MAX_PITCH_TURN_PER_TICK = 6.0F;
+
+        private final boolean meleeAssault;
+        private int superBoostSlot;
+        private int activeRushTicks;
+        private int attackTicks;
+        private boolean attackStarted;
+        private boolean finished;
+        private boolean hasActivated;
+
+        public SuperBoostAssaultPattern(
+                LivingEntity pilot,
+                Pmvc01Entity mech,
+                MechAutoController controller,
+                float preferredDistance,
+                boolean meleeAssault) {
+            super(pilot, mech, controller, preferredDistance);
+            this.meleeAssault = meleeAssault;
+        }
+
+        @Override
+        public void start(LivingEntity target) {
+            super.start(target);
+            maxTicks = ACTIVATION_TIMEOUT_TICKS + MAX_ACTIVE_RUSH_TICKS
+                    + (meleeAssault ? MELEE_ATTACK_TICKS : RANGED_FULL_BURST_TICKS);
+            superBoostSlot = findSuperBoostSlot();
+            mech.setNpcSuperBoostAssaultActive(true);
+        }
+
+        @Override
+        public void tick(DriverInput input) {
+            tick++;
+            setMove(0.0F, 0.0F, input);
+
+            if (target == null || !target.isAlive() || superBoostSlot == 0) {
+                finished = true;
+                return;
+            }
+
+            // Extension actions trigger on release, so create a one-tick pulse.
+            setSuperBoostExtension(input, tick == 1);
+            if (tick == 2) {
+                setSuperBoostExtension(input, false);
+            }
+
+            if (!mech.isSuperBoost()) {
+                aimTowardTarget();
+                if (tick >= ACTIVATION_TIMEOUT_TICKS && !hasActivated && !attackStarted) {
+                    finished = true;
+                }
+                if (attackStarted) tickAttack(input);
+                return;
+            }
+
+            hasActivated = true;
+
+            activeRushTicks++;
+            double distance = mech.distanceTo(target);
+            double attackDistance = meleeAssault ? MELEE_ATTACK_DISTANCE : RANGED_ATTACK_DISTANCE;
+
+            // Stop homing near the victim (or after a short pursuit) and commit
+            // to the current vector. This leaves a real sidestep dodge window.
+            if (!attackStarted && distance > attackDistance
+                    && activeRushTicks < MAX_ACTIVE_RUSH_TICKS) {
+                aimTowardTarget();
+                return;
+            }
+
+            if (!attackStarted) {
+                attackStarted = true;
+            }
+            tickAttack(input);
+        }
+
+        private void tickAttack(DriverInput input) {
+            attackTicks++;
+            if (meleeAssault) {
+                setWeaponInputs(input, true);
+                if (attackTicks >= MELEE_ATTACK_TICKS) {
+                    mech.cancelSuperBoost();
+                    finished = true;
+                }
+            } else {
+                // Keep the Super Boost committed during the full burst. Aim
+                // correction remains capped, so this is a fast strafing rush
+                // rather than an unavoidable homing attack.
+                aimTowardTarget();
+                setWeaponInputs(input, false);
+                // Start firing at range, but brake once the rush has actually
+                // reached its victim. The remainder of the burst continues
+                // from nearby instead of overshooting by dozens of blocks.
+                if (mech.isSuperBoost() && mech.distanceTo(target) <= RANGED_BRAKE_DISTANCE) {
+                    mech.cancelSuperBoost();
+                }
+                // Do not end merely because the burst timer elapsed. A fast
+                // target can still be far away at that point; keep pursuing
+                // until the rush reaches braking distance, then finish.
+                if (attackTicks >= RANGED_FULL_BURST_TICKS
+                        && (!mech.isSuperBoost()
+                        || mech.distanceTo(target) <= RANGED_BRAKE_DISTANCE)) {
+                    mech.cancelSuperBoost();
+                    finished = true;
+                }
+            }
+        }
+
+        private void setWeaponInputs(DriverInput input, boolean meleeOnly) {
+            setWeaponInput(input, mech.getRightArmWeapon(), meleeOnly, 0);
+            setWeaponInput(input, mech.getLeftArmWeapon(), meleeOnly, 1);
+            setWeaponInput(input, mech.getRightShoulderWeapon(), meleeOnly, 2);
+            setWeaponInput(input, mech.getLeftShoulderWeapon(), meleeOnly, 3);
+        }
+
+        private void setWeaponInput(DriverInput input, net.minecraft.world.item.ItemStack stack,
+                                    boolean meleeOnly, int slot) {
+            if (!(stack.getItem() instanceof BasePartsItem.Weapon weapon)) return;
+            boolean melee = weapon.getWeaponCategory() == BasePartsItem.WeaponCategory.MELEE;
+            if (meleeOnly != melee) return;
+            switch (slot) {
+                case 0 -> input.setWeaponRightHandPressed(true);
+                case 1 -> input.setWeaponLeftHandPressed(true);
+                case 2 -> input.setWeaponRightShoulderPressed(true);
+                case 3 -> input.setWeaponLeftShoulderPressed(true);
+            }
+        }
+
+        private void aimTowardTarget() {
+            Vec3 delta = target.getBoundingBox().getCenter().subtract(mech.getEyePosition());
+            double horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
+            float desiredYaw = (float)Math.toDegrees(Math.atan2(-delta.x, delta.z));
+            float desiredPitch = (float)-Math.toDegrees(Math.atan2(delta.y, horizontal));
+            float yaw = pilot.getYRot() + Mth.clamp(
+                    Mth.wrapDegrees(desiredYaw - pilot.getYRot()),
+                    -MAX_YAW_TURN_PER_TICK, MAX_YAW_TURN_PER_TICK);
+            float pitch = pilot.getXRot() + Mth.clamp(
+                    Mth.wrapDegrees(desiredPitch - pilot.getXRot()),
+                    -MAX_PITCH_TURN_PER_TICK, MAX_PITCH_TURN_PER_TICK);
+            lookAtYaw(yaw);
+            pilot.setXRot(pitch);
+            pilot.xRotO = pitch;
+        }
+
+        private int findSuperBoostSlot() {
+            if (mech.getExtension1Weapon().getItem() instanceof SBUnitProtoTypeItem) return 1;
+            if (mech.getExtension2Weapon().getItem() instanceof SBUnitProtoTypeItem) return 2;
+            return 0;
+        }
+
+        private void setSuperBoostExtension(DriverInput input, boolean pressed) {
+            if (superBoostSlot == 1) input.setExtension1Pressed(pressed);
+            if (superBoostSlot == 2) input.setExtension2Pressed(pressed);
+        }
+
+        @Override
+        public boolean controlsAim() {
+            return true;
+        }
+
+        @Override
+        public boolean shouldExit() {
+            return finished || super.shouldExit();
+        }
+
+        @Override
+        public void stop() {
+            mech.setNpcSuperBoostAssaultActive(false);
+            mech.cancelSuperBoost();
         }
     }
 

@@ -2,6 +2,7 @@ package grcmcs.minecraft.mods.pomkotsmechs.client.input;
 
 public class DriverInput {
     private short keyPressStatus = 0;
+    private final byte flightEvasionDirection;
     private DriverInput prevInput = null;
 
     public DriverInput(short st) {
@@ -9,12 +10,25 @@ public class DriverInput {
     }
 
     public DriverInput(short st, DriverInput prev) {
+        this(st, (byte) 0, prev);
+    }
+
+    public DriverInput(short st, byte flightEvasionDirection) {
+        this(st, flightEvasionDirection, null);
+    }
+
+    public DriverInput(short st, byte flightEvasionDirection, DriverInput prev) {
         this.keyPressStatus = st;
+        this.flightEvasionDirection = flightEvasionDirection;
         this.prevInput = prev;
     }
 
     public short getStatus() {
         return keyPressStatus;
+    }
+
+    public byte getFlightEvasionDirection() {
+        return flightEvasionDirection;
     }
 
     public boolean isWeaponRightHandPressed() {
@@ -47,6 +61,12 @@ public class DriverInput {
         return (this.keyPressStatus & UserInteractionManager.Keys.WEAPON_SHOULDER_R.getKeyID()) != 0;
     }
 
+    public boolean isWeaponRightShoulderJustPressed() {
+        return isWeaponRightShoulderPressed()
+                && (this.prevInput == null
+                || (this.prevInput.keyPressStatus & UserInteractionManager.Keys.WEAPON_SHOULDER_R.getKeyID()) == 0);
+    }
+
     public boolean isWeaponRightShoulderReleased() {
         if (this.prevInput != null) {
             return ((this.prevInput.keyPressStatus & UserInteractionManager.Keys.WEAPON_SHOULDER_R.getKeyID()) != 0)
@@ -58,6 +78,12 @@ public class DriverInput {
 
     public boolean isWeaponLeftShoulderPressed() {
         return (this.keyPressStatus & UserInteractionManager.Keys.WEAPON_SHOULDER_L.getKeyID()) != 0;
+    }
+
+    public boolean isWeaponLeftShoulderJustPressed() {
+        return isWeaponLeftShoulderPressed()
+                && (this.prevInput == null
+                || (this.prevInput.keyPressStatus & UserInteractionManager.Keys.WEAPON_SHOULDER_L.getKeyID()) == 0);
     }
 
     public boolean isWeaponLeftShoulderReleased() {

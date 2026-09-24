@@ -110,6 +110,7 @@ public final class MissionPilotedMechSpawner {
         mech.setTextureColor(textureColor);
         if (supplyConsumables) supplyConsumables(mech);
         mech.setChanged();
+        if (supplyConsumables) mech.refillEnergy();
         mech.setHealth(mech.getMaxHealth());
     }
 

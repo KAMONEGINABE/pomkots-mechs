@@ -43,6 +43,7 @@ import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.BlockPlacementPreviewEntit
 import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.ElevatorEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.GenericElevatorEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.LargeElevatorEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.MiddleElevatorEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.HorizontalGateEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.PlacementPreviewEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.MissionMarkerEntity;
@@ -291,6 +292,12 @@ public class PomkotsMechs {
 					.clientTrackingRange(30)
 					.updateInterval(1)
 					.build(id("generic_elevator").toString())
+	);
+	public static final RegistrySupplier<EntityType<MiddleElevatorEntity>> ELEVATOR_MIDDLE = ENTITIES.register(
+			"elevator_middle",
+			() -> EntityType.Builder.<MiddleElevatorEntity>of(MiddleElevatorEntity::new, MobCategory.MISC)
+					.sized(16.0F, 1.0F).clientTrackingRange(40).updateInterval(1)
+					.build(id("elevator_middle").toString())
 	);
 	public static final RegistrySupplier<EntityType<LargeElevatorEntity>> ELEVATOR_LARGE = ENTITIES.register(
 			"elevator_large",
@@ -681,6 +688,7 @@ public class PomkotsMechs {
 	public static final RegistrySupplier<Item> BUILDER_UNIT = ITEMS.register("builderunit", () -> new BuilderUnitItem(new Item.Properties().stacksTo(1)));
 	public static final RegistrySupplier<Item> CORE_DRILL = ITEMS.register("coredrill", () -> new CoreDrillItem(new Item.Properties().stacksTo(1)));
 	public static final RegistrySupplier<Item> GLIDER_UNIT = ITEMS.register("gliderunit", () -> new GliderUnitItem(new Item.Properties().stacksTo(1)));
+	public static final RegistrySupplier<Item> FLIGHT_UNIT = ITEMS.register("flightunit", () -> new FlightUnitItem(new Item.Properties().stacksTo(1)));
 
 	// CIRCUITS
 	public static final RegistrySupplier<Item> CIRCUIT_BASE = ITEMS.register("circuits/circuit", () -> new CircuitItem(new Item.Properties().stacksTo(64)));
@@ -940,6 +948,7 @@ public class PomkotsMechs {
 				output.accept(new ItemStack(SB_PROTO.get()));
 				output.accept(new ItemStack(BUILDER_UNIT.get()));
 				output.accept(new ItemStack(GLIDER_UNIT.get()));
+				output.accept(new ItemStack(FLIGHT_UNIT.get()));
 				output.accept(new ItemStack(CORE_DRILL.get()));
 
 				CircuitStackFactory.addAll(output);
@@ -1480,6 +1489,7 @@ public class PomkotsMechs {
 		EntityAttributeRegistry.register(ELEVATOR::get, ElevatorEntity::createMobAttributes);
 		EntityAttributeRegistry.register(GENERIC_ELEVATOR::get, GenericElevatorEntity::createAttributes);
 		EntityAttributeRegistry.register(ELEVATOR_LARGE::get, GenericElevatorEntity::createAttributes);
+		EntityAttributeRegistry.register(ELEVATOR_MIDDLE::get, GenericElevatorEntity::createAttributes);
 		EntityAttributeRegistry.register(GATE_HORIZONTAL::get, HorizontalGateEntity::createAttributes);
 		EntityAttributeRegistry.register(ARENA_CAMERA::get, ArenaCameraEntity::createMobAttributes);
 		EntityAttributeRegistry.register(CUTSCENE_CAMERA::get, CutsceneCameraEntity::createAttributes);
@@ -1584,6 +1594,7 @@ public class PomkotsMechs {
 
 	public static final String PACKET_DRIVER_INPUT = "kpm";
 	public static final String PACKET_MECH_AIM_PITCH = "map";
+	public static final String PACKET_FLIGHT_ORIENTATION = "flight_orientation";
 	public static final String PACKET_LOCK_SOFT = "ls";
 	public static final String PACKET_UNLOCK_SOFT = "uls";
 	public static final String PACKET_LOCK_HARD = "lh";
@@ -1700,11 +1711,13 @@ public class PomkotsMechs {
 		NetworkManager.registerReceiver(NetworkManager.Side.C2S, PomkotsMechs.id(PACKET_DRIVER_INPUT), (buf, context) -> {
 			Player player = context.getPlayer();
 			short keyPressStatus = buf.readShort();
+			byte flightEvasionDirection = buf.readByte();
 
 			context.queue(() -> {
 				if (Utils.isRidingPomkotsControllable(player)) {
 					Entity vehicle = player.getVehicle();
-					((PomkotsControllable) vehicle).setDriverInput(new DriverInput(keyPressStatus));
+					((PomkotsControllable) vehicle).setDriverInput(
+							new DriverInput(keyPressStatus, flightEvasionDirection));
 				}
 			});
 		});
@@ -1722,6 +1735,25 @@ public class PomkotsMechs {
 						mech.setSyncedWeaponAimPitch(
 								grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity.INV_WEAPON_RIGHT_HAND + index,
 								pitches[index]);
+					}
+				}
+			});
+		});
+
+		NetworkManager.registerReceiver(NetworkManager.Side.C2S, PomkotsMechs.id(PACKET_FLIGHT_ORIENTATION), (buf, context) -> {
+			Player player = context.getPlayer();
+			int entityId = buf.readVarInt();
+			float qx = buf.readFloat();
+			float qy = buf.readFloat();
+			float qz = buf.readFloat();
+			float qw = buf.readFloat();
+
+			context.queue(() -> {
+				if (player.getVehicle() instanceof Pmvc01Entity mech
+						&& mech.getId() == entityId && mech.isFlightMode()) {
+					float lengthSquared = qx * qx + qy * qy + qz * qz + qw * qw;
+					if (Float.isFinite(lengthSquared) && lengthSquared > 0.5F && lengthSquared < 1.5F) {
+						mech.setFlightOrientation(new org.joml.Quaternionf(qx, qy, qz, qw));
 					}
 				}
 			});

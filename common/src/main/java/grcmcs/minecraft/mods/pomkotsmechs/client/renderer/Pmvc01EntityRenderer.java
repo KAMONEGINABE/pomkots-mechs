@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import grcmcs.minecraft.mods.pomkotsmechs.client.model.Pmvc01EntityModel;
+import grcmcs.minecraft.mods.pomkotsmechs.client.model.parts.BasePartsItemModel;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.boss.Pmb99Entity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
 import grcmcs.minecraft.mods.pomkotsmechs.items.parts.BasePartsItem;
@@ -13,6 +14,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -31,6 +33,8 @@ import java.util.function.Predicate;
 public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PomkotsMechs.MODID);
+    /** Blockbench pivot of pmvc01.geo.json's roll bone, converted from pixels. */
+    private static final double FLIGHT_ROLL_PIVOT_Y = 53.0D / 16.0D;
 
     ItemRenderer itemRenderer;
 
@@ -42,6 +46,23 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
         super(renderManager, model);
         addRenderLayer(new Pmvc01EntityPartsLayer<>(this, renderManager.getItemRenderer()));
         this.itemRenderer = renderManager.getItemRenderer();
+    }
+
+    @Override
+    public void renderRecursively(PoseStack poseStack, Pmvc01Entity animatable, GeoBone bone,
+                                  RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer,
+                                  boolean isReRender, float partialTick, int packedLight, int packedOverlay,
+                                  float red, float green, float blue, float alpha) {
+        if ("flight_booster_root".equals(bone.getName())
+                || "flight_wing_root".equals(bone.getName())) {
+            String color = BasePartsItemModel.BASE_COLORS.get(animatable.getTextureColor());
+            ResourceLocation texture = new ResourceLocation(PomkotsMechs.MODID,
+                    "textures/entity/parts/" + color + ".png");
+            renderType = getRenderType(animatable, texture, bufferSource, partialTick);
+            buffer = bufferSource.getBuffer(renderType);
+        }
+        super.renderRecursively(poseStack, animatable, bone, renderType, bufferSource, buffer,
+                isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
     }
 
     @Override
@@ -58,15 +79,15 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
                 bufferSource, buffer, isReRender, partialTick,
         packedLight, packedOverlay, red, green, blue, alpha);
 
-        this.renderParts(poseStack, animatable, model, renderType,
-                bufferSource, buffer, isReRender, partialTick,
-                packedLight, packedOverlay, red, green, blue, alpha);
-
         if (animatable.getDrivingPassenger() != null) {
-            animatable.setClientSeatPos(getSeatPosition(model));
+            animatable.setClientSeatRenderPosition(getRenderedSeatBoneOffset(model), partialTick);
             animatable.setMainCameraPosition(getMainCameraPosition(model, animatable, partialTick, Pmvc01Entity.DEFAULT_SCALE));
 
         }
+
+        this.renderParts(poseStack, animatable, model, renderType,
+                bufferSource, buffer, isReRender, partialTick,
+                packedLight, packedOverlay, red, green, blue, alpha);
 
         RenderUtils.renderAdditionalHud2(animatable, poseStack, bufferSource, this.entityRenderDispatcher, 1);
 
@@ -74,6 +95,51 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
         if (animatable.getVehicle() instanceof Pmb99Entity pmb99) {
             poseStack.popPose();
         }
+    }
+
+    @Override
+    protected void applyRotations(Pmvc01Entity animatable, PoseStack poseStack,
+                                  float ageInTicks, float rotationYaw, float partialTick) {
+        super.applyRotations(animatable, poseStack, ageInTicks, rotationYaw, partialTick);
+        applyFlightBoostVibration(poseStack, animatable, partialTick);
+        if (animatable.isFlightMode()) {
+            float pitch = Mth.lerp(partialTick, animatable.xRotO, animatable.getXRot());
+            poseStack.mulPose(Axis.XP.rotationDegrees(-pitch));
+        }
+        applyFlightPitchFlip(poseStack, animatable, partialTick);
+        if (animatable.isFlightMode()) {
+            applyFlightRoll(poseStack, animatable, partialTick);
+        }
+    }
+
+    @Override
+    public void renderFinal(PoseStack poseStack, Pmvc01Entity animatable, BakedGeoModel model,
+                            MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick,
+                            int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+        super.renderFinal(poseStack, animatable, model, bufferSource, buffer, partialTick,
+                packedLight, packedOverlay, red, green, blue, alpha);
+        Pmvc01FlightTrailRenderer.render(poseStack, animatable, bufferSource, partialTick);
+    }
+
+    private void applyFlightPitchFlip(PoseStack poseStack, Pmvc01Entity animatable, float partialTick) {
+        float flip = animatable.getFlightVisualPitchFlip(partialTick);
+        if (Math.abs(flip) < 0.001F) return;
+
+        poseStack.translate(0.0D, FLIGHT_ROLL_PIVOT_Y, 0.0D);
+        poseStack.mulPose(Axis.XP.rotationDegrees(flip));
+        poseStack.translate(0.0D, -FLIGHT_ROLL_PIVOT_Y, 0.0D);
+    }
+
+    private void applyFlightRoll(PoseStack poseStack, Pmvc01Entity animatable, float partialTick) {
+        float roll = animatable.getFlightTurnBank(partialTick)
+                + animatable.getFlightVisualRoll(partialTick);
+        if (Math.abs(roll) < 0.001F) return;
+
+        // Rotate around the same point as the model's `roll` bone instead of
+        // the entity render origin at its feet.
+        poseStack.translate(0.0D, FLIGHT_ROLL_PIVOT_Y, 0.0D);
+        poseStack.mulPose(Axis.ZP.rotationDegrees(roll));
+        poseStack.translate(0.0D, -FLIGHT_ROLL_PIVOT_Y, 0.0D);
     }
 
     public void renderParts(PoseStack poseStack, Pmvc01Entity animatable, BakedGeoModel bakedModel, RenderType renderType,
@@ -84,6 +150,14 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
         float yaw = lerpYaw(partialTick, animatable.yBodyRotO, animatable.yBodyRot) + 180;
         poseStack.mulPose(Axis.YP.rotationDegrees(-yaw)); // 反転を考慮
 
+        if (animatable.isFlightMode()) {
+            float pitch = Mth.lerp(partialTick, animatable.xRotO, animatable.getXRot());
+            poseStack.mulPose(Axis.XP.rotationDegrees(-pitch));
+        }
+        applyFlightPitchFlip(poseStack, animatable, partialTick);
+        if (animatable.isFlightMode()) {
+            applyFlightRoll(poseStack, animatable, partialTick);
+        }
         renderPart(animatable.getHeadParts(), (item) -> item instanceof BasePartsItem.Head, poseStack, animatable, bakedModel, renderType, bufferSource, packedLight, packedOverlay);
         renderPart(animatable.getBodyParts(), (item) -> item instanceof BasePartsItem.Body, poseStack, animatable, bakedModel, renderType, bufferSource, packedLight, packedOverlay);
         renderPart(animatable.getArmParts(), (item) -> item instanceof BasePartsItem.Arm, poseStack, animatable, bakedModel, renderType, bufferSource, packedLight, packedOverlay);
@@ -144,6 +218,36 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
         }
     }
 
+    private void applyFlightBoostVibration(PoseStack poseStack, Pmvc01Entity mech, float partialTick) {
+        if (!mech.isFlightMode() || !mech.isFlightSuperBoost()) return;
+        double time = mech.tickCount + partialTick;
+        poseStack.translate(Math.sin(time * 2.7D) * 0.055D,
+                Math.sin(time * 3.9D) * 0.040D, 0.0D);
+    }
+
+    /**
+     * Reads the seat after GeckoLib has rendered the complete bone hierarchy.
+     * World-space translation is removed by subtracting the root bone, while
+     * the exact yaw/pitch/roll/transition matrices used for this frame remain.
+     */
+    private Vec3 getRenderedSeatBoneOffset(BakedGeoModel model) {
+        if (model == null) return Vec3.ZERO;
+
+        GeoBone seat = model.getBone("head").orElse(null);
+        GeoBone root = model.getBone("root").orElse(null);
+        if (seat == null || root == null) {
+            Vec3 fallback = getSeatPosition(model);
+            return fallback.add(0.0D, 4.2D, 0.0D);
+        }
+
+        Vector3d seatWorld = seat.getWorldPosition();
+        Vector3d rootWorld = root.getWorldPosition();
+        return new Vec3(
+                seatWorld.x - rootWorld.x,
+                seatWorld.y - rootWorld.y,
+                seatWorld.z - rootWorld.z);
+    }
+
     private Vec3 getMainCameraPosition(BakedGeoModel model, Pmvc01Entity entity, float partialTick, float scale) {
         if (model != null) {
             GeoBone vcSeat = null;
@@ -172,6 +276,15 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
         this.scaleHeight = Pmvc01Entity.DEFAULT_SCALE;
         this.scaleWidth = Pmvc01Entity.DEFAULT_SCALE;
         animatable.setupBoneFinder(model);
+        // Enable matrix tracking before recursive rendering so the seat is
+        // available with the current frame's complete parent/render transforms
+        // from the very first frame, including flight pitch and bank.
+        model.getBone("head").ifPresent(GeoBone::getLocalSpaceMatrix);
+        model.getBone("root").ifPresent(GeoBone::getLocalSpaceMatrix);
+        Pmvc01FlightTrailRenderer.enableBoneTracking(model, animatable.isFlightMode() && animatable.hasFlightUnit());
+        boolean hideFlightUnit = !animatable.hasFlightUnit();
+        model.getBone("flight_wing_root").ifPresent(bone -> bone.setHidden(hideFlightUnit));
+        model.getBone("flight_booster_root").ifPresent(bone -> bone.setHidden(hideFlightUnit));
         setWeaponsVisibility(model, animatable, animatable.isMainMode());
 //        setBoosterVisibilitty(model, animatable);
 //        rotateBooster(animatable, 0, 0);

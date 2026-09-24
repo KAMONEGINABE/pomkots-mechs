@@ -17,13 +17,13 @@ public class TargetPriority {
         this.sizeWeight = sizeWeight;
     }
 
-    public double calculatePriority(Player player, Entity target) {
+    public double calculatePriority(Player player, Entity target, double maxDistance) {
         Vec3 eyePos = player.getEyePosition();
         Vec3 lookDirection = player.getLookAngle();
 
         // 距離スコア (近いほど高い)
         double distance = eyePos.distanceTo(target.position());
-        double distanceScore = Math.max(0, 1.0 - (distance / 150.0));
+        double distanceScore = Math.max(0, 1.0 - (distance / maxDistance));
 
         // 角度スコア (中心に近いほど高い)
         Vec3 toTarget = target.position().subtract(eyePos).normalize();

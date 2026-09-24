@@ -823,7 +823,9 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
             case RIGHT_ARM, LEFT_ARM ->
                     item instanceof BasePartsItem.WeaponArm;
             case RIGHT_SHOULDER, LEFT_SHOULDER ->
-                    item instanceof BasePartsItem.WeaponShoulder;
+                    item instanceof BasePartsItem.WeaponShoulder
+                            || (menu.isArmWeaponRackEnabled()
+                            && item instanceof BasePartsItem.WeaponArm);
             case EXT1, EXT2 ->
                     item instanceof BasePartsItem.Extension;
         };

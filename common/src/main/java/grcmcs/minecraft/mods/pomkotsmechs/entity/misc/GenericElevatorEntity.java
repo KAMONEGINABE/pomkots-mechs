@@ -1,6 +1,7 @@
 package grcmcs.minecraft.mods.pomkotsmechs.entity.misc;
 
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -20,6 +21,7 @@ import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.PushReaction;
@@ -47,6 +49,8 @@ public class GenericElevatorEntity extends LivingEntity implements GeoEntity {
     private static final float HEIGHT = 0.5F;
     private static final double MOVE_SPEED = 0.35D;
     private static final double ARRIVAL_DISTANCE = 0.08D;
+    // Exactly representable by relative entity position packets (1/4096 block).
+    public static final double PLATFORM_Y_OFFSET = 819.0D / 4096.0D;
 
     private static final EntityDataAccessor<Boolean> MOVING =
             SynchedEntityData.defineId(GenericElevatorEntity.class, EntityDataSerializers.BOOLEAN);
@@ -61,8 +65,14 @@ public class GenericElevatorEntity extends LivingEntity implements GeoEntity {
     private BlockPos endPlatform = BlockPos.ZERO;
     private BlockPos targetController = BlockPos.ZERO;
     private final Map<UUID, Integer> carriedEntityGraceTicks = new HashMap<>();
+    // Client riders follow the interpolated platform, which trails the server.
+    // Remember actual riders rather than exempting everyone near a moving lift.
+    private final Map<UUID, Long> clientRiderSupportUntil = new HashMap<>();
+    private long clientRiderSettleUntil = Long.MIN_VALUE;
     private long groundSupportCheckTick = Long.MIN_VALUE;
     private boolean groundSupportCheckResult;
+    /** Prevents an occupied small elevator from immediately returning after arrival. */
+    private boolean playerDrivenMechAutoTriggerOccupied;
 
     public GenericElevatorEntity(EntityType<? extends LivingEntity> type, Level level) {
         super(type, level);
@@ -125,6 +135,7 @@ public class GenericElevatorEntity extends LivingEntity implements GeoEntity {
             return false;
         }
         targetController = destination;
+        updateClientRiders();
         entityData.set(MOVING, true);
         level().playSound(null, blockPosition(), PomkotsMechs.SE_ELEVATOR.get(),
                 SoundSource.BLOCKS, 1.0F, 0.7F);
@@ -139,6 +150,7 @@ public class GenericElevatorEntity extends LivingEntity implements GeoEntity {
     @Override
     public void tick() {
         setNoGravity(true);
+        setDeltaMovement(Vec3.ZERO);
         super.tick();
         lockYaw();
         setDeltaMovement(Vec3.ZERO);
@@ -147,7 +159,9 @@ public class GenericElevatorEntity extends LivingEntity implements GeoEntity {
             return;
         }
         if (!isMoving()) {
+            if (level().getGameTime() > clientRiderSettleUntil) clientRiderSupportUntil.clear();
             stabilizeStationaryContents();
+            tickSmallElevatorAutoDeparture();
             return;
         }
 
@@ -156,26 +170,89 @@ public class GenericElevatorEntity extends LivingEntity implements GeoEntity {
         double distance = difference.length();
         Vec3 requested = distance <= MOVE_SPEED
                 ? difference : difference.scale(MOVE_SPEED / distance);
+        updateClientRiders();
         movePlatformAndContents(requested);
 
         if (position().distanceToSqr(target) <= ARRIVAL_DISTANCE * ARRIVAL_DISTANCE) {
             Vec3 snap = target.subtract(position());
             movePlatformAndContents(snap);
             entityData.set(MOVING, false);
+            clientRiderSettleUntil = level().getGameTime() + 10;
             level().playSound(null, blockPosition(), PomkotsMechs.SE_ELEVATOR.get(),
                     SoundSource.BLOCKS, 1.0F, 0.7F);
             setChangedForSync();
         }
     }
 
+    /**
+     * The normal 6.5-block platform doubles as a vehicle-operated lift. Medium
+     * and large mission platforms remain controller/redstone-only.
+     */
+    private void tickSmallElevatorAutoDeparture() {
+        if (getType() != PomkotsMechs.GENERIC_ELEVATOR.get()) return;
+
+        boolean occupied = entitiesOnTop().stream().anyMatch(entity ->
+                entity instanceof Pmvc01Entity mech
+                        && !mech.isBroken()
+                        && mech.getDrivingPassenger() instanceof Player player
+                        && player.isAlive());
+
+        if (occupied && !playerDrivenMechAutoTriggerOccupied) {
+            playerDrivenMechAutoTriggerOccupied = true;
+            beginMove();
+        } else if (!occupied) {
+            // Re-arm only after the player-driven mech has left the platform.
+            playerDrivenMechAutoTriggerOccupied = false;
+        }
+    }
+
+    private void updateClientRiders() {
+        if (!(level() instanceof ServerLevel serverLevel)) return;
+        long now = level().getGameTime();
+        AABB platform = getBoundingBox();
+        clientRiderSupportUntil.entrySet().removeIf(entry -> entry.getValue() < now);
+        for (ServerPlayer player : serverLevel.players()) {
+            AABB box = player.getBoundingBox();
+            double gap = box.minY - platform.maxY;
+            boolean remembered = clientRiderSupportUntil.containsKey(player.getUUID());
+            if (player.isSpectator() || player.isPassenger() || !player.isAlive()
+                    || box.maxX <= platform.minX || box.minX >= platform.maxX
+                    || box.maxZ <= platform.minZ || box.minZ >= platform.maxZ
+                    || gap > 0.5D || gap < (remembered ? -2.5D : -0.25D)) {
+                clientRiderSupportUntil.remove(player.getUUID());
+                continue;
+            }
+            clientRiderSupportUntil.put(player.getUUID(), now + 10);
+        }
+    }
+
+    /** Only the tracked rider's own moving platform is ignored, never blocks. */
+    public boolean usesClientRiderCollision(Entity entity) {
+        if (!(entity instanceof ServerPlayer player) || player.isPassenger() || !player.isAlive()) return false;
+        long now = level().getGameTime();
+        if (!isMoving() && now > clientRiderSettleUntil) return false;
+        if (clientRiderSupportUntil.getOrDefault(player.getUUID(), Long.MIN_VALUE) < now) return false;
+        AABB box = player.getBoundingBox();
+        AABB platform = getBoundingBox();
+        double gap = box.minY - platform.maxY;
+        return box.maxX > platform.minX && box.minX < platform.maxX
+                && box.maxZ > platform.minZ && box.minZ < platform.maxZ
+                && gap >= -2.5D && gap <= 0.5D;
+    }
+
     private void stabilizeStationaryContents() {
         AABB platform = getBoundingBox();
         double platformTop = platform.maxY;
-        for (Entity entity : entitiesOnTop()) {
+        for (Entity entity : level().getEntities(this, platform.inflate(0, 1.25D, 0))) {
             if (entity instanceof ServerPlayer || entity.isRemoved()
+                    || entity instanceof HorizontalGateEntity || entity.isPassenger()
                     || entity.getDeltaMovement().y > 0.05D) continue;
             double correction = platformTop - entity.getBoundingBox().minY;
-            if (Math.abs(correction) > 1.25D) continue;
+            AABB box = entity.getBoundingBox();
+            if (correction <= 1.0E-5D || correction > 1.25D
+                    || box.maxX <= platform.minX || box.minX >= platform.maxX
+                    || box.maxZ <= platform.minZ || box.minZ >= platform.maxZ
+                    || !level().noCollision(entity, box.move(0, correction, 0).deflate(0.001D))) continue;
             if (Math.abs(correction) > 1.0E-5D) {
                 entity.setPos(entity.getX(), entity.getY() + correction, entity.getZ());
             }
@@ -280,7 +357,7 @@ public class GenericElevatorEntity extends LivingEntity implements GeoEntity {
         double horizontalOffset = platformHorizontalCenterOffset();
         return new Vec3(
                 platform.getX() + horizontalOffset,
-                platform.getY() + 0.2D,
+                platform.getY() + PLATFORM_Y_OFFSET,
                 platform.getZ() + horizontalOffset);
     }
 
@@ -362,7 +439,9 @@ public class GenericElevatorEntity extends LivingEntity implements GeoEntity {
     }
 
     @Override public AnimatableInstanceCache getAnimatableInstanceCache() { return geoCache; }
-    @Override public boolean canBeCollidedWith() { return !isStoppedOnGround(); }
+    // Ground support must not remove the platform's top collision: clients
+    // otherwise fall through it and fight the rider's penetration correction.
+    @Override public boolean canBeCollidedWith() { return true; }
     @Override public boolean isPushable() { return false; }
     @Override protected void pushEntities() { }
     @Override public PushReaction getPistonPushReaction() { return PushReaction.IGNORE; }

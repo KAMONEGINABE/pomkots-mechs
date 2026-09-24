@@ -253,6 +253,10 @@ public class ActionWeapon extends Action {
             return action.itemStack;
         }
 
+        public boolean useWeaponMotion() {
+            return !owner.isFlightMode() || action.weapon.useWeaponMotionInFlight();
+        }
+
         public int isRight() {
             if (action.weaponItemSlot == Pmvc01Entity.INV_WEAPON_RIGHT_HAND || action.weaponItemSlot == Pmvc01Entity.INV_WEAPON_RIGHT_SHOULDER) {
                 return -1;

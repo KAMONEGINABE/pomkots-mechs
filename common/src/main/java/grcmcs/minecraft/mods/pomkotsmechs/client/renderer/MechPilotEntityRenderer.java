@@ -22,7 +22,9 @@ public class MechPilotEntityRenderer extends GeoEntityRenderer<MechPilotEntity> 
     @Override
     public void actuallyRender(PoseStack poseStack, MechPilotEntity animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
         if (animatable.getVehicle() instanceof PomkotsVehicle robot) {
-            Vec3 seatPos = robot.getClientSeatPos(animatable);
+            Vec3 seatPos = robot instanceof Pmvc01Entity pmvc
+                    ? pmvc.getClientSeatPosForRender(animatable, partialTick)
+                    : robot.getClientSeatPos(animatable);
 
             poseStack.pushPose();
 

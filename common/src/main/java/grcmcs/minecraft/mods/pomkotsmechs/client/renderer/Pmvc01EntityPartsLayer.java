@@ -31,6 +31,9 @@ public class Pmvc01EntityPartsLayer <T extends Pmvc01Entity> extends GeoRenderLa
 
     @Override
     public void renderForBone(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
+        if (bone.getName().startsWith("flight_trail_wing_")) {
+            Pmvc01FlightTrailRenderer.captureBone(animatable, bone, partialTick);
+        }
         if ("weapon_right_hand".equals(bone.getName())) {
             this.renderWeapon(BasePartsItem.AttachSide.RIGHT, BasePartsItem.WeaponInterface.WeaponAttachPoint.ATTACH_POINT_HAND, animatable.getRightArmWeapon(), poseStack,  animatable,  bone,  renderType,  bufferSource,  buffer,  partialTick,  packedLight,  packedOverlay);
         } else if ("weapon_right_arm".equals(bone.getName())) {
@@ -55,10 +58,37 @@ public class Pmvc01EntityPartsLayer <T extends Pmvc01Entity> extends GeoRenderLa
             return;
         }
 
-        if (item.getItem() instanceof BasePartsItem.Weapon w && point.equals(w.getWeaponAttachPoint())) {
+        boolean armWeaponStoredOnShoulder = point == BasePartsItem.WeaponInterface.WeaponAttachPoint.ATTACH_POINT_SHOULDER
+                && item.getItem() instanceof BasePartsItem.WeaponArm
+                && (animatable.hasArmWeaponRack()
+                || animatable.isArmWeaponRackDeployed(side == BasePartsItem.AttachSide.RIGHT));
+        if (item.getItem() instanceof BasePartsItem.Weapon w
+                && (point.equals(w.getWeaponAttachPoint()) || armWeaponStoredOnShoulder)) {
             poseStack.pushPose();
 
-            RenderUtils.translateAndRotateMatrixForBone(poseStack, bone);
+            // GeoRenderLayer#renderForBone is invoked after GeckoLib has
+            // already applied this bone's transform to the pose stack. The
+            // legacy attachment path applies it once more, but doing that to
+            // the animated shoulder attachment in FLIGHT doubles its X
+            // rotation (for example, an authored 70 degrees becomes 140).
+            // Keep the legacy transform everywhere else to avoid changing
+            // existing normal/GERWALK weapon placement.
+            boolean flightShoulder = animatable.isFlightMode()
+                    && point == BasePartsItem.WeaponInterface.WeaponAttachPoint.ATTACH_POINT_SHOULDER;
+            if (flightShoulder) {
+                // The recursive bone renderer leaves the matrix translated
+                // away from the pivot after applying the bone transform. Move
+                // back to the attachment pivot, but do not rotate again.
+                RenderUtils.translateToPivotPoint(poseStack, bone);
+            } else {
+                RenderUtils.translateAndRotateMatrixForBone(poseStack, bone);
+            }
+            if (armWeaponStoredOnShoulder) {
+                applyShoulderStowTransform(poseStack, w.getShoulderStowTransform(side));
+            }
+            if (animatable.isFlightMode()) {
+                applyFlightRenderTransform(poseStack, w.getFlightRenderTransform(side));
+            }
 
             w.setParentEntity(animatable);
             w.setSide(side);
@@ -81,6 +111,35 @@ public class Pmvc01EntityPartsLayer <T extends Pmvc01Entity> extends GeoRenderLa
 
             poseStack.popPose();
         }
+    }
+
+    private static void applyShoulderStowTransform(
+            PoseStack poseStack,
+            BasePartsItem.WeaponInterface.ShoulderStowTransform transform
+    ) {
+        poseStack.translate(
+                transform.offsetX() / 16.0D,
+                transform.offsetY() / 16.0D,
+                transform.offsetZ() / 16.0D
+        );
+        if (transform.rotationX() != 0.0F) {
+            poseStack.mulPose(Axis.XP.rotationDegrees(transform.rotationX()));
+        }
+        if (transform.rotationY() != 0.0F) {
+            poseStack.mulPose(Axis.YP.rotationDegrees(transform.rotationY()));
+        }
+        if (transform.rotationZ() != 0.0F) {
+            poseStack.mulPose(Axis.ZP.rotationDegrees(transform.rotationZ()));
+        }
+    }
+
+    private static void applyFlightRenderTransform(
+            PoseStack poseStack, BasePartsItem.WeaponInterface.FlightRenderTransform transform) {
+        poseStack.translate(transform.offsetX() / 16.0D,
+                transform.offsetY() / 16.0D, transform.offsetZ() / 16.0D);
+        if (transform.rotationX() != 0.0F) poseStack.mulPose(Axis.XP.rotationDegrees(transform.rotationX()));
+        if (transform.rotationY() != 0.0F) poseStack.mulPose(Axis.YP.rotationDegrees(transform.rotationY()));
+        if (transform.rotationZ() != 0.0F) poseStack.mulPose(Axis.ZP.rotationDegrees(transform.rotationZ()));
     }
 
     private void renderExtensionsSpine(PoseStack poseStack, T animatable, GeoBone bone, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {

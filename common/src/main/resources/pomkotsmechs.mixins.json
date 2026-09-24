@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_17",
   "minVersion": "0.8",
   "mixins": [
+    "ElevatorCollisionMixin",
     "LivingEntityMixin",
     "CameraAccessor",
     "PlayerEntityMixin",
@@ -13,6 +14,7 @@
   "client": [
     "GuiMixin",
     "CameraMixin",
+    "FlightFovMixin",
     "BotDriverRenderer",
     "MusicManagerMixin",
     "LivingEntityRendererMixin",
@@ -27,6 +29,7 @@
     "EntityScanHighlightMixin",
     "EntityScanColorMixin",
     "EntityRenderDispatcherMixin"
+    ,"EntityFlightTurnMixin"
   ],
   "injectors": {
     "defaultRequire": 1

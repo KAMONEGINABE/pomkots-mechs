@@ -19,7 +19,7 @@ public class MissileProjectileModel<T extends Entity> extends EntityModel<T> {
     private static final float FLAME_U1 = 58.0F / 64.0F;
     private static final float FLAME_V0 = 29.5F / 64.0F;
     private static final float FLAME_V1 = 59.5F / 64.0F;
-    private static final float FLAME_HALF_WIDTH = 2.14265F / 16.0F;
+    private static final float FLAME_HALF_WIDTH = (2.14265F / 16.0F) * 1.5F;
     private static final float FLAME_BASE_LENGTH = 14.28432F / 16.0F;
 
     private final ModelPart body;
@@ -98,10 +98,12 @@ public class MissileProjectileModel<T extends Entity> extends EntityModel<T> {
 
     private static void drawFlameQuad(PoseStack.Pose pose, VertexConsumer buffer,
                                       float halfWidth, float length, int light) {
-        vertex(buffer, pose, -halfWidth, 0.0F, 0.0F, FLAME_U0, FLAME_V0, light);
-        vertex(buffer, pose, halfWidth, 0.0F, 0.0F, FLAME_U1, FLAME_V0, light);
-        vertex(buffer, pose, halfWidth, 0.0F, -length, FLAME_U1, FLAME_V1, light);
-        vertex(buffer, pose, -halfWidth, 0.0F, -length, FLAME_U0, FLAME_V1, light);
+        // Keep the exhaust geometry on the tail, but orient its texture so the
+        // flame root is at the nozzle and its tip points away from the missile.
+        vertex(buffer, pose, -halfWidth, 0.0F, 0.0F, FLAME_U0, FLAME_V1, light);
+        vertex(buffer, pose, halfWidth, 0.0F, 0.0F, FLAME_U1, FLAME_V1, light);
+        vertex(buffer, pose, halfWidth, 0.0F, -length, FLAME_U1, FLAME_V0, light);
+        vertex(buffer, pose, -halfWidth, 0.0F, -length, FLAME_U0, FLAME_V0, light);
     }
 
     private static void vertex(VertexConsumer buffer, PoseStack.Pose pose,

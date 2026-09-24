@@ -27,7 +27,9 @@ public abstract class BotDriverRenderer <T extends LivingEntity, M extends Entit
     public void onRender(T entity, float yaw, float tickDelta, PoseStack poseStack, MultiBufferSource vertexConsumers, int light, CallbackInfo ci) {
         // エンティティが特定のエンティティに乗っている場合、座標を調整する
         if (entity.getVehicle() instanceof PomkotsVehicle robot) {
-            Vec3 seatPos = robot.getClientSeatPos(entity);
+            Vec3 seatPos = robot instanceof Pmvc01Entity pmvc
+                    ? pmvc.getClientSeatPosForRender(entity, tickDelta)
+                    : robot.getClientSeatPos(entity);
 
             //@JOKE
             if (robot instanceof Pmvc01Entity pmvc && pmvc.getVehicle() instanceof Pmb99Entity pmb99) {

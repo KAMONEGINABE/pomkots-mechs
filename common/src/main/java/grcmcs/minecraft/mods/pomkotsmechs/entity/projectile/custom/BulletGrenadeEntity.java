@@ -28,6 +28,20 @@ public class BulletGrenadeEntity extends PomkotsCustomThrowableProjectile {
     public BulletGrenadeEntity(EntityType<? extends ThrowableProjectile> entityType, Level level, LivingEntity shooter, int maxLifeTicks, float damage, int stun) {
         super(entityType, level, shooter,
                 maxLifeTicks, damage,stun);
+        // Fast client-predicted projectiles can temporarily outrun Forge's
+        // interpolated culling box. Keep grenade rendering consistent with the
+        // rifle and machine-gun projectiles.
+        this.noCulling = true;
+    }
+
+    @Override
+    public boolean shouldRender(double cameraX, double cameraY, double cameraZ) {
+        return true;
+    }
+
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        return true;
     }
 
     public void setExplosionScale(int scale) {
