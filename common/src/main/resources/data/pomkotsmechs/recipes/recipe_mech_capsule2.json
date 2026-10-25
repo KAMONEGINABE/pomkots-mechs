@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "N": {
+      "item": "minecraft:iron_nugget"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "pattern": [
+    " N ",
+    "I I",
+    " I "
+  ],
+  "result": {
+    "item": "pomkotsmechs:mech_capsule2",
+    "count": 1
+  },
+  "show_notification": true
+}

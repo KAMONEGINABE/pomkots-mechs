@@ -3,7 +3,7 @@
     "category": "misc",
     "key": {
         "A": {
-            "item": "pomkotsmechs:p_titanium_nugget"
+            "tag": "forge:nuggets/titanium"
         }
     },
     "pattern": [
