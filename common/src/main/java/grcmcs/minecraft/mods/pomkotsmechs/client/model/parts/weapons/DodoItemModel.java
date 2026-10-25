@@ -1,0 +1,15 @@
+package grcmcs.minecraft.mods.pomkotsmechs.client.model.parts.weapons;
+
+import grcmcs.minecraft.mods.pomkotsmechs.client.model.parts.BasePartsItemModel;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.weapons.DodoItem;
+import net.minecraft.resources.ResourceLocation;
+
+public class DodoItemModel extends BasePartsItemModel<DodoItem> {
+   public ResourceLocation getModelResource(DodoItem animatable) {
+      return new ResourceLocation("pomkotsmechs", "geo/dodo.geo.json");
+   }
+
+   public ResourceLocation getAnimationResource(DodoItem animatable) {
+      return new ResourceLocation("pomkotsmechs", "animations/dodo.animation.json");
+   }
+}

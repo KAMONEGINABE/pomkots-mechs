@@ -1,4 +1,52 @@
 {
+  "title": {
+    "category": "music",
+    "sounds": [
+      { "name": "pomkotsmechs:bgm/mass_theme", "stream": true}
+    ]
+  },
+  "opening": {
+    "category": "music",
+    "sounds": [
+      { "name": "pomkotsmechs:bgm/lvsd_0005_02_cocoon", "stream": true}
+    ]
+  },
+  "ruin_city": {
+    "category": "music",
+    "sounds": [
+      { "name": "minecraft:music/game/echo_in_the_wind", "stream": true},
+      { "name": "minecraft:music/game/an_ordinary_day", "stream": true },
+      { "name": "minecraft:music/game/floating_dream", "stream": true },
+      { "name": "pomkotsmechs:bgm/lvsd_0005_02_cocoon", "stream": true},
+      { "name": "pomkotsmechs:bgm/lvsd_0005_06_chrono_end", "stream": true},
+      { "name": "pomkotsmechs:bgm/mass_field_a", "stream": true}
+    ]
+  },
+  "battle_boss": {
+    "category": "music",
+    "sounds": [
+      { "name": "pomkotsmechs:bgm/lvsd_0004_10_battle_field", "stream": true }
+    ]
+  },
+  "battle_raid": {
+    "category": "music",
+    "sounds": [
+      { "name": "pomkotsmechs:bgm/lvsd_0004_11_echoes_of_valhalla", "stream": true },
+      { "name": "pomkotsmechs:bgm/lvsd_0005_01_fates_fall", "stream": true }
+    ]
+  },
+  "field_a": {
+    "category": "music",
+    "sounds": [
+      { "name": "pomkotsmechs:bgm/mass_field_a", "stream": true}
+    ]
+  },
+  "ruin_scattered": {
+    "category": "music",
+    "sounds": [
+      { "name": "minecraft:music/game/an_ordinary_day", "stream": true }
+    ]
+  },
   "se_bossdown": {
     "sounds": [
       "pomkotsmechs:se_bossdown"
@@ -52,6 +100,16 @@
   "se_hit": {
     "sounds": [
       "pomkotsmechs:se_hit"
+    ]
+  },
+  "se_hit_middle": {
+    "sounds": [
+      "pomkotsmechs:se_hit_middle"
+    ]
+  },
+  "se_hit_heavy": {
+    "sounds": [
+      "pomkotsmechs:se_hit_heavy"
     ]
   },
   "se_gatling": {
@@ -132,6 +190,171 @@
   "se_water": {
     "sounds": [
       "pomkotsmechs:se_water"
+    ]
+  },
+  "se_rifle": {
+    "sounds": [
+      "pomkotsmechs:se_rifle"
+    ]
+  },
+  "se_shotgun": {
+    "sounds": [
+      "pomkotsmechs:se_shotgun"
+    ]
+  },
+  "se_saber": {
+    "sounds": [
+      "pomkotsmechs:se_saber"
+    ]
+  },
+  "se_alert": {
+    "sounds": [
+      "pomkotsmechs:se_alert"
+    ]
+  },
+  "se_bossboxopen": {
+    "sounds": [
+      "pomkotsmechs:se_bossboxopen"
+    ]
+  },
+  "se_walk_large": {
+    "sounds": [
+      "pomkotsmechs:se_walk_large"
+    ]
+  },
+  "se_machine": {
+    "sounds": [
+      "pomkotsmechs:se_machine"
+    ]
+  },
+  "se_impact_1": {
+    "sounds": [
+      "pomkotsmechs:se_impact_1"
+    ]
+  },
+  "se_impact_2": {
+    "sounds": [
+      "pomkotsmechs:se_impact_2"
+    ]
+  },
+  "se_chainsaw": {
+    "sounds": [
+      "pomkotsmechs:se_chainsaw"
+    ]
+  },
+  "se_beam1": {
+    "sounds": [
+      "pomkotsmechs:se_beam1"
+    ]
+  },
+  "se_beam2": {
+    "sounds": [
+      "pomkotsmechs:se_beam2"
+    ]
+  },
+  "se_charge": {
+    "sounds": [
+      "pomkotsmechs:se_charge"
+    ]
+  },
+  "se_gashan": {
+    "sounds": [
+      "pomkotsmechs:se_gashan"
+    ]
+  },
+  "se_boost": {
+    "sounds": [
+      "pomkotsmechs:se_boost"
+    ]
+  },
+  "se_dash": {
+    "sounds": [
+      "pomkotsmechs:se_dash"
+    ]
+  },
+  "se_gun1": {
+    "sounds": [
+      "pomkotsmechs:se_gun1"
+    ]
+  },
+  "se_gun2": {
+    "sounds": [
+      "pomkotsmechs:se_gun2"
+    ]
+  },
+  "se_gun3": {
+    "sounds": [
+      "pomkotsmechs:se_gun3"
+    ]
+  },
+  "se_boost_charge": {
+    "sounds": [
+      "pomkotsmechs:se_boost_charge"
+    ]
+  },
+  "se_heri": {
+    "sounds": [
+      "pomkotsmechs:se_heri"
+    ]
+  },
+  "se_reload": {
+    "sounds": [
+      "pomkotsmechs:se_reload"
+    ]
+  },
+  "se_start_car": {
+    "sounds": [
+      "pomkotsmechs:se_start_car"
+    ]
+  },
+  "se_close_door": {
+    "sounds": [
+      "pomkotsmechs:se_close_door"
+    ]
+  },
+  "se_beep": {
+    "sounds": [
+      "pomkotsmechs:se_beep"
+    ]
+  },
+  "se_register": {
+    "sounds": [
+      "pomkotsmechs:se_register"
+    ]
+  },
+  "se_coin": {
+    "sounds": [
+      "pomkotsmechs:se_coin"
+    ]
+  },
+  "se_elevator": {
+    "sounds": [
+      "pomkotsmechs:se_elevator"
+    ]
+  },
+  "se_cheers": {
+    "sounds": [
+      "pomkotsmechs:se_cheers"
+    ]
+  },
+  "se_arena_start": {
+    "sounds": [
+      "pomkotsmechs:se_arena_start"
+    ]
+  },
+  "se_arena_end": {
+    "sounds": [
+      "pomkotsmechs:se_arena_end"
+    ]
+  },
+  "se_scan1": {
+    "sounds": [
+      "pomkotsmechs:se_scan1"
+    ]
+  },
+  "se_scan2": {
+    "sounds": [
+      "pomkotsmechs:se_scan2"
     ]
   }
 }

@@ -1,0 +1,37 @@
+package grcmcs.minecraft.mods.pomkotsmechs.block;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import org.jetbrains.annotations.Nullable;
+
+public class StructureSpawnerBlock extends BaseEntityBlock {
+   public StructureSpawnerBlock() {
+      super(Properties.m_284310_().m_60978_(2.5F).m_60918_(SoundType.f_56743_));
+   }
+
+   public RenderShape m_7514_(BlockState state) {
+      return RenderShape.MODEL;
+   }
+
+   @Nullable
+   public BlockEntity m_142194_(BlockPos pos, BlockState state) {
+      return new StructureSpawnerBlockEntity(pos, state);
+   }
+
+   @Nullable
+   public <T extends BlockEntity> BlockEntityTicker<T> m_142354_(Level level, BlockState state, BlockEntityType<T> type) {
+      return level.f_46443_ ? null : (lvl, pos, st, be) -> {
+         if (be instanceof StructureSpawnerBlockEntity spawner) {
+            StructureSpawnerBlockEntity.tick(lvl, pos, st, spawner);
+         }
+      };
+   }
+}

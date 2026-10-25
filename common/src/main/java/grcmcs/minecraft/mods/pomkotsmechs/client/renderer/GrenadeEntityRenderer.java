@@ -6,22 +6,30 @@ import grcmcs.minecraft.mods.pomkotsmechs.client.model.GrenadeEntityModel;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.GrenadeEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 
 public class GrenadeEntityRenderer extends GeoEntityRenderer<GrenadeEntity> {
-    public GrenadeEntityRenderer(EntityRendererProvider.Context renderManager) {
-        super(renderManager, new GrenadeEntityModel());
+   public GrenadeEntityRenderer(Context renderManager) {
+      super(renderManager, new GrenadeEntityModel());
+      this.addRenderLayer(new AutoGlowingGeoLayer(this));
+   }
 
-        addRenderLayer(new AutoGlowingGeoLayer<>(this));
-    }
-
-    @Override
-    public void preApplyRenderLayers(PoseStack poseStack, GrenadeEntity animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-        this.scaleHeight = 2;
-        this.scaleWidth = 2;
-        super.preApplyRenderLayers(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
-    }
+   public void preApplyRenderLayers(
+      PoseStack poseStack,
+      GrenadeEntity animatable,
+      BakedGeoModel model,
+      RenderType renderType,
+      MultiBufferSource bufferSource,
+      VertexConsumer buffer,
+      float partialTick,
+      int packedLight,
+      int packedOverlay
+   ) {
+      this.scaleHeight = 2.0F;
+      this.scaleWidth = 2.0F;
+      super.preApplyRenderLayers(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+   }
 }

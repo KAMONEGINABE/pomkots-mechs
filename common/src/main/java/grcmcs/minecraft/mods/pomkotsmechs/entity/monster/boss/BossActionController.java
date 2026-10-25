@@ -5,117 +5,135 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 public class BossActionController {
-    public static class BossAction {
-        public int maxCoolTick;
-        public int maxActionTick;
-        public int maxActionTickPerLoop;
-        public int actualActionTick;
-        public int actionLoopNum;
+   private final Map<String, BossActionController.BossAction> actionMap = new HashMap<>();
 
-        public int currentCoolTick = 0;
-        public int currentActionTick = 0;
+   public void registerAction(String name, BossActionController.BossAction action) {
+      this.actionMap.put(name, action);
+   }
 
-        public boolean isOnEnd = false;
+   public BossActionController.BossAction getAction(String name) {
+      return this.actionMap.get(name);
+   }
 
-        private Consumer<Void> startAction;
-        private Consumer<Void> actualAction;
+   public void tick() {
+      for (BossActionController.BossAction action : this.actionMap.values()) {
+         action.tick();
+      }
+   }
 
+   public void reset() {
+      for (BossActionController.BossAction action : this.actionMap.values()) {
+         action.reset();
+      }
+   }
 
-        BossAction(int maxCoolTick, int maxActionTick, int actualActionTick, Consumer<Void> startAction, Consumer<Void> actualAction) {
-            this(maxCoolTick, maxActionTick, actualActionTick, 1,  startAction, actualAction);
-        }
+   public boolean isInActionAll() {
+      for (BossActionController.BossAction action : this.actionMap.values()) {
+         if (action.isInAction()) {
+            return true;
+         }
+      }
 
-        BossAction(int maxCoolTick, int maxActionTick, int actualActionTick, int actionLoopNum, Consumer<Void> startAction, Consumer<Void> actualAction) {
-            this.maxCoolTick = maxCoolTick;
-            this.maxActionTick = maxActionTick * actionLoopNum;
-            this.maxActionTickPerLoop = maxActionTick;
-            this.actionLoopNum = actionLoopNum;
-            this.startAction = startAction;
-            this.actualActionTick = actualActionTick;
-            this.actualAction = actualAction;
-        }
+      return false;
+   }
 
-        public void tick() {
-            if (currentCoolTick > 0) {
-                currentCoolTick--;
+   public static class BossAction {
+      public int maxCoolTick;
+      public int maxActionTick;
+      public int currentCoolTick = 0;
+      public int currentActionTick = 0;
+      private int currentLoopNum = 0;
+      private boolean continueFlag = false;
+      Consumer<BossActionController.BossAction> tickInAction;
+
+      BossAction(int maxCoolTick, int maxActionTick, Consumer<BossActionController.BossAction> tickInAction) {
+         this.currentCoolTick = this.maxCoolTick = maxCoolTick;
+         this.maxActionTick = maxActionTick;
+         this.tickInAction = tickInAction;
+      }
+
+      public void tick() {
+         if (this.currentCoolTick > 0) {
+            this.currentCoolTick--;
+         } else {
+            if (this.currentActionTick > 0) {
+               this.tickInAction.accept(this);
+               this.currentActionTick++;
             }
 
-            if (currentActionTick > 0) {
-                currentActionTick++;
-
-                if (currentActionTick % maxActionTickPerLoop == actualActionTick) {
-                    actualAction.accept(null);
-                }
-
-                if (currentActionTick == maxActionTick) {
-                    currentActionTick = 0;
-                    isOnEnd = true;
-                }
+            if (this.currentActionTick == this.maxActionTick + 1) {
+               if (this.consumeContinueFlag()) {
+                  this.currentActionTick = 1;
+                  this.currentLoopNum++;
+               } else {
+                  this.currentActionTick = 0;
+                  this.currentCoolTick = this.maxCoolTick;
+               }
             }
-        }
+         }
+      }
 
-        public boolean isInAction() {
-            return currentActionTick > 0;
-        }
+      private boolean consumeContinueFlag() {
+         boolean tmp = this.continueFlag;
+         this.continueFlag = false;
+         return tmp;
+      }
 
-        public boolean isInCooltime() {
-            return currentCoolTick > 0;
-        }
+      public void setContinue() {
+         this.continueFlag = true;
+      }
 
-        public boolean tryAction() {
-            if (!isInAction() && !isInCooltime()) {
-                startAction();
-                return true;
-            } else {
-                return false;
-            }
-        }
+      public boolean isInAction() {
+         return this.currentActionTick > 0;
+      }
 
-        public boolean canAction() {
-            return !isInAction() && !isInCooltime();
-        }
+      public boolean isInCooltime() {
+         return this.currentCoolTick > 0;
+      }
 
-        private void startAction() {
-            currentActionTick = 1;
-            currentCoolTick = maxCoolTick;
-            startAction.accept(null);
-        }
+      public boolean onStartOfAction() {
+         return this.currentActionTick == 1;
+      }
 
-        private void reset() {
-            currentActionTick = 0;
-            currentCoolTick = 0;
-        }
+      public boolean onEndOfAction() {
+         return this.currentActionTick == this.maxActionTick - 1;
+      }
 
-    }
+      public boolean isFirstLoop() {
+         return this.currentLoopNum == 0;
+      }
 
-    private Map<String, BossAction> actionMap = new HashMap<>();
+      public boolean tryAction() {
+         if (!this.isInAction() && !this.isInCooltime()) {
+            this.startAction();
+            return true;
+         } else {
+            return false;
+         }
+      }
 
-    public void registerAction(String name, BossAction action) {
-        actionMap.put(name, action);
-    }
+      public boolean canAction() {
+         return !this.isInAction() && !this.isInCooltime();
+      }
 
-    public BossAction getAction(String name) {
-        return actionMap.get(name);
-    }
+      public void startAction() {
+         this.currentActionTick = 1;
+         this.continueFlag = false;
+         this.currentLoopNum = 0;
+      }
 
-    public void tick() {
-        for(BossAction action: actionMap.values()) {
-            action.tick();
-        }
-    }
+      private void reset() {
+         this.currentActionTick = 0;
+         this.currentCoolTick = 0;
+         this.continueFlag = false;
+         this.currentLoopNum = 0;
+      }
 
-    public void reset() {
-        for(BossAction action: actionMap.values()) {
-            action.reset();
-        }
-    }
-
-    public boolean isInActionAll() {
-        for(BossAction action: actionMap.values()) {
-            if (action.isInAction()) {
-                return true;
-            }
-        }
-        return false;
-    }
+      public void stopAction() {
+         this.currentActionTick = -1;
+         this.currentCoolTick = this.maxCoolTick;
+         this.continueFlag = false;
+         this.currentLoopNum = 0;
+      }
+   }
 }

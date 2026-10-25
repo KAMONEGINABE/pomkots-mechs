@@ -1,10 +1,10 @@
 package grcmcs.minecraft.mods.pomkotsmechs.client.renderer;
 
 import grcmcs.minecraft.mods.pomkotsmechs.client.model.Pmv01bEntityModel;
-import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
 
 public class Pmv01bEntityRenderer extends Pmv01EntityRenderer {
-    public Pmv01bEntityRenderer(EntityRendererProvider.Context renderManager) {
-        super(renderManager, new Pmv01bEntityModel());
-    }
+   public Pmv01bEntityRenderer(Context renderManager) {
+      super(renderManager, new Pmv01bEntityModel());
+   }
 }

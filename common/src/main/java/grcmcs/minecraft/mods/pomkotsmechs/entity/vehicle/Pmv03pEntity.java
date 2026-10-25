@@ -2,10 +2,14 @@ package grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle;
 
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import grcmcs.minecraft.mods.pomkotsmechs.client.input.DriverInput;
-import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.*;
+import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.BulletEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.MissileEnemyEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.Action;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.ActionController;
+import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -17,523 +21,485 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.LiquidBlock;
-import net.minecraft.world.level.block.ShulkerBoxBlock;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.core.keyframe.event.SoundKeyframeEvent;
 import software.bernie.geckolib.core.object.PlayState;
 
-import java.util.LinkedList;
-import java.util.List;
-
 public class Pmv03pEntity extends PomkotsVehicleBase {
-    @Override
-    protected String getMechName() {
-        return "pmv02";
-    }
-    
-    public static final float DEFAULT_SCALE = 1f;
+   public static final float DEFAULT_SCALE = 1.0F;
+   protected static final int ACT_GATLING = 2;
+   protected static final int ACT_MISSILE = 3;
+   protected static final int ACT_HUMMER = 4;
+   protected static final int ACT_ROLLER = 5;
+   protected static final int ACT_BLOCKINJECT = 6;
+   protected static final int ACT_VACUME = 7;
+   protected static final int ACT_PLACE = 8;
+   protected static final int ACT_LIFT_BLOCK = 9;
+   protected static final int ACT_THROW = 10;
+   private Vec3 seatPos1 = Vec3.f_82478_;
+   private Vec3 seatPos2 = Vec3.f_82478_;
 
-    public Pmv03pEntity(EntityType<? extends LivingEntity> entityType, Level world) {
-        super(entityType, world);
-    }
+   @Override
+   protected String getMechName() {
+      return "pmv02";
+   }
 
-    protected static final int ACT_GATLING = 2;
-    protected static final int ACT_MISSILE = 3;
-    protected static final int ACT_HUMMER = 4;
-    protected static final int ACT_ROLLER = 5;
-    protected static final int ACT_BLOCKINJECT = 6;
-    protected static final int ACT_VACUME = 7;
-    protected static final int ACT_PLACE = 8;
-    protected static final int ACT_LIFT_BLOCK = 9;
-    protected static final int ACT_THROW = 10;
+   public Pmv03pEntity(EntityType<? extends LivingEntity> entityType, Level world) {
+      super(entityType, world);
+   }
 
-    @Override
-    protected void registerActions() {
-        super.registerActions();
-        this.actionController.registerAction(ACT_GATLING, new Action(0, 7, 2), ActionController.ActionType.R_ARM_MAIN);
-        this.actionController.registerAction(ACT_MISSILE, new Action(60, 2, 18), ActionController.ActionType.L_ARM_MAIN);
-        this.actionController.registerAction(ACT_HUMMER, new Action(20, 40, 20), ActionController.ActionType.R_SHL_MAIN);
-        this.actionController.registerAction(ACT_ROLLER, new Action(0, 20, 2), ActionController.ActionType.L_SHL_MAIN);
-        this.actionController.registerAction(ACT_BLOCKINJECT, new Action(0, 5, 5), ActionController.ActionType.R_ARM_SUB);
-        this.actionController.registerAction(ACT_VACUME, new Action(0, 5, 5), ActionController.ActionType.L_ARM_SUB);
-        this.actionController.registerAction(ACT_LIFT_BLOCK, new Action(20, 8, 2), ActionController.ActionType.R_SHL_SUB);
-        this.actionController.registerAction(ACT_THROW, new Action(20, 3, 7), ActionController.ActionType.R_SHL_SUB);
-        this.actionController.registerAction(ACT_PLACE, new Action(0, 20, 2), ActionController.ActionType.L_SHL_SUB);
+   @Override
+   protected void registerActions() {
+      super.registerActions();
+      this.actionController.registerAction(2, new Action(0, 7, 2), ActionController.ActionType.R_ARM_MAIN);
+      this.actionController.registerAction(3, new Action(60, 2, 18), ActionController.ActionType.L_ARM_MAIN);
+      this.actionController.registerAction(4, new Action(20, 40, 20), ActionController.ActionType.R_SHL_MAIN);
+      this.actionController.registerAction(5, new Action(0, 20, 2), ActionController.ActionType.L_SHL_MAIN);
+      this.actionController.registerAction(6, new Action(0, 5, 5), ActionController.ActionType.R_ARM_SUB);
+      this.actionController.registerAction(7, new Action(0, 5, 5), ActionController.ActionType.L_ARM_SUB);
+      this.actionController.registerAction(9, new Action(20, 8, 2), ActionController.ActionType.R_SHL_SUB);
+      this.actionController.registerAction(10, new Action(20, 3, 7), ActionController.ActionType.R_SHL_SUB);
+      this.actionController.registerAction(8, new Action(0, 20, 2), ActionController.ActionType.L_SHL_SUB);
+   }
 
-    }
+   @Override
+   protected boolean useEnergy(int dec) {
+      return true;
+   }
 
-    protected boolean useEnergy(int dec) {
-        return true;
-    }
-
-    @Override
-    public void tick() {
-        if (this.isMainMode()) {
-            super.tick();
-
-        } else {
-            setNoGravity(true);
-            super.tick();
+   @Override
+   public void m_8119_() {
+      if (this.isMainMode()) {
+         super.m_8119_();
+         if (this.m_20160_()) {
+            this.m_20242_(true);
             this.moveForward();
-        }
+         } else {
+            this.m_20242_(false);
+         }
 
-    }
+         if (this.m_20069_()) {
+            this.applyBuoyancy();
+         }
+      } else {
+         super.m_8119_();
+      }
+   }
 
+   private void applyBuoyancy() {
+      double waterSurfaceY = this.m_204036_(FluidTags.f_13131_);
+      double targetY = waterSurfaceY + 0.5;
+      double currentY = this.m_20186_();
+      double deltaY = targetY - currentY;
+      Vec3 motion = this.m_20184_();
+      this.m_20334_(motion.f_82479_, Mth.m_14008_(deltaY * 0.1, 0.0, 0.1), motion.f_82481_);
+      this.m_20256_(this.m_20184_().m_82490_(0.9));
+   }
 
-    private void moveForward() {
-        // ピッチ（xRot）とヨー（yRot）に基づいて移動量を計算
-        double xRotRadians = Math.toRadians(this.getXRot());
-        double yRotRadians = Math.toRadians(this.getYRot());
+   private void moveForward() {
+      double xRotRadians = Math.toRadians(this.m_146909_());
+      double yRotRadians = Math.toRadians(this.m_146908_());
+      double speed = this.m_6113_();
+      double vx = -speed * Math.cos(xRotRadians) * Math.sin(yRotRadians);
+      double vy = -speed * Math.sin(xRotRadians);
+      double vz = speed * Math.cos(xRotRadians) * Math.cos(yRotRadians);
+      this.m_20334_(vx, vy, vz);
+      this.m_6478_(MoverType.SELF, this.m_20184_());
+   }
 
-        double speed = this.getSpeed();
-        double vx = -speed * Math.cos(xRotRadians) * Math.sin(yRotRadians);
-        double vy = -speed * Math.sin(xRotRadians);
-        double vz = speed * Math.cos(xRotRadians) * Math.cos(yRotRadians);
+   @Override
+   protected void applyPlayerInput(DriverInput driverInput) {
+      if (this.isMainMode()) {
+         this.getUserIntentionForDirectionFromKey(driverInput);
+         this.applyPlayerInputWeapons(driverInput);
+         if (driverInput.isWeaponRightShoulderPressed()) {
+            this.m_7910_(this.m_6113_() - 0.01F);
+         }
 
-        // エンティティを移動
-        this.setDeltaMovement(vx, vy, vz);
-        this.move(MoverType.SELF, this.getDeltaMovement());
-    }
+         if (driverInput.isWeaponLeftShoulderPressed()) {
+            this.m_7910_(this.m_6113_() + 0.01F);
+         }
 
+         if (this.m_6113_() <= 0.0F) {
+            this.m_7910_(0.1F);
+         } else if (this.m_6113_() > 2.0F) {
+            this.m_7910_(2.0F);
+         }
 
-    @Override
-    public void travel(Vec3 pos) {
-        if (this.isMainMode()) {
-            super.travel(pos);
-        } else {
-//            this.setSpeed(1);
-//            pos = this.calculateNextPosition(pos, this.getXRot(), this.getYRot(), this.getSpeed());
-            this.travel2(pos);
-        }
-    }
+         if (driverInput.isForwardPressed()) {
+            this.m_146926_(this.m_146909_() - 2.0F);
+         }
 
-    public Vec3 calculateNextPosition(Vec3 cur, double xRot, double yRot, double speed) {
-        // 度をラジアンに変換
-        double xRotRadians = Math.toRadians(xRot);
-        double yRotRadians = Math.toRadians(yRot);
+         if (driverInput.isBackPressed()) {
+            this.m_146926_(this.m_146909_() + 2.0F);
+         }
 
-        // 速度ベクトルの計算
-        double vx = -speed * Math.cos(xRotRadians) * Math.sin(yRotRadians);
-        double vy = -speed * Math.sin(xRotRadians);
-        double vz = speed * Math.cos(xRotRadians) * Math.cos(yRotRadians);
+         if (driverInput.isLeftPressed()) {
+            this.m_146922_(this.m_146908_() - 2.0F);
+         }
 
-        // 次の座標
-        double nextX = cur.x + vx;
-        double nextY = cur.y + vy;
-        double nextZ = cur.z + vz;
+         if (driverInput.isRightPressed()) {
+            this.m_146922_(this.m_146908_() + 2.0F);
+         }
 
-        // 結果をVec3として返す
-        return new Vec3(nextX, nextY, nextZ);
-    }
+         this.m_146926_(Mth.m_14177_(this.m_146909_()));
+         this.f_19812_ = true;
+      } else {
+         this.getUserIntentionForDirectionFromKey(driverInput);
+         this.applyPlayerInputWeapons(driverInput);
+         this.applyPlayerInputBoost(driverInput);
+         this.applyPlayerInputEvasion(driverInput);
+         this.applyPlayerInputJump(driverInput);
+         this.applyPlayerInputInAirActions(driverInput);
+      }
+   }
 
-    @Override
-    protected void applyPlayerInput(DriverInput driverInput) {
-        if (this.isMainMode()) {
-            this.getUserIntentionForDirectionFromKey(driverInput);
+   @Override
+   protected void applyPlayerInputWeapons(DriverInput driverInput) {
+      if (driverInput.isWeaponRightHandPressed()) {
+         this.actionController.getAction(2).startAction();
+      } else if (driverInput.isWeaponLeftHandPressed()) {
+         this.actionController.getAction(3).startAction();
+      }
+   }
 
-            this.applyPlayerInputWeapons(driverInput);
-            this.applyPlayerInputBoost(driverInput);
-            this.applyPlayerInputEvasion(driverInput);
-            this.applyPlayerInputJump(driverInput);
-            this.applyPlayerInputInAirActions(driverInput);
-        } else {
-            this.getUserIntentionForDirectionFromKey(driverInput);
-            this.applyPlayerInputWeapons(driverInput);
+   @Override
+   protected void fireWeapons() {
+      Level level = this.m_9236_();
+      if (this.actionController.getAction(2).isOnFire()) {
+         this.fireGatling(level);
+      } else if (this.actionController.getAction(3).isOnFire()) {
+         this.fireMissile(level);
+      }
+   }
 
-            if (driverInput.isForwardPressed()) {
-                this.setXRot(this.getXRot() - 5);
-            }
-            if (driverInput.isBackPressed()) {
-                this.setXRot(this.getXRot() + 5);
-            }
-            if (driverInput.isLeftPressed()) {
-                this.setYRot(this.getYRot() - 5);
-            }
-            if (driverInput.isRightPressed()) {
-                this.setYRot(this.getYRot() + 5);
-            }
+   public void fireGatling(Level world) {
+      if (!world.m_5776_()) {
+         for (int i = 0; i < 2; i++) {
+            BulletEntity be = new BulletEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET.get(), world, this);
+            Vec3 offset = this.posHistory.getFirst();
+            Vec3 muzzlPos = new Vec3(0.5 - i, 3.3F, 6.5);
+            muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+            be.m_146884_(offset.m_82549_(muzzlPos));
+            be.m_37251_(be, this.m_146909_(), this.m_146908_(), this.m_21256_(), 2.5F, 2.0F);
+            world.m_7967_(be);
+         }
+      } else if (this.f_19797_ % 7 == 0) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_GATLING_EVENT.get());
+      }
+   }
 
-//            this.setXRot(Mth.clamp(this.getXRot(), -90, 90)); // ピッチは上下90度まで
+   private void fireMissile(Level world) {
+      if (!world.m_5776_()) {
+         Vec3 offset = this.posHistory.getFirst();
+         Vec3 muzzlPos = new Vec3(-1.0, 3.5, 0.8F);
+         Vec3 worldMuzzlPos = muzzlPos.m_82520_(0.0, 0.0, 3.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+         MissileEnemyEntity be = new MissileEnemyEntity(
+            (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_HORIZONTAL.get(),
+            world,
+            this,
+            BattleBalance.MECH_MISSILE_DAMAGE,
+            BattleBalance.MECH_MISSILE_GENERIC_SPEED
+         );
+         be.m_146884_(offset.m_82549_(worldMuzzlPos));
+         be.m_37251_(be, this.m_146909_(), this.m_146908_(), this.m_21256_(), 2.5F, 0.0F);
+         world.m_7967_(be);
+      } else {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_MISSILE_EVENT.get());
+         this.lockTargets.clearLockTargetsMulti();
+      }
+   }
 
-            this.yRotO = this.getYRot();
-            this.setYBodyRot(this.getYRot());
-            this.setYHeadRot(this.getYRot());
-//            this.setRot(this.getYRot(), this.getXRot());
+   @Override
+   public void m_7023_(Vec3 pos) {
+      if (this.isMainMode()) {
+         this.travel2(pos);
+      } else {
+         super.m_7023_(pos);
+      }
+   }
 
-            this.hasImpulse = true;
-        }
-    }
+   @Override
+   protected PlayState controllAnimationWeapons(AnimationState<PomkotsVehicleBase> event) {
+      return null;
+   }
 
-    @Override
-    protected void applyPlayerInputWeapons(DriverInput driverInput) {
-        if (driverInput.isWeaponRightHandPressed()) {
-            this.actionController.getAction(ACT_GATLING).startAction();
-        } else if (driverInput.isWeaponLeftHandPressed()) {
-            this.actionController.getAction(ACT_MISSILE).startAction();
-        }
-    }
+   @Override
+   protected PlayState controllAnimationBasicMove(AnimationState<PomkotsVehicleBase> event) {
+      return this.isMainMode() ? null : super.controllAnimationBasicMove(event);
+   }
 
-    @Override
-    protected void fireWeapons() {
-        Level level = level();
-
-        if (actionController.getAction(ACT_GATLING).isOnFire()) {
-            this.fireGatling(level);
-        } else if (actionController.getAction(ACT_MISSILE).isOnFire()) {
-            this.fireMissile(level);
-        }
-    }
-
-    public void fireGatling(Level world) {
-        if (!world.isClientSide()) {
-            for (int i = 0; i < 2; i++) {
-                BulletEntity be = new BulletEntity(PomkotsMechs.BULLET.get(), world, this);
-
-                // 原因不明なんだけど、getPosした時の座標と、レンダリングされてる座標で3tick分ぐらい乖離がある気配がする
-                // ので、3tick前の座標をオフセットにする
-                // なんかaddVelocity周りが悪さしてる…？
-                var offset = posHistory.getFirst();
-
-                // オフセット位置から大体の銃口の座標を決める（モデル位置からとるとクラサバ同期がめんどい…）
-                var muzzlPos = new Vec3(0.5 - i, 3.3F, 6.5F);
-                muzzlPos = muzzlPos.yRot((float) Math.toRadians((-1.0) * this.getYRot()));
-                be.setPos(offset.add(muzzlPos));
-
-                be.shootFromRotation(be, this.getXRot(), this.getYRot(), this.getFallFlyingTicks(), 0.9F, 2F);
-
-                world.addFreshEntity(be);
-            }
-        } else {
-            if (tickCount % 7 == 0) {
-                playSoundEffect(PomkotsMechs.SE_GATLING_EVENT.get());
-            }
-        }
-    }
-
-    private void fireMissile(Level world) {
-        if (!world.isClientSide()) {
-            // 原因不明なんだけど、getPosした時の座標と、レンダリングされてる座標で3tick分ぐらい乖離がある気配がする
-            // ので、3tick前の座標をオフセットにする
-            // なんかaddVelocity周りが悪さしてる…？
-            var offset = posHistory.getFirst();
-
-            // オフセット位置から大体の銃口の座標を決める（モデル位置からとるとクラサバ同期がめんどい…）
-            var muzzlPos = new Vec3(-1.0, 3.5F, 0.8F);
-            var worldMuzzlPos = muzzlPos.add(0, 0, 3).yRot((float) Math.toRadians((-1.0) * this.getYRot()));
-
-            MissileEnemyEntity be = new MissileEnemyEntity(PomkotsMechs.MISSILE_HORIZONTAL.get(), world, this);
-
-            be.setPos(offset.add(worldMuzzlPos));
-
-            be.shootFromRotation(be, this.getXRot(), this.getYRot(), this.getFallFlyingTicks(), 1F, 0F);
-
-            world.addFreshEntity(be);
-        } else {
-            playSoundEffect(PomkotsMechs.SE_MISSILE_EVENT.get());
-            lockTargets.clearLockTargetsMulti();
-        }
-    }
-
-
-    @Override
-    protected PlayState controllAnimationWeapons(AnimationState<PomkotsVehicleBase> event) {
-//        if (this.actionController.getAction(ACT_LIFT_BLOCK).isInAction()) {
-//            if (this.actionController.getAction(ACT_LIFT_BLOCK).isOnStart()) {
-//                event.getController().forceAnimationReset();
-//            }
-//            return event.setAndContinue(RawAnimation.begin().thenPlay("animation." + getMechName() + ".raise"));
-//        } else if (this.actionController.getAction(ACT_THROW).isInAction()) {
-//            if (this.actionController.getAction(ACT_THROW).isOnStart()) {
-//                event.getController().forceAnimationReset();
-//            }
-//            return event.setAndContinue(RawAnimation.begin().thenPlay("animation." + getMechName() + ".throw"));
-//
-//        }
-
-        return null;
-    }
-
-    protected PlayState controllAnimationBasicMove(AnimationState<PomkotsVehicleBase> event) {
-        if (this.isMainMode()) {
-            return super.controllAnimationBasicMove(event);
-        } else {
-            return null;
-        }
-    }
-
-    protected PlayState controllAnimationFlyingMotion(AnimationState<PomkotsVehicleBase> event) {
-        if (this.isMainMode()) {
-            return super.controllAnimationFlyingMotion(event);
-        } else {
-            return null;
-        }
-    }
-
-    protected PlayState controllAnimationRotation(AnimationState<PomkotsVehicleBase> event) {
-        if (this.isMainMode()) {
-            return super.controllAnimationRotation(event);
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    protected void addExtraAnimationController(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "props", 0, event -> {
-            if (event.isMoving()) {
-                return event.setAndContinue(RawAnimation.begin().thenLoop("animation." + getMechName() + ".prop"));
-            }
-            return event.setAndContinue(RawAnimation.begin().thenLoop("animation." + getMechName() + ".prop"));
-        }).setSoundKeyframeHandler(soundKeyframeEvent -> {
-            this.registerAnimationSoundHandlers(soundKeyframeEvent);
-        }));
-
-        controllers.add(new AnimationController<>(this, "tires", 0, event -> {
-            if (event.isMoving() && event.getAnimatable().onGround()) {
-                return event.setAndContinue(RawAnimation.begin().thenLoop("animation." + getMechName() + ".tire"));
-            }
-            return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + getMechName() + ".nop"));
-        }).setSoundKeyframeHandler(soundKeyframeEvent -> {
-            this.registerAnimationSoundHandlers(soundKeyframeEvent);
-        }));
-    }
-
-    @Override
-    protected void registerAnimationSoundHandlers(SoundKeyframeEvent event) {
-        if ("se_jump".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_JUMP_EVENT.get());
-        } else if ("se_booster".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_BOOSTER_EVENT.get());
-        } else if ("se_onground".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_JUMP_EVENT.get());
-        } else if ("se_drill1".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_DRILL1.get());
-        } else if ("se_drill2".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_DRILL2.get());
-        } else if ("se_hummer1".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_HUMMER1.get());
-        } else if ("se_hummer2".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_HUMMER2.get());
-        } else if ("se_lift".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_LIFT.get());
-        } else if ("se_needle".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_NEEDLE.get());
-        } else if ("se_roller1".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_ROLLER1.get());
-        } else if ("se_roller2".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_ROLLER2.get());
-        } else if ("se_step".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_STEP.get());
-        } else if ("se_throw".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_THROW.get());
-        } else if ("se_water".equals(event.getKeyframeData().getSound())) {
-            this.playSoundEffect(PomkotsMechs.SE_WATER.get());
-        }
-    }
-
-    @Override
-    public boolean shouldRenderDefaultHud(String hudName) {
-        return "renderHotbar".equals(hudName);
-    }
-
-    public void travel2(Vec3 vec3) {
-        if (this.isControlledByLocalInstance()) {
-            double d = 0.08;
-            boolean bl = this.getDeltaMovement().y <= 0.0;
-            if (bl && this.hasEffect(MobEffects.SLOW_FALLING)) {
-                d = 0.01;
+   @Override
+   public void registerControllers(ControllerRegistrar controllers) {
+      controllers.add(new AnimationController[]{new AnimationController(this, "rotation", 6, event -> {
+         if (this.getDriverInput() != null) {
+            if (this.getDriverInput().isRightPressed()) {
+               return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".rightfly"));
             }
 
-            FluidState fluidState = this.level().getFluidState(this.blockPosition());
-            float f;
-            double e;
-            if (this.isInWater() && this.isAffectedByFluids() && !this.canStandOnFluid(fluidState)) {
-                e = this.getY();
-                f = this.isSprinting() ? 0.9F : this.getWaterSlowDown();
-                float g = 0.02F;
-                float h = (float) EnchantmentHelper.getDepthStrider(this);
-                if (h > 3.0F) {
-                    h = 3.0F;
-                }
+            if (this.getDriverInput().isLeftPressed()) {
+               return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".leftfly"));
+            }
+         }
 
-                if (!this.onGround()) {
-                    h *= 0.5F;
-                }
+         return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".centerfly"));
+      })});
+      this.addExtraAnimationController(controllers);
+   }
 
-                if (h > 0.0F) {
-                    f += (0.54600006F - f) * h / 3.0F;
-                    g += (this.getSpeed() - g) * h / 3.0F;
-                }
+   @Override
+   protected void addExtraAnimationController(ControllerRegistrar controllers) {
+      controllers.add(
+         new AnimationController[]{
+            new AnimationController(
+                  this,
+                  "props",
+                  6,
+                  event -> this.m_20160_()
+                     ? event.setAndContinue(RawAnimation.begin().thenLoop("animation." + this.getMechName() + ".prop"))
+                     : event.setAndContinue(RawAnimation.begin().thenLoop("animation." + this.getMechName() + ".idle"))
+               )
+               .setSoundKeyframeHandler(soundKeyframeEvent -> this.registerAnimationSoundHandlers(soundKeyframeEvent))
+         }
+      );
+      controllers.add(
+         new AnimationController[]{
+            new AnimationController(
+                  this,
+                  "tires",
+                  6,
+                  event -> event.isMoving() && ((Pmv03pEntity)event.getAnimatable()).m_20096_()
+                     ? event.setAndContinue(RawAnimation.begin().thenLoop("animation." + this.getMechName() + ".tire"))
+                     : event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".nop"))
+               )
+               .setSoundKeyframeHandler(soundKeyframeEvent -> this.registerAnimationSoundHandlers(soundKeyframeEvent))
+         }
+      );
+   }
 
-                if (this.hasEffect(MobEffects.DOLPHINS_GRACE)) {
-                    f = 0.96F;
-                }
+   @Override
+   protected void registerAnimationSoundHandlers(SoundKeyframeEvent event) {
+      if ("se_jump".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_JUMP_EVENT.get());
+      } else if ("se_booster".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_BOOSTER_EVENT.get());
+      } else if ("se_onground".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_JUMP_EVENT.get());
+      } else if ("se_drill1".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_DRILL1.get());
+      } else if ("se_drill2".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_DRILL2.get());
+      } else if ("se_hummer1".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_HUMMER1.get());
+      } else if ("se_hummer2".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_HUMMER2.get());
+      } else if ("se_lift".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_LIFT.get());
+      } else if ("se_needle".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_NEEDLE.get());
+      } else if ("se_roller1".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_ROLLER1.get());
+      } else if ("se_roller2".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_ROLLER2.get());
+      } else if ("se_step".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_STEP.get());
+      } else if ("se_throw".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_THROW.get());
+      } else if ("se_water".equals(event.getKeyframeData().getSound())) {
+         this.playSoundEffect((SoundEvent)PomkotsMechs.SE_WATER.get());
+      }
+   }
 
-                this.moveRelative(g, vec3);
-                this.move(MoverType.SELF, this.getDeltaMovement());
-                Vec3 vec32 = this.getDeltaMovement();
-                if (this.horizontalCollision && this.onClimbable()) {
-                    vec32 = new Vec3(vec32.x, 0.2, vec32.z);
-                }
+   @Override
+   public boolean shouldRenderDefaultHud(String hudName) {
+      return "renderHotbar".equals(hudName);
+   }
 
-                this.setDeltaMovement(vec32.multiply((double)f, 0.800000011920929, (double)f));
-                Vec3 vec33 = this.getFluidFallingAdjustedMovement(d, bl, this.getDeltaMovement());
-                this.setDeltaMovement(vec33);
-                if (this.horizontalCollision && this.isFree(vec33.x, vec33.y + 0.6000000238418579 - this.getY() + e, vec33.z)) {
-                    this.setDeltaMovement(vec33.x, 0.30000001192092896, vec33.z);
-                }
-            } else if (this.isInLava() && this.isAffectedByFluids() && !this.canStandOnFluid(fluidState)) {
-                e = this.getY();
-                this.moveRelative(0.02F, vec3);
-                this.move(MoverType.SELF, this.getDeltaMovement());
-                Vec3 vec34;
-                if (this.getFluidHeight(FluidTags.LAVA) <= this.getFluidJumpThreshold()) {
-                    this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.800000011920929, 0.5));
-                    vec34 = this.getFluidFallingAdjustedMovement(d, bl, this.getDeltaMovement());
-                    this.setDeltaMovement(vec34);
-                } else {
-                    this.setDeltaMovement(this.getDeltaMovement().scale(0.5));
-                }
+   public void travel2(Vec3 vec3) {
+      if (this.m_6109_()) {
+         double d = 0.08;
+         boolean bl = this.m_20184_().f_82480_ <= 0.0;
+         if (bl && this.m_21023_(MobEffects.f_19591_)) {
+            d = 0.01;
+         }
 
-                if (!this.isNoGravity()) {
-                    this.setDeltaMovement(this.getDeltaMovement().add(0.0, -d / 4.0, 0.0));
-                }
+         FluidState fluidState = this.m_9236_().m_6425_(this.m_20183_());
+         if (this.m_20069_() && this.m_6129_() && !this.m_203441_(fluidState)) {
+            double e = this.m_20186_();
+            float f = this.m_20142_() ? 0.9F : this.m_6108_();
+            float g = 0.02F;
+            float h = EnchantmentHelper.m_44922_(this);
+            if (h > 3.0F) {
+               h = 3.0F;
+            }
 
-                vec34 = this.getDeltaMovement();
-                if (this.horizontalCollision && this.isFree(vec34.x, vec34.y + 0.6000000238418579 - this.getY() + e, vec34.z)) {
-                    this.setDeltaMovement(vec34.x, 0.30000001192092896, vec34.z);
-                }
-            } else if (this.isFallFlying()) {
-                this.checkSlowFallDistance();
-                Vec3 vec35 = this.getDeltaMovement();
-                Vec3 vec36 = this.getLookAngle();
-                f = this.getXRot() * 0.017453292F;
-                double i = Math.sqrt(vec36.x * vec36.x + vec36.z * vec36.z);
-                double j = vec35.horizontalDistance();
-                double k = vec36.length();
-                double l = Math.cos((double)f);
-                l = l * l * Math.min(1.0, k / 0.4);
-                vec35 = this.getDeltaMovement().add(0.0, d * (-1.0 + l * 0.75), 0.0);
-                double m;
-                if (vec35.y < 0.0 && i > 0.0) {
-                    m = vec35.y * -0.1 * l;
-                    vec35 = vec35.add(vec36.x * m / i, m, vec36.z * m / i);
-                }
+            if (!this.m_20096_()) {
+               h *= 0.5F;
+            }
 
-                if (f < 0.0F && i > 0.0) {
-                    m = j * (double)(-Mth.sin(f)) * 0.04;
-                    vec35 = vec35.add(-vec36.x * m / i, m * 3.2, -vec36.z * m / i);
-                }
+            if (h > 0.0F) {
+               f += (0.54600006F - f) * h / 3.0F;
+               g += (this.m_6113_() - g) * h / 3.0F;
+            }
 
-                if (i > 0.0) {
-                    vec35 = vec35.add((vec36.x / i * j - vec35.x) * 0.1, 0.0, (vec36.z / i * j - vec35.z) * 0.1);
-                }
+            if (this.m_21023_(MobEffects.f_19593_)) {
+               f = 0.96F;
+            }
 
-                this.setDeltaMovement(vec35.multiply(0.9900000095367432, 0.9800000190734863, 0.9900000095367432));
-                this.move(MoverType.SELF, this.getDeltaMovement());
-                if (this.horizontalCollision && !this.level().isClientSide) {
-                    m = this.getDeltaMovement().horizontalDistance();
-                    double n = j - m;
-                    float o = (float)(n * 10.0 - 3.0);
-                    if (o > 0.0F) {
-                        this.hurt(this.damageSources().flyIntoWall(), o);
-                    }
-                }
+            this.m_19920_(g, vec3);
+            this.m_6478_(MoverType.SELF, this.m_20184_());
+            Vec3 vec32 = this.m_20184_();
+            if (this.f_19862_ && this.m_6147_()) {
+               vec32 = new Vec3(vec32.f_82479_, 0.2, vec32.f_82481_);
+            }
 
-                if (this.onGround() && !this.level().isClientSide) {
-                    this.setSharedFlag(7, false);
-                }
+            this.m_20256_(vec32.m_82542_(f, 0.8F, f));
+            Vec3 vec33 = this.m_20994_(d, bl, this.m_20184_());
+            this.m_20256_(vec33);
+            if (this.f_19862_ && this.m_20229_(vec33.f_82479_, vec33.f_82480_ + 0.6F - this.m_20186_() + e, vec33.f_82481_)) {
+               this.m_20334_(vec33.f_82479_, 0.3F, vec33.f_82481_);
+            }
+         } else if (this.m_20077_() && this.m_6129_() && !this.m_203441_(fluidState)) {
+            double e = this.m_20186_();
+            this.m_19920_(0.02F, vec3);
+            this.m_6478_(MoverType.SELF, this.m_20184_());
+            if (this.m_204036_(FluidTags.f_13132_) <= this.m_20204_()) {
+               this.m_20256_(this.m_20184_().m_82542_(0.5, 0.8F, 0.5));
+               Vec3 vec34 = this.m_20994_(d, bl, this.m_20184_());
+               this.m_20256_(vec34);
             } else {
-                BlockPos blockPos = this.getBlockPosBelowThatAffectsMyMovement();
-                float p = this.level().getBlockState(blockPos).getBlock().getFriction();
-                f = this.onGround() ? p * 0.91F : 0.91F;
-                Vec3 vec37 = this.handleRelativeFrictionAndCalculateMovement(vec3, p);
-                double q = vec37.y;
-                if (this.hasEffect(MobEffects.LEVITATION)) {
-                    q += (0.05 * (double)(this.getEffect(MobEffects.LEVITATION).getAmplifier() + 1) - vec37.y) * 0.2;
-                } else if (this.level().isClientSide && !this.level().hasChunkAt(blockPos)) {
-                    if (this.getY() > (double)this.level().getMinBuildHeight()) {
-                        q = -0.1;
-                    } else {
-                        q = 0.0;
-                    }
-                } else if (!this.isNoGravity()) {
-                    q -= d;
-                }
-
-                if (this.shouldDiscardFriction()) {
-                    this.setDeltaMovement(vec37.x, q, vec37.z);
-                } else {
-                    this.setDeltaMovement(vec37.x * (double)f, q * 0.9800000190734863, vec37.z * (double)f);
-                }
+               this.m_20256_(this.m_20184_().m_82490_(0.5));
             }
-        }
 
-        this.calculateEntityAnimation(this instanceof FlyingAnimal);
-    }
-
-    private Vec3 seatPos1 = Vec3.ZERO;
-    private Vec3 seatPos2 = Vec3.ZERO;
-
-    public void setClientSeatPos1(Vec3 seatPos) {
-        this.seatPos1 = seatPos;
-    }
-
-    public void setClientSeatPos2(Vec3 seatPos) {
-        this.seatPos2 = seatPos;
-    }
-
-    @Override
-    public Vec3 getClientSeatPos(Entity passenger) {
-        var ps = this.getPassengers();
-
-        int num = 1;
-        for (Entity p: ps) {
-            if (p == passenger) {
-                if (num == 1) {
-                    return this.seatPos1;
-                } else if (num == 2) {
-                    return this.seatPos2;
-                }
+            if (!this.m_20068_()) {
+               this.m_20256_(this.m_20184_().m_82520_(0.0, -d / 4.0, 0.0));
             }
-            num++;
-        }
-        return Vec3.ZERO;
-    }
 
-    @Override
-    public InteractionResult interact(Player player, InteractionHand hand) {
-        if (isServerSide()) {
-            player.setYRot(this.getYRot());
-            player.setXRot(this.getXRot());
-            player.startRiding(this);
-        }
+            Vec3 vec34 = this.m_20184_();
+            if (this.f_19862_ && this.m_20229_(vec34.f_82479_, vec34.f_82480_ + 0.6F - this.m_20186_() + e, vec34.f_82481_)) {
+               this.m_20334_(vec34.f_82479_, 0.3F, vec34.f_82481_);
+            }
+         } else if (this.m_21255_()) {
+            this.m_245125_();
+            Vec3 vec35 = this.m_20184_();
+            Vec3 vec36 = this.m_20154_();
+            float f = this.m_146909_() * (float) (Math.PI / 180.0);
+            double i = Math.sqrt(vec36.f_82479_ * vec36.f_82479_ + vec36.f_82481_ * vec36.f_82481_);
+            double j = vec35.m_165924_();
+            double k = vec36.m_82553_();
+            double l = Math.cos(f);
+            l = l * l * Math.min(1.0, k / 0.4);
+            vec35 = this.m_20184_().m_82520_(0.0, d * (-1.0 + l * 0.75), 0.0);
+            if (vec35.f_82480_ < 0.0 && i > 0.0) {
+               double m = vec35.f_82480_ * -0.1 * l;
+               vec35 = vec35.m_82520_(vec36.f_82479_ * m / i, m, vec36.f_82481_ * m / i);
+            }
 
-        this.rideCoolTick = 3;
-        this.actionController.reset();
+            if (f < 0.0F && i > 0.0) {
+               double m = j * -Mth.m_14031_(f) * 0.04;
+               vec35 = vec35.m_82520_(-vec36.f_82479_ * m / i, m * 3.2, -vec36.f_82481_ * m / i);
+            }
 
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
-    }
+            if (i > 0.0) {
+               vec35 = vec35.m_82520_((vec36.f_82479_ / i * j - vec35.f_82479_) * 0.1, 0.0, (vec36.f_82481_ / i * j - vec35.f_82481_) * 0.1);
+            }
 
-    @Override
-    protected boolean canAddPassenger(Entity passenger) {
-        return this.getPassengers().size() < 2;
-    }
+            this.m_20256_(vec35.m_82542_(0.99F, 0.98F, 0.99F));
+            this.m_6478_(MoverType.SELF, this.m_20184_());
+            if (this.f_19862_ && !this.m_9236_().f_46443_) {
+               double m = this.m_20184_().m_165924_();
+               double n = j - m;
+               float o = (float)(n * 10.0 - 3.0);
+               if (o > 0.0F) {
+                  this.m_6469_(this.m_269291_().m_269515_(), o);
+               }
+            }
+
+            if (this.m_20096_() && !this.m_9236_().f_46443_) {
+               this.m_20115_(7, false);
+            }
+         } else {
+            BlockPos blockPos = this.m_20099_();
+            float p = this.m_9236_().m_8055_(blockPos).m_60734_().m_49958_();
+            float f = this.m_20096_() ? p * 0.91F : 0.91F;
+            Vec3 vec37 = this.m_21074_(vec3, p);
+            double q = vec37.f_82480_;
+            if (this.m_21023_(MobEffects.f_19620_)) {
+               q += (0.05 * (this.m_21124_(MobEffects.f_19620_).m_19564_() + 1) - vec37.f_82480_) * 0.2;
+            } else if (this.m_9236_().f_46443_ && !this.m_9236_().m_46805_(blockPos)) {
+               if (this.m_20186_() > this.m_9236_().m_141937_()) {
+                  q = -0.1;
+               } else {
+                  q = 0.0;
+               }
+            } else if (!this.m_20068_()) {
+               q -= d;
+            }
+
+            if (this.m_147223_()) {
+               this.m_20334_(vec37.f_82479_, q, vec37.f_82481_);
+            } else {
+               this.m_20334_(vec37.f_82479_ * f, q * 0.98F, vec37.f_82481_ * f);
+            }
+         }
+      }
+
+      this.m_267651_(this instanceof FlyingAnimal);
+   }
+
+   public void setClientSeatPos1(Vec3 seatPos) {
+      this.seatPos1 = seatPos;
+   }
+
+   public void setClientSeatPos2(Vec3 seatPos) {
+      this.seatPos2 = seatPos;
+   }
+
+   @Override
+   public Vec3 getClientSeatPos(Entity passenger) {
+      List<Entity> ps = this.m_20197_();
+      int num = 1;
+
+      for (Entity p : ps) {
+         if (p == passenger) {
+            if (num == 1) {
+               return this.seatPos1;
+            }
+
+            if (num == 2) {
+               return this.seatPos2;
+            }
+         }
+
+         num++;
+      }
+
+      return Vec3.f_82478_;
+   }
+
+   @Override
+   public InteractionResult m_6096_(Player player, InteractionHand hand) {
+      if (this.isServerSide()) {
+         player.m_146922_(this.m_146908_());
+         player.m_146926_(this.m_146909_());
+         player.m_20329_(this);
+      }
+
+      this.rideCoolTick = 3;
+      this.actionController.reset();
+      return InteractionResult.m_19078_(this.m_9236_().f_46443_);
+   }
+
+   @Override
+   protected boolean m_7310_(Entity passenger) {
+      return this.m_20197_().size() < 2;
+   }
 }

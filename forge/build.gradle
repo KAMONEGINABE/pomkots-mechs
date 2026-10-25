@@ -31,10 +31,14 @@ configurations {
 }
 
 repositories {
-    flatDir {
-        dirs 'libs'  // プロジェクト内のlibsフォルダを指定
+    maven {
+        name = 'GeckoLib'
+        url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        content {
+            includeGroupByRegex("software\\.bernie.*")
+            includeGroup("com.eliotlash.mclib")
+        }
     }
-
     maven { url "https://maven.shedaniel.me/" }
 }
 
@@ -44,7 +48,7 @@ dependencies {
 
     // Architectury API. This is optional, and you can comment it out if you don't need it.
     modImplementation "dev.architectury:architectury-forge:$rootProject.architectury_api_version"
-    implementation(name: 'geckolib-forge-1.20.1-4.4.9-deobf', ext: 'jar')  // 'libs/A.jar' を依存関係に追加
+    modImplementation "software.bernie.geckolib:geckolib-forge-${minecraft_version}:${geckolib_version}"
 
     modApi("me.shedaniel.cloth:cloth-config-forge:${cloth_config_version}")
 

@@ -7,10 +7,15 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
 public interface PomkotsVehicle extends PomkotsControllable {
-    public LockTargets getLockTargets();
-    public Vec3 getClientSeatPos(Entity passenger);
-    public boolean shouldRenderDefaultHud(String name);
-    public boolean shouldLockMulti(DriverInput di);
-    public boolean shouldLockWeak(DriverInput di);
-    public boolean shouldLockStrong(DriverInput di);
+   LockTargets getLockTargets();
+
+   Vec3 getClientSeatPos(Entity var1);
+
+   boolean shouldRenderDefaultHud(String var1);
+
+   boolean shouldLockMulti(DriverInput var1);
+
+   boolean shouldLockWeak(DriverInput var1);
+
+   boolean shouldLockStrong(DriverInput var1);
 }

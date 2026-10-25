@@ -1,160 +1,160 @@
 package grcmcs.minecraft.mods.pomkotsmechs.entity.monster.mob;
 
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
-import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.GenericPomkotsMonster;
-import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.mob.goal.GenericMobGoal;
-import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.mob.goal.MaintainAltitudeGoal;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.mob.goal.FlyingMobGoal;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.mob.goal.SimpleMobAttackGoal;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.BulletMiddleEntity;
-import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.MissileEnemyEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.MissileGenericEnemyEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
-import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.ai.util.DefaultRandomPos;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.Vec3;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-// Flying Mob
-public class Pms02Entity extends GenericPomkotsMonster implements GeoEntity, GeoAnimatable {
-    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
-    public static final float DEFAULT_SCALE = 1.0f;
-    public static final Logger LOGGER = LoggerFactory.getLogger(PomkotsMechs.MODID);
+public class Pms02Entity extends BaseSmallMonsterEntity implements GeoEntity, GeoAnimatable {
+   private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
+   public static final float DEFAULT_SCALE = 1.0F;
 
-    public Pms02Entity(EntityType<? extends GenericPomkotsMonster> entityType, Level world) {
-        super(entityType, world);
+   @Override
+   public String getMechName() {
+      return "pms02";
+   }
 
-        this.setMaxUpStep(BattleBalance.MOB_STEP_UP);
-        this.setSpeed(1F);
-        this.setPersistenceRequired();
-        this.setNoGravity(true);
-        this.setYRot(0F);
-        this.noCulling = true;
-    }
+   public Pms02Entity(EntityType<? extends GenericPomkotsMonster> entityType, Level world) {
+      super(entityType, world);
+      this.m_20242_(true);
+   }
 
-    @Override
-    protected void registerGoals() {
-        super.registerGoals();
+   @Override
+   public void m_8119_() {
+      this.m_20242_(true);
+      super.m_8119_();
+   }
 
-        this.goalSelector.addGoal(1, new MaintainAltitudeGoal(this, 30, 0.3F));
-        this.goalSelector.addGoal(2, new GenericMobGoal(this, 0.8F) {
-            protected void startRandomWalk(float speedModifier) {
-                Vec3 rnd = DefaultRandomPos.getPos(this.mob, 10, 7);
-                if (rnd != null) {
-                    this.mob.getNavigation().moveTo(rnd.x, rnd.y, rnd.z, this.speedModifier);
-                    this.walkCount = 1;
+   @Override
+   protected void m_8099_() {
+      super.m_8099_();
+      this.f_21345_.m_25352_(1, new FlyingMobGoal(this, this.getMechData().speed, 20.0, 100.0, 10.0, 30.0));
+      this.f_21345_.m_25352_(1, new SimpleMobAttackGoal(this, 0.5F));
+   }
 
-                }
+   @Override
+   public void doAttack() {
+      if (this.isServerSide() && this.m_5448_() != null) {
+         this.rotateToTarget(this.m_5448_());
+         int pattern = this.f_19796_.m_188503_(3);
+         if (pattern != 0) {
+            for (int i = 0; i < 2; i++) {
+               BulletMiddleEntity be = new BulletMiddleEntity(
+                  (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLETMIDDLE.get(), this.m_9236_(), this, this.getMechData().bulletDamage
+               );
+               Vec3 offset = this.m_20182_();
+               Vec3 muzzlPos = new Vec3(1 - i * 2, -2.0, 0.0);
+               muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+               be.m_146884_(offset.m_82549_(muzzlPos));
+               be.m_146922_(this.m_146908_());
+               be.m_146926_(this.m_146909_());
+               be.f_19859_ = this.m_146908_();
+               be.f_19860_ = this.m_146909_();
+               float[] angle = Utils.getShootingAngle(be, this.m_5448_(), true);
+               be.m_37251_(be, angle[0], angle[1], this.m_21256_(), this.getMechData().bulletSpeed, 0.0F);
+               this.m_9236_().m_7967_(be);
             }
-            protected void startWalk(LivingEntity target, float speedModifier) {
-                this.mob.getNavigation().moveTo(target, this.speedModifier);
-                this.walkCount = 1;
+         } else {
+            for (int i = 0; i < 2; i++) {
+               for (int j = 0; j < 2; j++) {
+                  MissileGenericEnemyEntity be = new MissileGenericEnemyEntity(
+                     (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_ENEMY.get(),
+                     this.m_9236_(),
+                     this,
+                     this.m_5448_(),
+                     this.getMechData().missileDamage,
+                     this.getMechData().missileSpeed
+                  );
+                  Vec3 offset = this.m_20182_();
+                  Vec3 muzzlPos = new Vec3(1 - i * 2, 4.4F, 0.0F - j * 2.0F);
+                  muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+                  be.m_146884_(offset.m_82549_(muzzlPos));
+                  be.m_37251_(be, -20.0F, this.m_146908_() - 30.0F + i * 60, this.m_21256_(), 1.9F, 0.0F);
+                  this.m_9236_().m_7967_(be);
+               }
             }
-        });
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal(this, Player.class, false, false));
-        this.goalSelector.addGoal(4, new RandomStrollGoal(this, 0.8));
-        this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
-    }
+         }
 
-    @Override
-    public void doAttack() {
-        if (this.isServerSide()) {
-            this.rotateToTarget(this.getTarget());
+         this.triggerAnim("shoot_controller", "shoot");
+      }
+   }
 
-            long pattern = this.level().getGameTime() % 3;
+   @Override
+   public int getMaxAttackCooltime() {
+      return 30;
+   }
 
-            if (pattern == 0) {
-                for (int i = 0; i < 2; i++) {
-                    MissileEnemyEntity be = new MissileEnemyEntity(PomkotsMechs.MISSILE_ENEMY.get(), this.level(), this);
+   protected float m_274460_() {
+      return 0.6F;
+   }
 
-                    var offset = this.position();
+   public boolean m_20096_() {
+      return false;
+   }
 
-                    // オフセット位置から大体の銃口の座標を決める（モデル位置からとるとクラサバ同期がめんどい…）
-                    var muzzlPos = new Vec3(1 - i * 2, 3.0F, 0);
-                    muzzlPos = muzzlPos.yRot((float) Math.toRadians((-1.0) * this.getYRot()));
+   public void registerControllers(ControllerRegistrar controllers) {
+      controllers.add(
+         new AnimationController[]{
+            new AnimationController(
+               this,
+               "basic_move",
+               0,
+               event -> {
+                  if (this.isClosed()) {
+                     return PlayState.STOP;
+                  } else {
+                     return event.isMoving()
+                        ? event.setAndContinue(RawAnimation.begin().thenLoop("animation.pms.idle"))
+                        : event.setAndContinue(RawAnimation.begin().thenLoop("animation.pms.idle"));
+                  }
+               }
+            )
+         }
+      );
+      controllers.add(
+         new AnimationController[]{
+            new AnimationController(this, "shoot_controller", state -> PlayState.STOP)
+               .triggerableAnim("shoot", RawAnimation.begin().thenPlay("animation.pms.idle"))
+               .triggerableAnim("close", RawAnimation.begin().thenPlayAndHold("animation.pms.close"))
+               .triggerableAnim("open", RawAnimation.begin().thenPlay("animation.pms.boot"))
+         }
+      );
+   }
 
-                    be.setPos(offset.add(muzzlPos));
-                    be.shootFromRotation(be, -10, this.getYRot() -30 + i * 60, this.getFallFlyingTicks(), 0.9F, 0F);
+   @Override
+   protected void fireOpenAnimation() {
+      this.triggerAnim("shoot_controller", "open");
+   }
 
-                    this.level().addFreshEntity(be);
-                }
+   @Override
+   protected void fireCloseAnimation() {
+      this.triggerAnim("shoot_controller", "close");
+   }
 
-            } else {
-                for (int i = 0; i < 2; i++) {
-                    BulletMiddleEntity be = new BulletMiddleEntity(PomkotsMechs.BULLETMIDDLE.get(), this.level(), this);
+   public AnimatableInstanceCache getAnimatableInstanceCache() {
+      return this.geoCache;
+   }
 
-                    var offset = this.position();
-
-                    // オフセット位置から大体の銃口の座標を決める（モデル位置からとるとクラサバ同期がめんどい…）
-                    var muzzlPos = new Vec3(1 - i * 2, 3.0F, 0);
-                    muzzlPos = muzzlPos.yRot((float) Math.toRadians((-1.0) * this.getYRot()));
-
-                    be.setPos(offset.add(muzzlPos));
-                    be.setYRot(this.getYRot());
-                    be.setXRot(this.getXRot());
-                    be.yRotO = this.getYRot();
-                    be.xRotO = this.getXRot();
-
-                    be.shootFromRotation(be, this.getXRot(), this.getYRot(), this.getFallFlyingTicks(), 0.9F, 0F);
-
-                    this.level().addFreshEntity(be);
-                }
-            }
-
-            this.triggerAnim("shoot_controller", "shoot");
-        }
-    }
-
-    @Override
-    public int getMaxAttackCooltime() {
-        return 30;
-    }
-
-//    @Override
-//    protected PathNavigation createNavigation(Level level) {
-//        return new FlyingPathNavigation(this, level);
-//    }
-
-    @Override protected float getFlyingSpeed() {
-        return 0.6f;
-    }
-
-    @Override
-    public boolean onGround() {
-        return false; // モンスターが地上にいると認識されないようにする
-    }
-
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "basic_move", 0, event -> {
-            if (event.isMoving()) {
-                return event.setAndContinue(RawAnimation.begin().thenLoop("animation.pms02.idle"));
-
-            } else {
-                return event.setAndContinue(RawAnimation.begin().thenLoop("animation.pms02.idle"));
-
-            }
-        }));
-
-        controllers.add(new AnimationController<>(this, "shoot_controller", state -> PlayState.STOP)
-                .triggerableAnim("shoot", RawAnimation.begin().thenPlay("animation.pms02.idle"))
-        );
-    }
-
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return this.geoCache;
-    }
+   public static boolean canSpawn(EntityType<Pms02Entity> type, ServerLevelAccessor world, MobSpawnType reason, BlockPos pos, RandomSource random) {
+      return GenericPomkotsMonster.canSpawnCommon(type, world, reason, pos, random);
+   }
 }

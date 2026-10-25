@@ -1,0 +1,140 @@
+package grcmcs.minecraft.mods.pomkotsmechs.misc.arena.core.state;
+
+import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
+import grcmcs.minecraft.mods.pomkotsmechs.block.arena.ArenaGateBlockEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.misc.ElevatorEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
+import grcmcs.minecraft.mods.pomkotsmechs.misc.arena.core.ArenaMatchContext;
+import grcmcs.minecraft.mods.pomkotsmechs.misc.arena.core.ArenaMatchProcessor;
+import grcmcs.minecraft.mods.pomkotsmechs.misc.arena.core.ArenaMatchRuntime;
+import grcmcs.minecraft.mods.pomkotsmechs.misc.arena.util.ArenaBossBarUtil;
+import grcmcs.minecraft.mods.pomkotsmechs.misc.arena.util.ArenaUtil;
+import grcmcs.minecraft.mods.pomkotsmechs.sounds.bgm.BGMState;
+import grcmcs.minecraft.mods.pomkotsmechs.sounds.bgm.ServerBGMTracker;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
+
+public class BattleProcessor extends AbstractArenaMatchStateProcessor {
+   private static final long TIMEOUT = 180000L;
+
+   @Override
+   public void onEnter(ArenaMatchContext context) {
+      Entity challengerMechEntity = context.getChallengerMechEntity();
+      Entity opponentMechEntity = context.getOpponentMechEntity();
+      if (challengerMechEntity instanceof Pmvc01Entity mc && opponentMechEntity instanceof Pmvc01Entity mo) {
+         if (context.getChallengerEntity() instanceof ServerPlayer player1) {
+            player1.m_7292_(new MobEffectInstance(MobEffects.f_19606_, 4000, 9, false, false, false));
+            ServerBGMTracker.forceSetBGMState(player1, BGMState.BATTLE_BOSS);
+         }
+
+         if (context.getChallengerEntity() instanceof ServerPlayer player2) {
+            player2.m_7292_(new MobEffectInstance(MobEffects.f_19606_, 4000, 9, false, false, false));
+            ServerBGMTracker.forceSetBGMState(player2, BGMState.BATTLE_BOSS);
+         }
+
+         mc.startArena((LivingEntity)opponentMechEntity);
+         mo.startArena((LivingEntity)challengerMechEntity);
+         this.unlockElevator(context.getLevel(), context.match().getGatePosA());
+         this.unlockElevator(context.getLevel(), context.match().getGatePosB());
+         ArenaBossBarUtil.createCountdownBar(context, "Time Left", 180000L);
+      }
+   }
+
+   private boolean unlockElevator(Level level, BlockPos gatePos) {
+      if (level.m_7702_(gatePos) instanceof ArenaGateBlockEntity gateEntity) {
+         ElevatorEntity elev = gateEntity.getElevator();
+         if (elev == null) {
+            return false;
+         }
+
+         elev.setMode(ElevatorEntity.Mode.IDLE);
+         return true;
+      } else {
+         return false;
+      }
+   }
+
+   @Override
+   public void tick(ArenaMatchContext context) {
+      long elapsed = context.elapsedMillis();
+      ArenaBossBarUtil.updateCountdownBar(context, "Time Left", elapsed, 180000L);
+      ArenaMatchRuntime.BattleResult result = this.checkResult(context, elapsed);
+      if (result != null) {
+         context.runtime().setResult(result);
+         ArenaUtil.playSounds((SoundEvent)PomkotsMechs.SE_ARENA_END.get(), context);
+         ArenaUtil.startScreenFade(context, 10, 10, 10);
+         ArenaMatchProcessor.changeState(context, ArenaMatchState.VICTORY_CEREMONY);
+      }
+   }
+
+   public ArenaMatchRuntime.BattleResult checkResult(ArenaMatchContext context, long elapsed) {
+      Entity challengerPilot = context.getChallengerEntity();
+      Entity challengerMech = context.getChallengerMechEntity();
+      Entity opponentPilot = context.getOpponentEntity();
+      Entity opponentMech = context.getOpponentMechEntity();
+      boolean challengerDead = isDefeated(challengerPilot, challengerMech);
+      boolean opponentDead = isDefeated(opponentPilot, opponentMech);
+      ArenaMatchRuntime.BattleResult result = null;
+      if (challengerDead && opponentDead) {
+         result = new ArenaMatchRuntime.BattleResult();
+         result.setResultType(ArenaMatchRuntime.BattleResult.ResultType.DRAW);
+         result.setReason("Double KO");
+      } else if (challengerDead) {
+         result = new ArenaMatchRuntime.BattleResult();
+         result.setResultType(ArenaMatchRuntime.BattleResult.ResultType.OPPONENT_WIN);
+         result.setWinnerId(context.match().getOpponentId());
+         result.setLoserId(context.match().getChallengerId());
+         result.setReason("Defeat");
+      } else if (opponentDead) {
+         result = new ArenaMatchRuntime.BattleResult();
+         result.setResultType(ArenaMatchRuntime.BattleResult.ResultType.CHALLENGER_WIN);
+         result.setWinnerId(context.match().getChallengerId());
+         result.setLoserId(context.match().getOpponentId());
+         result.setReason("Defeat");
+      } else if (elapsed >= 180000L) {
+         result = new ArenaMatchRuntime.BattleResult();
+         result.setResultType(ArenaMatchRuntime.BattleResult.ResultType.DRAW);
+         result.setReason("Time Over");
+      }
+
+      return result;
+   }
+
+   public static boolean isDefeated(Entity pilot, Entity mech) {
+      if (pilot == null || !pilot.m_6084_()) {
+         return true;
+      } else {
+         return mech instanceof Pmvc01Entity mechEntity ? mechEntity.isBroken() : true;
+      }
+   }
+
+   @Override
+   public void onExit(ArenaMatchContext context) {
+      ArenaBossBarUtil.removeBar(context);
+      if (context.getChallengerEntity() instanceof ServerPlayer player1) {
+         ServerBGMTracker.forceUnsetBGMState(player1);
+      }
+
+      if (context.getOpponentMechEntity() instanceof ServerPlayer player2) {
+         ServerBGMTracker.forceUnsetBGMState(player2);
+      }
+   }
+
+   @Override
+   public void onCancel(ArenaMatchContext context) {
+      ArenaBossBarUtil.removeBar(context);
+      if (context.getChallengerEntity() instanceof ServerPlayer player1) {
+         ServerBGMTracker.forceUnsetBGMState(player1);
+      }
+
+      if (context.getOpponentMechEntity() instanceof ServerPlayer player2) {
+         ServerBGMTracker.forceUnsetBGMState(player2);
+      }
+   }
+}

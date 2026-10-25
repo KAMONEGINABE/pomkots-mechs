@@ -6,22 +6,30 @@ import grcmcs.minecraft.mods.pomkotsmechs.client.model.KujiraEntityModel;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.KujiraEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 
 public class KujiraEntityRenderer extends GeoEntityRenderer<KujiraEntity> {
-    public KujiraEntityRenderer(EntityRendererProvider.Context renderManager) {
-        super(renderManager, new KujiraEntityModel());
+   public KujiraEntityRenderer(Context renderManager) {
+      super(renderManager, new KujiraEntityModel());
+      this.addRenderLayer(new AutoGlowingGeoLayer(this));
+   }
 
-        addRenderLayer(new AutoGlowingGeoLayer<>(this));
-    }
-
-    @Override
-    public void preApplyRenderLayers(PoseStack poseStack, KujiraEntity animatable, BakedGeoModel model, RenderType renderType, MultiBufferSource bufferSource, VertexConsumer buffer, float partialTick, int packedLight, int packedOverlay) {
-        super.preApplyRenderLayers(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
-        this.scaleHeight = 2.0F;
-        this.scaleWidth = 2.0F;
-    }
+   public void preApplyRenderLayers(
+      PoseStack poseStack,
+      KujiraEntity animatable,
+      BakedGeoModel model,
+      RenderType renderType,
+      MultiBufferSource bufferSource,
+      VertexConsumer buffer,
+      float partialTick,
+      int packedLight,
+      int packedOverlay
+   ) {
+      super.preApplyRenderLayers(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
+      this.scaleHeight = 2.0F;
+      this.scaleWidth = 2.0F;
+   }
 }

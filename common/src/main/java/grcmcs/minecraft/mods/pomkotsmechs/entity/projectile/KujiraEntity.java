@@ -1,105 +1,106 @@
 package grcmcs.minecraft.mods.pomkotsmechs.entity.projectile;
 
+import net.minecraft.core.NonNullList;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.projectile.ThrowableProjectile;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier.Builder;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.EntityHitResult;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class KujiraEntity extends ThrowableProjectile implements GeoEntity, GeoAnimatable {
-    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
-    private static final int MAX_LIFE_TICKS = 300;
-    private int lifeTicks = 0;
+public class KujiraEntity extends LivingEntity implements GeoEntity, GeoAnimatable {
+   private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
+   private static final int MAX_LIFE_TICKS = 300;
+   private int lifeTicks = 0;
 
-    public KujiraEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
-        super(entityType, world);
-        this.setNoGravity(true);
-    }
+   public static Builder createMobAttributes() {
+      return LivingEntity.m_21183_().m_22266_(Attributes.f_22282_).m_22268_(Attributes.f_22276_, 50.0);
+   }
 
-    @Override
-    public void tick() {
-        this.setNoGravity(true);
-        super.tick();
+   public KujiraEntity(EntityType<? extends KujiraEntity> entityType, Level world) {
+      super(entityType, world);
+      this.m_20242_(true);
+      this.f_19811_ = true;
+   }
 
-        if(this.lifeTicks++ >= MAX_LIFE_TICKS) {
-            this.discard();
-        }
-    }
+   public void m_8119_() {
+      this.m_20242_(true);
+      super.m_8119_();
+      if (!this.m_9236_().f_46443_) {
+         this.f_19812_ = true;
+      }
 
-    private void generateLava() {
-        if (this.level().isClientSide) {
-            RandomSource random = this.level().getRandom();
+      if (this.lifeTicks++ >= 300) {
+         this.m_146870_();
+      }
+   }
 
-            // 100個のLavaパーティクルをバラまく
-            for (int i = 0; i < 20; i++) {
-                // ランダムな速度を生成
-                double velocityX = random.nextDouble() * 2.0 - 1;
-                double velocityY = random.nextDouble() * 2.0 - 1;
-                double velocityZ = random.nextDouble() * 2.0 - 1;
+   private void generateLava() {
+      if (this.m_9236_().f_46443_) {
+         RandomSource random = this.m_9236_().m_213780_();
 
-                // パーティクルをクライアント側で発生させる
-                this.level().addParticle(ParticleTypes.LAVA,
-                        this.getX(), this.getY(), this.getZ(), // 位置
-                        velocityX, velocityY, velocityZ // 速度
-                );
-            }
-        }
-    }
+         for (int i = 0; i < 20; i++) {
+            double velocityX = random.m_188500_() * 2.0 - 1.0;
+            double velocityY = random.m_188500_() * 2.0 - 1.0;
+            double velocityZ = random.m_188500_() * 2.0 - 1.0;
+            this.m_9236_().m_7106_(ParticleTypes.f_123756_, this.m_20185_(), this.m_20186_(), this.m_20189_(), velocityX, velocityY, velocityZ);
+         }
+      }
+   }
 
-    @Override
-    protected void onHitEntity(EntityHitResult entityHitResult) {
+   protected void m_8097_() {
+      super.m_8097_();
+   }
 
-    }
+   public void registerControllers(ControllerRegistrar controllers) {
+      controllers.add(
+         new AnimationController[]{
+            new AnimationController(this, "rotation", 0, event -> event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation.kujira.happy")))
+         }
+      );
+   }
 
-    @Override
-    protected void onHitBlock(BlockHitResult blockHitResult) {
+   public AnimatableInstanceCache getAnimatableInstanceCache() {
+      return this.geoCache;
+   }
 
-    }
+   public boolean m_6000_(double cameraX, double cameraY, double cameraZ) {
+      double maxDistance = 1000.0;
+      return true;
+   }
 
-    @Override
-    protected void defineSynchedData() {
-    }
+   public boolean m_6783_(double d) {
+      return true;
+   }
 
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "rotation", 0, event -> {
-            return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation.kujira.happy"));
-        }));
-    }
+   public Iterable<ItemStack> m_6168_() {
+      return NonNullList.m_122780_(4, ItemStack.f_41583_);
+   }
 
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return this.geoCache;
-    }
+   public ItemStack m_6844_(EquipmentSlot equipmentSlot) {
+      return ItemStack.f_41583_;
+   }
 
+   public void m_8061_(EquipmentSlot equipmentSlot, ItemStack itemStack) {
+   }
 
-    @Override
-    public boolean shouldRender(double cameraX, double cameraY, double cameraZ) {
-        // カメラからの距離に関係なくレンダリングする
-        double maxDistance = 1000; // 必要に応じて距離を設定
-//        return this.distanceToSqr(cameraX, cameraY, cameraZ) < maxDistance * maxDistance;
-        return true;
-    }
+   public boolean m_142535_(float f1, float f2, DamageSource damageSource) {
+      return false;
+   }
 
-    @Override
-    public boolean shouldRenderAtSqrDistance(double d) {
-        return true;
-    }
-
-
-    @Override
-    public AABB getBoundingBoxForCulling() {
-        return this.getBoundingBox().inflate(30.0); // 必要に応じて調整
-    }
-
+   public HumanoidArm m_5737_() {
+      return null;
+   }
 }

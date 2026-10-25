@@ -11,15 +11,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
 public class LivingEntityMixin {
-
-    @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
-    public void onHurt(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
-        LivingEntity livingEntity = (LivingEntity) (Object) this;
-
-        if (livingEntity instanceof Player player) {
-            if (Utils.isRidingPomkotsVehicle(player)) {
-                cir.setReturnValue(false);
-            }
-        }
-    }
+   @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
+   public void onHurt(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+      LivingEntity livingEntity = (LivingEntity)this;
+      if (livingEntity instanceof Player player && Utils.isRidingPomkotsVehicle(player)) {
+         cir.setReturnValue(false);
+      }
+   }
 }

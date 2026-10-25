@@ -7,15 +7,12 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin(Camera.class)
 public interface CameraAccessor {
-    // setYRotへのアクセスを提供
-    @Invoker("setRotation")
-    void invokeSetRotation(float yaw, float pitch);
+   @Invoker("setRotation")
+   void invokeSetRotation(float var1, float var2);
 
+   @Accessor("xRot")
+   void setXRot(float var1);
 
-    @Accessor("xRot")
-    public void setXRot(float xRot);
-
-    @Accessor("yRot")
-    public void setYRot(float yRot);
-
+   @Accessor("yRot")
+   void setYRot(float var1);
 }

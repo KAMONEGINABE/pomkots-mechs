@@ -2,61 +2,59 @@ package grcmcs.minecraft.mods.pomkotsmechs.items;
 
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.Pmv01Entity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.PomkotsVehicleBase;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item.Properties;
 import net.minecraft.world.level.Level;
 
 public class CoreStonePMV01Item extends Item {
-    // 使用済みフラグのキー
-    private static final String USED_KEY = PomkotsMechs.MODID + ":corestone:used";
+   private static final String USED_KEY = "pomkotsmechs:corestone:used";
 
-    public CoreStonePMV01Item(Properties properties) {
-        super(properties);
-    }
+   public CoreStonePMV01Item(Properties properties) {
+      super(properties);
+   }
 
-    @Override
-    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
-        ItemStack stack = player.getItemInHand(hand);
-        CompoundTag nbt = stack.getOrCreateTag();
+   public InteractionResultHolder<ItemStack> m_7203_(Level world, Player player, InteractionHand hand) {
+      ItemStack stack = player.m_21120_(hand);
+      CompoundTag nbt = stack.m_41784_();
+      if (!nbt.m_128471_("pomkotsmechs:corestone:used")) {
+         if (!world.f_46443_) {
+            this.summonRobot(world, player);
+         }
 
-        // 1回目の使用：ロボット召喚
-        if (!nbt.getBoolean(USED_KEY)) {
-            if (!world.isClientSide) { // サーバー側のみで実行
-                summonRobot(world, player);
-            }
-            nbt.putBoolean(USED_KEY, true); // 使用済みに設定
-            return InteractionResultHolder.sidedSuccess(stack, world.isClientSide());
-        } else {
-            return InteractionResultHolder.fail(stack); // ロボットがいない場合は失敗
-        }
-    }
+         nbt.m_128379_("pomkotsmechs:corestone:used", true);
+         return InteractionResultHolder.m_19092_(stack, world.m_5776_());
+      } else {
+         return InteractionResultHolder.m_19100_(stack);
+      }
+   }
 
-    @Override
-    public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-        if (target instanceof Pmv01Entity robot) {
-            // ロボットの体力を回復
-            robot.heal(20.0F);
-            robot.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 1, 3)); // 回復エフェクト
+   public boolean m_7579_(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+      if (target instanceof PomkotsVehicleBase robot) {
+         robot.m_5634_(20.0F);
+         robot.m_7292_(new MobEffectInstance(MobEffects.f_19605_, 1, 3));
+         return false;
+      } else {
+         return super.m_7579_(stack, target, attacker);
+      }
+   }
 
-            return false;
-        }
-        return super.hurtEnemy(stack, target, attacker);
-    }
-    // ロボットを召喚するメソッド
-    private void summonRobot(Level world, Player player) {
-        Pmv01Entity robot = createInstance(world);
-        robot.moveTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
-        world.addFreshEntity(robot);
-    }
+   private void summonRobot(Level world, Player player) {
+      Pmv01Entity robot = this.createInstance(world);
+      robot.m_7678_(player.m_20185_(), player.m_20186_(), player.m_20189_(), player.m_146908_(), player.m_146909_());
+      world.m_7967_(robot);
+   }
 
-    protected Pmv01Entity createInstance(Level world) {
-        return new Pmv01Entity(PomkotsMechs.PMV01.get(), world);
-    }
+   protected Pmv01Entity createInstance(Level world) {
+      return new Pmv01Entity((EntityType<? extends LivingEntity>)PomkotsMechs.PMV01.get(), world);
+   }
 }

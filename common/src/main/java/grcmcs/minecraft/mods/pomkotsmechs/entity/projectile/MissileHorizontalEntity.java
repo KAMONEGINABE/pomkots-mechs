@@ -1,5 +1,7 @@
 package grcmcs.minecraft.mods.pomkotsmechs.entity.projectile;
 
+import java.util.List;
+import java.util.function.Predicate;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -8,124 +10,118 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.List;
-import java.util.function.Predicate;
-
 public class MissileHorizontalEntity extends MissileBaseEntity {
-    public MissileHorizontalEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
-        super(entityType, world);
-        this.setNoGravity(true);
-    }
+   public MissileHorizontalEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
+      super(entityType, world);
+      this.m_20242_(true);
+   }
 
-    public MissileHorizontalEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter, LivingEntity target) {
-        this(entityType, world);
-        this.shooter = shooter;
-        this.target = target;
-    }
+   public MissileHorizontalEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter, LivingEntity target) {
+      this(entityType, world);
+      this.shooter = shooter;
+      this.target = target;
+   }
 
-    @Override
-    protected LivingEntity findTarget() {
-        final int range = getSeekRange();
-        List<Entity> candidates = this.level().getEntitiesOfClass(
-                getTargetClass(),
-                new AABB(this.getX() - range ,this.getY() - range ,this.getZ() - range ,
-                        this.getX() + range ,this.getY() + range,this.getZ() + range),
-                new MissileTargetPredicate()
-        );
+   @Override
+   protected LivingEntity findTarget() {
+      int range = this.getSeekRange();
+      List<Entity> candidates = this.m_9236_()
+         .m_6443_(
+            this.getTargetClass(),
+            new AABB(
+               this.m_20185_() - range,
+               this.m_20186_() - range,
+               this.m_20189_() - range,
+               this.m_20185_() + range,
+               this.m_20186_() + range,
+               this.m_20189_() + range
+            ),
+            new MissileHorizontalEntity.MissileTargetPredicate()
+         );
+      return (LivingEntity)this.getBestMatch(candidates, this);
+   }
 
-        return (LivingEntity) getBestMatch(candidates, this);
-    }
+   public Entity getBestMatch(List<Entity> entities, Entity currentEntity) {
+      Entity bestMatch = null;
+      double bestScore = Double.MAX_VALUE;
 
-    public Entity getBestMatch(List<Entity> entities, Entity currentEntity) {
-        Entity bestMatch = null; // 最適なエンティティ
-        double bestScore = Double.MAX_VALUE; // 最適スコアの初期値 (小さいほど良い)
-
-        for (Entity entity : entities) {
-            if (entity == shooter || entity.getVehicle() == shooter || entity == currentEntity) continue;
-
-            // 高さの差を計算
-            double heightDifference = Math.abs(entity.getY() - currentEntity.getY());
-            // 距離を計算
-            double distance = entity.distanceTo(currentEntity);
-
-            // スコア計算: 高さの差を優先しつつ、次に距離を考慮
-            double score = heightDifference * 100 + distance;
-
-            // 現在の最良スコアと比較
+      for (Entity entity : entities) {
+         if (entity != this.shooter && entity.m_20202_() != this.shooter && entity != currentEntity) {
+            double heightDifference = Math.abs(entity.m_20186_() - currentEntity.m_20186_());
+            double distance = entity.m_20270_(currentEntity);
+            double score = heightDifference * 100.0 + distance;
             if (score < bestScore) {
-                bestScore = score;
-                bestMatch = entity;
+               bestScore = score;
+               bestMatch = entity;
             }
-        }
+         }
+      }
 
-        return bestMatch;
-    }
+      return bestMatch;
+   }
 
-    private class MissileTargetPredicate<LivingEntity> implements Predicate<LivingEntity> {
-        @Override
-        public boolean test(LivingEntity entity) {
-            return true;
-        }
-    }
+   @Override
+   protected void updateHomingMovement() {
+      Vec3 currentPosition = this.m_20182_();
+      Vec3 targetPosition = this.target.m_20182_().m_82520_(0.0, this.target.m_20206_() / 2.0F, 0.0);
+      Vec3 currentVelocity = this.m_20184_().m_82541_();
+      Vec3 directionToTarget = targetPosition.m_82546_(currentPosition).m_82541_();
+      double angleBetween = Math.acos(currentVelocity.m_82526_(directionToTarget));
+      double maxRotationRadians = Math.toRadians(this.getMaxRotationAnglePerTick());
+      Vec3 newVelocity;
+      if (angleBetween > maxRotationRadians) {
+         newVelocity = this.rotateTowards(currentVelocity, directionToTarget, maxRotationRadians);
+      } else {
+         newVelocity = directionToTarget;
+      }
 
-    // ホーミング処理
-    protected void updateHomingMovement() {
-        Vec3 currentPosition = this.position();
-        Vec3 targetPosition = target.position().add(0, target.getBbHeight() / 2, 0);
+      this.m_20256_(newVelocity.m_82490_(this.getSpeed()));
+   }
 
-        // 現在の進行方向とターゲット方向を計算
-        Vec3 currentVelocity = this.getDeltaMovement().normalize();
-        Vec3 directionToTarget = targetPosition.subtract(currentPosition).normalize();
+   @Override
+   protected int getSwitchTick() {
+      return 7;
+   }
 
-        // 角度差を計算（ラジアン）
-        double angleBetween = Math.acos(currentVelocity.dot(directionToTarget));
+   @Override
+   protected double getSpeed() {
+      return 2.0;
+   }
 
-        // 最大回転角度（ラジアンに変換）
-        double maxRotationRadians = Math.toRadians(getMaxRotationAnglePerTick());
+   @Override
+   protected int getSeekRange() {
+      return 40;
+   }
 
-        // ターゲット方向に向かうための回転角を制限
-        Vec3 newVelocity;
-        if (angleBetween > maxRotationRadians) {
-            // 最大回転角度まで回転する
-            newVelocity = rotateTowards(currentVelocity, directionToTarget, maxRotationRadians);
-        } else {
-            // 角度が許容範囲内であれば、ターゲットに向けて直接進む
-            newVelocity = directionToTarget;
-        }
+   @Override
+   protected float getMaxRotationAnglePerTick() {
+      return 10.0F;
+   }
 
-        // 新しい速度ベクトルに基づいて進行方向を更新
-        this.setDeltaMovement(newVelocity.scale(this.getSpeed()));
-    }
+   @Override
+   protected float getDamage() {
+      return 60.0F;
+   }
 
-    protected int getSwitchTick() {
-        return 7;
-    }
+   @Override
+   protected int getMaxLifeTicks() {
+      return 120;
+   }
 
-    protected double getSpeed() {
-        return 2;
-    }
+   @Override
+   protected Vec3 getNonTargetVelocity() {
+      return this.m_20184_();
+   }
 
-    protected int getSeekRange() {
-        return 40;
-    }
+   @Override
+   protected Class getTargetClass() {
+      return LivingEntity.class;
+   }
 
-    protected float getMaxRotationAnglePerTick() {
-        return 10;
-    }
-
-    protected float getDamage() {
-        return 60;
-    }
-
-    protected int getMaxLifeTicks() {
-        return 120;
-    }
-
-    protected Vec3 getNonTargetVelocity() {
-        return this.getDeltaMovement();
-    }
-
-    protected Class getTargetClass() {
-        return LivingEntity.class;
-    }
+   private class MissileTargetPredicate<LivingEntity> implements Predicate<LivingEntity> {
+      @Override
+      public boolean test(LivingEntity entity) {
+         return true;
+      }
+   }
 }

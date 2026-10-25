@@ -7,7 +7,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(GuiGraphics.class)
 public interface GuiGraphicsAccessor {
-    @Accessor("pose")
-    public void setPose(PoseStack pose);
-
+   @Accessor("pose")
+   void setPose(PoseStack var1);
 }

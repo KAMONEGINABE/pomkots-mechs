@@ -1,6 +1,7 @@
 package grcmcs.minecraft.mods.pomkotsmechs.entity.projectile;
 
 import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
@@ -8,90 +9,79 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.HitResult.Type;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class BulletEntity extends PomkotsThrowableProjectile implements GeoEntity, GeoAnimatable {
-    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
-    private static final float DAMAGE = BattleBalance.MECH_GATLING_DAMAGE;
-    private static final int MAX_LIFE_TICKS = 30;
-    private int lifeTicks = 0;
-    private LivingEntity shooter = null;
+   private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
+   private static final float DAMAGE = BattleBalance.MECH_GATLING_DAMAGE;
+   private static final int MAX_LIFE_TICKS = 30;
+   private int lifeTicks = 0;
+   private LivingEntity shooter = null;
 
-    public BulletEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
-        super(entityType, world);
-        this.setNoGravity(true);
-    }
+   public BulletEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
+      this(entityType, world, null);
+   }
 
-    public BulletEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter) {
-        this(entityType, world);
-        this.shooter = shooter;
-    }
+   public BulletEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter) {
+      super(entityType, shooter, world);
+      this.m_20242_(true);
+      this.shooter = shooter;
+   }
 
-    @Override
-    public void tick() {
-        this.setNoGravity(true);
+   @Override
+   public void m_8119_() {
+      this.m_20242_(true);
+      HitResult hitResult = ProjectileUtil.raycastBoundingCheck(this);
+      if (hitResult.m_6662_() != Type.MISS) {
+         this.m_6532_(hitResult);
+      }
 
-        // 弾速が早すぎると、ティック間にすり抜けちゃうのでレイキャスティングで補完
-        var hitResult = ProjectileUtil.raycastBoundingCheck(this);
-        if (hitResult.getType() != HitResult.Type.MISS) {
-            this.onHit(hitResult);
-        }
+      super.m_8119_();
+      Vec3 vel = this.m_20184_();
+      this.m_6034_(this.m_20185_() + vel.m_7096_(), this.m_20186_() + vel.m_7098_(), this.m_20189_() + vel.m_7094_());
+      if (this.lifeTicks++ >= 30) {
+         this.m_146870_();
+      }
+   }
 
-        super.tick();
+   protected void m_5790_(EntityHitResult entityHitResult) {
+      Entity entity = entityHitResult.m_82443_();
+      if (!entity.equals(this.shooter)) {
+         float damage = DAMAGE;
+         if (this.lifeTicks < 10) {
+            damage += (10.0F - this.lifeTicks) * DAMAGE / 20.0F;
+         }
 
-        var vel = this.getDeltaMovement();
-        this.setPos(this.getX() + vel.x(), this.getY() + vel.y(), this.getZ() + vel.z());
+         entity.m_6469_(entity.m_269291_().m_269390_(this, (Entity)(this.m_19749_() != null ? this.m_19749_() : this)), damage);
+         entity.f_19802_ = 0;
+         this.m_146870_();
+      }
+   }
 
-        if(this.lifeTicks++ >= MAX_LIFE_TICKS) {
-            this.discard();
-        }
-    }
+   protected void m_8060_(BlockHitResult blockHitResult) {
+      this.m_146870_();
+   }
 
-    @Override
-    protected void onHitEntity(EntityHitResult entityHitResult) {
-        var entity = entityHitResult.getEntity();
-        if (entity.equals(shooter)) {
-            return;
-        }
+   protected void m_8097_() {
+   }
 
-        float damage = DAMAGE;
+   public void registerControllers(ControllerRegistrar controllers) {
+      controllers.add(
+         new AnimationController[]{
+            new AnimationController(this, "rotation", 0, event -> event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation.bullet.idle")))
+         }
+      );
+   }
 
-        if (lifeTicks < 10) {
-            damage += (10 - (float)lifeTicks) * DAMAGE / 20;
-        }
-
-        entity.hurt(entity.damageSources().thrown(this, this.getOwner() != null ? this.getOwner() : this), damage);
-        entity.invulnerableTime = 0;
-
-        this.discard();
-    }
-
-
-    @Override
-    protected void onHitBlock(BlockHitResult blockHitResult) {
-        this.discard();
-    }
-
-    @Override
-    protected void defineSynchedData() {
-    }
-
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "rotation", 0, event -> {
-            return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation.bullet.idle"));
-        }));
-    }
-
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return this.geoCache;
-    }
-
+   public AnimatableInstanceCache getAnimatableInstanceCache() {
+      return this.geoCache;
+   }
 }

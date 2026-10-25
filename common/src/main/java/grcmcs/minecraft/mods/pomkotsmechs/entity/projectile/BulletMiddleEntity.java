@@ -1,6 +1,6 @@
 package grcmcs.minecraft.mods.pomkotsmechs.entity.projectile;
 
-import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
@@ -9,101 +9,91 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.HitResult.Type;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class BulletMiddleEntity extends PomkotsThrowableProjectile implements GeoEntity, GeoAnimatable {
-    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
-    private static final float DAMAGE = BattleBalance.MOB_BULLET_DAMAGE;
-    private static final int MAX_LIFE_TICKS = 40;
-    private int lifeTicks = 0;
-    private LivingEntity shooter = null;
+   private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
+   private static final float DAMAGE = 20.0F;
+   private static final int MAX_LIFE_TICKS = 40;
+   private int lifeTicks = 0;
+   private LivingEntity shooter = null;
+   private float damage;
 
-    public BulletMiddleEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
-        super(entityType, world);
-        this.setNoGravity(true);
-    }
+   public BulletMiddleEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
+      this(entityType, world, null, 20.0F);
+   }
 
-    public BulletMiddleEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter) {
-        this(entityType, world);
-        this.shooter = shooter;
-    }
+   public BulletMiddleEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter) {
+      this(entityType, world, shooter, 20.0F);
+   }
 
-    @Override
-    public void tick() {
-        this.setNoGravity(true);
+   public BulletMiddleEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter, float damage) {
+      super(entityType, shooter, world);
+      this.damage = damage;
+      this.shooter = shooter;
+      this.m_20242_(true);
+   }
 
-        // 弾速が早すぎると、ティック間にすり抜けちゃうのでレイキャスティングで補完
-        var hitResult = ProjectileUtil.raycastBoundingCheck(this);
-        if (hitResult.getType() != HitResult.Type.MISS) {
-            this.onHit(hitResult);
-        }
+   @Override
+   public void m_8119_() {
+      this.m_20242_(true);
+      HitResult hitResult = ProjectileUtil.raycastBoundingCheck(this);
+      if (hitResult.m_6662_() != Type.MISS) {
+         this.m_6532_(hitResult);
+      }
 
-        super.tick();
+      super.m_8119_();
+      this.f_19812_ = true;
+      if (this.lifeTicks++ >= 40) {
+         this.m_146870_();
+      }
+   }
 
-        this.updateRotationBasedOnVelocity();
+   protected void m_5790_(EntityHitResult entityHitResult) {
+      Entity entity = entityHitResult.m_82443_();
+      if (!entity.equals(this.shooter)) {
+         entity.m_6469_(entity.m_269291_().m_269390_(this, (Entity)(this.m_19749_() != null ? this.m_19749_() : this)), this.damage);
+         entity.f_19802_ = 0;
+         this.m_146870_();
+      }
+   }
 
-        var vel = this.getDeltaMovement();
-        this.setPos(this.getX() + vel.x(), this.getY() + vel.y(), this.getZ() + vel.z());
+   protected void m_8060_(BlockHitResult blockHitResult) {
+      this.m_146870_();
+   }
 
-        if(this.lifeTicks++ >= MAX_LIFE_TICKS) {
-            this.discard();
-        }
-    }
+   protected void m_8097_() {
+   }
 
-    @Override
-    protected void onHitEntity(EntityHitResult entityHitResult) {
-        var entity = entityHitResult.getEntity();
-        if (entity.equals(shooter)) {
-            return;
-        }
+   public void registerControllers(ControllerRegistrar controllers) {
+      controllers.add(
+         new AnimationController[]{
+            new AnimationController(this, "rotation", 0, event -> event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation.bulletmiddle.idle")))
+         }
+      );
+   }
 
-        entity.hurt(entity.damageSources().thrown(this, this.getOwner() != null ? this.getOwner() : this), DAMAGE);
-        entity.invulnerableTime = 0;
+   protected void updateRotationBasedOnVelocity() {
+      Vec3 velocity = this.m_20184_();
+      if (!velocity.equals(Vec3.f_82478_)) {
+         double yaw = Math.toDegrees(Math.atan2(velocity.f_82479_, velocity.f_82481_));
+         this.m_146922_((float)yaw);
+         double horizontalDistance = Math.sqrt(velocity.f_82479_ * velocity.f_82479_ + velocity.f_82481_ * velocity.f_82481_);
+         double pitch = Math.toDegrees(Math.atan2(velocity.f_82480_, horizontalDistance));
+         this.m_146926_((float)pitch);
+         this.f_19859_ = this.m_146908_();
+         this.f_19860_ = this.m_146909_();
+      }
+   }
 
-        this.discard();
-    }
-
-    @Override
-    protected void onHitBlock(BlockHitResult blockHitResult) {
-        this.discard();
-    }
-
-    @Override
-    protected void defineSynchedData() {
-    }
-
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "rotation", 0, event -> {
-            return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation.bulletmiddle.idle"));
-        }));
-    }
-
-    protected void updateRotationBasedOnVelocity() {
-        Vec3 velocity = this.getDeltaMovement();
-
-        if (!velocity.equals(Vec3.ZERO)) {
-            double yaw = Math.toDegrees(Math.atan2(velocity.x, velocity.z));
-            this.setYRot((float) yaw);
-
-            double horizontalDistance = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-            double pitch = Math.toDegrees(Math.atan2(velocity.y, horizontalDistance));
-            this.setXRot((float) pitch);
-
-            this.yRotO = this.getYRot();
-            this.xRotO = this.getXRot();
-        }
-    }
-
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return this.geoCache;
-    }
-
+   public AnimatableInstanceCache getAnimatableInstanceCache() {
+      return this.geoCache;
+   }
 }

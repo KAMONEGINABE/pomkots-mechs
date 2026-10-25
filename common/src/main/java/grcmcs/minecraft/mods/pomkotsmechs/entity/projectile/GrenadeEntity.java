@@ -1,152 +1,135 @@
 package grcmcs.minecraft.mods.pomkotsmechs.entity.projectile;
 
-import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
-import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.boss.Pmb01Entity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.boss.legacy.Pmb01Entity;
+import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.HitResult.Type;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class GrenadeEntity extends PomkotsThrowableProjectile implements GeoEntity, GeoAnimatable {
-    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
-    private static final float DAMAGE = BattleBalance.MECH_GRENADE_DAMAGE;
-    private static final int MAX_LIFE_TICKS = 80;
-    private int lifeTicks = 0;
-    private float explosionScale = 0;
-    private LivingEntity shooter = null;
+   private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
+   private static final float DAMAGE = BattleBalance.MECH_GRENADE_DAMAGE;
+   private static final int MAX_LIFE_TICKS = 80;
+   private int lifeTicks = 0;
+   private float explosionScale = 0.0F;
+   private float damage;
+   private LivingEntity shooter = null;
 
-    public GrenadeEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
-        this(entityType, world, null);
-    }
+   public GrenadeEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
+      this(entityType, world, null);
+   }
 
-    public GrenadeEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter) {
-        this(entityType, world, shooter, 10);
-    }
+   public GrenadeEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter) {
+      this(entityType, world, shooter, DAMAGE, 10.0F);
+   }
 
-    public GrenadeEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter, float exprosionScale) {
-        super(entityType, world);
-        this.shooter = shooter;
-        this.explosionScale = exprosionScale;
-    }
+   public GrenadeEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter, float damage, float explosionScale) {
+      super(entityType, shooter, world);
+      this.shooter = shooter;
+      this.explosionScale = explosionScale;
+      this.damage = damage;
+   }
 
+   @Override
+   public void m_8119_() {
+      HitResult hitResult = ProjectileUtil.raycastBoundingCheck(this);
+      if (hitResult.m_6662_() != Type.MISS) {
+         this.m_6532_(hitResult);
+      }
 
-    @Override
-    public void tick() {
-        // 弾速が早すぎると、ティック間にすり抜けちゃうのでレイキャスティングで補完
-        var hitResult = ProjectileUtil.raycastBoundingCheck(this);
-        if (hitResult.getType() != HitResult.Type.MISS) {
-            this.onHit(hitResult);
-        }
+      super.m_8119_();
+      Vec3 vel = this.m_20184_();
+      this.m_6034_(this.m_20185_() + vel.m_7096_(), this.m_20186_() + vel.m_7098_(), this.m_20189_() + vel.m_7094_());
+      if (this.lifeTicks++ >= 80) {
+         this.m_146870_();
+      }
+   }
 
-        super.tick();
+   protected void m_5790_(EntityHitResult entityHitResult) {
+      Entity entity = entityHitResult.m_82443_();
+      if (!entity.equals(this.shooter)) {
+         entity.m_6469_(entity.m_269291_().m_269390_(this, (Entity)(this.m_19749_() != null ? this.m_19749_() : this)), this.damage);
+         entity.f_19802_ = 0;
+         this.createExplosion(entityHitResult.m_82450_());
+         this.m_146870_();
+      }
+   }
 
-        var vel = this.getDeltaMovement();
-        this.setPos(this.getX() + vel.x(), this.getY() + vel.y(), this.getZ() + vel.z());
+   protected void m_8060_(BlockHitResult blockHitResult) {
+      this.createExplosion(blockHitResult.m_82450_());
+      this.m_146870_();
+   }
 
-        if(this.lifeTicks++ >= MAX_LIFE_TICKS) {
-            this.discard();
-        }
-    }
+   private void createExplosion(Vec3 pos) {
+      Level world = this.m_9236_();
+      if (!world.f_46443_) {
+         if (this.shooter instanceof Pmb01Entity && ProjectileUtil.isDestructionAllowed(this)) {
+            Utils.explode(this, pos.f_82479_, pos.f_82480_, pos.f_82481_, this.explosionScale, false, ExplosionInteraction.BLOCK, this.m_9236_());
+         } else {
+            Utils.explode(this, pos.f_82479_, pos.f_82480_, pos.f_82481_, this.explosionScale, false, ExplosionInteraction.NONE, this.m_9236_());
+         }
+      } else {
+         this.addParticles(this.m_20182_());
+      }
+   }
 
-    @Override
-    protected void onHitEntity(EntityHitResult entityHitResult) {
-        var entity = entityHitResult.getEntity();
-        if (entity.equals(shooter)) {
-            return;
-        }
+   public void m_142036_() {
+      if (this.m_9236_().f_46443_) {
+         this.addParticles(this.m_20182_());
+      }
+   }
 
-        entity.hurt(entity.damageSources().thrown(this, this.getOwner() != null ? this.getOwner() : this), DAMAGE);
-        entity.invulnerableTime = 0;
+   private void addParticles(Vec3 offset) {
+      Level world = this.m_9236_();
 
-        this.createExplosion(entityHitResult.getLocation());
-        this.discard();
-    }
+      for (int i = 0; i < 5; i++) {
+         int rad = Math.abs(i - 3);
 
-    @Override
-    protected void onHitBlock(BlockHitResult blockHitResult) {
-        this.createExplosion(blockHitResult.getLocation());
-//        this.createExplosionKujira(blockHitResult.getLocation());
-        this.discard();
-    }
-
-
-    private void createExplosionKujira(Vec3 pos) {
-        Level world = level();
-
-        if (!world.isClientSide) {
-            var level = this.level();
-            KujiraEntity e = new KujiraEntity(PomkotsMechs.KUJIRA.get(), level);
-            e.setPos(this.position());
-            level.addFreshEntity(e);
-        }
-    }
-
-    private void createExplosion(Vec3 pos) {
-        Level world = level();
-        if (!world.isClientSide) {
-            if (shooter instanceof Pmb01Entity && ProjectileUtil.isDestructionAllowed(this)) {
-                world.explode(this,  pos.x, pos.y, pos.z, explosionScale, false, Level.ExplosionInteraction.BLOCK);
-
-            } else {
-                world.explode(this,  pos.x, pos.y, pos.z, explosionScale, false, Level.ExplosionInteraction.NONE);
+         for (int j = 0; j < 5 - rad; j++) {
+            for (int k = 0; k < 5 - rad; k++) {
+               world.m_7106_(
+                  ParticleTypes.f_123813_,
+                  offset.f_82479_ - (k - (3 - rad / 2)) * 2,
+                  offset.f_82480_ - (i - 3) * 2,
+                  offset.f_82481_ - (j - (3 - rad / 2)) * 2,
+                  0.0,
+                  0.0,
+                  0.0
+               );
             }
-        } else {
-            addParticles(this.position());
-        }
-    }
+         }
+      }
+   }
 
-    @Override
-    public void onClientRemoval() {
-        if (this.level().isClientSide) {
-            addParticles(this.position());
-        }
-    }
+   protected void m_8097_() {
+   }
 
-    private void addParticles(Vec3 offset) {
-        Level world = level();
-        for (int i = 0; i < 5; i++) {
-            int rad = Math.abs(i - 3);
+   public void registerControllers(ControllerRegistrar controllers) {
+      controllers.add(
+         new AnimationController[]{
+            new AnimationController(this, "rotation", 0, event -> event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation.grenade.idle")))
+         }
+      );
+   }
 
-            for (int j = 0; j < 5 - rad; j++) {
-                for (int k = 0; k < 5 - rad; k++) {
-                    world.addParticle(
-                            ParticleTypes.EXPLOSION,
-                            offset.x - (k - (3 - rad/2)) * 2,
-                            offset.y - (i - 3) * 2,
-                            offset.z - (j - (3 - rad/2)) * 2,
-                            0,0,0);
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void defineSynchedData() {
-    }
-
-    @Override
-    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "rotation", 0, event -> {
-            return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation.grenade.idle"));
-        }));
-    }
-
-    @Override
-    public AnimatableInstanceCache getAnimatableInstanceCache() {
-        return this.geoCache;
-    }
+   public AnimatableInstanceCache getAnimatableInstanceCache() {
+      return this.geoCache;
+   }
 }

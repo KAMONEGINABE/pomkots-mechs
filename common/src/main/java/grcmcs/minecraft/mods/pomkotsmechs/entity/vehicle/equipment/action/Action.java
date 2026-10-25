@@ -1,113 +1,100 @@
 package grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action;
 
 public class Action {
-    public int maxCoolTime;
-    public int maxChargeTime;
-    public int maxFireTime;
+   public int maxCoolTime;
+   public int maxChargeTime;
+   public int maxFireTime;
+   public int currentCoolTime = 0;
+   public int currentChargeTime = 0;
+   public int currentFireTime = 0;
+   public boolean isOnEnd = false;
 
-    public int currentCoolTime = 0;
-    public int currentChargeTime = 0;
-    public int currentFireTime = 0;
+   public Action(int maxCoolTime, int maxChargeTime, int maxFireTime) {
+      this.maxCoolTime = maxCoolTime;
+      this.maxChargeTime = maxChargeTime;
+      this.maxFireTime = maxFireTime;
+   }
 
-    public boolean isOnEnd = false;
+   public void tick() {
+      this.isOnEnd = false;
+      if (this.currentCoolTime > 0) {
+         this.currentCoolTime--;
+      }
 
-    public Action(int maxCoolTime, int maxChargeTime, int maxFireTime) {
-        this.maxCoolTime = maxCoolTime;
-        this.maxChargeTime = maxChargeTime;
-        this.maxFireTime = maxFireTime;
-    }
+      if (this.currentChargeTime > 0 && this.maxChargeTime != 0) {
+         this.currentChargeTime++;
+         if (this.currentChargeTime == this.maxChargeTime) {
+            this.fireAction();
+         }
+      } else if (this.currentFireTime > 0) {
+         this.currentFireTime++;
+         if (this.currentFireTime == this.maxFireTime) {
+            this.currentFireTime = 0;
+            this.isOnEnd = true;
+         }
+      }
+   }
 
-    public void tick() {
-        isOnEnd = false;
+   public void fireAction() {
+      this.currentChargeTime = 0;
+      this.currentFireTime = 1;
+   }
 
-        if (currentCoolTime > 0) {
-            currentCoolTime--;
-        }
+   public boolean isInAction() {
+      return this.currentChargeTime > 0 || this.currentFireTime > 0;
+   }
 
-        if (currentChargeTime > 0 && maxChargeTime != 0) {
-            currentChargeTime++;
+   public boolean isInFire() {
+      return this.currentFireTime > 0;
+   }
 
-            if (currentChargeTime == maxChargeTime) {
-                fireAction();
-            }
-        } else if (currentFireTime > 0){
-            currentFireTime++;
+   public boolean isInCooltime() {
+      return this.currentCoolTime > 0;
+   }
 
-            if (currentFireTime == maxFireTime) {
-                currentFireTime = 0;
-                isOnEnd = true;
-            }
-        }
-    }
+   public boolean isCharging() {
+      return this.currentChargeTime > 0;
+   }
 
-    public void fireAction() {
-        currentChargeTime = 0;
-        currentFireTime = 1;
-    }
+   public boolean isFiring() {
+      return this.currentFireTime > 0;
+   }
 
-    public boolean isInAction() {
-        return currentChargeTime > 0 || currentFireTime > 0;
-    }
+   public boolean isOnFire() {
+      return this.currentFireTime == 1;
+   }
 
-    public boolean isInFire() {
-        return currentFireTime > 0;
-    }
+   public boolean startAction() {
+      if (this.maxCoolTime == 0 && this.isOnEnd) {
+         this.currentChargeTime = 0;
+         this.currentFireTime = 1;
+         this.isOnEnd = false;
+         return true;
+      } else if (!this.isInAction() && !this.isInCooltime()) {
+         this.startActionInternal();
+         return true;
+      } else {
+         return false;
+      }
+   }
 
-    public boolean isInCooltime() {
-        return currentCoolTime > 0;
-    }
+   public boolean isOnStart() {
+      return this.maxChargeTime > 0 ? this.currentChargeTime == 1 : this.currentFireTime == 1;
+   }
 
-    public boolean isCharging() {
-        return currentChargeTime > 0;
-    }
+   private void startActionInternal() {
+      if (this.maxChargeTime > 0) {
+         this.currentChargeTime = 1;
+      } else {
+         this.currentFireTime = 1;
+      }
 
-    public boolean isFiring() {
-        return currentFireTime > 0;
-    }
+      this.currentCoolTime = this.maxCoolTime;
+   }
 
-    public boolean isOnFire() {
-        return currentFireTime == 1;
-    }
-
-    public boolean startAction() {
-        if (maxCoolTime == 0 && isOnEnd) {
-            // CoolTime 0の時はホールド可能にする
-            currentChargeTime = 0;
-            currentFireTime = 1;
-            isOnEnd = false;
-
-            return true;
-        } else if (!isInAction() && !isInCooltime()) {
-            startActionInternal();
-
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public boolean isOnStart() {
-        if (maxChargeTime > 0) {
-            return currentChargeTime == 1;
-        } else {
-            return currentFireTime == 1;
-        }
-    }
-
-    private void startActionInternal() {
-        if (maxChargeTime > 0) {
-            currentChargeTime = 1;
-        } else {
-            currentFireTime = 1;
-        }
-
-        currentCoolTime = maxCoolTime;
-    }
-
-    public void reset() {
-        currentCoolTime = 0;
-        currentChargeTime = 0;
-        currentFireTime = 0;
-    }
-
+   public void reset() {
+      this.currentCoolTime = 0;
+      this.currentChargeTime = 0;
+      this.currentFireTime = 0;
+   }
 }
