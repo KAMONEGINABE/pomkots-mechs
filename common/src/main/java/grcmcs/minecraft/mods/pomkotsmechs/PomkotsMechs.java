@@ -1566,19 +1566,19 @@ public class PomkotsMechs {
    private static <T extends Entity> RegistrySupplier<EntityType<T>> registerEntityType(
       String name, EntityFactory<T> factory, MobCategory category, float width, float height
    ) {
-      return ENTITIES.register(name, () -> Builder.of(factory, category).sized(width, height).build(id(name).toString()));
+      return ENTITIES.register(name, () -> Builder.of(factory, category).sized(width, height).clientTrackingRange(32).build(id(name).toString()));
    }
 
    private static <T extends Entity> RegistrySupplier<EntityType<T>> registerEntityTypeLongTracking(
       String name, EntityFactory<T> factory, MobCategory category, float width, float height
    ) {
-      return ENTITIES.register(name, () -> Builder.of(factory, category).sized(width, height).clientTrackingRange(30).build(id(name).toString()));
+      return ENTITIES.register(name, () -> Builder.of(factory, category).sized(width, height).clientTrackingRange(32).build(id(name).toString()));
    }
 
    private static <T extends Entity> RegistrySupplier<EntityType<T>> registerEntityTypeTurret(
       String name, EntityFactory<T> factory, MobCategory category, float width, float height
    ) {
-      return ENTITIES.register(name, () -> Builder.of(factory, category).sized(width, height).clientTrackingRange(16).build(id(name).toString()));
+      return ENTITIES.register(name, () -> Builder.of(factory, category).sized(width, height).clientTrackingRange(32).build(id(name).toString()));
    }
 
    public static ItemStack createMechTemplate(String mechName, int pColor, int sColor) {
