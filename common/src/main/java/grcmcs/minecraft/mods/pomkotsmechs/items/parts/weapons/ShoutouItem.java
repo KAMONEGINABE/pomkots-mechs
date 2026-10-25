@@ -31,18 +31,18 @@ public class ShoutouItem extends BasePartsItem.WeaponArm {
    public void tickWeaponInAction(ActionWeapon.WeaponMechInterface mechInterface, int tick, boolean isOnFire) {
       Level world = mechInterface.getWorld();
       if (isOnFire) {
-         if (!world.m_5776_()) {
+         if (!world.isClientSide()) {
             Player player = mechInterface.getPlayer();
             if (player != null) {
                BlockState blockState = this.getMainHandBlock(player);
                if (blockState != null) {
-                  HitResult hit = player.m_19907_(100.0, 0.0F, true);
-                  if (hit.m_6662_() == Type.BLOCK) {
+                  HitResult hit = player.pick(100.0, 0.0F, true);
+                  if (hit.getType() == Type.BLOCK) {
                      BlockHitResult bh = (BlockHitResult)hit;
-                     BlockPos pos = bh.m_82425_().m_121945_(bh.m_82434_());
+                     BlockPos pos = bh.getBlockPos().relative(bh.getDirection());
                      Utils.setBlock(world, pos, blockState, 3);
-                     if (PomkotsMechs.CONFIG.consumeBlocksWhenPlacing && !player.m_150110_().f_35937_) {
-                        player.m_21205_().m_41774_(1);
+                     if (PomkotsMechs.CONFIG.consumeBlocksWhenPlacing && !player.getAbilities().instabuild) {
+                        player.getMainHandItem().shrink(1);
                      }
                   }
                }
@@ -54,7 +54,7 @@ public class ShoutouItem extends BasePartsItem.WeaponArm {
    }
 
    private BlockState getMainHandBlock(LivingEntity player) {
-      return player != null && player.m_21205_().m_41720_() instanceof BlockItem blockItem ? blockItem.m_40614_().m_49966_() : null;
+      return player != null && player.getMainHandItem().getItem() instanceof BlockItem blockItem ? blockItem.getBlock().defaultBlockState() : null;
    }
 
    @Override

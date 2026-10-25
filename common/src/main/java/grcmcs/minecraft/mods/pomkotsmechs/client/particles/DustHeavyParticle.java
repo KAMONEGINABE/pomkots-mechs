@@ -13,19 +13,19 @@ public class DustHeavyParticle extends TextureSheetParticle {
 
    public DustHeavyParticle(ClientLevel level, double x, double y, double z, double vx, double vy, double vz, SpriteSet spriteSet) {
       super(level, x, y, z, vx, vy, vz);
-      this.f_107227_ = 0.1F;
-      this.f_107228_ = 0.1F;
-      this.f_107229_ = 0.1F;
-      this.f_107230_ = 1.0F;
-      this.f_107225_ = 10;
-      this.f_107219_ = false;
-      this.f_107226_ = 0.5F;
+      this.rCol = 0.1F;
+      this.gCol = 0.1F;
+      this.bCol = 0.1F;
+      this.alpha = 1.0F;
+      this.lifetime = 10;
+      this.hasPhysics = false;
+      this.gravity = 0.5F;
       this.spriteSet = spriteSet;
-      this.m_108339_(spriteSet);
+      this.setSpriteFromAge(spriteSet);
    }
 
-   public ParticleRenderType m_7556_() {
-      return ParticleRenderType.f_107431_;
+   public ParticleRenderType getRenderType() {
+      return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
    }
 
    public static class Provider implements ParticleProvider<SimpleParticleType> {
@@ -37,8 +37,8 @@ public class DustHeavyParticle extends TextureSheetParticle {
 
       public Particle createParticle(SimpleParticleType typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
          Particle p = new DustHeavyParticle(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, this.spriteSet);
-         p.m_107257_((int)(10.0 * Math.random()) + 10);
-         p.m_6569_(0.5F);
+         p.setLifetime((int)(10.0 * Math.random()) + 10);
+         p.scale(0.5F);
          return p;
       }
    }

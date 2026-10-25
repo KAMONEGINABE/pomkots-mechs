@@ -11,8 +11,8 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 public class ServerModEvents {
    @SubscribeEvent
    public static void onPlayerJoin(PlayerLoggedInEvent event) {
-      if (event.getEntity() instanceof ServerPlayer serverPlayer && serverPlayer.m_20194_() != null) {
-         SurvivalInitActions.onServerStarted(serverPlayer.m_20194_());
+      if (event.getEntity() instanceof ServerPlayer serverPlayer && serverPlayer.getServer() != null) {
+         SurvivalInitActions.onServerStarted(serverPlayer.getServer());
          SurvivalInitActions.onPlayerJoin(serverPlayer);
       }
    }

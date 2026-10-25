@@ -52,7 +52,7 @@ public class Pmv03EntityRenderer extends GeoEntityRenderer<Pmv03Entity> {
          animatable.setMainCameraPosition(this.getMainCameraPosition(model, animatable, partialTick, Pmv03Entity.DEFAULT_SCALE));
       }
 
-      RenderUtils.renderAdditionalHud(poseStack, animatable, this.f_114476_.m_253208_(), bufferSource);
+      RenderUtils.renderAdditionalHud(poseStack, animatable, this.entityRenderDispatcher.cameraOrientation(), bufferSource);
    }
 
    private Vec3 getSeatPosition(BakedGeoModel model) {
@@ -67,7 +67,7 @@ public class Pmv03EntityRenderer extends GeoEntityRenderer<Pmv03Entity> {
             seatPos.z * Pmv03Entity.DEFAULT_SCALE - rootPos.z * Pmv03Entity.DEFAULT_SCALE
          );
       } else {
-         return Vec3.f_82478_;
+         return Vec3.ZERO;
       }
    }
 
@@ -77,7 +77,7 @@ public class Pmv03EntityRenderer extends GeoEntityRenderer<Pmv03Entity> {
          Vector3d seatPos = vcSeat.getLocalPosition();
          return new Vec3(seatPos.x * scale, seatPos.y * scale, seatPos.z * scale);
       } else {
-         return Vec3.f_82478_;
+         return Vec3.ZERO;
       }
    }
 
@@ -99,12 +99,12 @@ public class Pmv03EntityRenderer extends GeoEntityRenderer<Pmv03Entity> {
    }
 
    private void setBoosterVisibilitty(BakedGeoModel model, Pmv03Entity ent) {
-      Vec3 vel = ent.m_20184_();
-      vel = vel.m_82524_((float)Math.toRadians(ent.m_146908_()));
-      if (vel.f_82479_ > 1.0) {
+      Vec3 vel = ent.getDeltaMovement();
+      vel = vel.yRot((float)Math.toRadians(ent.getYRot()));
+      if (vel.x > 1.0) {
          ((GeoBone)model.getBone("fire_r1").get()).setHidden(false);
          ((GeoBone)model.getBone("fire_l1").get()).setHidden(true);
-      } else if (vel.f_82479_ < -1.0) {
+      } else if (vel.x < -1.0) {
          ((GeoBone)model.getBone("fire_r1").get()).setHidden(true);
          ((GeoBone)model.getBone("fire_l1").get()).setHidden(false);
       } else {
@@ -112,7 +112,7 @@ public class Pmv03EntityRenderer extends GeoEntityRenderer<Pmv03Entity> {
          ((GeoBone)model.getBone("fire_l1").get()).setHidden(true);
       }
 
-      if (vel.f_82481_ > 1.0) {
+      if (vel.z > 1.0) {
          ((GeoBone)model.getBone("fire_r3").get()).setHidden(false);
          ((GeoBone)model.getBone("fire_l3").get()).setHidden(false);
       } else {

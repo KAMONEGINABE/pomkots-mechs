@@ -48,67 +48,67 @@ public class GrenadeEntity extends PomkotsThrowableProjectile implements GeoEnti
    }
 
    @Override
-   public void m_8119_() {
+   public void tick() {
       HitResult hitResult = ProjectileUtil.raycastBoundingCheck(this);
-      if (hitResult.m_6662_() != Type.MISS) {
-         this.m_6532_(hitResult);
+      if (hitResult.getType() != Type.MISS) {
+         this.onHit(hitResult);
       }
 
-      super.m_8119_();
-      Vec3 vel = this.m_20184_();
-      this.m_6034_(this.m_20185_() + vel.m_7096_(), this.m_20186_() + vel.m_7098_(), this.m_20189_() + vel.m_7094_());
+      super.tick();
+      Vec3 vel = this.getDeltaMovement();
+      this.setPos(this.getX() + vel.x(), this.getY() + vel.y(), this.getZ() + vel.z());
       if (this.lifeTicks++ >= 80) {
-         this.m_146870_();
+         this.discard();
       }
    }
 
-   protected void m_5790_(EntityHitResult entityHitResult) {
-      Entity entity = entityHitResult.m_82443_();
+   protected void onHitEntity(EntityHitResult entityHitResult) {
+      Entity entity = entityHitResult.getEntity();
       if (!entity.equals(this.shooter)) {
-         entity.m_6469_(entity.m_269291_().m_269390_(this, (Entity)(this.m_19749_() != null ? this.m_19749_() : this)), this.damage);
-         entity.f_19802_ = 0;
-         this.createExplosion(entityHitResult.m_82450_());
-         this.m_146870_();
+         entity.hurt(entity.damageSources().thrown(this, (Entity)(this.getOwner() != null ? this.getOwner() : this)), this.damage);
+         entity.invulnerableTime = 0;
+         this.createExplosion(entityHitResult.getLocation());
+         this.discard();
       }
    }
 
-   protected void m_8060_(BlockHitResult blockHitResult) {
-      this.createExplosion(blockHitResult.m_82450_());
-      this.m_146870_();
+   protected void onHitBlock(BlockHitResult blockHitResult) {
+      this.createExplosion(blockHitResult.getLocation());
+      this.discard();
    }
 
    private void createExplosion(Vec3 pos) {
-      Level world = this.m_9236_();
-      if (!world.f_46443_) {
+      Level world = this.level();
+      if (!world.isClientSide) {
          if (this.shooter instanceof Pmb01Entity && ProjectileUtil.isDestructionAllowed(this)) {
-            Utils.explode(this, pos.f_82479_, pos.f_82480_, pos.f_82481_, this.explosionScale, false, ExplosionInteraction.BLOCK, this.m_9236_());
+            Utils.explode(this, pos.x, pos.y, pos.z, this.explosionScale, false, ExplosionInteraction.BLOCK, this.level());
          } else {
-            Utils.explode(this, pos.f_82479_, pos.f_82480_, pos.f_82481_, this.explosionScale, false, ExplosionInteraction.NONE, this.m_9236_());
+            Utils.explode(this, pos.x, pos.y, pos.z, this.explosionScale, false, ExplosionInteraction.NONE, this.level());
          }
       } else {
-         this.addParticles(this.m_20182_());
+         this.addParticles(this.position());
       }
    }
 
-   public void m_142036_() {
-      if (this.m_9236_().f_46443_) {
-         this.addParticles(this.m_20182_());
+   public void onClientRemoval() {
+      if (this.level().isClientSide) {
+         this.addParticles(this.position());
       }
    }
 
    private void addParticles(Vec3 offset) {
-      Level world = this.m_9236_();
+      Level world = this.level();
 
       for (int i = 0; i < 5; i++) {
          int rad = Math.abs(i - 3);
 
          for (int j = 0; j < 5 - rad; j++) {
             for (int k = 0; k < 5 - rad; k++) {
-               world.m_7106_(
-                  ParticleTypes.f_123813_,
-                  offset.f_82479_ - (k - (3 - rad / 2)) * 2,
-                  offset.f_82480_ - (i - 3) * 2,
-                  offset.f_82481_ - (j - (3 - rad / 2)) * 2,
+               world.addParticle(
+                  ParticleTypes.EXPLOSION,
+                  offset.x - (k - (3 - rad / 2)) * 2,
+                  offset.y - (i - 3) * 2,
+                  offset.z - (j - (3 - rad / 2)) * 2,
                   0.0,
                   0.0,
                   0.0
@@ -118,7 +118,7 @@ public class GrenadeEntity extends PomkotsThrowableProjectile implements GeoEnti
       }
    }
 
-   protected void m_8097_() {
+   protected void defineSynchedData() {
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

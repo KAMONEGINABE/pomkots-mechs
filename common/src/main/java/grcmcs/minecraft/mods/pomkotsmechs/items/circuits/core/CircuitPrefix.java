@@ -68,7 +68,7 @@ public final class CircuitPrefix implements SkillRegistryEntry {
 
    private static CircuitPrefix register(String path, String displayName, CircuitCategory mainCategory, Map<CircuitCategory, Integer> categoryWeights) {
       ResourceLocation id = new ResourceLocation("pomkotsmechs", path);
-      return CircuitRegistries.PREFIXES.register(new CircuitPrefix(id, Component.m_237113_(displayName), mainCategory, categoryWeights));
+      return CircuitRegistries.PREFIXES.register(new CircuitPrefix(id, Component.literal(displayName), mainCategory, categoryWeights));
    }
 
    private static EnumMap<CircuitCategory, Integer> weights(int offence, int defence, int energy, int mobility, int utility) {

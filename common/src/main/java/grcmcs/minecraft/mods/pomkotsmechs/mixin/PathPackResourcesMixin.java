@@ -16,12 +16,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class PathPackResourcesMixin implements PackResources {
    @Inject(method = "getResource", at = @At("RETURN"), cancellable = true)
    private void interceptOggResource(PackType type, ResourceLocation location, CallbackInfoReturnable<IoSupplier<InputStream>> cir) {
-      if (this.m_5542_().contains("pomkotsmechs")) {
+      if (this.packId().contains("pomkotsmechs")) {
          System.out.println(location);
-         if (location.m_135815_().endsWith(".ogg")) {
+         if (location.getPath().endsWith(".ogg")) {
             IoSupplier<InputStream> original = (IoSupplier<InputStream>)cir.getReturnValue();
             if (original != null) {
-               cir.setReturnValue((IoSupplier)() -> CryptoUtil.decrypt((InputStream)original.m_247737_()));
+               cir.setReturnValue((IoSupplier)() -> CryptoUtil.decrypt((InputStream)original.get()));
             }
          }
       }

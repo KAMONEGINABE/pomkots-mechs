@@ -22,7 +22,7 @@ public class ImageButton extends Button {
    public ImageButton(
       int x, int y, int width, int height, ResourceLocation texture, int texU, int texV, int texWidth, int texHeight, Component label, OnPress onPress
    ) {
-      super(x, y, width, height, label, onPress, f_252438_);
+      super(x, y, width, height, label, onPress, DEFAULT_NARRATION);
       this.texture = texture;
       this.texU = texU;
       this.texV = texV;
@@ -31,44 +31,44 @@ public class ImageButton extends Button {
       this.label = label;
    }
 
-   protected void m_87963_(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+   protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
       RenderSystem.enableBlend();
-      boolean pressed = this.f_93622_ && GLFW.glfwGetMouseButton(Minecraft.m_91087_().m_91268_().m_85439_(), 0) == 1;
+      boolean pressed = this.isHovered && GLFW.glfwGetMouseButton(Minecraft.getInstance().getWindow().getWindow(), 0) == 1;
       int v = this.texV;
-      if (!this.f_93623_) {
-         v += this.f_93619_ * 3;
+      if (!this.active) {
+         v += this.height * 3;
       } else if (pressed) {
-         v += this.f_93619_ * 2;
-      } else if (this.f_93622_) {
-         v += this.f_93619_;
+         v += this.height * 2;
+      } else if (this.isHovered) {
+         v += this.height;
       }
 
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.9F);
-      guiGraphics.m_280163_(this.texture, this.m_252754_(), this.m_252907_(), this.texU, v, this.f_93618_, this.f_93619_, this.texWidth, this.texHeight);
+      guiGraphics.blit(this.texture, this.getX(), this.getY(), this.texU, v, this.width, this.height, this.texWidth, this.texHeight);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-      Font font = Minecraft.m_91087_().f_91062_;
-      int textWidth = font.m_92852_(this.label);
-      int textX = this.m_252754_() + this.f_93618_ / 2 - textWidth / 2;
-      int textY = this.m_252907_() + (this.f_93619_ - 8) / 2;
+      Font font = Minecraft.getInstance().font;
+      int textWidth = font.width(this.label);
+      int textX = this.getX() + this.width / 2 - textWidth / 2;
+      int textY = this.getY() + (this.height - 8) / 2;
       int color = -1;
-      if (!this.f_93623_) {
+      if (!this.active) {
          color = -14540254;
       } else if (pressed) {
          textX++;
          textY++;
       }
 
-      guiGraphics.m_280614_(font, this.label, textX, textY, color, false);
+      guiGraphics.drawString(font, this.label, textX, textY, color, false);
       this.renderBadge(guiGraphics);
    }
 
    private void renderBadge(GuiGraphics graphics) {
       if (this.badgeCount > 0) {
-         int badgeX = this.m_252754_() + this.f_93618_ - 10;
-         int badgeY = this.m_252907_() - 2;
-         graphics.m_280509_(badgeX, badgeY, badgeX + 10, badgeY + 10, -65536);
+         int badgeX = this.getX() + this.width - 10;
+         int badgeY = this.getY() - 2;
+         graphics.fill(badgeX, badgeY, badgeX + 10, badgeY + 10, -65536);
          String text = this.badgeCount > 99 ? "!" : String.valueOf(this.badgeCount);
-         graphics.m_280137_(Minecraft.m_91087_().f_91062_, text, badgeX + 5, badgeY + 1, -1);
+         graphics.drawCenteredString(Minecraft.getInstance().font, text, badgeX + 5, badgeY + 1, -1);
       }
    }
 

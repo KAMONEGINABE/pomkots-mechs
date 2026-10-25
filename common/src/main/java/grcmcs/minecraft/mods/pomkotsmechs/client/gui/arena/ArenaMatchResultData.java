@@ -19,8 +19,8 @@ public class ArenaMatchResultData {
    }
 
    private static void writeFighterResult(FriendlyByteBuf buf, ArenaMatchResultData.FighterResult result) {
-      buf.m_130077_(result.getFighterId());
-      buf.m_130070_(result.getDisplayName());
+      buf.writeUUID(result.getFighterId());
+      buf.writeUtf(result.getDisplayName());
       buf.writeInt(result.getRatingBefore());
       buf.writeInt(result.getRatingAfter());
       buf.writeInt(result.getWinsBefore());
@@ -29,15 +29,15 @@ public class ArenaMatchResultData {
       buf.writeInt(result.getLossesAfter());
       buf.writeInt(result.getDrawsBefore());
       buf.writeInt(result.getDrawsAfter());
-      buf.m_130070_(result.getRankBefore());
-      buf.m_130070_(result.getRankAfter());
+      buf.writeUtf(result.getRankBefore());
+      buf.writeUtf(result.getRankAfter());
       buf.writeInt(result.getResultType());
    }
 
    private static ArenaMatchResultData.FighterResult readFighterResult(FriendlyByteBuf buf) {
       ArenaMatchResultData.FighterResult result = new ArenaMatchResultData.FighterResult();
-      result.setFighterId(buf.m_130259_());
-      result.setDisplayName(buf.m_130277_());
+      result.setFighterId(buf.readUUID());
+      result.setDisplayName(buf.readUtf());
       result.setRatingBefore(buf.readInt());
       result.setRatingAfter(buf.readInt());
       result.setWinsBefore(buf.readInt());
@@ -46,8 +46,8 @@ public class ArenaMatchResultData {
       result.setLossesAfter(buf.readInt());
       result.setDrawsBefore(buf.readInt());
       result.setDrawsAfter(buf.readInt());
-      result.setRankBefore(buf.m_130277_());
-      result.setRankAfter(buf.m_130277_());
+      result.setRankBefore(buf.readUtf());
+      result.setRankAfter(buf.readUtf());
       result.setResultType(buf.readInt());
       return result;
    }

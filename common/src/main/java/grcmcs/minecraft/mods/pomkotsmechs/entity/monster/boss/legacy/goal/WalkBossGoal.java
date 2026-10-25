@@ -14,22 +14,22 @@ public class WalkBossGoal extends BaseBossGoal {
    }
 
    @Override
-   public boolean m_8045_() {
+   public boolean canContinueToUse() {
       return this.walkCount < 40;
    }
 
    @Override
-   public void m_8056_() {
+   public void start() {
       this.walkCount = 0;
    }
 
    @Override
-   public void m_8041_() {
+   public void stop() {
    }
 
    @Override
-   public void m_8037_() {
-      LivingEntity target = this.mob.m_5448_();
+   public void tick() {
+      LivingEntity target = this.mob.getTarget();
       if (target != null) {
          if (this.walkCount > 0) {
             this.walkCount++;
@@ -44,15 +44,15 @@ public class WalkBossGoal extends BaseBossGoal {
    }
 
    protected void startRandomWalk(float speedModifier) {
-      Vec3 rnd = DefaultRandomPos.m_148403_(this.mob, 10, 7);
+      Vec3 rnd = DefaultRandomPos.getPos(this.mob, 10, 7);
       if (rnd != null) {
-         this.mob.m_21573_().m_26519_(rnd.f_82479_, rnd.f_82480_, rnd.f_82481_, this.speedModifier);
+         this.mob.getNavigation().moveTo(rnd.x, rnd.y, rnd.z, this.speedModifier);
          this.walkCount = 1;
       }
    }
 
    protected void startWalk(LivingEntity target, float speedModifier) {
-      this.mob.m_21573_().m_5624_(target, this.speedModifier);
+      this.mob.getNavigation().moveTo(target, this.speedModifier);
       this.walkCount = 1;
    }
 }

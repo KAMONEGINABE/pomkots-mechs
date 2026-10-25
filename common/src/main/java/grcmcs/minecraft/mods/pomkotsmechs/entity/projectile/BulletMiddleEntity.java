@@ -38,38 +38,38 @@ public class BulletMiddleEntity extends PomkotsThrowableProjectile implements Ge
       super(entityType, shooter, world);
       this.damage = damage;
       this.shooter = shooter;
-      this.m_20242_(true);
+      this.setNoGravity(true);
    }
 
    @Override
-   public void m_8119_() {
-      this.m_20242_(true);
+   public void tick() {
+      this.setNoGravity(true);
       HitResult hitResult = ProjectileUtil.raycastBoundingCheck(this);
-      if (hitResult.m_6662_() != Type.MISS) {
-         this.m_6532_(hitResult);
+      if (hitResult.getType() != Type.MISS) {
+         this.onHit(hitResult);
       }
 
-      super.m_8119_();
-      this.f_19812_ = true;
+      super.tick();
+      this.hasImpulse = true;
       if (this.lifeTicks++ >= 40) {
-         this.m_146870_();
+         this.discard();
       }
    }
 
-   protected void m_5790_(EntityHitResult entityHitResult) {
-      Entity entity = entityHitResult.m_82443_();
+   protected void onHitEntity(EntityHitResult entityHitResult) {
+      Entity entity = entityHitResult.getEntity();
       if (!entity.equals(this.shooter)) {
-         entity.m_6469_(entity.m_269291_().m_269390_(this, (Entity)(this.m_19749_() != null ? this.m_19749_() : this)), this.damage);
-         entity.f_19802_ = 0;
-         this.m_146870_();
+         entity.hurt(entity.damageSources().thrown(this, (Entity)(this.getOwner() != null ? this.getOwner() : this)), this.damage);
+         entity.invulnerableTime = 0;
+         this.discard();
       }
    }
 
-   protected void m_8060_(BlockHitResult blockHitResult) {
-      this.m_146870_();
+   protected void onHitBlock(BlockHitResult blockHitResult) {
+      this.discard();
    }
 
-   protected void m_8097_() {
+   protected void defineSynchedData() {
    }
 
    public void registerControllers(ControllerRegistrar controllers) {
@@ -81,15 +81,15 @@ public class BulletMiddleEntity extends PomkotsThrowableProjectile implements Ge
    }
 
    protected void updateRotationBasedOnVelocity() {
-      Vec3 velocity = this.m_20184_();
-      if (!velocity.equals(Vec3.f_82478_)) {
-         double yaw = Math.toDegrees(Math.atan2(velocity.f_82479_, velocity.f_82481_));
-         this.m_146922_((float)yaw);
-         double horizontalDistance = Math.sqrt(velocity.f_82479_ * velocity.f_82479_ + velocity.f_82481_ * velocity.f_82481_);
-         double pitch = Math.toDegrees(Math.atan2(velocity.f_82480_, horizontalDistance));
-         this.m_146926_((float)pitch);
-         this.f_19859_ = this.m_146908_();
-         this.f_19860_ = this.m_146909_();
+      Vec3 velocity = this.getDeltaMovement();
+      if (!velocity.equals(Vec3.ZERO)) {
+         double yaw = Math.toDegrees(Math.atan2(velocity.x, velocity.z));
+         this.setYRot((float)yaw);
+         double horizontalDistance = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+         double pitch = Math.toDegrees(Math.atan2(velocity.y, horizontalDistance));
+         this.setXRot((float)pitch);
+         this.yRotO = this.getYRot();
+         this.xRotO = this.getXRot();
       }
    }
 

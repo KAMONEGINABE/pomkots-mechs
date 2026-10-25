@@ -30,24 +30,24 @@ public class MitakeItem extends BasePartsItem.WeaponShoulder {
          int radius = 5;
          Vec3 pos = mechInterface.position();
          Vec3 aabbPos1 = new Vec3(-radius / 2.0F + mechInterface.isRight(), -radius / 2.0F, 0.0)
-            .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-            .m_82549_(mechInterface.position());
+            .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+            .add(mechInterface.position());
          Vec3 aabbPos2 = new Vec3(radius / 2.0F + mechInterface.isRight(), radius, radius * 2)
-            .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-            .m_82549_(mechInterface.position());
+            .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+            .add(mechInterface.position());
          AABB box = new AABB(aabbPos1, aabbPos2);
          float damage = mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory());
 
-         for (Entity ent : world.m_45933_(null, box)) {
+         for (Entity ent : world.getEntities(null, box)) {
             if (!mechInterface.isSelf(ent) && ent instanceof LivingEntity le) {
-               if (!world.m_5776_()) {
-                  Vec3 kbVel = ent.m_20182_().m_82546_(pos).m_82541_();
-                  le.m_147240_(4.0, -kbVel.f_82479_ * 2.0, -kbVel.f_82481_ * 2.0);
+               if (!world.isClientSide()) {
+                  Vec3 kbVel = ent.position().subtract(pos).normalize();
+                  le.knockback(4.0, -kbVel.x * 2.0, -kbVel.z * 2.0);
                   DamageSource ds;
                   if (driver instanceof Player p) {
-                     ds = mechInterface.damageSources().m_269075_(p);
+                     ds = mechInterface.damageSources().playerAttack(p);
                   } else {
-                     ds = mechInterface.damageSources().m_269264_();
+                     ds = mechInterface.damageSources().generic();
                   }
 
                   float baseDamage = damage;
@@ -57,14 +57,14 @@ public class MitakeItem extends BasePartsItem.WeaponShoulder {
                      baseDamage *= 1.5F;
                   }
 
-                  le.m_6469_(ds, mechInterface.isSuperBoost() ? baseDamage * 2.0F : baseDamage);
+                  le.hurt(ds, mechInterface.isSuperBoost() ? baseDamage * 2.0F : baseDamage);
                } else {
                   mechInterface.addHitParticles(le);
                }
             }
          }
 
-         if (world.f_46443_) {
+         if (world.isClientSide) {
             mechInterface.playSoundEffect((SoundEvent)PomkotsMechs.SE_PILEBUNKER_EVENT.get());
          }
       }

@@ -32,45 +32,45 @@ public class BulletEntity extends PomkotsThrowableProjectile implements GeoEntit
 
    public BulletEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter) {
       super(entityType, shooter, world);
-      this.m_20242_(true);
+      this.setNoGravity(true);
       this.shooter = shooter;
    }
 
    @Override
-   public void m_8119_() {
-      this.m_20242_(true);
+   public void tick() {
+      this.setNoGravity(true);
       HitResult hitResult = ProjectileUtil.raycastBoundingCheck(this);
-      if (hitResult.m_6662_() != Type.MISS) {
-         this.m_6532_(hitResult);
+      if (hitResult.getType() != Type.MISS) {
+         this.onHit(hitResult);
       }
 
-      super.m_8119_();
-      Vec3 vel = this.m_20184_();
-      this.m_6034_(this.m_20185_() + vel.m_7096_(), this.m_20186_() + vel.m_7098_(), this.m_20189_() + vel.m_7094_());
+      super.tick();
+      Vec3 vel = this.getDeltaMovement();
+      this.setPos(this.getX() + vel.x(), this.getY() + vel.y(), this.getZ() + vel.z());
       if (this.lifeTicks++ >= 30) {
-         this.m_146870_();
+         this.discard();
       }
    }
 
-   protected void m_5790_(EntityHitResult entityHitResult) {
-      Entity entity = entityHitResult.m_82443_();
+   protected void onHitEntity(EntityHitResult entityHitResult) {
+      Entity entity = entityHitResult.getEntity();
       if (!entity.equals(this.shooter)) {
          float damage = DAMAGE;
          if (this.lifeTicks < 10) {
             damage += (10.0F - this.lifeTicks) * DAMAGE / 20.0F;
          }
 
-         entity.m_6469_(entity.m_269291_().m_269390_(this, (Entity)(this.m_19749_() != null ? this.m_19749_() : this)), damage);
-         entity.f_19802_ = 0;
-         this.m_146870_();
+         entity.hurt(entity.damageSources().thrown(this, (Entity)(this.getOwner() != null ? this.getOwner() : this)), damage);
+         entity.invulnerableTime = 0;
+         this.discard();
       }
    }
 
-   protected void m_8060_(BlockHitResult blockHitResult) {
-      this.m_146870_();
+   protected void onHitBlock(BlockHitResult blockHitResult) {
+      this.discard();
    }
 
-   protected void m_8097_() {
+   protected void defineSynchedData() {
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

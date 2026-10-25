@@ -17,49 +17,49 @@ public class PomkotsSoundInstance extends AbstractTickableSoundInstance {
    private final Supplier<Vec3> positionSupplier;
 
    protected PomkotsSoundInstance(SoundEvent soundEvent, SoundConfig config) {
-      super(soundEvent, config.soundSource, RandomSource.m_216327_());
+      super(soundEvent, config.soundSource, RandomSource.create());
       this.config = config;
       this.targetVolume = config.volume;
-      this.f_119573_ = config.fadeInTicks > 0 ? 0.0F : config.volume;
-      this.currentVolume = this.f_119573_;
-      this.f_119574_ = config.pitch;
-      this.f_119578_ = config.loopCount != 0;
+      this.volume = config.fadeInTicks > 0 ? 0.0F : config.volume;
+      this.currentVolume = this.volume;
+      this.pitch = config.pitch;
+      this.looping = config.loopCount != 0;
       if (config.positionSupplier != null) {
          this.positionSupplier = config.positionSupplier;
-         this.f_119580_ = config.attenuation;
+         this.attenuation = config.attenuation;
          Vec3 pos = config.positionSupplier.get();
-         this.f_119575_ = pos.f_82479_;
-         this.f_119576_ = pos.f_82480_;
-         this.f_119577_ = pos.f_82481_;
+         this.x = pos.x;
+         this.y = pos.y;
+         this.z = pos.z;
       } else if (config.position != null) {
          this.positionSupplier = () -> config.position;
-         this.f_119580_ = config.attenuation;
-         this.f_119575_ = config.position.f_82479_;
-         this.f_119576_ = config.position.f_82480_;
-         this.f_119577_ = config.position.f_82481_;
+         this.attenuation = config.attenuation;
+         this.x = config.position.x;
+         this.y = config.position.y;
+         this.z = config.position.z;
       } else {
          this.positionSupplier = null;
-         this.f_119580_ = Attenuation.NONE;
-         this.f_119575_ = 0.0;
-         this.f_119576_ = 0.0;
-         this.f_119577_ = 0.0;
+         this.attenuation = Attenuation.NONE;
+         this.x = 0.0;
+         this.y = 0.0;
+         this.z = 0.0;
       }
 
-      this.f_119582_ = config.relative;
+      this.relative = config.relative;
    }
 
-   public boolean m_7784_() {
+   public boolean canStartSilent() {
       return true;
    }
 
-   public void m_7788_() {
-      if (!this.m_7801_()) {
+   public void tick() {
+      if (!this.isStopped()) {
          this.tickCount++;
          if (this.positionSupplier != null && !this.config.relative) {
             Vec3 pos = this.positionSupplier.get();
-            this.f_119575_ = pos.f_82479_;
-            this.f_119576_ = pos.f_82480_;
-            this.f_119577_ = pos.f_82481_;
+            this.x = pos.x;
+            this.y = pos.y;
+            this.z = pos.z;
          }
 
          if (this.isFadingOut) {
@@ -67,19 +67,19 @@ public class PomkotsSoundInstance extends AbstractTickableSoundInstance {
                this.currentVolume = this.currentVolume - this.targetVolume / this.config.fadeOutTicks;
                if (this.currentVolume <= 0.0F) {
                   this.currentVolume = 0.0F;
-                  this.m_119609_();
+                  this.stop();
                }
             } else {
-               this.m_119609_();
+               this.stop();
             }
 
-            this.f_119573_ = this.currentVolume;
+            this.volume = this.currentVolume;
          } else {
             if (this.tickCount <= this.config.fadeInTicks) {
                this.currentVolume = this.targetVolume * this.tickCount / this.config.fadeInTicks;
-               this.f_119573_ = this.currentVolume;
+               this.volume = this.currentVolume;
             } else {
-               this.f_119573_ = this.targetVolume;
+               this.volume = this.targetVolume;
                this.currentVolume = this.targetVolume;
             }
 
@@ -102,10 +102,10 @@ public class PomkotsSoundInstance extends AbstractTickableSoundInstance {
 
    public void startFadeOut() {
       this.isFadingOut = true;
-      this.f_119578_ = false;
+      this.looping = false;
    }
 
    public void stopImmediately() {
-      this.m_119609_();
+      this.stop();
    }
 }

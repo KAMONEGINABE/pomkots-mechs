@@ -16,25 +16,25 @@ import org.jetbrains.annotations.Nullable;
 
 public class CommandExecutorBlock extends BaseEntityBlock implements PomkotsUnbreakableBlock {
    public CommandExecutorBlock() {
-      super(Properties.m_284310_().m_60913_(-1.0F, 3600000.0F).m_60918_(SoundType.f_56743_));
+      super(Properties.of().strength(-1.0F, 3600000.0F).sound(SoundType.METAL));
    }
 
-   public float m_5880_(BlockState state, Player player, BlockGetter level, BlockPos pos) {
+   public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
       return 0.0F;
    }
 
-   public RenderShape m_7514_(BlockState state) {
+   public RenderShape getRenderShape(BlockState state) {
       return RenderShape.MODEL;
    }
 
    @Nullable
-   public BlockEntity m_142194_(BlockPos pos, BlockState state) {
+   public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
       return new CommandExecutorBlockEntity(pos, state);
    }
 
    @Nullable
-   public <T extends BlockEntity> BlockEntityTicker<T> m_142354_(Level level, BlockState state, BlockEntityType<T> type) {
-      return level.f_46443_ ? null : (lvl, pos, st, be) -> {
+   public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+      return level.isClientSide ? null : (lvl, pos, st, be) -> {
          if (be instanceof CommandExecutorBlockEntity spawner) {
             CommandExecutorBlockEntity.tick(lvl, pos, st, spawner);
          }

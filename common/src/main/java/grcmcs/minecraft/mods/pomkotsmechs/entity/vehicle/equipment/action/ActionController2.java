@@ -16,7 +16,7 @@ public class ActionController2 extends ActionController {
 
    @Override
    public void setBoost(boolean b) {
-      if (!this.mech.m_9236_().f_46443_) {
+      if (!this.mech.level().isClientSide) {
          this.mech.setBoost(b);
       }
    }

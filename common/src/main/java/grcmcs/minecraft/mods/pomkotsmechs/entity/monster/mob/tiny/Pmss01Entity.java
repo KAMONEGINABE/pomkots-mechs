@@ -38,10 +38,10 @@ public class Pmss01Entity extends BaseTinyMonsterEntity implements GeoEntity, Ge
    }
 
    @Override
-   public void m_8119_() {
-      super.m_8119_();
+   public void tick() {
+      super.tick();
       if (this.isAttacking()) {
-         this.m_20334_(0.0, this.m_20184_().f_82480_, 0.0);
+         this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
       }
    }
 
@@ -61,7 +61,7 @@ public class Pmss01Entity extends BaseTinyMonsterEntity implements GeoEntity, Ge
 
    private void actualAttack() {
       Vec3 impactPoint = Utils.computeAoeCenter(this, ATTACK_OFFSET);
-      Utils.doCircleAoeDamageAndKnockback(this.m_9236_(), this, impactPoint, 2.5, this.getMechData().meleeDamage, 2.0, 0.5);
+      Utils.doCircleAoeDamageAndKnockback(this.level(), this, impactPoint, 2.5, this.getMechData().meleeDamage, 2.0, 0.5);
    }
 
    @Override
@@ -75,12 +75,12 @@ public class Pmss01Entity extends BaseTinyMonsterEntity implements GeoEntity, Ge
    }
 
    @Override
-   protected void m_8099_() {
-      super.m_8099_();
-      this.f_21345_.m_25352_(1, new MeleeAttackGoal2(this, this.getMechData().speed, false));
-      this.f_21345_.m_25352_(2, new WaterAvoidingRandomStrollGoal(this, this.getMechData().speed));
-      this.f_21345_.m_25352_(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
-      this.f_21345_.m_25352_(4, new RandomLookAroundGoal(this));
+   protected void registerGoals() {
+      super.registerGoals();
+      this.goalSelector.addGoal(1, new MeleeAttackGoal2(this, this.getMechData().speed, false));
+      this.goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, this.getMechData().speed));
+      this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
+      this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
    }
 
    public void registerControllers(ControllerRegistrar controllers) {
@@ -119,7 +119,7 @@ public class Pmss01Entity extends BaseTinyMonsterEntity implements GeoEntity, Ge
       if ("se_impact".equals(event.getKeyframeData().getSound())) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_GASHAN.get(), 1.0F, 32.0);
          Vec3 impactPoint = Utils.computeAoeCenter(this, ATTACK_OFFSET);
-         Utils.spawnAoeDustParticles(this.m_9236_(), impactPoint, 2.5, 40);
+         Utils.spawnAoeDustParticles(this.level(), impactPoint, 2.5, 40);
       } else {
          super.playSounds(event);
       }

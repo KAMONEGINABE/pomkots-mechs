@@ -27,13 +27,13 @@ public class DaigomaruItem extends BasePartsItem.WeaponArm {
    public void tickWeaponInAction(ActionWeapon.WeaponMechInterface mechInterface, int tick, boolean isOnFire) {
       Level world = mechInterface.getWorld();
       if (isOnFire) {
-         if (!world.m_5776_()) {
+         if (!world.isClientSide()) {
             Player player = mechInterface.getPlayer();
             if (player != null) {
-               HitResult hit = player.m_19907_(100.0, 0.0F, true);
-               if (hit.m_6662_() == Type.BLOCK) {
+               HitResult hit = player.pick(100.0, 0.0F, true);
+               if (hit.getType() == Type.BLOCK) {
                   BlockHitResult bh = (BlockHitResult)hit;
-                  Utils.destroyBlock(world, bh.m_82425_(), PomkotsMechs.CONFIG.dropItemsWhenDestroyBlock);
+                  Utils.destroyBlock(world, bh.getBlockPos(), PomkotsMechs.CONFIG.dropItemsWhenDestroyBlock);
                }
             }
          } else {

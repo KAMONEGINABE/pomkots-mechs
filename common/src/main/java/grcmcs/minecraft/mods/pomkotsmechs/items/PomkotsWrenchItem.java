@@ -13,13 +13,13 @@ public class PomkotsWrenchItem extends Item {
       super(properties);
    }
 
-   public boolean m_7579_(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+   public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
       if (target instanceof PomkotsVehicleBase robot) {
-         robot.m_5634_(300.0F);
-         robot.m_7292_(new MobEffectInstance(MobEffects.f_19605_, 1, 3));
+         robot.heal(300.0F);
+         robot.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 1, 3));
          return false;
       } else {
-         return super.m_7579_(stack, target, attacker);
+         return super.hurtEnemy(stack, target, attacker);
       }
    }
 }

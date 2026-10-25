@@ -28,34 +28,34 @@ public class BulletBeamEntity extends PomkotsCustomDecayedThrowableProjectile im
 
    public BulletBeamEntity(EntityType<? extends ThrowableProjectile> entityType, Level level, LivingEntity shooter, int maxLifeTicks, float damage, int stun) {
       super(entityType, level, shooter, maxLifeTicks, damage, stun);
-      this.m_20242_(true);
-      this.f_19811_ = true;
-      this.f_19794_ = true;
+      this.setNoGravity(true);
+      this.noCulling = true;
+      this.noPhysics = true;
       this.shooter = shooter;
       this.damage = damage;
    }
 
-   public boolean m_6000_(double a, double b, double c) {
+   public boolean shouldRender(double a, double b, double c) {
       return true;
    }
 
-   public boolean m_6783_(double e) {
+   public boolean shouldRenderAtSqrDistance(double e) {
       return true;
    }
 
    @Override
-   public void m_8119_() {
-      super.m_8119_();
-      this.f_19812_ = true;
+   public void tick() {
+      super.tick();
+      this.hasImpulse = true;
    }
 
    @Override
-   protected void m_5790_(EntityHitResult entityHitResult) {
-      super.m_5790_(entityHitResult);
-      this.m_146870_();
+   protected void onHitEntity(EntityHitResult entityHitResult) {
+      super.onHitEntity(entityHitResult);
+      this.discard();
    }
 
-   protected void m_8097_() {
+   protected void defineSynchedData() {
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

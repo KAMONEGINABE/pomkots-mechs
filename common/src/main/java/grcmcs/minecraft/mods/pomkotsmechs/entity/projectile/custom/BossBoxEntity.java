@@ -30,28 +30,28 @@ public class BossBoxEntity extends ThrowableProjectile implements GeoEntity, Geo
 
    public BossBoxEntity(EntityType<? extends ThrowableProjectile> entityType, Level level) {
       super(entityType, level);
-      this.m_20242_(true);
-      this.f_19811_ = true;
-      this.f_19794_ = true;
+      this.setNoGravity(true);
+      this.noCulling = true;
+      this.noPhysics = true;
    }
 
-   public boolean m_6000_(double a, double b, double c) {
+   public boolean shouldRender(double a, double b, double c) {
       return true;
    }
 
-   public boolean m_6783_(double e) {
+   public boolean shouldRenderAtSqrDistance(double e) {
       return true;
    }
 
-   public void m_8119_() {
-      this.m_20242_(true);
-      super.m_8119_();
+   public void tick() {
+      this.setNoGravity(true);
+      super.tick();
       if (this.lifeTicks++ >= 100) {
-         this.m_146870_();
+         this.discard();
       }
    }
 
-   protected void m_8097_() {
+   protected void defineSynchedData() {
    }
 
    public void registerControllers(ControllerRegistrar controllers) {
@@ -79,35 +79,35 @@ public class BossBoxEntity extends ThrowableProjectile implements GeoEntity, Geo
    protected void registerAnimationSoundHandlers(SoundKeyframeEvent event) {
       if ("raise1".equals(event.getKeyframeData().getSound())) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_PILEBUNKER_EVENT.get());
-         this.spawnDirtParticlesSquare(this.m_9236_(), (int)(1.0F * this.scale), this.m_20183_());
+         this.spawnDirtParticlesSquare(this.level(), (int)(1.0F * this.scale), this.blockPosition());
       } else if ("raise2".equals(event.getKeyframeData().getSound())) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_EARTHBREAK_EVENT.get());
-         this.spawnDirtParticlesSquare(this.m_9236_(), (int)(10.0F * this.scale), this.m_20183_());
+         this.spawnDirtParticlesSquare(this.level(), (int)(10.0F * this.scale), this.blockPosition());
       } else if ("close".equals(event.getKeyframeData().getSound())) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_BOSSBOXOPEN.get());
       }
    }
 
    public void spawnDirtParticlesSquare(Level level, int ypos, BlockPos centerPos) {
-      BlockState dirt = Blocks.f_50493_.m_49966_();
-      RandomSource random = level.m_213780_();
+      BlockState dirt = Blocks.DIRT.defaultBlockState();
+      RandomSource random = level.getRandom();
       int range = (int)(7.0F * this.scale);
 
       for (int dx = -range; dx < range; dx++) {
          for (int dz = -range; dz < range; dz++) {
-            double px = centerPos.m_123341_() + 0.5 + dx;
-            double py = centerPos.m_123342_() + 1.0 + random.m_188500_() * 2.0 + ypos;
-            double pz = centerPos.m_123343_() + 0.5 + dz;
-            double vx = (random.m_188500_() - 0.5) * 0.1;
-            double vy = random.m_188500_() * 0.1;
-            double vz = (random.m_188500_() - 0.5) * 0.1;
-            this.m_9236_().m_7106_(new BlockParticleOption(ParticleTypes.f_123794_, dirt), px, py, pz, vx, vy, vz);
+            double px = centerPos.getX() + 0.5 + dx;
+            double py = centerPos.getY() + 1.0 + random.nextDouble() * 2.0 + ypos;
+            double pz = centerPos.getZ() + 0.5 + dz;
+            double vx = (random.nextDouble() - 0.5) * 0.1;
+            double vy = random.nextDouble() * 0.1;
+            double vz = (random.nextDouble() - 0.5) * 0.1;
+            this.level().addParticle(new BlockParticleOption(ParticleTypes.BLOCK, dirt), px, py, pz, vx, vy, vz);
          }
       }
    }
 
    protected void playSoundEffect(SoundEvent event) {
-      this.m_9236_().m_7785_(this.m_20185_(), this.m_20186_(), this.m_20189_(), event, SoundSource.PLAYERS, 1.0F, 1.0F, false);
+      this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), event, SoundSource.PLAYERS, 1.0F, 1.0F, false);
    }
 
    public AnimatableInstanceCache getAnimatableInstanceCache() {

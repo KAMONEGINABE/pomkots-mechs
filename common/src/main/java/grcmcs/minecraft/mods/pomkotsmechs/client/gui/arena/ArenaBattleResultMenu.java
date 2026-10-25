@@ -39,10 +39,10 @@ public class ArenaBattleResultMenu extends AbstractContainerMenu {
          ArenaMatchResultData.FighterResult targetResult = null;
          UUID cId = this.challengerResult.getFighterId();
          UUID oId = this.opponentResult.getFighterId();
-         if (cId != null && player.m_20148_().equals(cId)) {
+         if (cId != null && player.getUUID().equals(cId)) {
             selfResult = this.challengerResult;
             targetResult = this.opponentResult;
-         } else if (oId != null && player.m_20148_().equals(oId)) {
+         } else if (oId != null && player.getUUID().equals(oId)) {
             selfResult = this.opponentResult;
             targetResult = this.challengerResult;
          }
@@ -52,10 +52,10 @@ public class ArenaBattleResultMenu extends AbstractContainerMenu {
          }
 
          int baseReward = selfResult.getRatingAfter() - selfResult.getRatingBefore();
-         baseReward = Mth.m_14045_(baseReward, 1, 64);
+         baseReward = Mth.clamp(baseReward, 1, 64);
          int rankReward = this.getRankReward(ArenaRank.getRank(selfResult.getRankAfter()));
-         ((Slot)this.f_38839_.get(0)).m_5852_(new ItemStack((ItemLike)PomkotsMechs.POM_COIN.get(), baseReward));
-         ((Slot)this.f_38839_.get(1)).m_5852_(new ItemStack((ItemLike)PomkotsMechs.POM_COIN.get(), rankReward));
+         ((Slot)this.slots.get(0)).set(new ItemStack((ItemLike)PomkotsMechs.POM_COIN.get(), baseReward));
+         ((Slot)this.slots.get(1)).set(new ItemStack((ItemLike)PomkotsMechs.POM_COIN.get(), rankReward));
 
          CircuitRewardRoller.WeightedEntry<CircuitRarity>[] cRarity = switch (ArenaRank.getRank(targetResult.getRankBefore())) {
             case E, D, C -> CircuitRewardRoller.RARITY_WEIGHTS_ARENA_C_D;
@@ -63,9 +63,9 @@ public class ArenaBattleResultMenu extends AbstractContainerMenu {
             case S, SS -> CircuitRewardRoller.RARITY_WEIGHTS_ARENA_SS_S;
          };
          if (selfResult.getWinsAfter() > selfResult.getWinsBefore()) {
-            ItemStack circuit = CircuitRewardRoller.roll(CircuitRewardRoller.PREFIX_WEIGHTS_ARENA, cRarity, 1.0F, player.m_217043_());
-            if (!circuit.m_41619_()) {
-               ((Slot)this.f_38839_.get(2)).m_5852_(circuit);
+            ItemStack circuit = CircuitRewardRoller.roll(CircuitRewardRoller.PREFIX_WEIGHTS_ARENA, cRarity, 1.0F, player.getRandom());
+            if (!circuit.isEmpty()) {
+               ((Slot)this.slots.get(2)).set(circuit);
             }
          }
       }
@@ -92,8 +92,8 @@ public class ArenaBattleResultMenu extends AbstractContainerMenu {
       int offsetX = 73;
       int offsetY = 180;
 
-      for (int i = 0; i < this.rewardsContainer.f_19147_.size(); i++) {
-         this.m_38897_(new Slot(this.rewardsContainer, i, offsetX, offsetY + i * 18));
+      for (int i = 0; i < this.rewardsContainer.items.size(); i++) {
+         this.addSlot(new Slot(this.rewardsContainer, i, offsetX, offsetY + i * 18));
       }
    }
 
@@ -103,20 +103,20 @@ public class ArenaBattleResultMenu extends AbstractContainerMenu {
 
       for (int row = 0; row < 3; row++) {
          for (int col = 0; col < 9; col++) {
-            this.m_38897_(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18));
+            this.addSlot(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18));
          }
       }
 
       for (int i = 0; i < 9; i++) {
-         this.m_38897_(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4));
+         this.addSlot(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4));
       }
    }
 
-   public ItemStack m_7648_(Player player, int i) {
-      return ItemStack.f_41583_;
+   public ItemStack quickMoveStack(Player player, int i) {
+      return ItemStack.EMPTY;
    }
 
-   public boolean m_6875_(Player player) {
+   public boolean stillValid(Player player) {
       return true;
    }
 

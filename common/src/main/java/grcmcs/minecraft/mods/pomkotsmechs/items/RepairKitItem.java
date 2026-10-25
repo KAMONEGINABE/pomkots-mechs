@@ -21,30 +21,30 @@ public class RepairKitItem extends Item {
       super(properties);
    }
 
-   public InteractionResult m_6880_(ItemStack itemStack, Player player, LivingEntity target, InteractionHand interactionHand) {
-      Level level = player.m_9236_();
+   public InteractionResult interactLivingEntity(ItemStack itemStack, Player player, LivingEntity target, InteractionHand interactionHand) {
+      Level level = player.level();
       if (level instanceof ServerLevel serverLevel && this.canRepair(target)) {
-         float healed = Math.min(target.m_21233_(), target.m_21223_() + 100.0F);
-         target.m_21153_(healed);
+         float healed = Math.min(target.getMaxHealth(), target.getHealth() + 100.0F);
+         target.setHealth(healed);
          this.healEffect(serverLevel, target);
-         itemStack.m_41774_(1);
+         itemStack.shrink(1);
       }
 
-      return InteractionResult.m_19078_(level.m_5776_());
+      return InteractionResult.sidedSuccess(level.isClientSide());
    }
 
    protected boolean canRepair(LivingEntity target) {
-      return target.m_21233_() > target.m_21223_() && target instanceof Pmvc01Entity;
+      return target.getMaxHealth() > target.getHealth() && target instanceof Pmvc01Entity;
    }
 
    public void healEffect(ServerLevel level, LivingEntity target) {
       for (int i = 0; i < 10; i++) {
-         double dx = target.m_20185_() + (level.f_46441_.m_188500_() - 0.5) * target.m_20205_();
-         double dy = target.m_20186_() + level.f_46441_.m_188500_() * target.m_20206_();
-         double dz = target.m_20189_() + (level.f_46441_.m_188500_() - 0.5) * target.m_20205_();
-         level.m_8767_(ParticleTypes.f_123748_, dx, dy, dz, 1, 0.0, 0.1, 0.0, 0.1);
+         double dx = target.getX() + (level.random.nextDouble() - 0.5) * target.getBbWidth();
+         double dy = target.getY() + level.random.nextDouble() * target.getBbHeight();
+         double dz = target.getZ() + (level.random.nextDouble() - 0.5) * target.getBbWidth();
+         level.sendParticles(ParticleTypes.HAPPY_VILLAGER, dx, dy, dz, 1, 0.0, 0.1, 0.0, 0.1);
       }
 
-      level.m_5594_(null, target.m_20183_(), SoundEvents.f_12275_, SoundSource.PLAYERS, 0.5F, 1.2F);
+      level.playSound(null, target.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 0.5F, 1.2F);
    }
 }

@@ -30,28 +30,28 @@ public class MechSalvagerMenu extends AbstractContainerMenu {
       super((MenuType)PomkotsMechs.MECH_SALVAGER_GUI.get(), id);
       this.inventory = inventory;
       this.access = access;
-      this.m_38897_(new Slot(this.dataPadContainer, 0, 0, 0) {
-         public boolean m_6659_() {
+      this.addSlot(new Slot(this.dataPadContainer, 0, 0, 0) {
+         public boolean isActive() {
             return false;
          }
       });
-      if (playerInv.f_35978_ instanceof ServerPlayer sp) {
+      if (playerInv.player instanceof ServerPlayer sp) {
          List<ItemStack> dataPads = PomkotsDatapadItem.getPlayersDataPads(sp);
          ItemStack pad;
          if (dataPads.isEmpty()) {
-            pad = ItemStack.f_41583_;
+            pad = ItemStack.EMPTY;
          } else {
             pad = dataPads.get(0);
          }
 
-         this.m_38853_(0).m_5852_(pad);
+         this.getSlot(0).set(pad);
       }
 
       this.addPlayerInventory(playerInv);
    }
 
    public ItemStack getDataPad() {
-      return this.m_38853_(0).m_7993_();
+      return this.getSlot(0).getItem();
    }
 
    private void addPlayerInventory(Inventory inventory) {
@@ -60,27 +60,27 @@ public class MechSalvagerMenu extends AbstractContainerMenu {
 
       for (int row = 0; row < 3; row++) {
          for (int col = 0; col < 9; col++) {
-            if (inventory.m_8020_(col + row * 9 + 9).m_150930_((Item)PomkotsMechs.POMKOTS_DATAPAD_ITEM.get())) {
-               this.m_38897_(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18) {
-                  public boolean m_8010_(Player player) {
+            if (inventory.getItem(col + row * 9 + 9).is((Item)PomkotsMechs.POMKOTS_DATAPAD_ITEM.get())) {
+               this.addSlot(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18) {
+                  public boolean mayPickup(Player player) {
                      return false;
                   }
                });
             } else {
-               this.m_38897_(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18));
+               this.addSlot(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18));
             }
          }
       }
 
       for (int i = 0; i < 9; i++) {
-         if (inventory.m_8020_(i).m_150930_((Item)PomkotsMechs.POMKOTS_DATAPAD_ITEM.get())) {
-            this.m_38897_(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4) {
-               public boolean m_8010_(Player player) {
+         if (inventory.getItem(i).is((Item)PomkotsMechs.POMKOTS_DATAPAD_ITEM.get())) {
+            this.addSlot(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4) {
+               public boolean mayPickup(Player player) {
                   return false;
                }
             });
          } else {
-            this.m_38897_(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4));
+            this.addSlot(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4));
          }
       }
    }
@@ -91,11 +91,11 @@ public class MechSalvagerMenu extends AbstractContainerMenu {
       }
    }
 
-   public ItemStack m_7648_(Player player, int i) {
-      return ItemStack.f_41583_;
+   public ItemStack quickMoveStack(Player player, int i) {
+      return ItemStack.EMPTY;
    }
 
-   public boolean m_6875_(Player player) {
+   public boolean stillValid(Player player) {
       return true;
    }
 }

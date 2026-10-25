@@ -20,21 +20,21 @@ public class ArenaBattleRecord {
 
    public CompoundTag save() {
       CompoundTag tag = new CompoundTag();
-      tag.m_128362_("BattleId", this.battleId);
-      tag.m_128362_("FighterA", this.fighterA);
-      tag.m_128362_("FighterB", this.fighterB);
-      tag.m_128362_("Winner", this.winner);
-      tag.m_128356_("BattleTime", this.battleTime);
+      tag.putUUID("BattleId", this.battleId);
+      tag.putUUID("FighterA", this.fighterA);
+      tag.putUUID("FighterB", this.fighterB);
+      tag.putUUID("Winner", this.winner);
+      tag.putLong("BattleTime", this.battleTime);
       return tag;
    }
 
    public static ArenaBattleRecord load(CompoundTag tag) {
       ArenaBattleRecord data = new ArenaBattleRecord();
-      data.battleId = tag.m_128342_("BattleId");
-      data.fighterA = tag.m_128342_("FighterA");
-      data.fighterB = tag.m_128342_("FighterB");
-      data.winner = tag.m_128342_("Winner");
-      data.battleTime = tag.m_128454_("BattleTime");
+      data.battleId = tag.getUUID("BattleId");
+      data.fighterA = tag.getUUID("FighterA");
+      data.fighterB = tag.getUUID("FighterB");
+      data.winner = tag.getUUID("Winner");
+      data.battleTime = tag.getLong("BattleTime");
       return data;
    }
 }

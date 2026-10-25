@@ -27,27 +27,27 @@ public final class CircuitItemStackHelper {
    }
 
    public static boolean hasCircuitTag(ItemStack stack) {
-      return stack.m_41782_() && stack.m_41783_() != null && stack.m_41783_().m_128425_("Circuit", 10);
+      return stack.hasTag() && stack.getTag() != null && stack.getTag().contains("Circuit", 10);
    }
 
    public static boolean isIdentified(ItemStack stack) {
       CompoundTag circuitTag = getCircuitTag(stack, false);
-      return circuitTag == null ? false : circuitTag.m_128471_("Identified") && circuitTag.m_128425_("Skills", 9);
+      return circuitTag == null ? false : circuitTag.getBoolean("Identified") && circuitTag.contains("Skills", 9);
    }
 
    public static void setUnidentified(ItemStack stack, CircuitPrefix prefix, CircuitRarity rarity) {
       CompoundTag circuitTag = getCircuitTag(stack, true);
-      circuitTag.m_128379_("Identified", false);
-      circuitTag.m_128359_("Prefix", prefix.id().toString());
-      circuitTag.m_128359_("Rarity", rarity.serializedName());
-      circuitTag.m_128473_("Skills");
+      circuitTag.putBoolean("Identified", false);
+      circuitTag.putString("Prefix", prefix.id().toString());
+      circuitTag.putString("Rarity", rarity.serializedName());
+      circuitTag.remove("Skills");
    }
 
    public static void setIdentified(ItemStack stack, CircuitInstance instance) {
       CompoundTag circuitTag = getCircuitTag(stack, true);
-      circuitTag.m_128379_("Identified", true);
-      circuitTag.m_128359_("Prefix", instance.prefix().id().toString());
-      circuitTag.m_128359_("Rarity", instance.rarity().serializedName());
+      circuitTag.putBoolean("Identified", true);
+      circuitTag.putString("Prefix", instance.prefix().id().toString());
+      circuitTag.putString("Rarity", instance.rarity().serializedName());
       ListTag skillsTag = new ListTag();
 
       for (CircuitModifier modifier : instance.modifiers()) {
@@ -55,7 +55,7 @@ public final class CircuitItemStackHelper {
          skillsTag.add(snapshot.save());
       }
 
-      circuitTag.m_128365_("Skills", skillsTag);
+      circuitTag.put("Skills", skillsTag);
    }
 
    public static void ensureGenerated(ItemStack stack, RandomSource random) {
@@ -81,11 +81,11 @@ public final class CircuitItemStackHelper {
       CircuitPrefix prefix = readPrefix(circuitTag);
       CircuitRarity rarity = readRarity(circuitTag);
       List<CircuitModifier> modifiers = new ArrayList<>();
-      ListTag skillsTag = circuitTag.m_128437_("Skills", 10);
+      ListTag skillsTag = circuitTag.getList("Skills", 10);
 
       for (int i = 0; i < skillsTag.size(); i++) {
-         CompoundTag skillTag = skillsTag.m_128728_(i);
-         ResourceLocation skillId = ResourceLocation.m_135820_(skillTag.m_128461_("Id"));
+         CompoundTag skillTag = skillsTag.getCompound(i);
+         ResourceLocation skillId = ResourceLocation.tryParse(skillTag.getString("Id"));
          if (skillId != null) {
             CircuitSkill skill = CircuitRegistries.SKILLS.get(skillId);
             if (skill != null) {
@@ -107,11 +107,11 @@ public final class CircuitItemStackHelper {
          return List.of();
       }
 
-      ListTag skillsTag = circuitTag.m_128437_("Skills", 10);
+      ListTag skillsTag = circuitTag.getList("Skills", 10);
       List<CircuitSkillSnapshot> snapshots = new ArrayList<>();
 
       for (int i = 0; i < skillsTag.size(); i++) {
-         CircuitSkillSnapshot snapshot = CircuitSkillSnapshot.load(skillsTag.m_128728_(i));
+         CircuitSkillSnapshot snapshot = CircuitSkillSnapshot.load(skillsTag.getCompound(i));
          if (snapshot != null) {
             snapshots.add(snapshot);
          }
@@ -132,25 +132,25 @@ public final class CircuitItemStackHelper {
 
    private static CompoundTag getCircuitTag(ItemStack stack, boolean create) {
       if (!create) {
-         if (stack.m_41782_() && stack.m_41783_() != null) {
-            CompoundTag root = stack.m_41783_();
-            return !root.m_128425_("Circuit", 10) ? null : root.m_128469_("Circuit");
+         if (stack.hasTag() && stack.getTag() != null) {
+            CompoundTag root = stack.getTag();
+            return !root.contains("Circuit", 10) ? null : root.getCompound("Circuit");
          } else {
             return null;
          }
       } else {
-         CompoundTag root = stack.m_41784_();
-         if (!root.m_128425_("Circuit", 10)) {
-            root.m_128365_("Circuit", new CompoundTag());
+         CompoundTag root = stack.getOrCreateTag();
+         if (!root.contains("Circuit", 10)) {
+            root.put("Circuit", new CompoundTag());
          }
 
-         return root.m_128469_("Circuit");
+         return root.getCompound("Circuit");
       }
    }
 
    private static CircuitPrefix readPrefix(CompoundTag circuitTag) {
-      if (circuitTag.m_128425_("Prefix", 8)) {
-         ResourceLocation id = ResourceLocation.m_135820_(circuitTag.m_128461_("Prefix"));
+      if (circuitTag.contains("Prefix", 8)) {
+         ResourceLocation id = ResourceLocation.tryParse(circuitTag.getString("Prefix"));
          if (id != null) {
             CircuitPrefix prefix = CircuitRegistries.PREFIXES.get(id);
             if (prefix != null) {
@@ -163,6 +163,6 @@ public final class CircuitItemStackHelper {
    }
 
    private static CircuitRarity readRarity(CompoundTag circuitTag) {
-      return circuitTag.m_128425_("Rarity", 8) ? CircuitRarity.byName(circuitTag.m_128461_("Rarity"), CircuitRarity.COMMON) : CircuitRarity.COMMON;
+      return circuitTag.contains("Rarity", 8) ? CircuitRarity.byName(circuitTag.getString("Rarity"), CircuitRarity.COMMON) : CircuitRarity.COMMON;
    }
 }

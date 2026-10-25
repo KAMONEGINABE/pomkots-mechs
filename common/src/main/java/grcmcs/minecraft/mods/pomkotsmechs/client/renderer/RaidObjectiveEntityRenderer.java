@@ -13,7 +13,7 @@ public class RaidObjectiveEntityRenderer extends EntityRenderer<RaidObjectiveEnt
    }
 
    public void render(RaidObjectiveEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-      super.m_7392_(entity, entityYaw, partialTicks, poseStack, bufferSource, packedLight);
+      super.render(entity, entityYaw, partialTicks, poseStack, bufferSource, packedLight);
    }
 
    public ResourceLocation getTextureLocation(RaidObjectiveEntity entity) {

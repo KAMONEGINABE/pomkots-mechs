@@ -23,7 +23,7 @@ public class HitBoxEntity extends LivingEntity {
    private float damageCount = 39.0F;
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_().m_22266_(Attributes.f_22282_).m_22268_(Attributes.f_22276_, 50.0);
+      return LivingEntity.createLivingAttributes().add(Attributes.ATTACK_KNOCKBACK).add(Attributes.MAX_HEALTH, 50.0);
    }
 
    public HitBoxEntity(EntityType<? extends LivingEntity> entityType, Level world) {
@@ -33,74 +33,74 @@ public class HitBoxEntity extends LivingEntity {
    public HitBoxEntity(EntityType<? extends LivingEntity> entityType, Level world, LivingEntity parent) {
       super(entityType, world);
       this.parentEntity = parent;
-      this.f_19794_ = true;
-      this.m_20242_(true);
+      this.noPhysics = true;
+      this.setNoGravity(true);
    }
 
    public void setBreakCallback(Consumer<Void> breakCallback) {
       this.breakCallback = breakCallback;
    }
 
-   public void m_8119_() {
-      super.m_8119_();
-      if (!this.m_9236_().f_46443_) {
-         AABB bossBoundingBox = this.m_20191_();
-         List<PomkotsThrowableProjectile> projectiles = this.m_9236_()
-            .m_6443_(PomkotsThrowableProjectile.class, bossBoundingBox.m_82400_(1.0), projectilex -> !projectilex.m_213877_());
+   public void tick() {
+      super.tick();
+      if (!this.level().isClientSide) {
+         AABB bossBoundingBox = this.getBoundingBox();
+         List<PomkotsThrowableProjectile> projectiles = this.level()
+            .getEntitiesOfClass(PomkotsThrowableProjectile.class, bossBoundingBox.inflate(1.0), projectilex -> !projectilex.isRemoved());
          new ArrayList();
 
          for (PomkotsThrowableProjectile projectile : projectiles) {
-            if (bossBoundingBox.m_82381_(projectile.m_20191_())) {
+            if (bossBoundingBox.intersects(projectile.getBoundingBox())) {
                projectile.onHitEntityPublic(this);
             }
          }
       }
 
-      if (!this.m_9236_().f_46443_ && !this.f_19803_ && !this.isParentActive()) {
-         this.m_6074_();
+      if (!this.level().isClientSide && !this.firstTick && !this.isParentActive()) {
+         this.kill();
       }
    }
 
    protected boolean isParentActive() {
-      return this.parentEntity != null && !this.parentEntity.m_21224_();
+      return this.parentEntity != null && !this.parentEntity.isDeadOrDying();
    }
 
-   public boolean m_6469_(DamageSource source, float amount) {
+   public boolean hurt(DamageSource source, float amount) {
       if (this.isParentActive()) {
          if (this.damageCount < 0.0F) {
-            return this.parentEntity.m_6469_(source, amount);
+            return this.parentEntity.hurt(source, amount);
          }
 
-         if (source.m_276093_(DamageTypes.f_268464_)) {
+         if (source.is(DamageTypes.PLAYER_ATTACK)) {
             this.damageCount -= amount;
             if (this.damageCount < 0.0F && this.breakCallback != null) {
                this.breakCallback.accept(null);
             }
          }
 
-         this.parentEntity.f_19802_ = 0;
-         return this.parentEntity.m_6469_(source, amount * 0.5F);
+         this.parentEntity.invulnerableTime = 0;
+         return this.parentEntity.hurt(source, amount * 0.5F);
       } else {
-         return super.m_6469_(source, amount);
+         return super.hurt(source, amount);
       }
    }
 
-   public boolean m_6051_() {
+   public boolean displayFireAnimation() {
       return false;
    }
 
-   public Iterable<ItemStack> m_6168_() {
-      return NonNullList.m_122780_(4, ItemStack.f_41583_);
+   public Iterable<ItemStack> getArmorSlots() {
+      return NonNullList.withSize(4, ItemStack.EMPTY);
    }
 
-   public ItemStack m_6844_(EquipmentSlot equipmentSlot) {
-      return ItemStack.f_41583_;
+   public ItemStack getItemBySlot(EquipmentSlot equipmentSlot) {
+      return ItemStack.EMPTY;
    }
 
-   public void m_8061_(EquipmentSlot equipmentSlot, ItemStack itemStack) {
+   public void setItemSlot(EquipmentSlot equipmentSlot, ItemStack itemStack) {
    }
 
-   public HumanoidArm m_5737_() {
+   public HumanoidArm getMainArm() {
       return null;
    }
 }

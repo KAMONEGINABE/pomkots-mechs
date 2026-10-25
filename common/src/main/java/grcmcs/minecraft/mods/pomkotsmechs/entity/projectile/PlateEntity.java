@@ -32,35 +32,35 @@ public class PlateEntity extends Mob implements GeoEntity, GeoAnimatable {
    private int breakTicks = 0;
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_()
-         .m_22266_(Attributes.f_22282_)
-         .m_22268_(Attributes.f_22278_, 1.0)
-         .m_22268_(Attributes.f_22277_, 200.0)
-         .m_22268_(Attributes.f_22276_, 300.0);
+      return LivingEntity.createLivingAttributes()
+         .add(Attributes.ATTACK_KNOCKBACK)
+         .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
+         .add(Attributes.FOLLOW_RANGE, 200.0)
+         .add(Attributes.MAX_HEALTH, 300.0);
    }
 
    public PlateEntity(EntityType<? extends PlateEntity> entityType, Level world) {
       super(entityType, world);
-      this.m_20242_(true);
-      this.f_19811_ = true;
+      this.setNoGravity(true);
+      this.noCulling = true;
    }
 
-   public void m_8119_() {
-      if (!this.m_9236_().f_46443_) {
+   public void tick() {
+      if (!this.level().isClientSide) {
       }
 
-      super.m_8119_();
-      if (!this.m_9236_().f_46443_) {
+      super.tick();
+      if (!this.level().isClientSide) {
          if (this.breakTicks > 0) {
             if (this.breakTicks++ >= 300) {
-               this.m_146870_();
+               this.discard();
             }
 
-            if (!this.m_20068_()) {
-               this.m_5997_(0.0, -0.17640000343322754, 0.0);
+            if (!this.isNoGravity()) {
+               this.push(0.0, -0.17640000343322754, 0.0);
             }
          } else {
-            if (this.m_9236_() instanceof ServerLevel serverLevel) {
+            if (this.level() instanceof ServerLevel serverLevel) {
                moveEntityToNearestAir(serverLevel, this, 2);
             }
 
@@ -70,37 +70,37 @@ public class PlateEntity extends Mob implements GeoEntity, GeoAnimatable {
    }
 
    public static void snapYawTo90(Entity entity) {
-      float yaw = entity.m_146908_();
-      yaw = Mth.m_14177_(yaw);
+      float yaw = entity.getYRot();
+      yaw = Mth.wrapDegrees(yaw);
       float snappedYaw = Math.round(yaw / 90.0F) * 90.0F;
-      snappedYaw = Mth.m_14177_(snappedYaw);
-      entity.m_146922_(snappedYaw);
-      entity.m_5618_(snappedYaw);
-      entity.m_5616_(snappedYaw);
-      entity.f_19859_ = snappedYaw;
+      snappedYaw = Mth.wrapDegrees(snappedYaw);
+      entity.setYRot(snappedYaw);
+      entity.setYBodyRot(snappedYaw);
+      entity.setYHeadRot(snappedYaw);
+      entity.yRotO = snappedYaw;
    }
 
    public static boolean moveEntityToNearestAir(ServerLevel level, Entity entity, int maxRadius) {
-      if (level.m_45786_(entity)) {
+      if (level.noCollision(entity)) {
          return false;
       }
 
-      BlockPos origin = entity.m_20183_();
-      AABB box = entity.m_20191_();
+      BlockPos origin = entity.blockPosition();
+      AABB box = entity.getBoundingBox();
 
       for (int r = 1; r <= maxRadius; r++) {
          for (int dx = -r; dx <= r; dx++) {
             for (int dy = -r; dy <= r; dy++) {
                for (int dz = -r; dz <= r; dz++) {
                   if (dx * dx + dy * dy + dz * dz <= r * r) {
-                     BlockPos pos = origin.m_7918_(dx, dy, dz);
-                     double x = pos.m_123341_() + 0.5;
-                     double y = pos.m_123342_();
-                     double z = pos.m_123343_() + 0.5;
-                     AABB movedBox = box.m_82386_(x - entity.m_20185_(), y - entity.m_20186_(), z - entity.m_20189_());
-                     if (level.m_45756_(entity, movedBox)) {
-                        entity.m_6021_(x, y, z);
-                        entity.m_20256_(Vec3.f_82478_);
+                     BlockPos pos = origin.offset(dx, dy, dz);
+                     double x = pos.getX() + 0.5;
+                     double y = pos.getY();
+                     double z = pos.getZ() + 0.5;
+                     AABB movedBox = box.move(x - entity.getX(), y - entity.getY(), z - entity.getZ());
+                     if (level.noCollision(entity, movedBox)) {
+                        entity.teleportTo(x, y, z);
+                        entity.setDeltaMovement(Vec3.ZERO);
                         return true;
                      }
                   }
@@ -112,20 +112,20 @@ public class PlateEntity extends Mob implements GeoEntity, GeoAnimatable {
       return false;
    }
 
-   public boolean m_6469_(DamageSource source, float amount) {
-      if (!this.m_9236_().f_46443_ && this.m_9236_() instanceof ServerLevel serverLevel && this.breakTicks == 0) {
+   public boolean hurt(DamageSource source, float amount) {
+      if (!this.level().isClientSide && this.level() instanceof ServerLevel serverLevel && this.breakTicks == 0) {
          this.triggerAnim("action_controller", "break");
          this.breakTicks = 1;
          moveEntityToNearestAir(serverLevel, this, 2);
-         this.m_6853_(false);
-         this.m_20242_(false);
-         Vec3 v = this.m_20184_();
-         if (v.f_82480_ >= 0.0) {
-            this.m_20334_(v.f_82479_, -0.08, v.f_82481_);
+         this.setOnGround(false);
+         this.setNoGravity(false);
+         Vec3 v = this.getDeltaMovement();
+         if (v.y >= 0.0) {
+            this.setDeltaMovement(v.x, -0.08, v.z);
          }
       }
 
-      return super.m_6469_(source, amount);
+      return super.hurt(source, amount);
    }
 
    public void registerControllers(ControllerRegistrar controllers) {
@@ -137,7 +137,7 @@ public class PlateEntity extends Mob implements GeoEntity, GeoAnimatable {
       );
    }
 
-   public boolean m_21532_() {
+   public boolean isPersistenceRequired() {
       return true;
    }
 
@@ -145,41 +145,41 @@ public class PlateEntity extends Mob implements GeoEntity, GeoAnimatable {
       return this.geoCache;
    }
 
-   public boolean m_6128_() {
+   public boolean ignoreExplosion() {
       return false;
    }
 
-   public boolean m_6000_(double cameraX, double cameraY, double cameraZ) {
+   public boolean shouldRender(double cameraX, double cameraY, double cameraZ) {
       return true;
    }
 
-   public boolean m_6783_(double d) {
+   public boolean shouldRenderAtSqrDistance(double d) {
       return true;
    }
 
-   public Iterable<ItemStack> m_6168_() {
-      return NonNullList.m_122780_(4, ItemStack.f_41583_);
+   public Iterable<ItemStack> getArmorSlots() {
+      return NonNullList.withSize(4, ItemStack.EMPTY);
    }
 
-   public ItemStack m_6844_(EquipmentSlot equipmentSlot) {
-      return ItemStack.f_41583_;
+   public ItemStack getItemBySlot(EquipmentSlot equipmentSlot) {
+      return ItemStack.EMPTY;
    }
 
-   public void m_8061_(EquipmentSlot equipmentSlot, ItemStack itemStack) {
+   public void setItemSlot(EquipmentSlot equipmentSlot, ItemStack itemStack) {
    }
 
-   public boolean m_142535_(float f1, float f2, DamageSource damageSource) {
+   public boolean causeFallDamage(float f1, float f2, DamageSource damageSource) {
       return false;
    }
 
-   public HumanoidArm m_5737_() {
+   public HumanoidArm getMainArm() {
       return null;
    }
 
-   public boolean m_6094_() {
+   public boolean isPushable() {
       return false;
    }
 
-   protected void m_20101_() {
+   protected void checkInsideBlocks() {
    }
 }

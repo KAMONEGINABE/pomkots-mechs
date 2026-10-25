@@ -36,7 +36,7 @@ public class SenzokuItem extends BasePartsItem.WeaponArm {
 
          for (int i = 0; i < bulletNum; i++) {
             if (mechInterface.consumeAmmo(1)) {
-               if (!world.m_5776_()) {
+               if (!world.isClientSide()) {
                   BulletMachineEntity be = new BulletMachineEntity(
                      (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_MACHINE.get(),
                      world,
@@ -45,11 +45,11 @@ public class SenzokuItem extends BasePartsItem.WeaponArm {
                   );
                   Vec3 offset = mechInterface.getOffset();
                   Vec3 muzzlPos = new Vec3(1.8 * mechInterface.isRight(), 3.0, 5.0);
-                  muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
-                  be.m_146884_(offset.m_82549_(muzzlPos));
-                  float[] angle = this.randomizeShootingAngle(mechInterface.getShootingAngle(be, true), 30.0F, mechInterface.getMechEntity().m_217043_());
-                  be.m_37251_(be, angle[0], angle[1], mechInterface.getFallFlyingTicks(), 7.0F, 1.0F);
-                  world.m_7967_(be);
+                  muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+                  be.setPos(offset.add(muzzlPos));
+                  float[] angle = this.randomizeShootingAngle(mechInterface.getShootingAngle(be, true), 30.0F, mechInterface.getMechEntity().getRandom());
+                  be.shootFromRotation(be, angle[0], angle[1], mechInterface.getFallFlyingTicks(), 7.0F, 1.0F);
+                  world.addFreshEntity(be);
                } else if (i == 0) {
                   ParticleUtil.spawnAttachedMuzzleFlash(
                      (ClientLevel)world, mechInterface.getMechEntity(), mechInterface.getAttachPoint(), 16.0, new Vec3(1.8 * mechInterface.isRight(), 3.0, 5.0)
@@ -67,8 +67,8 @@ public class SenzokuItem extends BasePartsItem.WeaponArm {
    }
 
    private float[] randomizeShootingAngle(float[] baseShootingAngle, float spread, RandomSource random) {
-      float newPitch = baseShootingAngle[0] + (random.m_188501_() - 0.5F) * spread;
-      float newYaw = baseShootingAngle[1] + (random.m_188501_() - 0.5F) * spread;
+      float newPitch = baseShootingAngle[0] + (random.nextFloat() - 0.5F) * spread;
+      float newYaw = baseShootingAngle[1] + (random.nextFloat() - 0.5F) * spread;
       return new float[]{newPitch, newYaw};
    }
 

@@ -62,23 +62,23 @@ public class Pmc02Entity extends GenericPomkotsMonsterPercistant implements GeoE
 
    public Pmc02Entity(EntityType<? extends Monster> entityType, Level level) {
       super(entityType, level);
-      this.f_19811_ = true;
+      this.noCulling = true;
       this.alwaysLookAtTarget = false;
    }
 
    @Override
-   public void m_8119_() {
-      this.m_20242_(false);
-      super.m_8119_();
+   public void tick() {
+      this.setNoGravity(false);
+      super.tick();
       if (this.isServerSide()) {
          if (this.raidControllerEntityUUID != null && this.raidControllerEntity == null) {
-            this.raidControllerEntity = (RaidControllerEntity)((ServerLevel)this.m_9236_()).m_8791_(this.raidControllerEntityUUID);
+            this.raidControllerEntity = (RaidControllerEntity)((ServerLevel)this.level()).getEntity(this.raidControllerEntityUUID);
          }
 
          if (this.lifeTicks++ >= 4000) {
-            this.m_146870_();
+            this.discard();
          } else {
-            if (this.isCarrying && this.m_20096_()) {
+            if (this.isCarrying && this.onGround()) {
                this.isCarrying = false;
                this.triggerAnim("action_controller", "onground");
             }
@@ -93,14 +93,14 @@ public class Pmc02Entity extends GenericPomkotsMonsterPercistant implements GeoE
                for (String typeString : this.spawnTargetMobs) {
                   RegistrySupplier<EntityType<?>> type = Utils.getEntityType(typeString);
                   if (type != null) {
-                     Entity ent = ((EntityType)type.get()).m_20615_(this.m_9236_());
+                     Entity ent = ((EntityType)type.get()).create(this.level());
                      if (ent != null) {
-                        Vec3 pos = this.m_20182_();
-                        ent.m_6034_(pos.f_82479_ + this.f_19796_.m_188503_(8) - 4.0, pos.f_82480_ + 5.0, pos.f_82481_ + this.f_19796_.m_188503_(8) - 4.0);
+                        Vec3 pos = this.position();
+                        ent.setPos(pos.x + this.random.nextInt(8) - 4.0, pos.y + 5.0, pos.z + this.random.nextInt(8) - 4.0);
                         if (ent instanceof BaseSmallMonsterEntity mons) {
-                           mons.m_21530_();
-                           if (this.m_5448_() != null) {
-                              mons.m_6710_(this.m_5448_());
+                           mons.setPersistenceRequired();
+                           if (this.getTarget() != null) {
+                              mons.setTarget(this.getTarget());
                            }
 
                            mons.setInRaid(this.isInRaid);
@@ -111,14 +111,14 @@ public class Pmc02Entity extends GenericPomkotsMonsterPercistant implements GeoE
                            this.raidControllerEntity.addSpawnedEntity(ent);
                         }
 
-                        this.m_9236_().m_7967_(ent);
+                        this.level().addFreshEntity(ent);
                      }
                   }
                }
 
                this.spawnTargetMobs.clear();
             } else if (this.ongroundTicks < 0) {
-               this.m_146870_();
+               this.discard();
             }
          }
       }
@@ -129,44 +129,44 @@ public class Pmc02Entity extends GenericPomkotsMonsterPercistant implements GeoE
    }
 
    @Override
-   public void m_7380_(CompoundTag compound) {
-      super.m_7380_(compound);
-      compound.m_128379_(PomkotsMechs.nbtName("IsCarrying"), this.isCarrying);
+   public void addAdditionalSaveData(CompoundTag compound) {
+      super.addAdditionalSaveData(compound);
+      compound.putBoolean(PomkotsMechs.nbtName("IsCarrying"), this.isCarrying);
       ListTag list = new ListTag();
 
       for (String type : this.spawnTargetMobs) {
-         list.add(StringTag.m_129297_(type));
+         list.add(StringTag.valueOf(type));
       }
 
-      compound.m_128365_(PomkotsMechs.nbtName("SpawnTargetMobs"), list);
+      compound.put(PomkotsMechs.nbtName("SpawnTargetMobs"), list);
       if (this.raidControllerEntityUUID != null) {
-         compound.m_128362_(PomkotsMechs.nbtName("RaidControllerEntityUUID"), this.raidControllerEntityUUID);
+         compound.putUUID(PomkotsMechs.nbtName("RaidControllerEntityUUID"), this.raidControllerEntityUUID);
       } else {
-         compound.m_128473_(PomkotsMechs.nbtName("RaidControllerEntityUUID"));
+         compound.remove(PomkotsMechs.nbtName("RaidControllerEntityUUID"));
       }
    }
 
    @Override
-   public void m_7378_(CompoundTag compound) {
-      super.m_7378_(compound);
-      if (compound.m_128441_(PomkotsMechs.nbtName("IsCarrying"))) {
-         this.isCarrying = compound.m_128471_(PomkotsMechs.nbtName("IsCarrying"));
+   public void readAdditionalSaveData(CompoundTag compound) {
+      super.readAdditionalSaveData(compound);
+      if (compound.contains(PomkotsMechs.nbtName("IsCarrying"))) {
+         this.isCarrying = compound.getBoolean(PomkotsMechs.nbtName("IsCarrying"));
       } else {
          this.isCarrying = false;
       }
 
-      if (compound.m_128441_(PomkotsMechs.nbtName("SpawnTargetMobs"))) {
+      if (compound.contains(PomkotsMechs.nbtName("SpawnTargetMobs"))) {
          this.spawnTargetMobs.clear();
-         ListTag list = (ListTag)compound.m_128423_(PomkotsMechs.nbtName("SpawnTargetMobs"));
+         ListTag list = (ListTag)compound.get(PomkotsMechs.nbtName("SpawnTargetMobs"));
          if (list != null) {
             for (Tag t : list) {
-               this.spawnTargetMobs.add(t.m_7916_());
+               this.spawnTargetMobs.add(t.getAsString());
             }
          }
       }
 
-      if (compound.m_128441_(PomkotsMechs.nbtName("RaidControllerEntityUUID"))) {
-         this.raidControllerEntityUUID = compound.m_128342_(PomkotsMechs.nbtName("RaidControllerEntityUUID"));
+      if (compound.contains(PomkotsMechs.nbtName("RaidControllerEntityUUID"))) {
+         this.raidControllerEntityUUID = compound.getUUID(PomkotsMechs.nbtName("RaidControllerEntityUUID"));
       } else {
          this.raidControllerEntityUUID = null;
       }
@@ -179,10 +179,10 @@ public class Pmc02Entity extends GenericPomkotsMonsterPercistant implements GeoE
    protected void registerAnimationSoundHandlers(SoundKeyframeEvent event) {
       if ("raise1".equals(event.getKeyframeData().getSound())) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_PILEBUNKER_EVENT.get());
-         this.spawnDirtParticlesSquare(this.m_9236_(), (int)(1.0F * this.scale), this.m_20183_());
+         this.spawnDirtParticlesSquare(this.level(), (int)(1.0F * this.scale), this.blockPosition());
       } else if ("raise2".equals(event.getKeyframeData().getSound())) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_EARTHBREAK_EVENT.get());
-         this.spawnDirtParticlesSquare(this.m_9236_(), (int)(10.0F * this.scale), this.m_20183_());
+         this.spawnDirtParticlesSquare(this.level(), (int)(10.0F * this.scale), this.blockPosition());
       } else if ("close".equals(event.getKeyframeData().getSound())) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_BOSSBOXOPEN.get());
       } else if ("se_bossdown".equals(event.getKeyframeData().getSound())) {
@@ -191,38 +191,38 @@ public class Pmc02Entity extends GenericPomkotsMonsterPercistant implements GeoE
    }
 
    public void spawnDirtParticlesSquare(Level level, int ypos, BlockPos centerPos) {
-      BlockState dirt = Blocks.f_50493_.m_49966_();
-      RandomSource random = level.m_213780_();
+      BlockState dirt = Blocks.DIRT.defaultBlockState();
+      RandomSource random = level.getRandom();
       int range = (int)(7.0F * this.scale);
 
       for (int dx = -range; dx < range; dx++) {
          for (int dz = -range; dz < range; dz++) {
-            double px = centerPos.m_123341_() + 0.5 + dx;
-            double py = centerPos.m_123342_() + 1.0 + random.m_188500_() * 2.0 + ypos;
-            double pz = centerPos.m_123343_() + 0.5 + dz;
-            double vx = (random.m_188500_() - 0.5) * 0.1;
-            double vy = random.m_188500_() * 0.1;
-            double vz = (random.m_188500_() - 0.5) * 0.1;
-            this.m_9236_().m_7106_(new BlockParticleOption(ParticleTypes.f_123794_, dirt), px, py, pz, vx, vy, vz);
+            double px = centerPos.getX() + 0.5 + dx;
+            double py = centerPos.getY() + 1.0 + random.nextDouble() * 2.0 + ypos;
+            double pz = centerPos.getZ() + 0.5 + dz;
+            double vx = (random.nextDouble() - 0.5) * 0.1;
+            double vy = random.nextDouble() * 0.1;
+            double vz = (random.nextDouble() - 0.5) * 0.1;
+            this.level().addParticle(new BlockParticleOption(ParticleTypes.BLOCK, dirt), px, py, pz, vx, vy, vz);
          }
       }
    }
 
    @Override
    protected void playSoundEffect(SoundEvent event) {
-      this.m_9236_().m_7785_(this.m_20185_(), this.m_20186_(), this.m_20189_(), event, SoundSource.PLAYERS, 1.0F, 1.0F, false);
+      this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), event, SoundSource.PLAYERS, 1.0F, 1.0F, false);
    }
 
    public AnimatableInstanceCache getAnimatableInstanceCache() {
       return this.geoCache;
    }
 
-   public boolean m_6000_(double a, double b, double c) {
+   public boolean shouldRender(double a, double b, double c) {
       return true;
    }
 
    @Override
-   public boolean m_6783_(double e) {
+   public boolean shouldRenderAtSqrDistance(double e) {
       return true;
    }
 
@@ -235,7 +235,7 @@ public class Pmc02Entity extends GenericPomkotsMonsterPercistant implements GeoE
       return 0;
    }
 
-   public boolean m_142535_(float f1, float f2, DamageSource damageSource) {
+   public boolean causeFallDamage(float f1, float f2, DamageSource damageSource) {
       return false;
    }
 }

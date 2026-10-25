@@ -41,10 +41,10 @@ import org.slf4j.LoggerFactory;
 
 public class TargetLocker {
    private static final Logger LOGGER = LoggerFactory.getLogger("pomkotsmechs");
-   private static final float COSINE_THRESHOLD = Mth.m_14089_((float)Math.toRadians(30.0));
-   private static final float COSINE_THRESHOLD2 = Mth.m_14089_((float)Math.toRadians(10.0));
+   private static final float COSINE_THRESHOLD = Mth.cos((float)Math.toRadians(30.0));
+   private static final float COSINE_THRESHOLD2 = Mth.cos((float)Math.toRadians(10.0));
    private static final TargetLocker singleton = new TargetLocker();
-   private Minecraft minecraft = Minecraft.m_91087_();
+   private Minecraft minecraft = Minecraft.getInstance();
    private TargetFinder finder = new TargetFinder();
    private Entity targetSoft = null;
    private Entity targetHard = null;
@@ -88,11 +88,11 @@ public class TargetLocker {
    }
 
    public void tick(DriverInput driverInput, PomkotsVehicle bot) {
-      if (this.targetSoft != null && !this.targetSoft.m_6084_()) {
+      if (this.targetSoft != null && !this.targetSoft.isAlive()) {
          this.unlockTargetSoft();
       }
 
-      if (this.targetHard != null && !this.targetHard.m_6084_()) {
+      if (this.targetHard != null && !this.targetHard.isAlive()) {
          this.unlockTargetHard();
       }
 
@@ -151,11 +151,11 @@ public class TargetLocker {
    }
 
    public Entity getCrossHairTarget2() {
-      return this.finder.findTargetEntity(this.minecraft.f_91074_);
+      return this.finder.findTargetEntity(this.minecraft.player);
    }
 
    public Entity getCrossHairTarget() {
-      for (LivingEntity ent : this.getEntitiesAroundPlayer(this.minecraft.f_91074_, 150.0)) {
+      for (LivingEntity ent : this.getEntitiesAroundPlayer(this.minecraft.player, 150.0)) {
          if (this.isInLockonTraceRange(ent, COSINE_THRESHOLD2)) {
             return ent;
          }
@@ -229,7 +229,7 @@ public class TargetLocker {
       }
 
       if (added) {
-         this.minecraft.f_91074_.m_5496_((SoundEvent)PomkotsMechs.SE_TARGET_EVENT.get(), 1.0F, 1.0F);
+         this.minecraft.player.playSound((SoundEvent)PomkotsMechs.SE_TARGET_EVENT.get(), 1.0F, 1.0F);
       }
    }
 
@@ -238,9 +238,9 @@ public class TargetLocker {
          return false;
       }
 
-      map.put(target.m_19879_(), target);
+      map.put(target.getId(), target);
       this.lockOnMultiCooltime = 10;
-      this.sendServerLockMultiCustom(target.m_19879_(), slot);
+      this.sendServerLockMultiCustom(target.getId(), slot);
       return true;
    }
 
@@ -267,10 +267,10 @@ public class TargetLocker {
 
    private void addTargetMulti(Entity ent) {
       if (this.targetMulti.size() < 6) {
-         this.targetMulti.put(ent.m_19879_(), ent);
+         this.targetMulti.put(ent.getId(), ent);
          this.lockOnMultiCooltime = 10;
-         this.sendServerLockMulti(ent.m_19879_());
-         this.minecraft.f_91074_.m_5496_((SoundEvent)PomkotsMechs.SE_TARGET_EVENT.get(), 1.0F, 1.0F);
+         this.sendServerLockMulti(ent.getId());
+         this.minecraft.player.playSound((SoundEvent)PomkotsMechs.SE_TARGET_EVENT.get(), 1.0F, 1.0F);
       }
    }
 
@@ -284,7 +284,7 @@ public class TargetLocker {
       List<Integer> removeTarget = null;
 
       for (Entry<Integer, Entity> entry : map.entrySet()) {
-         if (entry.getValue() != null && !entry.getValue().m_6084_()) {
+         if (entry.getValue() != null && !entry.getValue().isAlive()) {
             if (removeTarget == null) {
                removeTarget = new ArrayList<>();
             }
@@ -323,7 +323,7 @@ public class TargetLocker {
       } else {
          res = this.getCrossHairTarget();
          if (res == null) {
-            Player p = this.minecraft.f_91074_;
+            Player p = this.minecraft.player;
             List<LivingEntity> list = this.getEntitiesAroundPlayer(p, 50.0);
             res = this.getClosestEntityInLookDirection(p, list);
          }
@@ -333,17 +333,17 @@ public class TargetLocker {
    }
 
    public List<LivingEntity> getEntitiesAroundPlayer(LivingEntity player, double range) {
-      Level world = player.m_9236_();
-      Vec3 playerPos = player.m_20182_();
+      Level world = player.level();
+      Vec3 playerPos = player.position();
       AABB searchBox = new AABB(
-         playerPos.f_82479_ - range,
-         playerPos.f_82480_ - range,
-         playerPos.f_82481_ - range,
-         playerPos.f_82479_ + range,
-         playerPos.f_82480_ + range,
-         playerPos.f_82481_ + range
+         playerPos.x - range,
+         playerPos.y - range,
+         playerPos.z - range,
+         playerPos.x + range,
+         playerPos.y + range,
+         playerPos.z + range
       );
-      return world.m_6443_(LivingEntity.class, searchBox, entity -> entity != player && player.m_142582_(entity) && !this.isSelf(entity, player));
+      return world.getEntitiesOfClass(LivingEntity.class, searchBox, entity -> entity != player && player.hasLineOfSight(entity) && !this.isSelf(entity, player));
    }
 
    private boolean isSelf(LivingEntity entity, LivingEntity player) {
@@ -358,12 +358,12 @@ public class TargetLocker {
    private Entity getClosestEntityInLookDirection(LivingEntity player, List<LivingEntity> entities) {
       double maxCosineSimilarity = -1.0;
       LivingEntity closestEntity = null;
-      Vec3 lookVector = player.m_20154_().m_82541_();
-      Vec3 playerPos = player.m_20182_();
+      Vec3 lookVector = player.getLookAngle().normalize();
+      Vec3 playerPos = player.position();
 
       for (LivingEntity entity : entities) {
-         Vec3 entityVector = entity.m_20182_().m_82546_(playerPos).m_82541_();
-         double cosineSimilarity = lookVector.m_82526_(entityVector);
+         Vec3 entityVector = entity.position().subtract(playerPos).normalize();
+         double cosineSimilarity = lookVector.dot(entityVector);
          if (cosineSimilarity > maxCosineSimilarity && !this.isSelf(entity, player)) {
             maxCosineSimilarity = cosineSimilarity;
             closestEntity = entity;
@@ -379,9 +379,9 @@ public class TargetLocker {
 
    private void lockOnTargetHard(Entity ent) {
       if (ent != null) {
-         this.sendServerLockHard(ent.m_19879_());
+         this.sendServerLockHard(ent.getId());
          this.targetHard = ent;
-         this.minecraft.f_91074_.m_5496_((SoundEvent)PomkotsMechs.SE_TARGET_EVENT.get(), 1.0F, 1.0F);
+         this.minecraft.player.playSound((SoundEvent)PomkotsMechs.SE_TARGET_EVENT.get(), 1.0F, 1.0F);
       }
    }
 
@@ -406,19 +406,19 @@ public class TargetLocker {
    public boolean turn(LocalPlayer player) {
       if (Utils.isRidingPomkotsVehicle(player)) {
          if (this.targetHard != null) {
-            if (!this.targetHard.m_6084_()) {
+            if (!this.targetHard.isAlive()) {
                this.unlockTargetHard();
                return false;
             } else {
-               Vec3 targetPos = this.targetHard.m_20182_().m_82520_(0.0, this.targetHard.m_20206_() - this.targetHard.m_20206_() / 2.0F, 0.0);
-               Vec3 targetVec = targetPos.m_82546_(player.m_20182_().m_82520_(0.0, player.m_20192_(), 0.0)).m_82541_();
-               double angleX = Mth.m_14175_(Math.atan2(-targetVec.f_82479_, targetVec.f_82481_) * 180.0 / Math.PI);
-               double angleY = Math.atan2(targetVec.f_82480_, targetVec.m_165924_()) * 180.0 / Math.PI;
-               double xRot = Mth.m_14177_(player.m_146909_());
-               double yRot = Mth.m_14177_(player.m_146908_());
-               double toTurnX = Mth.m_14175_(yRot - angleX);
-               double toTurnY = Mth.m_14175_(xRot + angleY);
-               player.m_19884_(-toTurnX, -toTurnY);
+               Vec3 targetPos = this.targetHard.position().add(0.0, this.targetHard.getBbHeight() - this.targetHard.getBbHeight() / 2.0F, 0.0);
+               Vec3 targetVec = targetPos.subtract(player.position().add(0.0, player.getEyeHeight(), 0.0)).normalize();
+               double angleX = Mth.wrapDegrees(Math.atan2(-targetVec.x, targetVec.z) * 180.0 / Math.PI);
+               double angleY = Math.atan2(targetVec.y, targetVec.horizontalDistance()) * 180.0 / Math.PI;
+               double xRot = Mth.wrapDegrees(player.getXRot());
+               double yRot = Mth.wrapDegrees(player.getYRot());
+               double toTurnX = Mth.wrapDegrees(yRot - angleX);
+               double toTurnY = Mth.wrapDegrees(xRot + angleY);
+               player.turn(-toTurnX, -toTurnY);
                return true;
             }
          } else {
@@ -435,7 +435,7 @@ public class TargetLocker {
 
    private void lockOnTargetSoft(Entity ent) {
       if (ent != null) {
-         this.sendServerLockSoft(ent.m_19879_());
+         this.sendServerLockSoft(ent.getId());
          this.targetSoft = ent;
       }
    }
@@ -449,10 +449,10 @@ public class TargetLocker {
    }
 
    private boolean isInLockonTraceRange(Entity ent, float cosineThreshold) {
-      Camera cam = this.minecraft.f_91063_.m_109153_();
-      Vec3 playerToEnemy = ent.m_20182_().m_82546_(cam.m_90583_()).m_82541_();
-      Vec3 playerLookDirection = new Vec3(cam.m_253058_().normalize());
-      double dotProduct = playerToEnemy.m_82526_(playerLookDirection);
+      Camera cam = this.minecraft.gameRenderer.getMainCamera();
+      Vec3 playerToEnemy = ent.position().subtract(cam.getPosition()).normalize();
+      Vec3 playerLookDirection = new Vec3(cam.getLookVector().normalize());
+      double dotProduct = playerToEnemy.dot(playerLookDirection);
       return dotProduct >= cosineThreshold;
    }
 
@@ -471,53 +471,53 @@ public class TargetLocker {
          return 0;
       } else if (this.targetHard == ent) {
          return 1;
-      } else if (this.targetMulti.containsKey(ent.m_19879_())) {
+      } else if (this.targetMulti.containsKey(ent.getId())) {
          return 2;
       } else {
-         return !this.targetMultiRA.containsKey(ent.m_19879_())
-               && !this.targetMultiLA.containsKey(ent.m_19879_())
-               && !this.targetMultiRS.containsKey(ent.m_19879_())
-               && !this.targetMultiLS.containsKey(ent.m_19879_())
+         return !this.targetMultiRA.containsKey(ent.getId())
+               && !this.targetMultiLA.containsKey(ent.getId())
+               && !this.targetMultiRS.containsKey(ent.getId())
+               && !this.targetMultiLS.containsKey(ent.getId())
             ? 3
             : 2;
       }
    }
 
    private Entity getCrossHairTargetFromPick() {
-      HitResult hit = this.minecraft.f_91063_.m_109153_().m_90592_().m_19907_(1000.0, 1.0F, true);
-      if (hit.m_6662_() == Type.ENTITY) {
+      HitResult hit = this.minecraft.gameRenderer.getMainCamera().getEntity().pick(1000.0, 1.0F, true);
+      if (hit.getType() == Type.ENTITY) {
          EntityHitResult entityHit = (EntityHitResult)hit;
-         return entityHit.m_82443_();
+         return entityHit.getEntity();
       } else {
          return null;
       }
    }
 
    private Entity getCrossHairTargetFromCameraDirection() {
-      Entity entity = this.minecraft.m_91288_();
+      Entity entity = this.minecraft.getCameraEntity();
       Entity crosshairPickEntity = null;
       double maxDistance = 1000.0;
-      HitResult hitResult = entity.m_19907_(maxDistance, 1.0F, false);
-      Vec3 vec3 = entity.m_20299_(1.0F);
+      HitResult hitResult = entity.pick(maxDistance, 1.0F, false);
+      Vec3 vec3 = entity.getEyePosition(1.0F);
       boolean bl = false;
       double e = 6.0;
       maxDistance = e;
       e *= e;
       if (hitResult != null) {
-         e = hitResult.m_82450_().m_82557_(vec3);
+         e = hitResult.getLocation().distanceToSqr(vec3);
       }
 
-      Vec3 vec32 = entity.m_20252_(1.0F);
-      Vec3 vec33 = vec3.m_82520_(vec32.f_82479_ * maxDistance, vec32.f_82480_ * maxDistance, vec32.f_82481_ * maxDistance);
+      Vec3 vec32 = entity.getViewVector(1.0F);
+      Vec3 vec33 = vec3.add(vec32.x * maxDistance, vec32.y * maxDistance, vec32.z * maxDistance);
       float g = 1.0F;
-      AABB aABB = entity.m_20191_().m_82369_(vec32.m_82490_(maxDistance)).m_82377_(1.0, 1.0, 1.0);
-      EntityHitResult entityHitResult = ProjectileUtil.m_37287_(entity, vec3, vec33, aABB, entityx -> !entityx.m_5833_() && entityx.m_6087_(), e);
+      AABB aABB = entity.getBoundingBox().expandTowards(vec32.scale(maxDistance)).inflate(1.0, 1.0, 1.0);
+      EntityHitResult entityHitResult = ProjectileUtil.getEntityHitResult(entity, vec3, vec33, aABB, entityx -> !entityx.isSpectator() && entityx.isPickable(), e);
       if (entityHitResult != null) {
-         Entity entity2 = entityHitResult.m_82443_();
-         Vec3 vec34 = entityHitResult.m_82450_();
-         double h = vec3.m_82557_(vec34);
+         Entity entity2 = entityHitResult.getEntity();
+         Vec3 vec34 = entityHitResult.getLocation();
+         double h = vec3.distanceToSqr(vec34);
          if (bl && h > 9.0) {
-            HitResult var20 = BlockHitResult.m_82426_(vec34, Direction.m_122366_(vec32.f_82479_, vec32.f_82480_, vec32.f_82481_), BlockPos.m_274446_(vec34));
+            HitResult var20 = BlockHitResult.miss(vec34, Direction.getNearest(vec32.x, vec32.y, vec32.z), BlockPos.containing(vec34));
          } else if ((h < e || hitResult == null) && (entity2 instanceof LivingEntity || entity2 instanceof ItemFrame)) {
             crosshairPickEntity = entity2;
          }
@@ -527,15 +527,15 @@ public class TargetLocker {
    }
 
    public Entity getCrossHairTargetFromLookAtDirection(Player player, double maxDistance) {
-      Vec3 startVec = player.m_146892_();
-      Vec3 lookVec = player.m_20252_(1.0F).m_82490_(maxDistance);
-      Vec3 endVec = startVec.m_82549_(lookVec);
+      Vec3 startVec = player.getEyePosition();
+      Vec3 lookVec = player.getViewVector(1.0F).scale(maxDistance);
+      Vec3 endVec = startVec.add(lookVec);
       ClipContext context = new ClipContext(startVec, endVec, Block.OUTLINE, Fluid.NONE, player);
-      HitResult hitResult = player.m_9236_().m_45547_(context);
-      if (hitResult.m_6662_() == Type.ENTITY) {
+      HitResult hitResult = player.level().clip(context);
+      if (hitResult.getType() == Type.ENTITY) {
          EntityHitResult entityHitResult = (EntityHitResult)hitResult;
-         if (entityHitResult != null && entityHitResult.m_82443_() != player.m_20202_()) {
-            return entityHitResult.m_82443_();
+         if (entityHitResult != null && entityHitResult.getEntity() != player.getVehicle()) {
+            return entityHitResult.getEntity();
          }
       }
 

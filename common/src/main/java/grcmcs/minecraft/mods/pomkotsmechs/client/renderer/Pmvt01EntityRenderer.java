@@ -34,6 +34,6 @@ public class Pmvt01EntityRenderer extends GeoEntityRenderer<Pmvt01Entity> {
       super.actuallyRender(
          poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha
       );
-      RenderUtils.renderAdditionalHud(poseStack, animatable, this.f_114476_.m_253208_(), bufferSource);
+      RenderUtils.renderAdditionalHud(poseStack, animatable, this.entityRenderDispatcher.cameraOrientation(), bufferSource);
    }
 }

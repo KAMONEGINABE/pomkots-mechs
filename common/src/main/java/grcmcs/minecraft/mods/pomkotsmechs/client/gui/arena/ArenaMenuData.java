@@ -8,9 +8,9 @@ import net.minecraft.world.item.ItemStack;
 
 public class ArenaMenuData {
    public static void write(FriendlyByteBuf buf, ArenaMenuData.Entry entry) {
-      buf.m_130070_(entry.arenaId);
+      buf.writeUtf(entry.arenaId);
       buf.writeInt(entry.mode);
-      buf.m_130055_(Objects.requireNonNullElse(entry.mechDataPadStack, ItemStack.f_41583_));
+      buf.writeItem(Objects.requireNonNullElse(entry.mechDataPadStack, ItemStack.EMPTY));
       writeRankings(buf, entry.rankings);
    }
 
@@ -18,11 +18,11 @@ public class ArenaMenuData {
       buf.writeInt(rankings.size());
 
       for (ArenaRankingEntry entry : rankings) {
-         buf.m_130077_(entry.getFighterId());
-         buf.m_130070_(entry.getDisplayName());
+         buf.writeUUID(entry.getFighterId());
+         buf.writeUtf(entry.getDisplayName());
          buf.writeInt(entry.getRating());
-         buf.m_130070_(entry.getComment());
-         buf.m_130070_(entry.getMechName());
+         buf.writeUtf(entry.getComment());
+         buf.writeUtf(entry.getMechName());
          buf.writeInt(entry.getWins());
          buf.writeInt(entry.getLosses());
          buf.writeInt(entry.getType());
@@ -31,19 +31,19 @@ public class ArenaMenuData {
    }
 
    public static ArenaMenuData.Entry read(FriendlyByteBuf buf) {
-      String arenaId = buf.m_130277_();
+      String arenaId = buf.readUtf();
       int mode = buf.readInt();
-      ItemStack mechDataPackStack = buf.m_130267_();
+      ItemStack mechDataPackStack = buf.readItem();
       int size = buf.readInt();
       List<ArenaRankingEntry> result = new ArrayList<>();
 
       for (int i = 0; i < size; i++) {
          ArenaRankingEntry entry = new ArenaRankingEntry();
-         entry.setFighterId(buf.m_130259_());
-         entry.setDisplayName(buf.m_130277_());
+         entry.setFighterId(buf.readUUID());
+         entry.setDisplayName(buf.readUtf());
          entry.setRating(buf.readInt());
-         entry.setComment(buf.m_130277_());
-         entry.setMechName(buf.m_130277_());
+         entry.setComment(buf.readUtf());
+         entry.setMechName(buf.readUtf());
          entry.setWins(buf.readInt());
          entry.setLosses(buf.readInt());
          entry.setType(buf.readInt());

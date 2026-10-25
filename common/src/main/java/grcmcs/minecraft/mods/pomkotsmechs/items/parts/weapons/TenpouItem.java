@@ -29,24 +29,24 @@ public class TenpouItem extends BasePartsItem.WeaponArm {
       if (isOnFire) {
          Entity driver = mechInterface.getDrivingPassenger();
          Vec3 pilePos1 = new Vec3(6.5 * mechInterface.isRight(), 4.0, 18.0)
-            .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-            .m_82549_(mechInterface.position());
+            .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+            .add(mechInterface.position());
          Vec3 pilePos2 = new Vec3(-2 * mechInterface.isRight(), -4.0, -4.0)
-            .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-            .m_82549_(mechInterface.position());
-         Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+            .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+            .add(mechInterface.position());
+         Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
          float damage = mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory());
 
-         for (Entity ent : world.m_45933_(null, new AABB(pilePos1, pilePos2))) {
+         for (Entity ent : world.getEntities(null, new AABB(pilePos1, pilePos2))) {
             if (!mechInterface.isSelf(ent) && ent instanceof LivingEntity le) {
-               if (!world.m_5776_()) {
+               if (!world.isClientSide()) {
                   float sbModifier = mechInterface.isSuperBoost() ? 1.5F : 1.0F;
-                  le.m_147240_(sbModifier * 2.0F, sbModifier * kbVel.f_82479_, sbModifier * kbVel.f_82481_);
+                  le.knockback(sbModifier * 2.0F, sbModifier * kbVel.x, sbModifier * kbVel.z);
                   DamageSource ds;
                   if (driver instanceof Player p) {
-                     ds = mechInterface.damageSources().m_269075_(p);
+                     ds = mechInterface.damageSources().playerAttack(p);
                   } else {
-                     ds = mechInterface.damageSources().m_269264_();
+                     ds = mechInterface.damageSources().generic();
                   }
 
                   float baseDamage = damage;
@@ -60,14 +60,14 @@ public class TenpouItem extends BasePartsItem.WeaponArm {
                      baseDamage = 100000.0F;
                   }
 
-                  le.m_6469_(ds, sbModifier * baseDamage);
+                  le.hurt(ds, sbModifier * baseDamage);
                } else {
                   mechInterface.addHitParticles(le);
                }
             }
          }
 
-         if (world.f_46443_) {
+         if (world.isClientSide) {
             mechInterface.playSoundEffect((SoundEvent)PomkotsMechs.SE_PILEBUNKER_EVENT.get());
          } else if (Utils.isBlockDestructionAllowed(mechInterface.getMechEntity())) {
             mechInterface.breakBlocksCube(3, 6, new Vec3(0.0, 0.0, 3.0));

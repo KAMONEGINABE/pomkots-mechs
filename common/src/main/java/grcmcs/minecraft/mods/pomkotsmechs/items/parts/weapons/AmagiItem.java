@@ -36,35 +36,35 @@ public class AmagiItem extends BasePartsItem.WeaponArm {
    @Override
    public void tickWeaponInAction(ActionWeapon.WeaponMechInterface mechInterface, int tick, boolean isOnFire) {
       Level level = mechInterface.getWorld();
-      if (isOnFire && !level.f_46443_) {
+      if (isOnFire && !level.isClientSide) {
          Pmvc01Entity mech = mechInterface.getMechEntity();
-         double forwardX = -Math.sin(Math.toRadians(mech.m_146908_()));
-         double forwardZ = Math.cos(Math.toRadians(mech.m_146908_()));
-         BlockPos origin = mech.m_20183_().m_7918_((int)(forwardX * 5.0), 0, (int)(forwardZ * 5.0));
+         double forwardX = -Math.sin(Math.toRadians(mech.getYRot()));
+         double forwardZ = Math.cos(Math.toRadians(mech.getYRot()));
+         BlockPos origin = mech.blockPosition().offset((int)(forwardX * 5.0), 0, (int)(forwardZ * 5.0));
          int rangeX = 5;
          int rangeY = 15;
          int rangeZ = 5;
          if (mech.getDrivingPassenger() instanceof Player player) {
             BlockState blockState = this.getMainHandBlock(player);
             if (blockState != null && this.isAvailableBlock(blockState)) {
-               Block blockToPlace = blockState.m_60734_();
-               List<ItemStack> stacks = Utils.getItemStacks(player.m_21205_(), player, rangeX * rangeZ);
-               if (!PomkotsMechs.CONFIG.consumeBlocksWhenPlacing || stacks != null || player.m_150110_().f_35937_) {
+               Block blockToPlace = blockState.getBlock();
+               List<ItemStack> stacks = Utils.getItemStacks(player.getMainHandItem(), player, rangeX * rangeZ);
+               if (!PomkotsMechs.CONFIG.consumeBlocksWhenPlacing || stacks != null || player.getAbilities().instabuild) {
                   int consumedBlocks = 0;
 
                   for (int x = -rangeX / 2; x <= rangeX / 2; x++) {
                      for (int z = -rangeZ / 2; z <= rangeZ / 2; z++) {
-                        BlockPos targetPos = origin.m_7918_(x, -1, z);
-                        BlockPos a = new BlockPos(targetPos.m_123341_(), targetPos.m_123342_(), targetPos.m_123343_());
-                        BlockState bs = level.m_8055_(a);
+                        BlockPos targetPos = origin.offset(x, -1, z);
+                        BlockPos a = new BlockPos(targetPos.getX(), targetPos.getY(), targetPos.getZ());
+                        BlockState bs = level.getBlockState(a);
                         if (!blockState.equals(bs)) {
-                           Utils.setBlock(level, a, blockToPlace.m_49966_(), 3);
+                           Utils.setBlock(level, a, blockToPlace.defaultBlockState(), 3);
                            consumedBlocks++;
                         }
                      }
                   }
 
-                  if (PomkotsMechs.CONFIG.consumeBlocksWhenPlacing && !player.m_150110_().f_35937_ && stacks != null) {
+                  if (PomkotsMechs.CONFIG.consumeBlocksWhenPlacing && !player.getAbilities().instabuild && stacks != null) {
                      Utils.consumeItemStackFromTop(stacks, consumedBlocks);
                   }
                }
@@ -74,30 +74,30 @@ public class AmagiItem extends BasePartsItem.WeaponArm {
    }
 
    private BlockState getMainHandBlock(LivingEntity player) {
-      return player != null && player.m_21205_().m_41720_() instanceof BlockItem blockItem ? blockItem.m_40614_().m_49966_() : null;
+      return player != null && player.getMainHandItem().getItem() instanceof BlockItem blockItem ? blockItem.getBlock().defaultBlockState() : null;
    }
 
    private boolean isAvailableBlock(BlockState bs) {
-      return !(bs.m_60734_() instanceof ShulkerBoxBlock);
+      return !(bs.getBlock() instanceof ShulkerBoxBlock);
    }
 
    @Override
    public void startUsing(ActionWeapon.WeaponMechInterface context) {
-      if (!context.getWorld().f_46443_ && context.getPlayer() != null && context.getItemStack() != null) {
+      if (!context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
          this.triggerAnim(context.getPlayer(), GeoItem.getOrAssignId(context.getItemStack(), (ServerLevel)context.getWorld()), "Activation", "use");
       }
    }
 
    @Override
    public void endUsing(ActionWeapon.WeaponMechInterface context) {
-      if (!context.getWorld().f_46443_ && context.getPlayer() != null && context.getItemStack() != null) {
+      if (!context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
          this.triggerAnim(context.getPlayer(), GeoItem.getOrAssignId(context.getItemStack(), (ServerLevel)context.getWorld()), "Activation", "stop");
       }
    }
 
-   public void m_6883_(ItemStack stack, Level level, Entity ent, int slotIndex, boolean bl) {
-      super.m_6883_(stack, level, ent, slotIndex, bl);
-      if (!level.f_46443_ && level instanceof ServerLevel serverLevel) {
+   public void inventoryTick(ItemStack stack, Level level, Entity ent, int slotIndex, boolean bl) {
+      super.inventoryTick(stack, level, ent, slotIndex, bl);
+      if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
          GeoItem.getOrAssignId(stack, serverLevel);
       }
    }

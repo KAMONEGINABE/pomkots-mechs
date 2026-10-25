@@ -35,7 +35,7 @@ public class TsurugiItem extends BasePartsItem.WeaponArm {
    public void tickWeaponInAction(ActionWeapon.WeaponMechInterface mechInterface, int tick, boolean isOnFire) {
       Level world = mechInterface.getWorld();
       if (tick == 2) {
-         if (!world.f_46443_) {
+         if (!world.isClientSide) {
             float[] angle = mechInterface.getShootingAngle(mechInterface.getMechEntity(), true);
             mechInterface.addVelocity(angle[0], angle[1], 5.0F);
          } else {
@@ -50,23 +50,23 @@ public class TsurugiItem extends BasePartsItem.WeaponArm {
 
          Entity driver = mechInterface.getDrivingPassenger();
          Vec3 pilePos1 = new Vec3(6.5 * mechInterface.isRight(), 4.0, 18.0)
-            .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-            .m_82549_(mechInterface.position());
+            .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+            .add(mechInterface.position());
          Vec3 pilePos2 = new Vec3(-2 * mechInterface.isRight(), -4.0, -4.0)
-            .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-            .m_82549_(mechInterface.position());
-         Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+            .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+            .add(mechInterface.position());
+         Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
          float damage = mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory());
 
-         for (Entity ent : world.m_45933_(null, new AABB(pilePos1, pilePos2))) {
+         for (Entity ent : world.getEntities(null, new AABB(pilePos1, pilePos2))) {
             if (!mechInterface.isSelf(ent) && ent instanceof LivingEntity le) {
-               if (!world.m_5776_()) {
-                  le.m_147240_(2.0, kbVel.f_82479_, kbVel.f_82481_);
+               if (!world.isClientSide()) {
+                  le.knockback(2.0, kbVel.x, kbVel.z);
                   DamageSource ds;
                   if (driver instanceof Player p) {
-                     ds = mechInterface.damageSources().m_269075_(p);
+                     ds = mechInterface.damageSources().playerAttack(p);
                   } else {
-                     ds = mechInterface.damageSources().m_269264_();
+                     ds = mechInterface.damageSources().generic();
                   }
 
                   float baseDamage = damage;
@@ -76,7 +76,7 @@ public class TsurugiItem extends BasePartsItem.WeaponArm {
                      baseDamage *= 1.5F;
                   }
 
-                  le.m_6469_(ds, baseDamage);
+                  le.hurt(ds, baseDamage);
                } else {
                   mechInterface.addHitParticles(le);
                }
@@ -87,7 +87,7 @@ public class TsurugiItem extends BasePartsItem.WeaponArm {
 
    @Override
    public void startUsing(ActionWeapon.WeaponMechInterface mechInterface) {
-      if (!mechInterface.getWorld().f_46443_ && mechInterface.getPlayer() != null && mechInterface.getItemStack() != null) {
+      if (!mechInterface.getWorld().isClientSide && mechInterface.getPlayer() != null && mechInterface.getItemStack() != null) {
          this.triggerAnim(
             mechInterface.getPlayer(), GeoItem.getOrAssignId(mechInterface.getItemStack(), (ServerLevel)mechInterface.getWorld()), "Activation", "use"
          );
@@ -96,7 +96,7 @@ public class TsurugiItem extends BasePartsItem.WeaponArm {
 
    @Override
    public void endUsing(ActionWeapon.WeaponMechInterface mechInterface) {
-      if (!mechInterface.getWorld().f_46443_ && mechInterface.getPlayer() != null && mechInterface.getItemStack() != null) {
+      if (!mechInterface.getWorld().isClientSide && mechInterface.getPlayer() != null && mechInterface.getItemStack() != null) {
          this.triggerAnim(
             mechInterface.getPlayer(), GeoItem.getOrAssignId(mechInterface.getItemStack(), (ServerLevel)mechInterface.getWorld()), "Activation", "stop"
          );
@@ -114,9 +114,9 @@ public class TsurugiItem extends BasePartsItem.WeaponArm {
       );
    }
 
-   public void m_6883_(ItemStack stack, Level level, Entity ent, int slotIndex, boolean bl) {
-      super.m_6883_(stack, level, ent, slotIndex, bl);
-      if (!level.f_46443_ && level instanceof ServerLevel serverLevel) {
+   public void inventoryTick(ItemStack stack, Level level, Entity ent, int slotIndex, boolean bl) {
+      super.inventoryTick(stack, level, ent, slotIndex, bl);
+      if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
          GeoItem.getOrAssignId(stack, serverLevel);
       }
    }

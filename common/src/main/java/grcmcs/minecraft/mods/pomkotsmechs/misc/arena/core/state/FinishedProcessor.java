@@ -15,7 +15,7 @@ public class FinishedProcessor extends AbstractArenaMatchStateProcessor {
    @Override
    public void onEnter(ArenaMatchContext context) {
       if (context.runtime().getBossBar() != null) {
-         context.runtime().getBossBar().m_7706_();
+         context.runtime().getBossBar().removeAllPlayers();
       }
 
       ArenaFighterData challengerData = ArenaUtil.getChallengerData(context);
@@ -40,7 +40,7 @@ public class FinishedProcessor extends AbstractArenaMatchStateProcessor {
       this.saveResultToFighter(challengerData, result.getChallengerResult());
       this.saveResultToFighter(opponentData, result.getOpponentResult());
       context.arena().setActiveMatch(null);
-      ArenaSavedData.get(context.server()).m_77762_();
+      ArenaSavedData.get(context.server()).setDirty();
    }
 
    private void addAdvancement(ArenaRank rank, ServerPlayer sp) {

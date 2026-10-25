@@ -32,7 +32,7 @@ public class MashuItem extends BasePartsItem.WeaponArm {
             return;
          }
 
-         if (!world.m_5776_()) {
+         if (!world.isClientSide()) {
             BulletBeamEntity be = new BulletBeamEntity(
                (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_BEAM.get(),
                world,
@@ -41,11 +41,11 @@ public class MashuItem extends BasePartsItem.WeaponArm {
             );
             Vec3 offset = mechInterface.getOffset();
             Vec3 muzzlPos = new Vec3(1.8 * mechInterface.isRight(), 3.0, 5.0);
-            muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
-            be.m_146884_(offset.m_82549_(muzzlPos));
+            muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+            be.setPos(offset.add(muzzlPos));
             float[] angle = mechInterface.getShootingAngle(be, true);
-            be.m_37251_(be, angle[0], angle[1], mechInterface.getFallFlyingTicks(), 7.0F, 0.0F);
-            world.m_7967_(be);
+            be.shootFromRotation(be, angle[0], angle[1], mechInterface.getFallFlyingTicks(), 7.0F, 0.0F);
+            world.addFreshEntity(be);
          } else {
             mechInterface.playSoundEffect((SoundEvent)PomkotsMechs.SE_RIFLE.get());
          }

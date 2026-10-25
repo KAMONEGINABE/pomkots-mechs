@@ -32,6 +32,6 @@ public class Pmc02EntityRenderer extends GeoEntityRenderer<Pmc02Entity> {
       this.scaleHeight = animatable.scale;
       this.scaleWidth = animatable.scale;
       super.preApplyRenderLayers(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
-      ((GeoBone)model.getBone("root").get()).setRotY((float)Math.toRadians(animatable.m_146908_()));
+      ((GeoBone)model.getBone("root").get()).setRotY((float)Math.toRadians(animatable.getYRot()));
    }
 }

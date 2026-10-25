@@ -105,15 +105,15 @@ public abstract class BasePartsItem extends Item implements GeoItem {
 
    public int getLevel(ItemStack stack) {
       if (PomkotsMechs.CONFIG.enablePartsLevelCompatibility) {
-         if (stack.m_41782_() && stack.m_41783_().m_128441_("Level")) {
-            return stack.m_41783_().m_128451_("Level");
+         if (stack.hasTag() && stack.getTag().contains("Level")) {
+            return stack.getTag().getInt("Level");
          }
 
          this.setLevel(stack, this.getMaxLevel());
          return this.getMaxLevel();
       } else {
-         if (stack.m_41782_() && stack.m_41783_().m_128441_(PomkotsMechs.nbtName("Level"))) {
-            return stack.m_41783_().m_128451_(PomkotsMechs.nbtName("Level"));
+         if (stack.hasTag() && stack.getTag().contains(PomkotsMechs.nbtName("Level"))) {
+            return stack.getTag().getInt(PomkotsMechs.nbtName("Level"));
          }
 
          this.setLevel(stack, this.getMaxLevel());
@@ -123,16 +123,16 @@ public abstract class BasePartsItem extends Item implements GeoItem {
 
    public void setLevel(ItemStack stack, int level) {
       if (PomkotsMechs.CONFIG.enablePartsLevelCompatibility) {
-         CompoundTag tag = stack.m_41784_();
-         tag.m_128405_(PomkotsMechs.nbtName("Level"), level);
+         CompoundTag tag = stack.getOrCreateTag();
+         tag.putInt(PomkotsMechs.nbtName("Level"), level);
       } else {
-         CompoundTag tag = stack.m_41784_();
-         tag.m_128405_(PomkotsMechs.nbtName("Level"), level);
-         stack.m_41751_(tag);
+         CompoundTag tag = stack.getOrCreateTag();
+         tag.putInt(PomkotsMechs.nbtName("Level"), level);
+         stack.setTag(tag);
       }
    }
 
-   public void m_7836_(ItemStack stack, Level world, Player player) {
+   public void onCraftedBy(ItemStack stack, Level world, Player player) {
       this.setLevel(stack, 1);
    }
 
@@ -249,123 +249,123 @@ public abstract class BasePartsItem extends Item implements GeoItem {
       return data.energyConsumePerTick;
    }
 
-   public void m_7373_(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
-      super.m_7373_(stack, world, tooltip, flag);
-      tooltip.add(Component.m_237113_(this.getAdditionalDescription(stack)).m_130940_(ChatFormatting.BLUE));
+   public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
+      super.appendHoverText(stack, world, tooltip, flag);
+      tooltip.add(Component.literal(this.getAdditionalDescription(stack)).withStyle(ChatFormatting.BLUE));
       tooltip.add(
-         Component.m_237113_(this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.level}") + ": " + this.getLevel(stack)).m_130940_(ChatFormatting.WHITE)
+         Component.literal(this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.level}") + ": " + this.getLevel(stack)).withStyle(ChatFormatting.WHITE)
       );
       tooltip.add(
-         Component.m_237113_(this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.weight}") + ": " + String.format("%d", this.getWeight(stack)))
-            .m_130940_(ChatFormatting.WHITE)
+         Component.literal(this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.weight}") + ": " + String.format("%d", this.getWeight(stack)))
+            .withStyle(ChatFormatting.WHITE)
       );
       if (this instanceof BasePartsItem.Weapon) {
          tooltip.add(
-            Component.m_237113_(this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.attack}") + ": " + String.format("%.1f", this.getDamage(stack)))
-               .m_130940_(ChatFormatting.WHITE)
+            Component.literal(this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.attack}") + ": " + String.format("%.1f", this.getDamage(stack)))
+               .withStyle(ChatFormatting.WHITE)
          );
          if (BasePartsItem.WeaponCategory.MISSILE == this.getWeaponCategory()) {
             tooltip.add(
-               Component.m_237113_(
+               Component.literal(
                      this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.maxmissilenum}") + ": " + String.format("%d", this.getMissileMaxNum(stack))
                   )
-                  .m_130940_(ChatFormatting.WHITE)
+                  .withStyle(ChatFormatting.WHITE)
             );
             tooltip.add(
-               Component.m_237113_(
+               Component.literal(
                      this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.lockinterval}")
                         + ": "
                         + String.format("%.1f", this.getMissileLockInterval(stack))
                   )
-                  .m_130940_(ChatFormatting.WHITE)
+                  .withStyle(ChatFormatting.WHITE)
             );
          }
       } else if (this instanceof BasePartsItem.Generator) {
          tooltip.add(
-            Component.m_237113_(this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.maxenergy}") + ": " + String.format("%d", this.getMaxEnergy(stack)))
-               .m_130940_(ChatFormatting.WHITE)
+            Component.literal(this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.maxenergy}") + ": " + String.format("%d", this.getMaxEnergy(stack)))
+               .withStyle(ChatFormatting.WHITE)
          );
          tooltip.add(
-            Component.m_237113_(
+            Component.literal(
                   this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.enchargepertick}")
                      + ": "
                      + String.format("%.1f", this.getEnergyChargePerTick(stack))
                )
-               .m_130940_(ChatFormatting.WHITE)
+               .withStyle(ChatFormatting.WHITE)
          );
          tooltip.add(
-            Component.m_237113_(
+            Component.literal(
                   this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.worksecperfuel}") + ": " + String.format("%d", this.getWorkSecPerFuel(stack))
                )
-               .m_130940_(ChatFormatting.WHITE)
+               .withStyle(ChatFormatting.WHITE)
          );
       } else if (this instanceof BasePartsItem.Booster) {
          tooltip.add(
-            Component.m_237113_(
+            Component.literal(
                   this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.speedmodevasion}")
                      + ": "
                      + String.format("%.1f", this.getSpeedModifierEvasion(stack))
                )
-               .m_130940_(ChatFormatting.WHITE)
+               .withStyle(ChatFormatting.WHITE)
          );
          tooltip.add(
-            Component.m_237113_(
+            Component.literal(
                   this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.speedmodvertical}")
                      + ": "
                      + String.format("%.1f", this.getSpeedModifierVertical(stack))
                )
-               .m_130940_(ChatFormatting.WHITE)
+               .withStyle(ChatFormatting.WHITE)
          );
          tooltip.add(
-            Component.m_237113_(
+            Component.literal(
                   this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.enconsumeevasion}")
                      + ": "
                      + String.format("%d", this.getEnergyConsumeEvasion(stack))
                )
-               .m_130940_(ChatFormatting.WHITE)
+               .withStyle(ChatFormatting.WHITE)
          );
          tooltip.add(
-            Component.m_237113_(
+            Component.literal(
                   this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.enconsumevertical}")
                      + ": "
                      + String.format("%d", this.getEnergyConsumeVertical(stack))
                )
-               .m_130940_(ChatFormatting.WHITE)
+               .withStyle(ChatFormatting.WHITE)
          );
       } else if (this instanceof SBUnitProtoTypeItem) {
          tooltip.add(
-            Component.m_237113_(
+            Component.literal(
                   this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.enconsumepertick}")
                      + ": "
                      + String.format("%d", this.getEnergyConsumePerTick(stack))
                )
-               .m_130940_(ChatFormatting.WHITE)
+               .withStyle(ChatFormatting.WHITE)
          );
       } else if (this instanceof BasePartsItem.MechParts) {
          tooltip.add(
-            Component.m_237113_(
+            Component.literal(
                   this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.durability}") + ": " + String.format("%d", this.getDurability(stack))
                )
-               .m_130940_(ChatFormatting.WHITE)
+               .withStyle(ChatFormatting.WHITE)
          );
          if (BasePartsItem.PartsCategory.LEGS == this.getPartsCategory()) {
             tooltip.add(
-               Component.m_237113_(
+               Component.literal(
                      this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.maxweight}") + ": " + String.format("%d", this.getMaxWeight(stack))
                   )
-                  .m_130940_(ChatFormatting.WHITE)
+                  .withStyle(ChatFormatting.WHITE)
             );
             tooltip.add(
-               Component.m_237113_(
+               Component.literal(
                      this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.speed}") + ": " + String.format("%.1f", this.getSpeedModifier(stack))
                   )
-                  .m_130940_(ChatFormatting.WHITE)
+                  .withStyle(ChatFormatting.WHITE)
             );
             tooltip.add(
-               Component.m_237113_(
+               Component.literal(
                      this.getLocalizedString("{text.pomkotsmechs.gui.partsintro.jumpspeed}") + ": " + String.format("%.1f", this.getJumpModifier(stack))
                   )
-                  .m_130940_(ChatFormatting.WHITE)
+                  .withStyle(ChatFormatting.WHITE)
             );
          }
       }

@@ -83,28 +83,28 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
          }
       }
    );
-   private static final EntityDataAccessor<Boolean> MODE = SynchedEntityData.m_135353_(PomkotsVehicleBase.class, EntityDataSerializers.f_135035_);
-   protected static final EntityDataAccessor<Boolean> IS_BOOST = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135035_);
+   private static final EntityDataAccessor<Boolean> MODE = SynchedEntityData.defineId(PomkotsVehicleBase.class, EntityDataSerializers.BOOLEAN);
+   protected static final EntityDataAccessor<Boolean> IS_BOOST = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
    protected LockTargets lockTargets = new LockTargets();
    private static final int MAX_ENERGY = 100;
    private int energy = 100;
-   private Vec3 clientSeatPos = Vec3.f_82478_;
+   private Vec3 clientSeatPos = Vec3.ZERO;
    protected LinkedList<Vec3> posHistory = new LinkedList<>();
    protected float forwardIntention = 0.0F;
    protected float sidewayIntention = 0.0F;
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_().m_22266_(Attributes.f_22282_).m_22268_(Attributes.f_22276_, BattleBalance.MECH_HEALTH);
+      return LivingEntity.createLivingAttributes().add(Attributes.ATTACK_KNOCKBACK).add(Attributes.MAX_HEALTH, BattleBalance.MECH_HEALTH);
    }
 
    protected abstract String getMechName();
 
    public PomkotsVehicleBase(EntityType<? extends LivingEntity> entityType, Level world) {
       super(entityType, world);
-      this.f_19811_ = true;
-      this.m_146922_(0.0F);
+      this.noCulling = true;
+      this.setYRot(0.0F);
       if (this.isServerSide()) {
-         this.m_20242_(false);
+         this.setNoGravity(false);
       }
 
       this.registerActions();
@@ -117,20 +117,20 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
    }
 
    protected void setupProperties() {
-      this.m_274367_(2.0F);
+      this.setMaxUpStep(2.0F);
    }
 
-   public void m_8119_() {
-      this.updatePosHistory(this.m_20182_());
+   public void tick() {
+      this.updatePosHistory(this.position());
       this.soundEffectVolume = -1.0F;
-      if (!this.isClientSide() && !this.m_20160_() && this.isBoost()) {
+      if (!this.isClientSide() && !this.isVehicle() && this.isBoost()) {
          this.setBoost(false);
       }
 
-      super.m_8119_();
+      super.tick();
       this.actionController.tick();
-      if (!this.m_6084_() || !this.m_20160_() || !this.canWork()) {
-         this.m_20242_(false);
+      if (!this.isAlive() || !this.isVehicle() || !this.canWork()) {
+         this.setNoGravity(false);
       } else if (this.rideCoolTick > 0) {
          this.rideCoolTick--;
       } else {
@@ -154,7 +154,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
       }
 
       this.prevDriverInput = this.driverInput;
-      this.onGroundPrev = this.m_20096_();
+      this.onGroundPrev = this.onGround();
    }
 
    public boolean canWork() {
@@ -174,7 +174,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
    }
 
    protected void applyPlayerInputBoost(DriverInput driverInput) {
-      if (this.m_20184_().f_82481_ == 0.0 && this.m_20184_().f_82479_ == 0.0) {
+      if (this.getDeltaMovement().z == 0.0 && this.getDeltaMovement().x == 0.0) {
          this.actionController.setBoost(false);
       }
    }
@@ -192,44 +192,44 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
          if (this.forwardIntention == 0.0F && this.sidewayIntention == 0.0F) {
             vel = new Vec3(0.0, 0.0, 1.0);
          } else {
-            vel = new Vec3(this.sidewayIntention, 0.0, this.forwardIntention).m_82541_();
+            vel = new Vec3(this.sidewayIntention, 0.0, this.forwardIntention).normalize();
          }
 
-         vel = vel.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+         vel = vel.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
          float distance = this.getHorizontalBoostAcceleration();
-         vel = vel.m_82490_(distance);
-         this.m_5997_(vel.f_82479_, vel.f_82480_, vel.f_82481_);
+         vel = vel.scale(distance);
+         this.push(vel.x, vel.y, vel.z);
       }
    }
 
    protected void applyPlayerInputJump(DriverInput driverInput) {
-      if (driverInput.isJumpPressed() && this.m_20096_()) {
+      if (driverInput.isJumpPressed() && this.onGround()) {
          this.actionController.getAction(1).startAction();
       }
 
       if (this.actionController.getAction(1).isOnFire() && this.isServerSide()) {
-         this.m_5997_(0.0, this.getJumpSpeed(), 0.0);
+         this.push(0.0, this.getJumpSpeed(), 0.0);
       }
    }
 
    protected void applyPlayerInputInAirActions(DriverInput driverInput) {
-      if (!this.m_20096_()) {
+      if (!this.onGround()) {
          if (driverInput.isJumpPressed()) {
-            this.m_20242_(true);
+            this.setNoGravity(true);
             if (!this.tryVerticalBoost() && this.isServerSide()) {
-               this.m_5997_(0.0, -0.17640000343322754, 0.0);
+               this.push(0.0, -0.17640000343322754, 0.0);
             }
          } else if (this.isServerSide()) {
-            this.m_5997_(0.0, -0.17640000343322754, 0.0);
+            this.push(0.0, -0.17640000343322754, 0.0);
          }
       } else {
-         this.m_20242_(false);
+         this.setNoGravity(false);
       }
    }
 
    protected boolean tryVerticalBoost() {
-      if (this.useEnergy(5) && this.isServerSide() && this.m_20184_().m_7098_() < this.getVerticalBoostMaxSpeed()) {
-         this.m_5997_(0.0, this.getVerticalBoostAcceleration(), 0.0);
+      if (this.useEnergy(5) && this.isServerSide() && this.getDeltaMovement().y() < this.getVerticalBoostMaxSpeed()) {
+         this.push(0.0, this.getVerticalBoostAcceleration(), 0.0);
          return true;
       } else {
          return false;
@@ -244,50 +244,50 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
       double yRot = 0.0;
       Entity lockTarget = this.lockTargets.getLockTargetHard() != null ? this.lockTargets.getLockTargetHard() : this.lockTargets.getLockTargetSoft();
       if (useLockTarget && lockTarget != null) {
-         Vec3 positionA = bullet.m_20182_();
-         Vec3 positionB = lockTarget.m_20191_().m_82399_();
-         double deltaX = positionB.f_82479_ - positionA.f_82479_;
-         double deltaY = positionB.f_82480_ - positionA.f_82480_;
-         double deltaZ = positionB.f_82481_ - positionA.f_82481_;
+         Vec3 positionA = bullet.position();
+         Vec3 positionB = lockTarget.getBoundingBox().getCenter();
+         double deltaX = positionB.x - positionA.x;
+         double deltaY = positionB.y - positionA.y;
+         double deltaZ = positionB.z - positionA.z;
          yRot = Math.toDegrees(Math.atan2(deltaZ, deltaX)) - 90.0;
          double distanceXZ = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
          xRot = -Math.toDegrees(Math.atan2(deltaY, distanceXZ));
       } else {
          LivingEntity driver = this.getDrivingPassenger();
-         Vec3 lookAngle = driver.m_20154_();
-         xRot = -Math.toDegrees(Math.asin(lookAngle.f_82480_)) - 7.5;
-         yRot = Math.toDegrees(Math.atan2(lookAngle.f_82481_, lookAngle.f_82479_)) - 90.0;
+         Vec3 lookAngle = driver.getLookAngle();
+         xRot = -Math.toDegrees(Math.asin(lookAngle.y)) - 7.5;
+         yRot = Math.toDegrees(Math.atan2(lookAngle.z, lookAngle.x)) - 90.0;
       }
 
       return new float[]{(float)xRot, (float)yRot};
    }
 
-   public void m_7023_(Vec3 pos) {
-      if (this.m_6084_() && this.m_20160_() && this.canWork()) {
+   public void travel(Vec3 pos) {
+      if (this.isAlive() && this.isVehicle() && this.canWork()) {
          LivingEntity pilot = this.getDrivingPassenger();
-         this.m_146922_(pilot.m_146908_());
-         this.f_19859_ = this.m_146908_();
-         this.m_146926_(pilot.m_146909_() * 0.5F);
-         this.m_19915_(this.m_146908_(), this.m_146909_());
-         this.m_5618_(this.m_146908_());
-         this.m_5616_(this.m_146908_());
-         float f = pilot.f_20900_ * 0.5F;
-         float f1 = pilot.f_20902_ * 0.5F;
+         this.setYRot(pilot.getYRot());
+         this.yRotO = this.getYRot();
+         this.setXRot(pilot.getXRot() * 0.5F);
+         this.setRot(this.getYRot(), this.getXRot());
+         this.setYBodyRot(this.getYRot());
+         this.setYHeadRot(this.getYRot());
+         float f = pilot.xxa * 0.5F;
+         float f1 = pilot.zza * 0.5F;
          if (this.actionController.isBoost()) {
-            this.m_7910_(this.getRunSpeed());
+            this.setSpeed(this.getRunSpeed());
          } else {
-            this.m_7910_(this.getWalkSpeed());
+            this.setSpeed(this.getWalkSpeed());
          }
 
-         this.f_19812_ = true;
-         super.m_7023_(new Vec3(f, pos.f_82480_, f1));
+         this.hasImpulse = true;
+         super.travel(new Vec3(f, pos.y, f1));
       } else {
-         super.m_7023_(pos);
+         super.travel(pos);
       }
    }
 
    protected void travelBypass(Vec3 pos) {
-      super.m_7023_(pos);
+      super.travel(pos);
    }
 
    protected float getWalkSpeed() {
@@ -298,8 +298,8 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
       return 1.5F;
    }
 
-   protected float m_274460_() {
-      if (!this.isServerSide() || !this.m_20068_()) {
+   protected float getFlyingSpeed() {
+      if (!this.isServerSide() || !this.isNoGravity()) {
          return 0.02F;
       } else {
          return this.actionController.isBoost() ? 0.4F : 0.2F;
@@ -322,8 +322,8 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
       return 2.0F;
    }
 
-   public boolean m_6469_(DamageSource ds, float a) {
-      if (ds.m_7639_() != null && ds.m_7639_().equals(this.getDrivingPassenger())) {
+   public boolean hurt(DamageSource ds, float a) {
+      if (ds.getEntity() != null && ds.getEntity().equals(this.getDrivingPassenger())) {
          return false;
       }
 
@@ -332,48 +332,48 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
          ParticleUtil.addParticles(ds, this);
       }
 
-      return super.m_6469_(ds, a);
+      return super.hurt(ds, a);
    }
 
-   public Vec3 m_7688_(LivingEntity passenger) {
+   public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
       if (passenger instanceof Player player) {
-         if (player.m_21224_()) {
-            player.m_150110_().f_35936_ = true;
+         if (player.isDeadOrDying()) {
+            player.getAbilities().mayfly = true;
          }
 
-         player.f_19802_ = 40;
+         player.invulnerableTime = 40;
       }
 
       this.lockTargets.clearLockTargets();
-      return new Vec3(this.m_20185_(), this.m_20191_().f_82292_, this.m_20189_());
+      return new Vec3(this.getX(), this.getBoundingBox().maxY, this.getZ());
    }
 
-   public InteractionResult m_6096_(Player player, InteractionHand hand) {
+   public InteractionResult interact(Player player, InteractionHand hand) {
       if (this.getDrivingPassenger() == null) {
-         if (this.isServerSide() && player.m_20202_() == null) {
-            player.m_146922_(this.m_146908_());
-            player.m_146926_(this.m_146909_());
-            player.m_20329_(this);
+         if (this.isServerSide() && player.getVehicle() == null) {
+            player.setYRot(this.getYRot());
+            player.setXRot(this.getXRot());
+            player.startRiding(this);
          }
 
          this.rideCoolTick = 3;
          this.actionController.reset();
          return InteractionResult.SUCCESS;
       } else {
-         return super.m_6096_(player, hand);
+         return super.interact(player, hand);
       }
    }
 
-   protected boolean m_7310_(Entity passenger) {
-      return this.m_20197_().isEmpty();
+   protected boolean canAddPassenger(Entity passenger) {
+      return this.getPassengers().isEmpty();
    }
 
    public LivingEntity getDrivingPassenger() {
-      if (this.m_20197_().isEmpty()) {
+      if (this.getPassengers().isEmpty()) {
          return null;
       }
 
-      Entity driver = (Entity)this.m_20197_().get(0);
+      Entity driver = (Entity)this.getPassengers().get(0);
       return driver instanceof LivingEntity le ? le : null;
    }
 
@@ -425,12 +425,12 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
          } else if (this.actionController.isBoost()) {
             return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".dash"));
          } else {
-            return this.m_20068_()
+            return this.isNoGravity()
                ? event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".idle"))
                : event.setAndContinue(RawAnimation.begin().thenLoop("animation." + this.getMechName() + ".walk"));
          }
       } else {
-         if (this.f_19859_ != this.m_146908_()) {
+         if (this.yRotO != this.getYRot()) {
             return event.setAndContinue(RawAnimation.begin().thenLoop("animation." + this.getMechName() + ".walk"));
          }
 
@@ -444,7 +444,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
          event.getController().forceAnimationReset();
          return event.setAndContinue(RawAnimation.begin().thenPlay("animation." + this.getMechName() + ".onground"));
       } else {
-         return ((PomkotsVehicleBase)event.getAnimatable()).m_20096_()
+         return ((PomkotsVehicleBase)event.getAnimatable()).onGround()
             ? event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".nop"))
             : event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".flylegs"));
       }
@@ -452,7 +452,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
 
    protected PlayState controllAnimationRotation(AnimationState<PomkotsVehicleBase> event) {
       if (event.isMoving()) {
-         if (this.m_20068_() && !this.actionController.isBoost() && !this.actionController.getAction(0).isInAction()) {
+         if (this.isNoGravity() && !this.actionController.isBoost() && !this.actionController.getAction(0).isInAction()) {
             if (this.forwardIntention > 0.0F) {
                return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".frontfly"));
             } else if (this.forwardIntention < 0.0F) {
@@ -489,7 +489,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
    @Override
    public void setDriverInput(DriverInput di) {
       this.driverInput = di;
-      if (!this.m_9236_().f_46443_) {
+      if (!this.level().isClientSide) {
          this.setAnimData(DRIVER_INPUT_SERIALIZABLE_DATA_TICKET, this.driverInput.getStatus());
          if (di.isModeChangePressed()) {
             this.setMainMode(!this.isMainMode());
@@ -501,30 +501,30 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
       return this.driverInput;
    }
 
-   protected void m_8097_() {
-      super.m_8097_();
-      this.f_19804_.m_135372_(MODE, true);
-      this.f_19804_.m_135372_(IS_BOOST, false);
+   protected void defineSynchedData() {
+      super.defineSynchedData();
+      this.entityData.define(MODE, true);
+      this.entityData.define(IS_BOOST, false);
    }
 
    private void setMainMode(boolean value) {
-      this.f_19804_.m_135381_(MODE, value);
+      this.entityData.set(MODE, value);
    }
 
    public boolean isMainMode() {
-      return (Boolean)this.f_19804_.m_135370_(MODE);
+      return (Boolean)this.entityData.get(MODE);
    }
 
    public boolean isSubMode() {
-      return !(Boolean)this.f_19804_.m_135370_(MODE);
+      return !(Boolean)this.entityData.get(MODE);
    }
 
    public boolean isBoost() {
-      return (Boolean)this.f_19804_.m_135370_(IS_BOOST);
+      return (Boolean)this.entityData.get(IS_BOOST);
    }
 
    public void setBoost(boolean broken) {
-      this.f_19804_.m_135381_(IS_BOOST, broken);
+      this.entityData.set(IS_BOOST, broken);
    }
 
    @Override
@@ -558,30 +558,30 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
       }
    }
 
-   public boolean m_142535_(float f1, float f2, DamageSource damageSource) {
+   public boolean causeFallDamage(float f1, float f2, DamageSource damageSource) {
       return false;
    }
 
-   public Iterable<ItemStack> m_6168_() {
-      return NonNullList.m_122780_(4, ItemStack.f_41583_);
+   public Iterable<ItemStack> getArmorSlots() {
+      return NonNullList.withSize(4, ItemStack.EMPTY);
    }
 
-   public ItemStack m_6844_(EquipmentSlot equipmentSlot) {
-      return ItemStack.f_41583_;
+   public ItemStack getItemBySlot(EquipmentSlot equipmentSlot) {
+      return ItemStack.EMPTY;
    }
 
-   public void m_8061_(EquipmentSlot equipmentSlot, ItemStack itemStack) {
+   public void setItemSlot(EquipmentSlot equipmentSlot, ItemStack itemStack) {
    }
 
-   public HumanoidArm m_5737_() {
+   public HumanoidArm getMainArm() {
       return null;
    }
 
-   public double m_6048_() {
+   public double getPassengersRidingOffset() {
       return 2.5;
    }
 
-   public boolean m_6094_() {
+   public boolean isPushable() {
       return false;
    }
 
@@ -604,7 +604,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
       }
 
       if (this.soundEffectVolume > 0.0F) {
-         this.m_9236_().m_7785_(this.m_20185_(), this.m_20186_(), this.m_20189_(), event, SoundSource.PLAYERS, volume * this.soundEffectVolume, 1.0F, false);
+         this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), event, SoundSource.PLAYERS, volume * this.soundEffectVolume, 1.0F, false);
       }
    }
 
@@ -613,26 +613,26 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
    }
 
    private float computeVolume(double maxDistance) {
-      Minecraft mc = Minecraft.m_91087_();
-      LocalPlayer player = mc.f_91074_;
+      Minecraft mc = Minecraft.getInstance();
+      LocalPlayer player = mc.player;
       if (player == null) {
          return 0.0F;
       }
 
-      double distance = player.m_20270_(this);
+      double distance = player.distanceTo(this);
       if (distance > maxDistance) {
          return 0.0F;
       }
 
       float volume = 1.0F - (float)(distance / maxDistance);
-      return Mth.m_14036_(volume, 0.0F, 1.0F);
+      return Mth.clamp(volume, 0.0F, 1.0F);
    }
 
-   public void m_7355_(BlockPos blockPos, BlockState blockState) {
+   public void playStepSound(BlockPos blockPos, BlockState blockState) {
    }
 
    private void updatePosHistory(Vec3 v) {
-      Vec3 vec = new Vec3(v.f_82479_, v.f_82480_, v.f_82481_);
+      Vec3 vec = new Vec3(v.x, v.y, v.z);
       if (this.posHistory.size() > 3) {
          this.posHistory.remove(0);
       }
@@ -641,7 +641,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
    }
 
    protected boolean justLanded(Entity ent) {
-      return ent.m_20184_().f_82480_ == 0.0 && ent.f_19791_ - ent.m_20186_() > 0.4;
+      return ent.getDeltaMovement().y == 0.0 && ent.yOld - ent.getY() > 0.4;
    }
 
    protected void getUserIntentionForDirectionFromKey(DriverInput driverInput) {
@@ -671,7 +671,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
    }
 
    protected boolean isClientSide() {
-      return this.m_9236_().m_5776_();
+      return this.level().isClientSide();
    }
 
    @Override
@@ -694,7 +694,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
       return driverInput.isLockPressed();
    }
 
-   public boolean m_6051_() {
+   public boolean displayFireAnimation() {
       return false;
    }
 }

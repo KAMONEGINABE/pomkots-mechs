@@ -46,83 +46,83 @@ public class NeedleEntity extends PomkotsCustomThrowableProjectile implements Ge
 
    public NeedleEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter, float damage) {
       super(entityType, world, shooter, 60, damage, 0);
-      this.m_20242_(true);
-      this.f_19811_ = true;
-      this.f_19794_ = true;
+      this.setNoGravity(true);
+      this.noCulling = true;
+      this.noPhysics = true;
       this.shooter = shooter;
       this.damage = damage;
    }
 
-   public boolean m_6000_(double a, double b, double c) {
+   public boolean shouldRender(double a, double b, double c) {
       return true;
    }
 
-   public boolean m_6783_(double e) {
+   public boolean shouldRenderAtSqrDistance(double e) {
       return true;
    }
 
    @Override
-   public void m_8119_() {
+   public void tick() {
       if (this.stopTicks < 1) {
          HitResult hitResult = ProjectileUtil.raycastBoundingCheck(this);
-         if (hitResult.m_6662_() != Type.MISS) {
-            this.m_6532_(hitResult);
+         if (hitResult.getType() != Type.MISS) {
+            this.onHit(hitResult);
          }
 
-         super.m_8119_();
-         this.f_19812_ = true;
+         super.tick();
+         this.hasImpulse = true;
       } else {
-         this.m_20334_(0.0, 0.0, 0.0);
+         this.setDeltaMovement(0.0, 0.0, 0.0);
          this.stopTicks++;
          if (this.stopTicks > 20) {
-            this.createExplosion(this.m_20182_());
-            this.m_146870_();
+            this.createExplosion(this.position());
+            this.discard();
          }
       }
 
       if (this.lifeTicks++ >= 60) {
-         this.m_146870_();
+         this.discard();
       }
    }
 
    @Override
-   protected void m_5790_(EntityHitResult entityHitResult) {
-      this.handleEntityHit(entityHitResult.m_82443_());
+   protected void onHitEntity(EntityHitResult entityHitResult) {
+      this.handleEntityHit(entityHitResult.getEntity());
    }
 
    public void handleEntityHit(Entity entity) {
       if (!entity.equals(this.shooter) && !(entity instanceof NeedleEntity)) {
-         entity.m_6469_(entity.m_269291_().m_269390_(this, (Entity)(this.m_19749_() != null ? this.m_19749_() : this)), this.damage);
-         entity.f_19802_ = 0;
-         this.m_146870_();
+         entity.hurt(entity.damageSources().thrown(this, (Entity)(this.getOwner() != null ? this.getOwner() : this)), this.damage);
+         entity.invulnerableTime = 0;
+         this.discard();
       }
    }
 
    @Override
-   protected void m_8060_(BlockHitResult blockHitResult) {
+   protected void onHitBlock(BlockHitResult blockHitResult) {
       this.stopTicks = 1;
-      this.m_20334_(0.0, 0.0, 0.0);
+      this.setDeltaMovement(0.0, 0.0, 0.0);
    }
 
    private void createExplosion(Vec3 pos) {
-      Level world = this.m_9236_();
-      if (!world.f_46443_) {
+      Level world = this.level();
+      if (!world.isClientSide) {
          if (ProjectileUtil.isDestructionAllowed(this)) {
-            Utils.explode(this, pos.f_82479_, pos.f_82480_ + 2.0, pos.f_82481_, this.explosionScale, false, ExplosionInteraction.BLOCK, this.m_9236_());
+            Utils.explode(this, pos.x, pos.y + 2.0, pos.z, this.explosionScale, false, ExplosionInteraction.BLOCK, this.level());
          } else {
-            Utils.explode(this, pos.f_82479_, pos.f_82480_ + 2.0, pos.f_82481_, this.explosionScale, false, ExplosionInteraction.NONE, this.m_9236_());
+            Utils.explode(this, pos.x, pos.y + 2.0, pos.z, this.explosionScale, false, ExplosionInteraction.NONE, this.level());
          }
       }
    }
 
    @Override
-   public void m_142036_() {
-      if (this.m_9236_().f_46443_) {
-         ParticleUtil.addSparkParticles(this.m_20182_(), this.m_9236_());
+   public void onClientRemoval() {
+      if (this.level().isClientSide) {
+         ParticleUtil.addSparkParticles(this.position(), this.level());
       }
    }
 
-   protected void m_8097_() {
+   protected void defineSynchedData() {
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

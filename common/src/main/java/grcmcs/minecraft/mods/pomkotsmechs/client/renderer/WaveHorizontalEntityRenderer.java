@@ -30,7 +30,7 @@ public class WaveHorizontalEntityRenderer extends GeoEntityRenderer<WaveHorizont
       int packedOverlay
    ) {
       super.preApplyRenderLayers(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
-      ((GeoBone)model.getBone("root").get()).setRotX((float)Math.toRadians(animatable.m_146909_()));
-      ((GeoBone)model.getBone("root").get()).setRotY((float)Math.toRadians(animatable.m_146908_()));
+      ((GeoBone)model.getBone("root").get()).setRotX((float)Math.toRadians(animatable.getXRot()));
+      ((GeoBone)model.getBone("root").get()).setRotY((float)Math.toRadians(animatable.getYRot()));
    }
 }

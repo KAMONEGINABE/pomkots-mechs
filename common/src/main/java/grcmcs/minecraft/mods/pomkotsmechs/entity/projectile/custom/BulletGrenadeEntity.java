@@ -40,58 +40,58 @@ public class BulletGrenadeEntity extends PomkotsCustomThrowableProjectile implem
    }
 
    @Override
-   public void m_8119_() {
-      super.m_8119_();
-      this.f_19812_ = true;
+   public void tick() {
+      super.tick();
+      this.hasImpulse = true;
    }
 
    @Override
-   protected void m_5790_(EntityHitResult entityHitResult) {
-      this.createExplosion(entityHitResult.m_82450_());
-      entityHitResult.m_82443_().f_19802_ = 0;
-      super.m_5790_(entityHitResult);
+   protected void onHitEntity(EntityHitResult entityHitResult) {
+      this.createExplosion(entityHitResult.getLocation());
+      entityHitResult.getEntity().invulnerableTime = 0;
+      super.onHitEntity(entityHitResult);
    }
 
    @Override
-   protected void m_8060_(BlockHitResult blockHitResult) {
-      this.createExplosion(blockHitResult.m_82450_());
-      super.m_8060_(blockHitResult);
+   protected void onHitBlock(BlockHitResult blockHitResult) {
+      this.createExplosion(blockHitResult.getLocation());
+      super.onHitBlock(blockHitResult);
    }
 
    private void createExplosion(Vec3 pos) {
-      Level world = this.m_9236_();
+      Level world = this.level();
       if (Utils.isBlockDestructionAllowed(this.shooter)) {
-         Utils.explode(this, pos.f_82479_, pos.f_82480_, pos.f_82481_, this.explosionScale, false, ExplosionInteraction.BLOCK, this.m_9236_());
+         Utils.explode(this, pos.x, pos.y, pos.z, this.explosionScale, false, ExplosionInteraction.BLOCK, this.level());
       } else {
-         Utils.explode(this, pos.f_82479_, pos.f_82480_, pos.f_82481_, this.explosionScale, false, ExplosionInteraction.NONE, this.m_9236_());
+         Utils.explode(this, pos.x, pos.y, pos.z, this.explosionScale, false, ExplosionInteraction.NONE, this.level());
       }
    }
 
    @Override
-   public void m_142036_() {
-      if (this.m_9236_().f_46443_) {
-         Vec3 pos = this.m_20182_();
+   public void onClientRemoval() {
+      if (this.level().isClientSide) {
+         Vec3 pos = this.position();
          if (!(this.explosionScale < 2.0F)) {
-            this.m_9236_().m_7106_(ParticleTypes.f_123812_, pos.f_82479_, pos.f_82480_, pos.f_82481_, 1.0, 0.0, 0.0);
+            this.level().addParticle(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
          } else {
-            this.m_9236_().m_7106_(ParticleTypes.f_123813_, pos.f_82479_, pos.f_82480_, pos.f_82481_, 1.0, 0.0, 0.0);
+            this.level().addParticle(ParticleTypes.EXPLOSION, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
          }
       }
    }
 
    private void addParticles(Vec3 offset) {
-      Level world = this.m_9236_();
+      Level world = this.level();
 
       for (int i = 0; i < 5; i++) {
          int rad = Math.abs(i - 3);
 
          for (int j = 0; j < 5 - rad; j++) {
             for (int k = 0; k < 5 - rad; k++) {
-               world.m_7106_(
-                  ParticleTypes.f_123813_,
-                  offset.f_82479_ - (k - (3 - rad / 2)) * 2,
-                  offset.f_82480_ - (i - 3) * 2,
-                  offset.f_82481_ - (j - (3 - rad / 2)) * 2,
+               world.addParticle(
+                  ParticleTypes.EXPLOSION,
+                  offset.x - (k - (3 - rad / 2)) * 2,
+                  offset.y - (i - 3) * 2,
+                  offset.z - (j - (3 - rad / 2)) * 2,
                   0.0,
                   0.0,
                   0.0
@@ -101,7 +101,7 @@ public class BulletGrenadeEntity extends PomkotsCustomThrowableProjectile implem
       }
    }
 
-   protected void m_8097_() {
+   protected void defineSynchedData() {
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

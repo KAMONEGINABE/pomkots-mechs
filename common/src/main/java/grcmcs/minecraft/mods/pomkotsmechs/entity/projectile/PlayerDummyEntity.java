@@ -22,27 +22,27 @@ public class PlayerDummyEntity extends PathfinderMob implements GeoEntity, GeoAn
 
    public PlayerDummyEntity(EntityType<? extends PathfinderMob> entityType, Level world) {
       super(entityType, world);
-      this.m_274367_(1.0F);
+      this.setMaxUpStep(1.0F);
    }
 
-   public boolean m_6469_(DamageSource s, float d) {
-      return s.m_19385_().equals("inWall") ? false : super.m_6469_(s, d);
+   public boolean hurt(DamageSource s, float d) {
+      return s.getMsgId().equals("inWall") ? false : super.hurt(s, d);
    }
 
-   public boolean m_142535_(float f1, float f2, DamageSource damageSource) {
+   public boolean causeFallDamage(float f1, float f2, DamageSource damageSource) {
       return false;
    }
 
-   public void m_8119_() {
-      if (this.m_20202_() == null) {
-         this.m_6074_();
+   public void tick() {
+      if (this.getVehicle() == null) {
+         this.kill();
       }
 
-      super.m_8119_();
+      super.tick();
    }
 
-   public void m_7023_(Vec3 pos) {
-      super.m_7023_(pos);
+   public void travel(Vec3 pos) {
+      super.travel(pos);
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

@@ -85,27 +85,27 @@ public class Pmv01Entity extends PomkotsVehicleBase {
       if (this.isServerSide()) {
          Vec3 vel;
          if (this.lockTargets.getLockTargetHard() != null) {
-            vel = this.m_20182_().m_82505_(this.lockTargets.getLockTargetHard().m_20182_()).m_82541_();
+            vel = this.position().vectorTo(this.lockTargets.getLockTargetHard().position()).normalize();
          } else if (this.lockTargets.getLockTargetSoft() != null) {
-            vel = this.m_20182_().m_82505_(this.lockTargets.getLockTargetSoft().m_20182_()).m_82541_();
+            vel = this.position().vectorTo(this.lockTargets.getLockTargetSoft().position()).normalize();
          } else {
             vel = new Vec3(0.0, 0.0, 1.0);
-            vel = vel.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+            vel = vel.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
          }
 
          double distance = 1.4249999999999998;
-         if (!this.m_20096_()) {
+         if (!this.onGround()) {
             distance = 0.475;
          }
 
-         vel = vel.m_82490_(distance);
-         this.m_5997_(vel.f_82479_, vel.f_82480_, vel.f_82481_);
+         vel = vel.scale(distance);
+         this.push(vel.x, vel.y, vel.z);
       }
    }
 
    @Override
    protected void fireWeapons() {
-      Level level = this.m_9236_();
+      Level level = this.level();
       if (this.actionController.getAction(2).isOnFire()) {
          this.fireHummer(level);
       } else if (this.actionController.getAction(3).isOnFire()) {
@@ -122,17 +122,17 @@ public class Pmv01Entity extends PomkotsVehicleBase {
    }
 
    private void fireHummer(Level world) {
-      if (!world.m_5776_()) {
-         BlockPos curBP = this.m_20183_();
+      if (!world.isClientSide()) {
+         BlockPos curBP = this.blockPosition();
          Vec3 vec = new Vec3(0.0, 0.0, 5.0);
-         vec = vec.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         BlockPos tgtOffset = new BlockPos(curBP.m_123341_() + (int)vec.f_82479_, curBP.m_123342_() + (int)vec.f_82480_, curBP.m_123343_() + (int)vec.f_82481_);
+         vec = vec.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         BlockPos tgtOffset = new BlockPos(curBP.getX() + (int)vec.x, curBP.getY() + (int)vec.y, curBP.getZ() + (int)vec.z);
 
          for (int i = 0; i < 4; i++) {
             for (Vec3i v : Utils.circlePosRad9) {
                Utils.destroyBlock(
                   world,
-                  new BlockPos(tgtOffset.m_123341_() + v.m_123341_(), tgtOffset.m_123342_() + v.m_123342_() + i, tgtOffset.m_123343_() + v.m_123343_()),
+                  new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() + v.getY() + i, tgtOffset.getZ() + v.getZ()),
                   false
                );
             }
@@ -141,7 +141,7 @@ public class Pmv01Entity extends PomkotsVehicleBase {
          for (Vec3i v : Utils.circlePosRad7) {
             Utils.destroyBlock(
                world,
-               new BlockPos(tgtOffset.m_123341_() + v.m_123341_(), tgtOffset.m_123342_() + v.m_123342_() + 4, tgtOffset.m_123343_() + v.m_123343_()),
+               new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() + v.getY() + 4, tgtOffset.getZ() + v.getZ()),
                false
             );
          }
@@ -149,7 +149,7 @@ public class Pmv01Entity extends PomkotsVehicleBase {
          for (Vec3i v : Utils.circlePosRad5) {
             Utils.destroyBlock(
                world,
-               new BlockPos(tgtOffset.m_123341_() + v.m_123341_(), tgtOffset.m_123342_() + v.m_123342_() + 5, tgtOffset.m_123343_() + v.m_123343_()),
+               new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() + v.getY() + 5, tgtOffset.getZ() + v.getZ()),
                false
             );
          }
@@ -157,99 +157,99 @@ public class Pmv01Entity extends PomkotsVehicleBase {
    }
 
    private void fireScop(Level world) {
-      if (!world.m_5776_()) {
-         BlockPos curBP = this.m_20183_();
+      if (!world.isClientSide()) {
+         BlockPos curBP = this.blockPosition();
          Vec3 vec = new Vec3(0.0, 0.0, 8.0);
-         vec = vec.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         BlockPos tgtOffset = new BlockPos(curBP.m_123341_() + (int)vec.f_82479_, curBP.m_123342_() + (int)vec.f_82480_, curBP.m_123343_() + (int)vec.f_82481_);
+         vec = vec.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         BlockPos tgtOffset = new BlockPos(curBP.getX() + (int)vec.x, curBP.getY() + (int)vec.y, curBP.getZ() + (int)vec.z);
 
          for (Vec3i v : Utils.circlePosRad9) {
             Utils.destroyBlock(
-               world, new BlockPos(tgtOffset.m_123341_() + v.m_123341_(), tgtOffset.m_123342_() - 0, tgtOffset.m_123343_() + v.m_123343_()), false
+               world, new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() - 0, tgtOffset.getZ() + v.getZ()), false
             );
          }
 
          for (Vec3i v : Utils.circlePosRad9) {
             Utils.destroyBlock(
-               world, new BlockPos(tgtOffset.m_123341_() + v.m_123341_(), tgtOffset.m_123342_() - 1, tgtOffset.m_123343_() + v.m_123343_()), false
+               world, new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() - 1, tgtOffset.getZ() + v.getZ()), false
             );
          }
 
          for (Vec3i v : Utils.circlePosRad7) {
             Utils.destroyBlock(
-               world, new BlockPos(tgtOffset.m_123341_() + v.m_123341_(), tgtOffset.m_123342_() - 2, tgtOffset.m_123343_() + v.m_123343_()), false
+               world, new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() - 2, tgtOffset.getZ() + v.getZ()), false
             );
          }
 
          for (Vec3i v : Utils.circlePosRad5) {
             Utils.destroyBlock(
-               world, new BlockPos(tgtOffset.m_123341_() + v.m_123341_(), tgtOffset.m_123342_() - 3, tgtOffset.m_123343_() + v.m_123343_()), false
+               world, new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() - 3, tgtOffset.getZ() + v.getZ()), false
             );
          }
       }
    }
 
    private void fireGatring(Level world) {
-      if (!world.m_5776_()) {
+      if (!world.isClientSide()) {
          BulletEntity be = new BulletEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET.get(), world, this);
          Vec3 offset = this.posHistory.getFirst();
          Vec3 muzzlPos = new Vec3(-1.65, 2.0, 3.5);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         be.m_146884_(offset.m_82549_(muzzlPos));
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         be.setPos(offset.add(muzzlPos));
          float[] angle = this.getShootingAngle(be, true);
-         be.m_37251_(be, angle[0], angle[1], this.m_21256_(), 0.9F, 2.0F);
-         world.m_7967_(be);
-      } else if (this.f_19797_ % 7 == 0) {
+         be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), 0.9F, 2.0F);
+         world.addFreshEntity(be);
+      } else if (this.tickCount % 7 == 0) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_GATLING_EVENT.get());
       }
    }
 
    private void firePilebunker(Level world) {
       Entity driver = this.getDrivingPassenger();
-      Vec3 pilePos1 = new Vec3(6.5, 3.0, 18.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())).m_82549_(this.m_20182_());
-      Vec3 pilePos2 = new Vec3(-2.0, -3.0, -2.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())).m_82549_(this.m_20182_());
-      Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+      Vec3 pilePos1 = new Vec3(6.5, 3.0, 18.0).yRot((float)Math.toRadians(-1.0 * this.getYRot())).add(this.position());
+      Vec3 pilePos2 = new Vec3(-2.0, -3.0, -2.0).yRot((float)Math.toRadians(-1.0 * this.getYRot())).add(this.position());
+      Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).yRot((float)Math.toRadians(-1.0 * this.getYRot()));
 
-      for (Entity ent : world.m_45933_(null, new AABB(pilePos1, pilePos2))) {
+      for (Entity ent : world.getEntities(null, new AABB(pilePos1, pilePos2))) {
          if (!this.isSelf(ent) && ent instanceof LivingEntity le) {
-            if (!world.m_5776_()) {
-               le.m_147240_(2.0, kbVel.f_82479_, kbVel.f_82481_);
+            if (!world.isClientSide()) {
+               le.knockback(2.0, kbVel.x, kbVel.z);
                DamageSource ds;
                if (driver instanceof Player p) {
-                  ds = this.m_269291_().m_269075_(p);
+                  ds = this.damageSources().playerAttack(p);
                } else {
-                  ds = this.m_269291_().m_269264_();
+                  ds = this.damageSources().generic();
                }
 
-               le.m_6469_(ds, BattleBalance.MECH_PILE_DAMAGE);
+               le.hurt(ds, BattleBalance.MECH_PILE_DAMAGE);
             } else {
                this.addHitParticles(le);
             }
          }
       }
 
-      if (this.m_9236_().f_46443_) {
+      if (this.level().isClientSide) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_PILEBUNKER_EVENT.get());
       }
    }
 
    private void addHitParticles(Entity target) {
-      Vec3 offset = new Vec3(target.m_20182_().f_82479_, target.m_20191_().m_82399_().f_82480_, target.m_20182_().f_82481_);
+      Vec3 offset = new Vec3(target.position().x, target.getBoundingBox().getCenter().y, target.position().z);
 
       for (int i = 0; i < 40; i++) {
-         double velocityX = this.f_19796_.m_188500_() * 4.3 - 1.0;
-         double velocityY = this.f_19796_.m_188500_() * 4.3 - 1.0;
-         double velocityZ = this.f_19796_.m_188500_() * 4.3 - 1.0;
-         this.m_9236_()
-            .m_6485_((ParticleOptions)PomkotsMechs.SPARK.get(), true, offset.m_7096_(), offset.m_7098_(), offset.m_7094_(), velocityX, velocityY, velocityZ);
+         double velocityX = this.random.nextDouble() * 4.3 - 1.0;
+         double velocityY = this.random.nextDouble() * 4.3 - 1.0;
+         double velocityZ = this.random.nextDouble() * 4.3 - 1.0;
+         this.level()
+            .addAlwaysVisibleParticle((ParticleOptions)PomkotsMechs.SPARK.get(), true, offset.x(), offset.y(), offset.z(), velocityX, velocityY, velocityZ);
       }
    }
 
    private void fireMissile(Level world, int slot) {
-      if (!world.m_5776_()) {
+      if (!world.isClientSide()) {
          Vec3 offset = this.posHistory.getFirst();
          Vec3 muzzlPos = new Vec3(-1.0, 3.5, 0.8F);
-         Vec3 worldMuzzlPos = muzzlPos.m_82520_(0.0, 0.0, -slot * 0.3).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+         Vec3 worldMuzzlPos = muzzlPos.add(0.0, 0.0, -slot * 0.3).yRot((float)Math.toRadians(-1.0 * this.getYRot()));
          LivingEntity target = null;
          List<Entity> lockTargetsMulti = this.lockTargets.getLockTargetMulti();
          if (!lockTargetsMulti.isEmpty()) {
@@ -265,9 +265,9 @@ public class Pmv01Entity extends PomkotsVehicleBase {
          MissileVerticalEntity be = new MissileVerticalEntity(
             (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_VERTICAL.get(), world, this, target
          );
-         be.m_146884_(offset.m_82549_(worldMuzzlPos));
-         be.m_37251_(be, -89.0F, this.m_146908_(), this.m_21256_(), 1.0F, 0.0F);
-         world.m_7967_(be);
+         be.setPos(offset.add(worldMuzzlPos));
+         be.shootFromRotation(be, -89.0F, this.getYRot(), this.getFallFlyingTicks(), 1.0F, 0.0F);
+         world.addFreshEntity(be);
          if (slot == 5) {
             this.lockTargets.clearLockTargetsMulti();
          }
@@ -281,7 +281,7 @@ public class Pmv01Entity extends PomkotsVehicleBase {
    }
 
    private void fireGrenade(Level world) {
-      if (!world.m_5776_()) {
+      if (!world.isClientSide()) {
          GrenadeEntity be = new GrenadeEntity(
             (EntityType<? extends ThrowableProjectile>)PomkotsMechs.GRENADE.get(),
             world,
@@ -291,13 +291,13 @@ public class Pmv01Entity extends PomkotsVehicleBase {
          );
          Vec3 offset = this.posHistory.getFirst();
          Vec3 muzzlPos = new Vec3(1.65, 3.0, 3.5);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         be.m_146884_(offset.m_82549_(muzzlPos));
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         be.setPos(offset.add(muzzlPos));
          float[] angle = this.getShootingAngle(be, false);
-         be.m_37251_(be, angle[0], angle[1], this.m_21256_(), 0.9F, 0.0F);
-         world.m_7967_(be);
-         Vec3 knockBackvel = new Vec3(0.0, 0.0, -3.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         this.m_246865_(knockBackvel);
+         be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), 0.9F, 0.0F);
+         world.addFreshEntity(be);
+         Vec3 knockBackvel = new Vec3(0.0, 0.0, -3.0).yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         this.addDeltaMovement(knockBackvel);
       } else {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_GRENADE_EVENT.get());
       }

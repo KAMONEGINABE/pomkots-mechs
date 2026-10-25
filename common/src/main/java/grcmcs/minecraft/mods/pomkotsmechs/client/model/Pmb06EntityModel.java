@@ -34,9 +34,9 @@ public class Pmb06EntityModel extends GeoModel<Pmb06Entity> {
    }
 
    public static void pointBonePitchTowards(CoreGeoBone bone, Vec3 fromPos, Vec3 toPos) {
-      Vec3 delta = toPos.m_82546_(fromPos);
-      double horizontalDistance = Math.sqrt(delta.f_82479_ * delta.f_82479_ + delta.f_82481_ * delta.f_82481_);
-      float pitchRadians = (float)(-Math.atan2(delta.f_82480_, horizontalDistance));
+      Vec3 delta = toPos.subtract(fromPos);
+      double horizontalDistance = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
+      float pitchRadians = (float)(-Math.atan2(delta.y, horizontalDistance));
       bone.setRotX(pitchRadians);
    }
 }

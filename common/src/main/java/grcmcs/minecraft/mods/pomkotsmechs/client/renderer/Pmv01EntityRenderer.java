@@ -51,7 +51,7 @@ public class Pmv01EntityRenderer extends GeoEntityRenderer<Pmv01Entity> {
          animatable.setClientSeatPos(this.getSeatPosition(model));
       }
 
-      RenderUtils.renderAdditionalHud(poseStack, animatable, this.f_114476_.m_253208_(), bufferSource);
+      RenderUtils.renderAdditionalHud(poseStack, animatable, this.entityRenderDispatcher.cameraOrientation(), bufferSource);
    }
 
    private Vec3 getSeatPosition(BakedGeoModel model) {
@@ -62,7 +62,7 @@ public class Pmv01EntityRenderer extends GeoEntityRenderer<Pmv01Entity> {
          Vector3d rootPos = vcRoot.getLocalPosition();
          return new Vec3(seatPos.x * 0.5 - rootPos.x * 0.5, seatPos.y * 0.5 - rootPos.y * 0.5 - 2.8F, seatPos.z * 0.5 - rootPos.z * 0.5);
       } else {
-         return Vec3.f_82478_;
+         return Vec3.ZERO;
       }
    }
 
@@ -86,12 +86,12 @@ public class Pmv01EntityRenderer extends GeoEntityRenderer<Pmv01Entity> {
    }
 
    private void setBoosterVisibilitty(BakedGeoModel model, Pmv01Entity ent) {
-      Vec3 vel = ent.m_20184_();
-      vel = vel.m_82524_((float)Math.toRadians(ent.m_146908_()));
-      if (vel.f_82479_ > 1.0) {
+      Vec3 vel = ent.getDeltaMovement();
+      vel = vel.yRot((float)Math.toRadians(ent.getYRot()));
+      if (vel.x > 1.0) {
          ((GeoBone)model.getBone("fire_rsb").get()).setHidden(false);
          ((GeoBone)model.getBone("fire_lsb").get()).setHidden(true);
-      } else if (vel.f_82479_ < -1.0) {
+      } else if (vel.x < -1.0) {
          ((GeoBone)model.getBone("fire_rsb").get()).setHidden(true);
          ((GeoBone)model.getBone("fire_lsb").get()).setHidden(false);
       } else {
@@ -99,7 +99,7 @@ public class Pmv01EntityRenderer extends GeoEntityRenderer<Pmv01Entity> {
          ((GeoBone)model.getBone("fire_lsb").get()).setHidden(true);
       }
 
-      if (vel.f_82481_ > 1.0) {
+      if (vel.z > 1.0) {
          ((GeoBone)model.getBone("fire_bpcr").get()).setHidden(false);
          ((GeoBone)model.getBone("fire_bpcl").get()).setHidden(false);
          ((GeoBone)model.getBone("fire_rl").get()).setHidden(false);

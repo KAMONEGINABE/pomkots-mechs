@@ -15,7 +15,7 @@ public class WeightedList<T> {
    }
 
    public T getRandomObject(RandomSource random) {
-      int roll = random.m_188503_(this.totalWeight);
+      int roll = random.nextInt(this.totalWeight);
       int current = 0;
 
       for (WeightedList.Entry<T> entry : this.entries) {

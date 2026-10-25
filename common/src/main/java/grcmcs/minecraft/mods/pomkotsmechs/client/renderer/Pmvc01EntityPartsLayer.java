@@ -150,38 +150,38 @@ public class Pmvc01EntityPartsLayer<T extends Pmvc01Entity> extends GeoRenderLay
       int packedLight,
       int packedOverlay
    ) {
-      if (!item.m_41619_()) {
-         if (item.m_41720_() instanceof BasePartsItem.Weapon w && point.equals(w.getWeaponAttachPoint())) {
-            poseStack.m_85836_();
+      if (!item.isEmpty()) {
+         if (item.getItem() instanceof BasePartsItem.Weapon w && point.equals(w.getWeaponAttachPoint())) {
+            poseStack.pushPose();
             software.bernie.geckolib.util.RenderUtils.translateAndRotateMatrixForBone(poseStack, bone);
             w.setParentEntity(animatable);
             w.setSide(side);
-            if (BasePartsItem.AttachSide.RIGHT == side && item.m_41720_() instanceof TenpouItem) {
-               poseStack.m_85836_();
-               poseStack.m_252781_(Axis.f_252436_.m_252977_(180.0F));
+            if (BasePartsItem.AttachSide.RIGHT == side && item.getItem() instanceof TenpouItem) {
+               poseStack.pushPose();
+               poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
             }
 
-            Minecraft.m_91087_()
-               .m_91291_()
-               .m_269491_(
+            Minecraft.getInstance()
+               .getItemRenderer()
+               .renderStatic(
                   animatable,
                   item,
                   ItemDisplayContext.NONE,
                   false,
                   poseStack,
                   bufferSource,
-                  animatable.m_9236_(),
+                  animatable.level(),
                   packedLight,
                   packedOverlay,
-                  animatable.m_19879_()
+                  animatable.getId()
                );
-            if (BasePartsItem.AttachSide.RIGHT == side && item.m_41720_() instanceof TenpouItem) {
-               poseStack.m_85849_();
+            if (BasePartsItem.AttachSide.RIGHT == side && item.getItem() instanceof TenpouItem) {
+               poseStack.popPose();
             }
 
             w.setSide(null);
             w.setParentEntity(null);
-            poseStack.m_85849_();
+            poseStack.popPose();
          }
       }
    }
@@ -201,12 +201,12 @@ public class Pmvc01EntityPartsLayer<T extends Pmvc01Entity> extends GeoRenderLay
       ItemStack ext2Stack = animatable.getExtension2Weapon();
       HoverUnitItem hover = null;
       ItemStack hoverStack = null;
-      if (!ext1Stack.m_41619_() && ext1Stack.m_41720_() instanceof HoverUnitItem hui) {
+      if (!ext1Stack.isEmpty() && ext1Stack.getItem() instanceof HoverUnitItem hui) {
          hover = hui;
          hoverStack = ext1Stack;
       }
 
-      if (!ext2Stack.m_41619_() && ext2Stack.m_41720_() instanceof HoverUnitItem hui) {
+      if (!ext2Stack.isEmpty() && ext2Stack.getItem() instanceof HoverUnitItem hui) {
          hover = hui;
          hoverStack = ext2Stack;
       }
@@ -229,15 +229,15 @@ public class Pmvc01EntityPartsLayer<T extends Pmvc01Entity> extends GeoRenderLay
    ) {
       ItemStack ext1Stack = animatable.getExtension1Weapon();
       ItemStack ext2Stack = animatable.getExtension2Weapon();
-      if (!ext1Stack.m_41619_()
+      if (!ext1Stack.isEmpty()
          && (
-            ext1Stack.m_41720_() instanceof SBUnitProtoTypeItem
-               || ext1Stack.m_41720_() instanceof BuilderUnitItem
-               || ext1Stack.m_41720_() instanceof GliderUnitItem
+            ext1Stack.getItem() instanceof SBUnitProtoTypeItem
+               || ext1Stack.getItem() instanceof BuilderUnitItem
+               || ext1Stack.getItem() instanceof GliderUnitItem
          )) {
          this.renderExtension(
             ext1Stack,
-            (BasePartsItem.Extension)ext1Stack.m_41720_(),
+            (BasePartsItem.Extension)ext1Stack.getItem(),
             poseStack,
             animatable,
             bone,
@@ -250,15 +250,15 @@ public class Pmvc01EntityPartsLayer<T extends Pmvc01Entity> extends GeoRenderLay
          );
       }
 
-      if (!ext2Stack.m_41619_()
+      if (!ext2Stack.isEmpty()
          && (
-            ext2Stack.m_41720_() instanceof SBUnitProtoTypeItem
-               || ext2Stack.m_41720_() instanceof BuilderUnitItem
-               || ext2Stack.m_41720_() instanceof GliderUnitItem
+            ext2Stack.getItem() instanceof SBUnitProtoTypeItem
+               || ext2Stack.getItem() instanceof BuilderUnitItem
+               || ext2Stack.getItem() instanceof GliderUnitItem
          )) {
          this.renderExtension(
             ext2Stack,
-            (BasePartsItem.Extension)ext2Stack.m_41720_(),
+            (BasePartsItem.Extension)ext2Stack.getItem(),
             poseStack,
             animatable,
             bone,
@@ -285,26 +285,26 @@ public class Pmvc01EntityPartsLayer<T extends Pmvc01Entity> extends GeoRenderLay
       int packedLight,
       int packedOverlay
    ) {
-      poseStack.m_85836_();
+      poseStack.pushPose();
       software.bernie.geckolib.util.RenderUtils.translateAndRotateMatrixForBone(poseStack, bone);
       extItem.setParentEntity(animatable);
       extItem.setSide(BasePartsItem.AttachSide.RIGHT);
-      Minecraft.m_91087_()
-         .m_91291_()
-         .m_269491_(
+      Minecraft.getInstance()
+         .getItemRenderer()
+         .renderStatic(
             animatable,
             extItemStack,
             ItemDisplayContext.NONE,
             false,
             poseStack,
             bufferSource,
-            animatable.m_9236_(),
+            animatable.level(),
             packedLight,
             packedOverlay,
-            animatable.m_19879_()
+            animatable.getId()
          );
       extItem.setSide(null);
       extItem.setParentEntity(null);
-      poseStack.m_85849_();
+      poseStack.popPose();
    }
 }

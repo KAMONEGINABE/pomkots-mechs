@@ -78,43 +78,43 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
 
    public ArenaReceptionistScreen(ArenaReceptionistMenu menu, Inventory inventory, Component title) {
       super(menu, inventory, title);
-      this.f_97726_ = 480;
-      this.f_97727_ = 270;
+      this.imageWidth = 480;
+      this.imageHeight = 270;
    }
 
-   protected void m_7856_() {
-      super.m_7856_();
-      this.tabSelectorOffsetX = this.f_97735_ + 20;
-      this.tabSelectorOffsetY = this.f_97736_ + 35;
+   protected void init() {
+      super.init();
+      this.tabSelectorOffsetX = this.leftPos + 20;
+      this.tabSelectorOffsetY = this.topPos + 35;
       this.rankingOffsetX = this.tabSelectorOffsetX;
       this.rankingOffsetY = this.tabSelectorOffsetY + 14;
-      this.playerInvX = this.f_97735_ + 310;
-      this.playerInvY = this.f_97736_ + 35;
-      this.m_142416_(
+      this.playerInvX = this.leftPos + 310;
+      this.playerInvY = this.topPos + 35;
+      this.addRenderableWidget(
          this.buildButton("Ranking", this.tabSelectorOffsetX, this.tabSelectorOffsetY, btn -> this.currentTab = ArenaReceptionistScreen.ArenaTab.RANKED)
       );
-      if (((ArenaReceptionistMenu)this.f_97732_).getMode() == 0) {
-         this.m_142416_(
+      if (((ArenaReceptionistMenu)this.menu).getMode() == 0) {
+         this.addRenderableWidget(
             this.buildButton(
                "Profile", this.tabSelectorOffsetX + 70, this.tabSelectorOffsetY, btn -> this.currentTab = ArenaReceptionistScreen.ArenaTab.PROFILE
             )
          );
       }
 
-      this.rankMatchButton = (Button)this.m_142416_(
+      this.rankMatchButton = (Button)this.addRenderableWidget(
          this.buildButton("Rank Match", this.tabSelectorOffsetX + 280, this.rankingOffsetY + 190 + 5, btn -> this.startMatch(true))
       );
-      this.freeMatchButton = (Button)this.m_142416_(
+      this.freeMatchButton = (Button)this.addRenderableWidget(
          this.buildButton("Free Match", this.tabSelectorOffsetX + 350 + 15, this.rankingOffsetY + 190 + 5, btn -> this.startMatch(false))
       );
-      if (((ArenaReceptionistMenu)this.f_97732_).getMode() == 1) {
-         this.acceptButton = (ImageButton)this.m_142416_(
+      if (((ArenaReceptionistMenu)this.menu).getMode() == 1) {
+         this.acceptButton = (ImageButton)this.addRenderableWidget(
             this.buildButton("Teleport", this.tabSelectorOffsetX + 210 - 15, this.rankingOffsetY - 18, btn -> this.btnClicked(0), this.isAcceptEnable())
          );
-         this.declineButton = (ImageButton)this.m_142416_(
+         this.declineButton = (ImageButton)this.addRenderableWidget(
             this.buildButton("Decline", this.tabSelectorOffsetX + 280, this.rankingOffsetY - 18, btn -> this.btnClicked(1), this.isDeclineEnable())
          );
-         this.returnButton = (ImageButton)this.m_142416_(
+         this.returnButton = (ImageButton)this.addRenderableWidget(
             this.buildButton("Return", this.tabSelectorOffsetX + 350 + 15, this.rankingOffsetY - 18, btn -> this.btnClicked(2), this.isReturnEnable())
          );
          if (this.isAcceptEnable()) {
@@ -138,16 +138,16 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
          }
       }
 
-      this.nameField = new EditBox(this.f_96547_, this.rankingOffsetX + 20, this.rankingOffsetY + 10 + 15, 180, 18, Component.m_237113_("Display Name"));
-      this.nameField.m_94199_(32);
-      this.m_142416_(this.nameField);
-      this.commentField = new EditBox(this.f_96547_, this.rankingOffsetX + 20, this.rankingOffsetY + 10 + 45 + 15, 180, 18, Component.m_237113_("Comment"));
-      this.commentField.m_94199_(64);
-      this.m_142416_(this.commentField);
-      this.saveProfileButton = (Button)this.m_142416_(
+      this.nameField = new EditBox(this.font, this.rankingOffsetX + 20, this.rankingOffsetY + 10 + 15, 180, 18, Component.literal("Display Name"));
+      this.nameField.setMaxLength(32);
+      this.addRenderableWidget(this.nameField);
+      this.commentField = new EditBox(this.font, this.rankingOffsetX + 20, this.rankingOffsetY + 10 + 45 + 15, 180, 18, Component.literal("Comment"));
+      this.commentField.setMaxLength(64);
+      this.addRenderableWidget(this.commentField);
+      this.saveProfileButton = (Button)this.addRenderableWidget(
          this.buildButton("Save", this.rankingOffsetX, this.rankingOffsetY + 145 + 20, btn -> this.savePlayerProfile())
       );
-      this.removeProfileButton = (Button)this.m_142416_(
+      this.removeProfileButton = (Button)this.addRenderableWidget(
          this.buildButton("Remove", this.rankingOffsetX + 70 + 20, this.rankingOffsetY + 145 + 20, btn -> this.removePlayerPlofile())
       );
       this.updateScrollLimits();
@@ -156,8 +156,8 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
    }
 
    private void btnClicked(int btnId) {
-      this.f_96541_.f_91072_.m_105208_(((ArenaReceptionistMenu)this.f_97732_).f_38840_, btnId);
-      this.m_7379_();
+      this.minecraft.gameMode.handleInventoryButtonClick(((ArenaReceptionistMenu)this.menu).containerId, btnId);
+      this.onClose();
    }
 
    private void startMatch(boolean isFree) {
@@ -167,39 +167,39 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
 
          FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
          buf.writeBoolean(isFree);
-         buf.m_130070_(((ArenaReceptionistMenu)this.f_97732_).getArenaId());
-         buf.m_130077_(this.selectedEntry.getFighterId());
+         buf.writeUtf(((ArenaReceptionistMenu)this.menu).getArenaId());
+         buf.writeUUID(this.selectedEntry.getFighterId());
          NetworkManager.sendToServer(PomkotsMechs.id("asm"), buf);
-         this.m_7379_();
+         this.onClose();
       }
    }
 
    private void savePlayerProfile() {
       FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-      buf.m_130070_(this.nameField.m_94155_());
-      buf.m_130070_(this.commentField.m_94155_());
-      buf.m_130070_(((ArenaReceptionistMenu)this.f_97732_).getArenaId());
+      buf.writeUtf(this.nameField.getValue());
+      buf.writeUtf(this.commentField.getValue());
+      buf.writeUtf(((ArenaReceptionistMenu)this.menu).getArenaId());
       NetworkManager.sendToServer(PomkotsMechs.id("aspp"), buf);
    }
 
    private void removePlayerPlofile() {
       FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-      buf.m_130070_(((ArenaReceptionistMenu)this.f_97732_).getArenaId());
+      buf.writeUtf(((ArenaReceptionistMenu)this.menu).getArenaId());
       NetworkManager.sendToServer(PomkotsMechs.id("arpp"), buf);
    }
 
    public void refleshData() {
       this.selfProfile = null;
-      LocalPlayer player = Minecraft.m_91087_().f_91074_;
-      if (((ArenaReceptionistMenu)this.f_97732_).getRankings() != null && player != null) {
-         for (ArenaRankingEntry fighter : ((ArenaReceptionistMenu)this.f_97732_).getRankings()) {
-            if (fighter.getFighterId().equals(player.m_20148_())) {
+      LocalPlayer player = Minecraft.getInstance().player;
+      if (((ArenaReceptionistMenu)this.menu).getRankings() != null && player != null) {
+         for (ArenaRankingEntry fighter : ((ArenaReceptionistMenu)this.menu).getRankings()) {
+            if (fighter.getFighterId().equals(player.getUUID())) {
                if (this.nameField != null) {
-                  this.nameField.m_94144_(fighter.getDisplayName());
+                  this.nameField.setValue(fighter.getDisplayName());
                }
 
                if (this.commentField != null) {
-                  this.commentField.m_94144_(fighter.getComment());
+                  this.commentField.setValue(fighter.getComment());
                }
 
                this.mechName = fighter.getMechName();
@@ -212,67 +212,67 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
    private void updateMatchButtons() {
       boolean enable = this.currentTab == ArenaReceptionistScreen.ArenaTab.RANKED
          && this.selectedEntry != null
-         && ((ArenaReceptionistMenu)this.f_97732_).getMode() == 0
+         && ((ArenaReceptionistMenu)this.menu).getMode() == 0
          && this.selfProfile != null;
-      this.rankMatchButton.f_93623_ = enable;
-      this.freeMatchButton.f_93623_ = enable;
+      this.rankMatchButton.active = enable;
+      this.freeMatchButton.active = enable;
    }
 
    private void updateComponentsVisibility() {
       boolean visible = this.currentTab == ArenaReceptionistScreen.ArenaTab.PROFILE;
       if (this.nameField != null) {
-         this.nameField.f_93624_ = visible;
-         this.nameField.m_94186_(visible);
+         this.nameField.visible = visible;
+         this.nameField.setEditable(visible);
       }
 
       if (this.commentField != null) {
-         this.commentField.f_93624_ = visible;
-         this.commentField.m_94186_(visible);
+         this.commentField.visible = visible;
+         this.commentField.setEditable(visible);
       }
 
       if (this.saveProfileButton != null) {
-         this.saveProfileButton.f_93624_ = visible;
-         this.saveProfileButton.f_93623_ = visible;
+         this.saveProfileButton.visible = visible;
+         this.saveProfileButton.active = visible;
       }
 
       if (this.removeProfileButton != null) {
-         this.removeProfileButton.f_93624_ = visible;
-         this.removeProfileButton.f_93623_ = visible;
+         this.removeProfileButton.visible = visible;
+         this.removeProfileButton.active = visible;
       }
 
-      for (int i = 0; i < ((ArenaReceptionistMenu)this.f_97732_).f_38839_.size(); i++) {
-         if (((ArenaReceptionistMenu)this.f_97732_).m_38853_(i) instanceof ArenaReceptionistMenu.ToggleableSlot ts) {
+      for (int i = 0; i < ((ArenaReceptionistMenu)this.menu).slots.size(); i++) {
+         if (((ArenaReceptionistMenu)this.menu).getSlot(i) instanceof ArenaReceptionistMenu.ToggleableSlot ts) {
             ts.setActive(visible);
          }
       }
    }
 
    private void updateScrollLimits() {
-      this.contentHeight = ((ArenaReceptionistMenu)this.f_97732_).getRankings().size() * 64;
+      this.contentHeight = ((ArenaReceptionistMenu)this.menu).getRankings().size() * 64;
       this.maxScroll = Math.max(0, this.contentHeight - 190);
-      this.scrollOffset = Mth.m_14045_(this.scrollOffset, 0, this.maxScroll);
+      this.scrollOffset = Mth.clamp(this.scrollOffset, 0, this.maxScroll);
    }
 
-   public void m_88315_(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
       this.updateMatchButtons();
       this.updateComponentsVisibility();
       this.updateScrollLimits();
-      this.m_280273_(graphics);
-      super.m_88315_(graphics, mouseX, mouseY, partialTick);
+      this.renderBackground(graphics);
+      super.render(graphics, mouseX, mouseY, partialTick);
       if (this.currentTab == ArenaReceptionistScreen.ArenaTab.RANKED) {
          this.renderRanking(graphics);
       } else if (this.currentTab == ArenaReceptionistScreen.ArenaTab.PROFILE) {
          this.renderProfileTab(graphics);
       }
 
-      this.m_280072_(graphics, mouseX, mouseY);
-      if (this.acceptButton != null && this.acceptButton.m_274382_()) {
-         graphics.m_280677_(
-            this.f_96547_,
+      this.renderTooltip(graphics, mouseX, mouseY);
+      if (this.acceptButton != null && this.acceptButton.isHovered()) {
+         graphics.renderTooltip(
+            this.font,
             List.of(
-               Component.m_237113_("Accept the challenge and teleport to the arena"),
-               Component.m_237113_("After the match, you can return to your original location using the \"Return\" button"),
-               Component.m_237113_("* You must be piloting a Mech").m_130940_(ChatFormatting.RED)
+               Component.literal("Accept the challenge and teleport to the arena"),
+               Component.literal("After the match, you can return to your original location using the \"Return\" button"),
+               Component.literal("* You must be piloting a Mech").withStyle(ChatFormatting.RED)
             ),
             Optional.empty(),
             mouseX,
@@ -280,13 +280,13 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
          );
       }
 
-      if (this.declineButton != null && this.declineButton.m_274382_()) {
-         graphics.m_280677_(
-            this.f_96547_,
+      if (this.declineButton != null && this.declineButton.isHovered()) {
+         graphics.renderTooltip(
+            this.font,
             List.of(
-               Component.m_237113_("Decline the challenge"),
-               Component.m_237113_("If the request times out, it will be automatically declined"),
-               Component.m_237113_("No ranking changes will occur").m_130940_(ChatFormatting.RED)
+               Component.literal("Decline the challenge"),
+               Component.literal("If the request times out, it will be automatically declined"),
+               Component.literal("No ranking changes will occur").withStyle(ChatFormatting.RED)
             ),
             Optional.empty(),
             mouseX,
@@ -294,12 +294,12 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
          );
       }
 
-      if (this.returnButton != null && this.returnButton.m_274382_()) {
-         graphics.m_280677_(
-            this.f_96547_,
+      if (this.returnButton != null && this.returnButton.isHovered()) {
+         graphics.renderTooltip(
+            this.font,
             List.of(
-               Component.m_237113_("Teleport to your pre-teleport location"),
-               Component.m_237113_("* You must be piloting a Mech").m_130940_(ChatFormatting.RED)
+               Component.literal("Teleport to your pre-teleport location"),
+               Component.literal("* You must be piloting a Mech").withStyle(ChatFormatting.RED)
             ),
             Optional.empty(),
             mouseX,
@@ -311,27 +311,27 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
    private void renderProfileTab(GuiGraphics graphics) {
       int x = this.rankingOffsetX + 10;
       int y = this.rankingOffsetY + 10;
-      graphics.m_280488_(this.f_96547_, "Display Name", x, y, 16777215);
-      graphics.m_280488_(this.f_96547_, "Comment", x, y + 45, 16777215);
-      graphics.m_280488_(this.f_96547_, "Registered Mech", x, y + 90, 16777215);
+      graphics.drawString(this.font, "Display Name", x, y, 16777215);
+      graphics.drawString(this.font, "Comment", x, y + 45, 16777215);
+      graphics.drawString(this.font, "Registered Mech", x, y + 90, 16777215);
       this.renderBgTexture(TEXTURE_ITEM_CONTAINER, x + 10, y + 105, 16, 16, graphics);
-      graphics.m_280488_(this.f_96547_, "Put your Data Pad here", x + 34, y + 109, 11184810);
-      graphics.m_280488_(this.f_96547_, "Registered Mech:", x, y + 135, 16777215);
-      graphics.m_280488_(this.f_96547_, this.mechName, x + 100, y + 135, 5635925);
+      graphics.drawString(this.font, "Put your Data Pad here", x + 34, y + 109, 11184810);
+      graphics.drawString(this.font, "Registered Mech:", x, y + 135, 16777215);
+      graphics.drawString(this.font, this.mechName, x + 100, y + 135, 5635925);
       this.renderPlayerInventoryPanel(graphics);
    }
 
    private void renderPlayerInventoryPanel(GuiGraphics guiGraphics) {
       this.renderBgTexture(TEXTURE_PANEL_INV_PLAYER, this.playerInvX, this.playerInvY, this.playerInvWidth, this.playerInvHeight, guiGraphics);
-      guiGraphics.m_280488_(this.f_96547_, "Player Inventory", this.playerInvX + 18, this.playerInvY + 4, -1);
+      guiGraphics.drawString(this.font, "Player Inventory", this.playerInvX + 18, this.playerInvY + 4, -1);
    }
 
    private void renderRanking(GuiGraphics graphics) {
-      List<ArenaRankingEntry> rankings = ((ArenaReceptionistMenu)this.f_97732_).getRankings();
+      List<ArenaRankingEntry> rankings = ((ArenaReceptionistMenu)this.menu).getRankings();
       int areaX = this.rankingOffsetX;
       int areaY = this.rankingOffsetY;
-      graphics.m_280509_(areaX, areaY, areaX + 440, areaY + 190, 1711276032);
-      graphics.m_280588_(areaX, areaY, areaX + 440, areaY + 190);
+      graphics.fill(areaX, areaY, areaX + 440, areaY + 190, 1711276032);
+      graphics.enableScissor(areaX, areaY, areaX + 440, areaY + 190);
       int cardY = areaY + 4 - this.scrollOffset;
 
       for (int i = 0; i < rankings.size(); i++) {
@@ -348,7 +348,7 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
          }
       }
 
-      graphics.m_280618_();
+      graphics.disableScissor();
       this.renderScrollbar(graphics);
    }
 
@@ -360,30 +360,30 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
          this.renderBgTexture(TEXTURE_CARD, x, y, 430, 60, graphics);
       }
 
-      graphics.m_280509_(x + 6, y + 6, x + 6 + 48, y + 6 + 48, -12566464);
-      if (((ArenaReceptionistMenu)this.f_97732_).getMode() == 1 && this.challengerUuid != null && this.challengerUuid.equals(entry.getFighterId())) {
+      graphics.fill(x + 6, y + 6, x + 6 + 48, y + 6 + 48, -12566464);
+      if (((ArenaReceptionistMenu)this.menu).getMode() == 1 && this.challengerUuid != null && this.challengerUuid.equals(entry.getFighterId())) {
          this.renderBadge("C", x + 12, y + 12, -65536, graphics);
       }
 
-      graphics.m_280137_(this.f_96547_, "#" + (rank + 1), x + 30, y + 24, 16777215);
+      graphics.drawCenteredString(this.font, "#" + (rank + 1), x + 30, y + 24, 16777215);
       String text = entry.isOnline() ? "ONLINE" : "OFFLINE";
       int color = entry.isOnline() ? -11141291 : -11184811;
-      graphics.m_280137_(this.f_96547_, text, x + 30, y + 40, color);
-      graphics.m_280056_(this.f_96547_, entry.getDisplayName() + (entry.getType() == 0 ? "" : " (NPC)"), x + 62, y + 6, 16777215, false);
-      graphics.m_280056_(this.f_96547_, "Rating : " + entry.getRating(), x + 62, y + 18, 12632256, false);
-      graphics.m_280056_(this.f_96547_, "Win " + entry.getWins() + " / Lose " + entry.getLosses(), x + 62, y + 30, 12632256, false);
+      graphics.drawCenteredString(this.font, text, x + 30, y + 40, color);
+      graphics.drawString(this.font, entry.getDisplayName() + (entry.getType() == 0 ? "" : " (NPC)"), x + 62, y + 6, 16777215, false);
+      graphics.drawString(this.font, "Rating : " + entry.getRating(), x + 62, y + 18, 12632256, false);
+      graphics.drawString(this.font, "Win " + entry.getWins() + " / Lose " + entry.getLosses(), x + 62, y + 30, 12632256, false);
       ArenaRank curRank = ArenaRank.getRank(entry.getRating());
-      graphics.m_280056_(this.f_96547_, "Rank : " + curRank.getName(), x + 62, y + 45, curRank.getColor(), false);
-      graphics.m_280056_(this.f_96547_, "Mech : " + entry.getMechName(), x + 240, y + 6, 8454143, false);
-      String comment = this.f_96547_.m_92834_(entry.getComment(), 170);
-      graphics.m_280056_(this.f_96547_, comment, x + 240, y + 20, 12632256, false);
+      graphics.drawString(this.font, "Rank : " + curRank.getName(), x + 62, y + 45, curRank.getColor(), false);
+      graphics.drawString(this.font, "Mech : " + entry.getMechName(), x + 240, y + 6, 8454143, false);
+      String comment = this.font.plainSubstrByWidth(entry.getComment(), 170);
+      graphics.drawString(this.font, comment, x + 240, y + 20, 12632256, false);
    }
 
    private void renderBadge(String text, int x, int y, int bgcolor, GuiGraphics graphics) {
       int badgeX = x - 2;
       int badgeY = y - 2;
-      graphics.m_280509_(badgeX, badgeY, badgeX + this.f_96547_.m_92895_(text), badgeY + 10, bgcolor);
-      graphics.m_280137_(Minecraft.m_91087_().f_91062_, text, badgeX + this.f_96547_.m_92895_(text) / 2, badgeY + 1, -1);
+      graphics.fill(badgeX, badgeY, badgeX + this.font.width(text), badgeY + 10, bgcolor);
+      graphics.drawCenteredString(Minecraft.getInstance().font, text, badgeX + this.font.width(text) / 2, badgeY + 1, -1);
    }
 
    private void renderScrollbar(GuiGraphics graphics) {
@@ -401,20 +401,20 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
       }
    }
 
-   public boolean m_6050_(double mouseX, double mouseY, double delta) {
+   public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
       this.scrollOffset -= (int)(delta * 12.0);
-      this.scrollOffset = Mth.m_14045_(this.scrollOffset, 0, this.maxScroll);
+      this.scrollOffset = Mth.clamp(this.scrollOffset, 0, this.maxScroll);
       return true;
    }
 
-   public boolean m_6375_(double mouseX, double mouseY, int button) {
-      boolean result = super.m_6375_(mouseX, mouseY, button);
-      if (!this.nameField.m_5953_(mouseX, mouseY)) {
-         this.nameField.m_93692_(false);
+   public boolean mouseClicked(double mouseX, double mouseY, int button) {
+      boolean result = super.mouseClicked(mouseX, mouseY, button);
+      if (!this.nameField.isMouseOver(mouseX, mouseY)) {
+         this.nameField.setFocused(false);
       }
 
-      if (!this.commentField.m_5953_(mouseX, mouseY)) {
-         this.commentField.m_93692_(false);
+      if (!this.commentField.isMouseOver(mouseX, mouseY)) {
+         this.commentField.setFocused(false);
       }
 
       if (this.currentTab == ArenaReceptionistScreen.ArenaTab.RANKED) {
@@ -424,15 +424,15 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
 
          int cardY = this.rankingOffsetY + 4 - this.scrollOffset;
 
-         for (ArenaRankingEntry entry : ((ArenaReceptionistMenu)this.f_97732_).getRankings()) {
+         for (ArenaRankingEntry entry : ((ArenaReceptionistMenu)this.menu).getRankings()) {
             int cardX = this.rankingOffsetX + 4;
             if (mouseX >= cardX && mouseX <= cardX + 430 && mouseY >= cardY && mouseY <= cardY + 60) {
                if (entry.isOnline()
                   && (
-                     this.f_96541_ == null
-                        || this.f_96541_.f_91074_ == null
+                     this.minecraft == null
+                        || this.minecraft.player == null
                         || entry.getFighterId() == null
-                        || !this.f_96541_.f_91074_.m_20148_().equals(entry.getFighterId())
+                        || !this.minecraft.player.getUUID().equals(entry.getFighterId())
                   )) {
                   this.selectedFighterId = entry.getFighterId();
                   this.selectedEntry = entry;
@@ -447,38 +447,38 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
       return result;
    }
 
-   public boolean m_7933_(int keyCode, int scanCode, int modifiers) {
-      if (this.nameField.m_93696_()) {
+   public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+      if (this.nameField.isFocused()) {
          if (keyCode == 256) {
-            this.nameField.m_93692_(false);
+            this.nameField.setFocused(false);
             return true;
          }
 
-         if (this.nameField.m_7933_(keyCode, scanCode, modifiers)) {
+         if (this.nameField.keyPressed(keyCode, scanCode, modifiers)) {
             return true;
          }
 
-         if (this.f_96541_.f_91066_.f_92092_.m_90832_(keyCode, scanCode)) {
+         if (this.minecraft.options.keyInventory.matches(keyCode, scanCode)) {
             return true;
          }
       }
 
-      if (this.commentField.m_93696_()) {
+      if (this.commentField.isFocused()) {
          if (keyCode == 256) {
-            this.commentField.m_93692_(false);
+            this.commentField.setFocused(false);
             return true;
          }
 
-         if (this.commentField.m_7933_(keyCode, scanCode, modifiers)) {
+         if (this.commentField.keyPressed(keyCode, scanCode, modifiers)) {
             return true;
          }
 
-         if (this.f_96541_.f_91066_.f_92092_.m_90832_(keyCode, scanCode)) {
+         if (this.minecraft.options.keyInventory.matches(keyCode, scanCode)) {
             return true;
          }
       }
 
-      return super.m_7933_(keyCode, scanCode, modifiers);
+      return super.keyPressed(keyCode, scanCode, modifiers);
    }
 
    private boolean isAcceptEnable() {
@@ -497,8 +497,8 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
    }
 
    private ItemStack getDataPad() {
-      ItemStack p = ((ArenaReceptionistMenu)this.f_97732_).getDataPadStack();
-      return p.m_41720_() instanceof PomkotsDatapadItem ? p : null;
+      ItemStack p = ((ArenaReceptionistMenu)this.menu).getDataPadStack();
+      return p.getItem() instanceof PomkotsDatapadItem ? p : null;
    }
 
    private ImageButton buildButton(String text, int x, int y, OnPress onPress) {
@@ -506,15 +506,15 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
    }
 
    private ImageButton buildButton(String text, int x, int y, OnPress onPress, boolean active) {
-      ImageButton b = new ImageButton(x, y, 70, 14, TEXTURE_BUTTON, 0, 0, 70, 56, Component.m_237113_(text), onPress);
-      b.f_93623_ = active;
+      ImageButton b = new ImageButton(x, y, 70, 14, TEXTURE_BUTTON, 0, 0, 70, 56, Component.literal(text), onPress);
+      b.active = active;
       return b;
    }
 
-   protected void m_7286_(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+   protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
    }
 
-   protected void m_280003_(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+   protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
    }
 
    private void renderBgTexture(ResourceLocation texture, int x, int y, int width, int height, GuiGraphics guiGraphics) {
@@ -525,7 +525,7 @@ public class ArenaReceptionistScreen extends AbstractContainerScreen<ArenaRecept
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
       RenderSystem.enableBlend();
       RenderSystem.setShaderTexture(0, texture);
-      guiGraphics.m_280163_(texture, x, y, 0.0F, 0.0F, width, height, width, height);
+      guiGraphics.blit(texture, x, y, 0.0F, 0.0F, width, height, width, height);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 

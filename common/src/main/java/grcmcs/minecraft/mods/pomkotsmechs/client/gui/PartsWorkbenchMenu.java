@@ -36,25 +36,25 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
    }
 
    private void setupSlotsForCurrentTab(Inventory playerInv) {
-      this.m_38897_(new PartsWorkbenchMenu.ConditionalSlot(this.container, 0, 10, 142, () -> this.currentTab == PartsWorkbenchMenu.Tab.CRAFT) {
-         public boolean m_5857_(ItemStack stack) {
+      this.addSlot(new PartsWorkbenchMenu.ConditionalSlot(this.container, 0, 10, 142, () -> this.currentTab == PartsWorkbenchMenu.Tab.CRAFT) {
+         public boolean mayPlace(ItemStack stack) {
             return false;
          }
       });
-      this.m_38897_(new PartsWorkbenchMenu.ConditionalSlot(this.container, 1, 10, 142, () -> this.currentTab == PartsWorkbenchMenu.Tab.UPGRADE));
+      this.addSlot(new PartsWorkbenchMenu.ConditionalSlot(this.container, 1, 10, 142, () -> this.currentTab == PartsWorkbenchMenu.Tab.UPGRADE));
       int offsetX = 284;
       int offsetY = 45;
 
       for (int row = 0; row < 6; row++) {
          for (int col = 0; col < 6; col++) {
-            this.m_38897_(new PartsWorkbenchMenu.ConditionalSlot(playerInv, col + row * 6, offsetX + col * 18, offsetY + row * 18, () -> true));
+            this.addSlot(new PartsWorkbenchMenu.ConditionalSlot(playerInv, col + row * 6, offsetX + col * 18, offsetY + row * 18, () -> true));
          }
       }
    }
 
    public void craftItem(Item target, ServerPlayer player) {
-      if (target instanceof BasePartsItem parts && this.m_38853_(0).m_7993_().m_41619_()) {
-         if (!this.m_38853_(0).m_7993_().m_41619_()) {
+      if (target instanceof BasePartsItem parts && this.getSlot(0).getItem().isEmpty()) {
+         if (!this.getSlot(0).getItem().isEmpty()) {
             this.sendMessage(player, "{text.pomkotsmechs.messages.partsworkbench.01}");
             return;
          }
@@ -65,11 +65,11 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
             return;
          }
 
-         if (isCraftable(player.m_150109_(), partsData.recipes.get(0))) {
+         if (isCraftable(player.getInventory(), partsData.recipes.get(0))) {
             ItemStack crafted = new ItemStack(parts);
             parts.setLevel(crafted, 1);
-            consumeMaterials(player.m_150109_(), partsData.recipes.get(0));
-            this.m_38853_(0).m_5852_(crafted);
+            consumeMaterials(player.getInventory(), partsData.recipes.get(0));
+            this.getSlot(0).set(crafted);
          } else {
             this.sendMessage(player, "{text.pomkotsmechs.messages.partsworkbench.03}");
          }
@@ -77,7 +77,7 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
    }
 
    public void sendMessage(ServerPlayer player, String msg) {
-      player.m_213846_(Utils.string2Component(msg));
+      player.sendSystemMessage(Utils.string2Component(msg));
    }
 
    public void setTab(PartsWorkbenchMenu.Tab tab) {
@@ -91,10 +91,10 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
    }
 
    public void upgradeParts(ServerPlayer player) {
-      ItemStack inputItemStack = this.m_38853_(1).m_7993_();
-      if (inputItemStack.m_41619_()) {
+      ItemStack inputItemStack = this.getSlot(1).getItem();
+      if (inputItemStack.isEmpty()) {
          this.sendMessage(player, "{text.pomkotsmechs.messages.partsworkbench.04}");
-      } else if (inputItemStack.m_41720_() instanceof BasePartsItem parts) {
+      } else if (inputItemStack.getItem() instanceof BasePartsItem parts) {
          PomkotsDataPack.PartsData partsData = getPartsData(parts);
          int curLevel = parts.getLevel(inputItemStack);
          if (partsData == null) {
@@ -113,12 +113,12 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
          }
 
          List<PomkotsDataPack.SerializablePair<String, Integer>> recipe = partsData.recipes.get(curLevel);
-         if (isCraftable(player.m_150109_(), recipe)) {
-            ItemStack newItemStack = inputItemStack.m_41777_();
+         if (isCraftable(player.getInventory(), recipe)) {
+            ItemStack newItemStack = inputItemStack.copy();
             parts.setLevel(newItemStack, curLevel + 1);
-            consumeMaterials(player.m_150109_(), recipe);
-            this.m_38853_(1).m_7993_().m_41774_(1);
-            this.m_38853_(1).m_5852_(newItemStack);
+            consumeMaterials(player.getInventory(), recipe);
+            this.getSlot(1).getItem().shrink(1);
+            this.getSlot(1).set(newItemStack);
          } else {
             this.sendMessage(player, "{text.pomkotsmechs.messages.partsworkbench.03}");
          }
@@ -127,11 +127,11 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
       }
    }
 
-   public ItemStack m_7648_(Player player, int i) {
-      return ItemStack.f_41583_;
+   public ItemStack quickMoveStack(Player player, int i) {
+      return ItemStack.EMPTY;
    }
 
-   public boolean m_6875_(Player player) {
+   public boolean stillValid(Player player) {
       return true;
    }
 
@@ -160,12 +160,12 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
    public static boolean isCraftable(Inventory inv, List<PomkotsDataPack.SerializablePair<String, Integer>> recipe) {
       for (PomkotsDataPack.SerializablePair<String, Integer> entry : recipe) {
          ResourceLocation id = new ResourceLocation(entry.getFirst());
-         Item requiredItem = (Item)BuiltInRegistries.f_257033_.m_7745_(id);
-         if (requiredItem == Items.f_41852_) {
+         Item requiredItem = (Item)BuiltInRegistries.ITEM.get(id);
+         if (requiredItem == Items.AIR) {
             return false;
          }
 
-         if (inv.m_18947_(requiredItem) < entry.getSecond()) {
+         if (inv.countItem(requiredItem) < entry.getSecond()) {
             return false;
          }
       }
@@ -176,18 +176,18 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
    public static boolean consumeMaterials(Inventory inv, List<PomkotsDataPack.SerializablePair<String, Integer>> recipe) {
       for (PomkotsDataPack.SerializablePair<String, Integer> entry : recipe) {
          ResourceLocation id = new ResourceLocation(entry.getFirst());
-         Item requiredItem = (Item)BuiltInRegistries.f_257033_.m_7745_(id);
-         if (requiredItem == Items.f_41852_) {
+         Item requiredItem = (Item)BuiltInRegistries.ITEM.get(id);
+         if (requiredItem == Items.AIR) {
             return false;
          }
 
          int remaining = entry.getSecond();
 
-         for (int i = 0; i < inv.m_6643_() && remaining > 0; i++) {
-            ItemStack stack = inv.m_8020_(i);
-            if (stack.m_150930_(requiredItem)) {
-               int take = Math.min(stack.m_41613_(), remaining);
-               stack.m_41774_(take);
+         for (int i = 0; i < inv.getContainerSize() && remaining > 0; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (stack.is(requiredItem)) {
+               int take = Math.min(stack.getCount(), remaining);
+               stack.shrink(take);
                remaining -= take;
             }
          }
@@ -204,11 +204,11 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
          this.activeCondition = condition;
       }
 
-      public boolean m_8010_(Player player) {
-         return this.activeCondition.get() && super.m_8010_(player);
+      public boolean mayPickup(Player player) {
+         return this.activeCondition.get() && super.mayPickup(player);
       }
 
-      public boolean m_6659_() {
+      public boolean isActive() {
          return this.activeCondition.get();
       }
    }

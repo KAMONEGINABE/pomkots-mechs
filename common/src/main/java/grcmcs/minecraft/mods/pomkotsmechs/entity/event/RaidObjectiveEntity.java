@@ -16,12 +16,12 @@ public class RaidObjectiveEntity extends LivingEntity {
    protected final BaseBossEntity parentEntity;
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_()
-         .m_22266_(Attributes.f_22282_)
-         .m_22268_(Attributes.f_22278_, 1.0)
-         .m_22268_(Attributes.f_22276_, 500.0)
-         .m_22268_(Attributes.f_22284_, 20.0)
-         .m_22268_(Attributes.f_22285_, 1.0);
+      return LivingEntity.createLivingAttributes()
+         .add(Attributes.ATTACK_KNOCKBACK)
+         .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
+         .add(Attributes.MAX_HEALTH, 500.0)
+         .add(Attributes.ARMOR, 20.0)
+         .add(Attributes.ARMOR_TOUGHNESS, 1.0);
    }
 
    public RaidObjectiveEntity(EntityType<? extends LivingEntity> entityType, Level world) {
@@ -31,38 +31,38 @@ public class RaidObjectiveEntity extends LivingEntity {
    public RaidObjectiveEntity(EntityType<? extends LivingEntity> entityType, Level world, BaseBossEntity parent) {
       super(entityType, world);
       this.parentEntity = parent;
-      this.f_19794_ = true;
-      this.m_20242_(true);
+      this.noPhysics = true;
+      this.setNoGravity(true);
    }
 
-   public void m_8119_() {
-      super.m_8119_();
+   public void tick() {
+      super.tick();
    }
 
-   public boolean m_6469_(DamageSource source, float amount) {
-      return super.m_6469_(source, amount / 5.0F);
+   public boolean hurt(DamageSource source, float amount) {
+      return super.hurt(source, amount / 5.0F);
    }
 
-   public boolean m_6051_() {
+   public boolean displayFireAnimation() {
       return false;
    }
 
-   public Iterable<ItemStack> m_6168_() {
-      return NonNullList.m_122780_(4, ItemStack.f_41583_);
+   public Iterable<ItemStack> getArmorSlots() {
+      return NonNullList.withSize(4, ItemStack.EMPTY);
    }
 
-   public ItemStack m_6844_(EquipmentSlot equipmentSlot) {
-      return ItemStack.f_41583_;
+   public ItemStack getItemBySlot(EquipmentSlot equipmentSlot) {
+      return ItemStack.EMPTY;
    }
 
-   public void m_8061_(EquipmentSlot equipmentSlot, ItemStack itemStack) {
+   public void setItemSlot(EquipmentSlot equipmentSlot, ItemStack itemStack) {
    }
 
-   public boolean m_6128_() {
+   public boolean ignoreExplosion() {
       return true;
    }
 
-   public HumanoidArm m_5737_() {
+   public HumanoidArm getMainArm() {
       return null;
    }
 }

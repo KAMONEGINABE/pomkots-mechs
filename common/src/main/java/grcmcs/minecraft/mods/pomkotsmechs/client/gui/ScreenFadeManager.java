@@ -11,7 +11,7 @@ public class ScreenFadeManager {
 
    public static void start(int fadeIn, int hold, int fadeOut) {
       active = true;
-      startTime = Minecraft.m_91087_().f_91073_.m_46467_();
+      startTime = Minecraft.getInstance().level.getGameTime();
       fadeInTicks = fadeIn;
       holdTicks = hold;
       fadeOutTicks = fadeOut;
@@ -26,8 +26,8 @@ public class ScreenFadeManager {
          return 0.0F;
       }
 
-      Minecraft mc = Minecraft.m_91087_();
-      long elapsed = mc.f_91073_.m_46467_() - startTime;
+      Minecraft mc = Minecraft.getInstance();
+      long elapsed = mc.level.getGameTime() - startTime;
       if (elapsed < fadeInTicks) {
          return (float)elapsed / fadeInTicks;
       }

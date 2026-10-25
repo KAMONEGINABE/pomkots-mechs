@@ -8,25 +8,25 @@ import net.minecraft.world.entity.ai.goal.Goal.Flag;
 public class SimpleMobAttackGoal extends SmallMobGoalBase {
    public SimpleMobAttackGoal(BaseSmallMonsterEntity mob, float speedModifier) {
       super(mob, speedModifier);
-      this.m_7021_(EnumSet.of(Flag.MOVE, Flag.LOOK));
+      this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
    }
 
    @Override
-   public boolean m_8036_() {
-      if (!super.m_8036_()) {
+   public boolean canUse() {
+      if (!super.canUse()) {
          return false;
       }
 
-      LivingEntity target = this.mob.m_5448_();
-      return target != null && target.m_6084_() && this.mob.m_217043_().m_188501_() < 0.7F;
+      LivingEntity target = this.mob.getTarget();
+      return target != null && target.isAlive() && this.mob.getRandom().nextFloat() < 0.7F;
    }
 
-   public boolean m_8045_() {
-      return this.mob.m_217043_().m_188501_() < 0.7F;
+   public boolean canContinueToUse() {
+      return this.mob.getRandom().nextFloat() < 0.7F;
    }
 
-   public void m_8037_() {
-      LivingEntity target = this.mob.m_5448_();
+   public void tick() {
+      LivingEntity target = this.mob.getTarget();
       if (target != null) {
          this.mob.tryAttack();
       }

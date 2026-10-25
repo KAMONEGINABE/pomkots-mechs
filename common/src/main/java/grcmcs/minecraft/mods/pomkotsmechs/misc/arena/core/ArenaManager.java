@@ -39,10 +39,10 @@ public final class ArenaManager {
       if (arena == null) {
          arena = data.getOrCreateArena(arenaId);
          arena.setControllerPos(controllerPos);
-         data.m_77762_();
+         data.setDirty();
       } else if (arena.getControllerPos() == null) {
          arena.setControllerPos(controllerPos);
-         data.m_77762_();
+         data.setDirty();
       }
    }
 
@@ -57,11 +57,11 @@ public final class ArenaManager {
          }
       }
 
-      data.m_77762_();
+      data.setDirty();
    }
 
    public static void tick(MinecraftServer server) {
-      if (server.m_129921_() % 20 == 0) {
+      if (server.getTickCount() % 20 == 0) {
          ArenaSavedData data = ArenaSavedData.get(server);
 
          for (ArenaInstance arena : data.getArenas().values()) {
@@ -71,48 +71,48 @@ public final class ArenaManager {
    }
 
    public static ArenaMatchData startRankMatch(ServerPlayer player, boolean isFreeMatch, String arenaId, UUID opponentId) {
-      ArenaSavedData data = ArenaSavedData.get(player.f_8924_);
+      ArenaSavedData data = ArenaSavedData.get(player.server);
       ArenaInstance arena = data.getArena(arenaId);
       if (arena == null) {
-         player.m_213846_(Component.m_237113_("Arena Instance not found."));
+         player.sendSystemMessage(Component.literal("Arena Instance not found."));
          return null;
       }
 
       if (arena.getControllerPos() == null) {
-         player.m_213846_(Component.m_237113_("Arena Controller Block not found"));
+         player.sendSystemMessage(Component.literal("Arena Controller Block not found"));
          return null;
       }
 
       GlobalPos cPos = arena.getControllerPos();
-      ResourceKey<Level> dim = cPos.m_122640_();
-      ServerLevel level = player.f_8924_.m_129880_(dim);
-      if (level.m_7702_(cPos.m_122646_()) instanceof ArenaControllerBlockEntity controllerBlockEntity) {
+      ResourceKey<Level> dim = cPos.dimension();
+      ServerLevel level = player.server.getLevel(dim);
+      if (level.getBlockEntity(cPos.pos()) instanceof ArenaControllerBlockEntity controllerBlockEntity) {
          ArenaLayout arenaLocation = controllerBlockEntity.scanLayout();
          if (arenaLocation.getBattleAnchor() == null) {
-            player.m_213846_(Component.m_237113_("Arena Battle Filed Anchor Block not found"));
+            player.sendSystemMessage(Component.literal("Arena Battle Filed Anchor Block not found"));
             return null;
          } else if (arenaLocation.getGates() == null || arenaLocation.getGates().size() < 2) {
-            player.m_213846_(Component.m_237113_("Arena Gate Block not found"));
+            player.sendSystemMessage(Component.literal("Arena Gate Block not found"));
             return null;
          } else if (arenaLocation.getTeleportPos() == null) {
-            player.m_213846_(Component.m_237113_("Arena Teleport Block not found"));
+            player.sendSystemMessage(Component.literal("Arena Teleport Block not found"));
             return null;
          } else {
-            UUID challengerId = player.m_20148_();
+            UUID challengerId = player.getUUID();
             ArenaFighterData challenger = arena.getFighters().get(challengerId);
             if (challenger == null) {
-               player.m_213846_(Component.m_237113_("Arena profile not found."));
+               player.sendSystemMessage(Component.literal("Arena profile not found."));
                return null;
             } else {
                ArenaFighterData opponent = arena.getFighters().get(opponentId);
                if (opponent == null) {
-                  player.m_213846_(Component.m_237113_("Opponent not found."));
+                  player.sendSystemMessage(Component.literal("Opponent not found."));
                   return null;
                } else if (arena.getActiveMatch() != null) {
-                  player.m_213846_(Component.m_237113_("Arena is currently in use."));
+                  player.sendSystemMessage(Component.literal("Arena is currently in use."));
                   return null;
-               } else if (opponent.getType() == ArenaFighterData.FighterType.PLAYER && player.f_8924_.m_6846_().m_11259_(opponent.getFighterId()) == null) {
-                  player.m_213846_(Component.m_237113_("Target fighter is off-line: " + opponent.getDisplayName()));
+               } else if (opponent.getType() == ArenaFighterData.FighterType.PLAYER && player.server.getPlayerList().getPlayer(opponent.getFighterId()) == null) {
+                  player.sendSystemMessage(Component.literal("Target fighter is off-line: " + opponent.getDisplayName()));
                   return null;
                } else {
                   ArenaMatchData match = new ArenaMatchData();
@@ -127,20 +127,20 @@ public final class ArenaManager {
                   match.setGatePosA(arenaLocation.getGates().get(0));
                   match.setGatePosB(arenaLocation.getGates().get(1));
                   match.setTeleportPointPos(arenaLocation.getTeleportPos());
-                  startMatch(player.f_8924_, (ServerLevel)player.m_9236_(), arena, match);
+                  startMatch(player.server, (ServerLevel)player.level(), arena, match);
                   return match;
                }
             }
          }
       } else {
-         player.m_213846_(Component.m_237113_("Arena Controller Block not found at" + arena.getControllerPos().m_122646_()));
+         player.sendSystemMessage(Component.literal("Arena Controller Block not found at" + arena.getControllerPos().pos()));
          return null;
       }
    }
 
    private static void startMatch(MinecraftServer server, ServerLevel level, ArenaInstance arena, ArenaMatchData match) {
       arena.setActiveMatch(match);
-      ArenaSavedData.get(server).m_77762_();
+      ArenaSavedData.get(server).setDirty();
       ArenaMatchContext context = ArenaMatchProcessor.createContext(server, level, arena, match);
       ArenaStateProcessors.get(match.getState()).onEnter(context);
       PomkotsMechs.LOGGER.info("[Arena] Match created {} vs {} ({})", new Object[]{match.getChallengerId(), match.getOpponentId(), match.getMatchId()});
@@ -155,7 +155,7 @@ public final class ArenaManager {
       ArenaInstance arena = data.getOrCreateArena(arenaId);
       if (arena != null) {
          arena.addFighter(fighter);
-         data.m_77762_();
+         data.setDirty();
          broadcastRankingUpdate(server, arenaId);
       }
    }
@@ -165,7 +165,7 @@ public final class ArenaManager {
       ArenaInstance arena = data.getOrCreateArena(arenaId);
       if (arena != null) {
          arena.removeFighter(fighterId);
-         data.m_77762_();
+         data.setDirty();
          broadcastRankingUpdate(server, arenaId);
       }
    }
@@ -198,7 +198,7 @@ public final class ArenaManager {
             ent.setType(0);
             ServerPlayer player = null;
             if (fighter.getFighterId() != null) {
-               player = server.m_6846_().m_11259_(fighter.getFighterId());
+               player = server.getPlayerList().getPlayer(fighter.getFighterId());
             }
 
             ent.setOnline(player != null);
@@ -222,10 +222,10 @@ public final class ArenaManager {
    public static void broadcastRankingUpdate(MinecraftServer server, String arenaId) {
       List<ArenaRankingEntry> ranking = buildRanking(server, arenaId);
 
-      for (ServerPlayer player : server.m_6846_().m_11314_()) {
-         if (player.f_36096_ instanceof ArenaReceptionistMenu) {
+      for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+         if (player.containerMenu instanceof ArenaReceptionistMenu) {
             FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-            ArenaMenuData.write(buf, new ArenaMenuData.Entry(arenaId, 0, ItemStack.f_41583_, ranking));
+            ArenaMenuData.write(buf, new ArenaMenuData.Entry(arenaId, 0, ItemStack.EMPTY, ranking));
             NetworkManager.sendToPlayer(player, PomkotsMechs.id("arr"), buf);
          }
       }
@@ -249,7 +249,7 @@ public final class ArenaManager {
 
    public static void update(MinecraftServer server, String arenaId) {
       ArenaSavedData data = ArenaSavedData.get(server);
-      data.m_77762_();
+      data.setDirty();
       broadcastRankingUpdate(server, arenaId);
    }
 }

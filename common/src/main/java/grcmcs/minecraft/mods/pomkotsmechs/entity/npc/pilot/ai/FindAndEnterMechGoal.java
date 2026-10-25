@@ -19,11 +19,11 @@ public class FindAndEnterMechGoal extends Goal {
 
    public FindAndEnterMechGoal(MechPilotEntity pilot) {
       this.pilot = pilot;
-      this.m_7021_(EnumSet.of(Flag.MOVE, Flag.LOOK));
+      this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
    }
 
-   public boolean m_8036_() {
-      if (this.pilot.m_20159_()) {
+   public boolean canUse() {
+      if (this.pilot.isPassenger()) {
          return false;
       } else if (this.searchCooldown > 0) {
          this.searchCooldown--;
@@ -35,48 +35,48 @@ public class FindAndEnterMechGoal extends Goal {
       }
    }
 
-   public boolean m_8045_() {
-      if (this.pilot.m_20159_()) {
+   public boolean canContinueToUse() {
+      if (this.pilot.isPassenger()) {
          return false;
       } else if (this.targetMech == null) {
          return false;
       } else {
-         return !this.isRidableMech(this.targetMech) ? false : this.targetMech.m_20197_().isEmpty();
+         return !this.isRidableMech(this.targetMech) ? false : this.targetMech.getPassengers().isEmpty();
       }
    }
 
-   public void m_8056_() {
-      this.pilot.m_21573_().m_5624_(this.targetMech, 0.7);
+   public void start() {
+      this.pilot.getNavigation().moveTo(this.targetMech, 0.7);
    }
 
-   public void m_8037_() {
+   public void tick() {
       if (this.targetMech != null) {
-         this.pilot.m_21563_().m_24960_(this.targetMech, 30.0F, 30.0F);
-         double distanceSq = this.pilot.m_20280_(this.targetMech);
+         this.pilot.getLookControl().setLookAt(this.targetMech, 30.0F, 30.0F);
+         double distanceSq = this.pilot.distanceToSqr(this.targetMech);
          if (distanceSq <= 4.0) {
-            this.pilot.m_7998_(this.targetMech, true);
+            this.pilot.startRiding(this.targetMech, true);
          } else {
-            if (this.pilot.m_21573_().m_26571_()) {
-               this.pilot.m_21573_().m_5624_(this.targetMech, 0.7);
+            if (this.pilot.getNavigation().isDone()) {
+               this.pilot.getNavigation().moveTo(this.targetMech, 0.7);
             }
          }
       }
    }
 
-   public void m_8041_() {
-      this.pilot.m_21573_().m_26573_();
+   public void stop() {
+      this.pilot.getNavigation().stop();
       this.targetMech = null;
    }
 
    private Pmvc01Entity findNearestFreeMech() {
-      AABB box = this.pilot.m_20191_().m_82400_(32.0);
-      List<Pmvc01Entity> mechs = this.pilot.m_9236_().m_45976_(Pmvc01Entity.class, box);
+      AABB box = this.pilot.getBoundingBox().inflate(32.0);
+      List<Pmvc01Entity> mechs = this.pilot.level().getEntitiesOfClass(Pmvc01Entity.class, box);
       Pmvc01Entity nearest = null;
       double nearestDistance = Double.MAX_VALUE;
 
       for (Pmvc01Entity mech : mechs) {
-         if (this.isRidableMech(mech) && mech.m_20197_().isEmpty()) {
-            double distance = this.pilot.m_20280_(mech);
+         if (this.isRidableMech(mech) && mech.getPassengers().isEmpty()) {
+            double distance = this.pilot.distanceToSqr(mech);
             if (distance < nearestDistance) {
                nearestDistance = distance;
                nearest = mech;
@@ -88,6 +88,6 @@ public class FindAndEnterMechGoal extends Goal {
    }
 
    private boolean isRidableMech(Pmvc01Entity mech) {
-      return mech != null && mech.m_6084_() && !mech.isBroken();
+      return mech != null && mech.isAlive() && !mech.isBroken();
    }
 }

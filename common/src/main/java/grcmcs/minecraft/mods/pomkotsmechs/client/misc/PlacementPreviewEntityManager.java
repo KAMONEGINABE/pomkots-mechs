@@ -14,25 +14,25 @@ public class PlacementPreviewEntityManager {
    public static void enable(Level level) {
       if (preview == null) {
          preview = new PlacementPreviewEntity((EntityType<?>)PomkotsMechs.PLACEMENT_PREVIEW.get(), level);
-         preview.m_146884_(Minecraft.m_91087_().f_91075_.m_20182_());
-         level.m_7967_(preview);
+         preview.setPos(Minecraft.getInstance().cameraEntity.position());
+         level.addFreshEntity(preview);
       }
    }
 
    public static void disable() {
       if (preview != null) {
-         preview.m_146870_();
+         preview.discard();
          preview = null;
       }
    }
 
    public static void tick(Minecraft mc) {
-      if (preview != null && mc.f_91074_ != null) {
-         if (mc.f_91074_.m_19907_(30.0, 0.0F, true) instanceof BlockHitResult bhr) {
-            Vec3 pos = bhr.m_82425_().m_252807_();
-            preview.m_6034_(pos.f_82479_, pos.f_82480_, pos.f_82481_);
-            preview.m_146922_(mc.f_91074_.m_146908_());
-            preview.f_19859_ = preview.m_146908_();
+      if (preview != null && mc.player != null) {
+         if (mc.player.pick(30.0, 0.0F, true) instanceof BlockHitResult bhr) {
+            Vec3 pos = bhr.getBlockPos().getCenter();
+            preview.setPos(pos.x, pos.y, pos.z);
+            preview.setYRot(mc.player.getYRot());
+            preview.yRotO = preview.getYRot();
          }
       }
    }

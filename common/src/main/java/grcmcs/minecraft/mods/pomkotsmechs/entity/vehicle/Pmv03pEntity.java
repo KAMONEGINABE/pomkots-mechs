@@ -44,8 +44,8 @@ public class Pmv03pEntity extends PomkotsVehicleBase {
    protected static final int ACT_PLACE = 8;
    protected static final int ACT_LIFT_BLOCK = 9;
    protected static final int ACT_THROW = 10;
-   private Vec3 seatPos1 = Vec3.f_82478_;
-   private Vec3 seatPos2 = Vec3.f_82478_;
+   private Vec3 seatPos1 = Vec3.ZERO;
+   private Vec3 seatPos2 = Vec3.ZERO;
 
    @Override
    protected String getMechName() {
@@ -76,43 +76,43 @@ public class Pmv03pEntity extends PomkotsVehicleBase {
    }
 
    @Override
-   public void m_8119_() {
+   public void tick() {
       if (this.isMainMode()) {
-         super.m_8119_();
-         if (this.m_20160_()) {
-            this.m_20242_(true);
+         super.tick();
+         if (this.isVehicle()) {
+            this.setNoGravity(true);
             this.moveForward();
          } else {
-            this.m_20242_(false);
+            this.setNoGravity(false);
          }
 
-         if (this.m_20069_()) {
+         if (this.isInWater()) {
             this.applyBuoyancy();
          }
       } else {
-         super.m_8119_();
+         super.tick();
       }
    }
 
    private void applyBuoyancy() {
-      double waterSurfaceY = this.m_204036_(FluidTags.f_13131_);
+      double waterSurfaceY = this.getFluidHeight(FluidTags.WATER);
       double targetY = waterSurfaceY + 0.5;
-      double currentY = this.m_20186_();
+      double currentY = this.getY();
       double deltaY = targetY - currentY;
-      Vec3 motion = this.m_20184_();
-      this.m_20334_(motion.f_82479_, Mth.m_14008_(deltaY * 0.1, 0.0, 0.1), motion.f_82481_);
-      this.m_20256_(this.m_20184_().m_82490_(0.9));
+      Vec3 motion = this.getDeltaMovement();
+      this.setDeltaMovement(motion.x, Mth.clamp(deltaY * 0.1, 0.0, 0.1), motion.z);
+      this.setDeltaMovement(this.getDeltaMovement().scale(0.9));
    }
 
    private void moveForward() {
-      double xRotRadians = Math.toRadians(this.m_146909_());
-      double yRotRadians = Math.toRadians(this.m_146908_());
-      double speed = this.m_6113_();
+      double xRotRadians = Math.toRadians(this.getXRot());
+      double yRotRadians = Math.toRadians(this.getYRot());
+      double speed = this.getSpeed();
       double vx = -speed * Math.cos(xRotRadians) * Math.sin(yRotRadians);
       double vy = -speed * Math.sin(xRotRadians);
       double vz = speed * Math.cos(xRotRadians) * Math.cos(yRotRadians);
-      this.m_20334_(vx, vy, vz);
-      this.m_6478_(MoverType.SELF, this.m_20184_());
+      this.setDeltaMovement(vx, vy, vz);
+      this.move(MoverType.SELF, this.getDeltaMovement());
    }
 
    @Override
@@ -121,37 +121,37 @@ public class Pmv03pEntity extends PomkotsVehicleBase {
          this.getUserIntentionForDirectionFromKey(driverInput);
          this.applyPlayerInputWeapons(driverInput);
          if (driverInput.isWeaponRightShoulderPressed()) {
-            this.m_7910_(this.m_6113_() - 0.01F);
+            this.setSpeed(this.getSpeed() - 0.01F);
          }
 
          if (driverInput.isWeaponLeftShoulderPressed()) {
-            this.m_7910_(this.m_6113_() + 0.01F);
+            this.setSpeed(this.getSpeed() + 0.01F);
          }
 
-         if (this.m_6113_() <= 0.0F) {
-            this.m_7910_(0.1F);
-         } else if (this.m_6113_() > 2.0F) {
-            this.m_7910_(2.0F);
+         if (this.getSpeed() <= 0.0F) {
+            this.setSpeed(0.1F);
+         } else if (this.getSpeed() > 2.0F) {
+            this.setSpeed(2.0F);
          }
 
          if (driverInput.isForwardPressed()) {
-            this.m_146926_(this.m_146909_() - 2.0F);
+            this.setXRot(this.getXRot() - 2.0F);
          }
 
          if (driverInput.isBackPressed()) {
-            this.m_146926_(this.m_146909_() + 2.0F);
+            this.setXRot(this.getXRot() + 2.0F);
          }
 
          if (driverInput.isLeftPressed()) {
-            this.m_146922_(this.m_146908_() - 2.0F);
+            this.setYRot(this.getYRot() - 2.0F);
          }
 
          if (driverInput.isRightPressed()) {
-            this.m_146922_(this.m_146908_() + 2.0F);
+            this.setYRot(this.getYRot() + 2.0F);
          }
 
-         this.m_146926_(Mth.m_14177_(this.m_146909_()));
-         this.f_19812_ = true;
+         this.setXRot(Mth.wrapDegrees(this.getXRot()));
+         this.hasImpulse = true;
       } else {
          this.getUserIntentionForDirectionFromKey(driverInput);
          this.applyPlayerInputWeapons(driverInput);
@@ -173,7 +173,7 @@ public class Pmv03pEntity extends PomkotsVehicleBase {
 
    @Override
    protected void fireWeapons() {
-      Level level = this.m_9236_();
+      Level level = this.level();
       if (this.actionController.getAction(2).isOnFire()) {
          this.fireGatling(level);
       } else if (this.actionController.getAction(3).isOnFire()) {
@@ -182,26 +182,26 @@ public class Pmv03pEntity extends PomkotsVehicleBase {
    }
 
    public void fireGatling(Level world) {
-      if (!world.m_5776_()) {
+      if (!world.isClientSide()) {
          for (int i = 0; i < 2; i++) {
             BulletEntity be = new BulletEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET.get(), world, this);
             Vec3 offset = this.posHistory.getFirst();
             Vec3 muzzlPos = new Vec3(0.5 - i, 3.3F, 6.5);
-            muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-            be.m_146884_(offset.m_82549_(muzzlPos));
-            be.m_37251_(be, this.m_146909_(), this.m_146908_(), this.m_21256_(), 2.5F, 2.0F);
-            world.m_7967_(be);
+            muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+            be.setPos(offset.add(muzzlPos));
+            be.shootFromRotation(be, this.getXRot(), this.getYRot(), this.getFallFlyingTicks(), 2.5F, 2.0F);
+            world.addFreshEntity(be);
          }
-      } else if (this.f_19797_ % 7 == 0) {
+      } else if (this.tickCount % 7 == 0) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_GATLING_EVENT.get());
       }
    }
 
    private void fireMissile(Level world) {
-      if (!world.m_5776_()) {
+      if (!world.isClientSide()) {
          Vec3 offset = this.posHistory.getFirst();
          Vec3 muzzlPos = new Vec3(-1.0, 3.5, 0.8F);
-         Vec3 worldMuzzlPos = muzzlPos.m_82520_(0.0, 0.0, 3.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+         Vec3 worldMuzzlPos = muzzlPos.add(0.0, 0.0, 3.0).yRot((float)Math.toRadians(-1.0 * this.getYRot()));
          MissileEnemyEntity be = new MissileEnemyEntity(
             (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_HORIZONTAL.get(),
             world,
@@ -209,9 +209,9 @@ public class Pmv03pEntity extends PomkotsVehicleBase {
             BattleBalance.MECH_MISSILE_DAMAGE,
             BattleBalance.MECH_MISSILE_GENERIC_SPEED
          );
-         be.m_146884_(offset.m_82549_(worldMuzzlPos));
-         be.m_37251_(be, this.m_146909_(), this.m_146908_(), this.m_21256_(), 2.5F, 0.0F);
-         world.m_7967_(be);
+         be.setPos(offset.add(worldMuzzlPos));
+         be.shootFromRotation(be, this.getXRot(), this.getYRot(), this.getFallFlyingTicks(), 2.5F, 0.0F);
+         world.addFreshEntity(be);
       } else {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_MISSILE_EVENT.get());
          this.lockTargets.clearLockTargetsMulti();
@@ -219,11 +219,11 @@ public class Pmv03pEntity extends PomkotsVehicleBase {
    }
 
    @Override
-   public void m_7023_(Vec3 pos) {
+   public void travel(Vec3 pos) {
       if (this.isMainMode()) {
          this.travel2(pos);
       } else {
-         super.m_7023_(pos);
+         super.travel(pos);
       }
    }
 
@@ -263,7 +263,7 @@ public class Pmv03pEntity extends PomkotsVehicleBase {
                   this,
                   "props",
                   6,
-                  event -> this.m_20160_()
+                  event -> this.isVehicle()
                      ? event.setAndContinue(RawAnimation.begin().thenLoop("animation." + this.getMechName() + ".prop"))
                      : event.setAndContinue(RawAnimation.begin().thenLoop("animation." + this.getMechName() + ".idle"))
                )
@@ -276,7 +276,7 @@ public class Pmv03pEntity extends PomkotsVehicleBase {
                   this,
                   "tires",
                   6,
-                  event -> event.isMoving() && ((Pmv03pEntity)event.getAnimatable()).m_20096_()
+                  event -> event.isMoving() && ((Pmv03pEntity)event.getAnimatable()).onGround()
                      ? event.setAndContinue(RawAnimation.begin().thenLoop("animation." + this.getMechName() + ".tire"))
                      : event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".nop"))
                )
@@ -324,135 +324,135 @@ public class Pmv03pEntity extends PomkotsVehicleBase {
    }
 
    public void travel2(Vec3 vec3) {
-      if (this.m_6109_()) {
+      if (this.isControlledByLocalInstance()) {
          double d = 0.08;
-         boolean bl = this.m_20184_().f_82480_ <= 0.0;
-         if (bl && this.m_21023_(MobEffects.f_19591_)) {
+         boolean bl = this.getDeltaMovement().y <= 0.0;
+         if (bl && this.hasEffect(MobEffects.SLOW_FALLING)) {
             d = 0.01;
          }
 
-         FluidState fluidState = this.m_9236_().m_6425_(this.m_20183_());
-         if (this.m_20069_() && this.m_6129_() && !this.m_203441_(fluidState)) {
-            double e = this.m_20186_();
-            float f = this.m_20142_() ? 0.9F : this.m_6108_();
+         FluidState fluidState = this.level().getFluidState(this.blockPosition());
+         if (this.isInWater() && this.isAffectedByFluids() && !this.canStandOnFluid(fluidState)) {
+            double e = this.getY();
+            float f = this.isSprinting() ? 0.9F : this.getWaterSlowDown();
             float g = 0.02F;
-            float h = EnchantmentHelper.m_44922_(this);
+            float h = EnchantmentHelper.getDepthStrider(this);
             if (h > 3.0F) {
                h = 3.0F;
             }
 
-            if (!this.m_20096_()) {
+            if (!this.onGround()) {
                h *= 0.5F;
             }
 
             if (h > 0.0F) {
                f += (0.54600006F - f) * h / 3.0F;
-               g += (this.m_6113_() - g) * h / 3.0F;
+               g += (this.getSpeed() - g) * h / 3.0F;
             }
 
-            if (this.m_21023_(MobEffects.f_19593_)) {
+            if (this.hasEffect(MobEffects.DOLPHINS_GRACE)) {
                f = 0.96F;
             }
 
-            this.m_19920_(g, vec3);
-            this.m_6478_(MoverType.SELF, this.m_20184_());
-            Vec3 vec32 = this.m_20184_();
-            if (this.f_19862_ && this.m_6147_()) {
-               vec32 = new Vec3(vec32.f_82479_, 0.2, vec32.f_82481_);
+            this.moveRelative(g, vec3);
+            this.move(MoverType.SELF, this.getDeltaMovement());
+            Vec3 vec32 = this.getDeltaMovement();
+            if (this.horizontalCollision && this.onClimbable()) {
+               vec32 = new Vec3(vec32.x, 0.2, vec32.z);
             }
 
-            this.m_20256_(vec32.m_82542_(f, 0.8F, f));
-            Vec3 vec33 = this.m_20994_(d, bl, this.m_20184_());
-            this.m_20256_(vec33);
-            if (this.f_19862_ && this.m_20229_(vec33.f_82479_, vec33.f_82480_ + 0.6F - this.m_20186_() + e, vec33.f_82481_)) {
-               this.m_20334_(vec33.f_82479_, 0.3F, vec33.f_82481_);
+            this.setDeltaMovement(vec32.multiply(f, 0.8F, f));
+            Vec3 vec33 = this.getFluidFallingAdjustedMovement(d, bl, this.getDeltaMovement());
+            this.setDeltaMovement(vec33);
+            if (this.horizontalCollision && this.isFree(vec33.x, vec33.y + 0.6F - this.getY() + e, vec33.z)) {
+               this.setDeltaMovement(vec33.x, 0.3F, vec33.z);
             }
-         } else if (this.m_20077_() && this.m_6129_() && !this.m_203441_(fluidState)) {
-            double e = this.m_20186_();
-            this.m_19920_(0.02F, vec3);
-            this.m_6478_(MoverType.SELF, this.m_20184_());
-            if (this.m_204036_(FluidTags.f_13132_) <= this.m_20204_()) {
-               this.m_20256_(this.m_20184_().m_82542_(0.5, 0.8F, 0.5));
-               Vec3 vec34 = this.m_20994_(d, bl, this.m_20184_());
-               this.m_20256_(vec34);
+         } else if (this.isInLava() && this.isAffectedByFluids() && !this.canStandOnFluid(fluidState)) {
+            double e = this.getY();
+            this.moveRelative(0.02F, vec3);
+            this.move(MoverType.SELF, this.getDeltaMovement());
+            if (this.getFluidHeight(FluidTags.LAVA) <= this.getFluidJumpThreshold()) {
+               this.setDeltaMovement(this.getDeltaMovement().multiply(0.5, 0.8F, 0.5));
+               Vec3 vec34 = this.getFluidFallingAdjustedMovement(d, bl, this.getDeltaMovement());
+               this.setDeltaMovement(vec34);
             } else {
-               this.m_20256_(this.m_20184_().m_82490_(0.5));
+               this.setDeltaMovement(this.getDeltaMovement().scale(0.5));
             }
 
-            if (!this.m_20068_()) {
-               this.m_20256_(this.m_20184_().m_82520_(0.0, -d / 4.0, 0.0));
+            if (!this.isNoGravity()) {
+               this.setDeltaMovement(this.getDeltaMovement().add(0.0, -d / 4.0, 0.0));
             }
 
-            Vec3 vec34 = this.m_20184_();
-            if (this.f_19862_ && this.m_20229_(vec34.f_82479_, vec34.f_82480_ + 0.6F - this.m_20186_() + e, vec34.f_82481_)) {
-               this.m_20334_(vec34.f_82479_, 0.3F, vec34.f_82481_);
+            Vec3 vec34 = this.getDeltaMovement();
+            if (this.horizontalCollision && this.isFree(vec34.x, vec34.y + 0.6F - this.getY() + e, vec34.z)) {
+               this.setDeltaMovement(vec34.x, 0.3F, vec34.z);
             }
-         } else if (this.m_21255_()) {
-            this.m_245125_();
-            Vec3 vec35 = this.m_20184_();
-            Vec3 vec36 = this.m_20154_();
-            float f = this.m_146909_() * (float) (Math.PI / 180.0);
-            double i = Math.sqrt(vec36.f_82479_ * vec36.f_82479_ + vec36.f_82481_ * vec36.f_82481_);
-            double j = vec35.m_165924_();
-            double k = vec36.m_82553_();
+         } else if (this.isFallFlying()) {
+            this.checkSlowFallDistance();
+            Vec3 vec35 = this.getDeltaMovement();
+            Vec3 vec36 = this.getLookAngle();
+            float f = this.getXRot() * (float) (Math.PI / 180.0);
+            double i = Math.sqrt(vec36.x * vec36.x + vec36.z * vec36.z);
+            double j = vec35.horizontalDistance();
+            double k = vec36.length();
             double l = Math.cos(f);
             l = l * l * Math.min(1.0, k / 0.4);
-            vec35 = this.m_20184_().m_82520_(0.0, d * (-1.0 + l * 0.75), 0.0);
-            if (vec35.f_82480_ < 0.0 && i > 0.0) {
-               double m = vec35.f_82480_ * -0.1 * l;
-               vec35 = vec35.m_82520_(vec36.f_82479_ * m / i, m, vec36.f_82481_ * m / i);
+            vec35 = this.getDeltaMovement().add(0.0, d * (-1.0 + l * 0.75), 0.0);
+            if (vec35.y < 0.0 && i > 0.0) {
+               double m = vec35.y * -0.1 * l;
+               vec35 = vec35.add(vec36.x * m / i, m, vec36.z * m / i);
             }
 
             if (f < 0.0F && i > 0.0) {
-               double m = j * -Mth.m_14031_(f) * 0.04;
-               vec35 = vec35.m_82520_(-vec36.f_82479_ * m / i, m * 3.2, -vec36.f_82481_ * m / i);
+               double m = j * -Mth.sin(f) * 0.04;
+               vec35 = vec35.add(-vec36.x * m / i, m * 3.2, -vec36.z * m / i);
             }
 
             if (i > 0.0) {
-               vec35 = vec35.m_82520_((vec36.f_82479_ / i * j - vec35.f_82479_) * 0.1, 0.0, (vec36.f_82481_ / i * j - vec35.f_82481_) * 0.1);
+               vec35 = vec35.add((vec36.x / i * j - vec35.x) * 0.1, 0.0, (vec36.z / i * j - vec35.z) * 0.1);
             }
 
-            this.m_20256_(vec35.m_82542_(0.99F, 0.98F, 0.99F));
-            this.m_6478_(MoverType.SELF, this.m_20184_());
-            if (this.f_19862_ && !this.m_9236_().f_46443_) {
-               double m = this.m_20184_().m_165924_();
+            this.setDeltaMovement(vec35.multiply(0.99F, 0.98F, 0.99F));
+            this.move(MoverType.SELF, this.getDeltaMovement());
+            if (this.horizontalCollision && !this.level().isClientSide) {
+               double m = this.getDeltaMovement().horizontalDistance();
                double n = j - m;
                float o = (float)(n * 10.0 - 3.0);
                if (o > 0.0F) {
-                  this.m_6469_(this.m_269291_().m_269515_(), o);
+                  this.hurt(this.damageSources().flyIntoWall(), o);
                }
             }
 
-            if (this.m_20096_() && !this.m_9236_().f_46443_) {
-               this.m_20115_(7, false);
+            if (this.onGround() && !this.level().isClientSide) {
+               this.setSharedFlag(7, false);
             }
          } else {
-            BlockPos blockPos = this.m_20099_();
-            float p = this.m_9236_().m_8055_(blockPos).m_60734_().m_49958_();
-            float f = this.m_20096_() ? p * 0.91F : 0.91F;
-            Vec3 vec37 = this.m_21074_(vec3, p);
-            double q = vec37.f_82480_;
-            if (this.m_21023_(MobEffects.f_19620_)) {
-               q += (0.05 * (this.m_21124_(MobEffects.f_19620_).m_19564_() + 1) - vec37.f_82480_) * 0.2;
-            } else if (this.m_9236_().f_46443_ && !this.m_9236_().m_46805_(blockPos)) {
-               if (this.m_20186_() > this.m_9236_().m_141937_()) {
+            BlockPos blockPos = this.getBlockPosBelowThatAffectsMyMovement();
+            float p = this.level().getBlockState(blockPos).getBlock().getFriction();
+            float f = this.onGround() ? p * 0.91F : 0.91F;
+            Vec3 vec37 = this.handleRelativeFrictionAndCalculateMovement(vec3, p);
+            double q = vec37.y;
+            if (this.hasEffect(MobEffects.LEVITATION)) {
+               q += (0.05 * (this.getEffect(MobEffects.LEVITATION).getAmplifier() + 1) - vec37.y) * 0.2;
+            } else if (this.level().isClientSide && !this.level().hasChunkAt(blockPos)) {
+               if (this.getY() > this.level().getMinBuildHeight()) {
                   q = -0.1;
                } else {
                   q = 0.0;
                }
-            } else if (!this.m_20068_()) {
+            } else if (!this.isNoGravity()) {
                q -= d;
             }
 
-            if (this.m_147223_()) {
-               this.m_20334_(vec37.f_82479_, q, vec37.f_82481_);
+            if (this.shouldDiscardFriction()) {
+               this.setDeltaMovement(vec37.x, q, vec37.z);
             } else {
-               this.m_20334_(vec37.f_82479_ * f, q * 0.98F, vec37.f_82481_ * f);
+               this.setDeltaMovement(vec37.x * f, q * 0.98F, vec37.z * f);
             }
          }
       }
 
-      this.m_267651_(this instanceof FlyingAnimal);
+      this.calculateEntityAnimation(this instanceof FlyingAnimal);
    }
 
    public void setClientSeatPos1(Vec3 seatPos) {
@@ -465,7 +465,7 @@ public class Pmv03pEntity extends PomkotsVehicleBase {
 
    @Override
    public Vec3 getClientSeatPos(Entity passenger) {
-      List<Entity> ps = this.m_20197_();
+      List<Entity> ps = this.getPassengers();
       int num = 1;
 
       for (Entity p : ps) {
@@ -482,24 +482,24 @@ public class Pmv03pEntity extends PomkotsVehicleBase {
          num++;
       }
 
-      return Vec3.f_82478_;
+      return Vec3.ZERO;
    }
 
    @Override
-   public InteractionResult m_6096_(Player player, InteractionHand hand) {
+   public InteractionResult interact(Player player, InteractionHand hand) {
       if (this.isServerSide()) {
-         player.m_146922_(this.m_146908_());
-         player.m_146926_(this.m_146909_());
-         player.m_20329_(this);
+         player.setYRot(this.getYRot());
+         player.setXRot(this.getXRot());
+         player.startRiding(this);
       }
 
       this.rideCoolTick = 3;
       this.actionController.reset();
-      return InteractionResult.m_19078_(this.m_9236_().f_46443_);
+      return InteractionResult.sidedSuccess(this.level().isClientSide);
    }
 
    @Override
-   protected boolean m_7310_(Entity passenger) {
-      return this.m_20197_().size() < 2;
+   protected boolean canAddPassenger(Entity passenger) {
+      return this.getPassengers().size() < 2;
    }
 }

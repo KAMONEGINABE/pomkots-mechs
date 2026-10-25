@@ -14,11 +14,11 @@ public class ElevatorEntityRenderer extends GeoEntityRenderer<ElevatorEntity> {
    }
 
    public void render(ElevatorEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-      super.m_7392_(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
-      if (entity.getMode() == ElevatorEntity.Mode.WAITING && entity.m_20197_().isEmpty()) {
-         Minecraft mc = Minecraft.m_91087_();
-         if (mc.f_91074_ != null && mc.f_91074_.m_20148_().equals(entity.getPassengerUUID())) {
-            RenderUtils.renderMarking(entity, poseStack, bufferSource, this.f_114476_, 1.3F);
+      super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+      if (entity.getMode() == ElevatorEntity.Mode.WAITING && entity.getPassengers().isEmpty()) {
+         Minecraft mc = Minecraft.getInstance();
+         if (mc.player != null && mc.player.getUUID().equals(entity.getPassengerUUID())) {
+            RenderUtils.renderMarking(entity, poseStack, bufferSource, this.entityRenderDispatcher, 1.3F);
          }
       }
    }

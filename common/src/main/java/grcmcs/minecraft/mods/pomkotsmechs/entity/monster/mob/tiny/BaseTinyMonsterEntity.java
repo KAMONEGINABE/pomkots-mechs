@@ -21,11 +21,11 @@ public abstract class BaseTinyMonsterEntity extends BaseSmallMonsterEntity {
    protected int attackingTime = 0;
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_()
-         .m_22266_(Attributes.f_22282_)
-         .m_22268_(Attributes.f_22278_, 1.0)
-         .m_22268_(Attributes.f_22281_, 1.0)
-         .m_22268_(Attributes.f_22277_, 100.0);
+      return LivingEntity.createLivingAttributes()
+         .add(Attributes.ATTACK_KNOCKBACK)
+         .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
+         .add(Attributes.ATTACK_DAMAGE, 1.0)
+         .add(Attributes.FOLLOW_RANGE, 100.0);
    }
 
    public BaseTinyMonsterEntity(EntityType<? extends GenericPomkotsMonster> entityType, Level world) {
@@ -37,16 +37,16 @@ public abstract class BaseTinyMonsterEntity extends BaseSmallMonsterEntity {
    }
 
    @Override
-   public void m_8119_() {
-      super.m_8119_();
+   public void tick() {
+      super.tick();
       this.tickAttack();
-      if (this.isClientSide() && this.m_21224_() && this.f_20919_ == 10) {
+      if (this.isClientSide() && this.isDeadOrDying() && this.deathTime == 10) {
          this.generateDestroyedExplosionEffect();
       }
    }
 
    protected void choiMove() {
-      this.m_246865_(new Vec3(0.0, 0.0, 0.001).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())));
+      this.addDeltaMovement(new Vec3(0.0, 0.0, 0.001).yRot((float)Math.toRadians(-1.0 * this.getYRot())));
    }
 
    protected void tickAttack() {
@@ -67,7 +67,7 @@ public abstract class BaseTinyMonsterEntity extends BaseSmallMonsterEntity {
    }
 
    protected void startAttack() {
-      this.rotateToTarget(this.m_5448_());
+      this.rotateToTarget(this.getTarget());
       this.attackingTime = this.getMaxAttackTicks();
    }
 
@@ -90,14 +90,14 @@ public abstract class BaseTinyMonsterEntity extends BaseSmallMonsterEntity {
    }
 
    private void generateLava() {
-      if (this.m_9236_().f_46443_) {
-         RandomSource random = this.m_9236_().m_213780_();
+      if (this.level().isClientSide) {
+         RandomSource random = this.level().getRandom();
 
          for (int i = 0; i < 50; i++) {
-            double velocityX = random.m_188500_() * 3.0 - 1.0;
-            double velocityY = random.m_188500_() * 3.0 - 1.0;
-            double velocityZ = random.m_188500_() * 3.0 - 1.0;
-            this.m_9236_().m_6485_(ParticleTypes.f_123756_, true, this.m_20185_(), this.m_20186_(), this.m_20189_(), velocityX, velocityY, velocityZ);
+            double velocityX = random.nextDouble() * 3.0 - 1.0;
+            double velocityY = random.nextDouble() * 3.0 - 1.0;
+            double velocityZ = random.nextDouble() * 3.0 - 1.0;
+            this.level().addAlwaysVisibleParticle(ParticleTypes.LAVA, true, this.getX(), this.getY(), this.getZ(), velocityX, velocityY, velocityZ);
          }
       }
    }

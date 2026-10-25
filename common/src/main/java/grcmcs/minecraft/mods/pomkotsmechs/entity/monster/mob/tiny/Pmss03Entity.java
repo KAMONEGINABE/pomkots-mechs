@@ -29,7 +29,7 @@ public class Pmss03Entity extends BaseTinyMonsterEntity implements GeoEntity, Ge
    public static final float DEFAULT_SCALE = 1.0F;
    private static final Vec3 ATTACK_OFFSET = new Vec3(0.0, 0.0, 2.0);
    private static final double ATTACK_RADIUS = 2.5;
-   private static final EntityDataAccessor<Integer> FUSE = SynchedEntityData.m_135353_(Pmss03Entity.class, EntityDataSerializers.f_135028_);
+   private static final EntityDataAccessor<Integer> FUSE = SynchedEntityData.defineId(Pmss03Entity.class, EntityDataSerializers.INT);
 
    @Override
    public String getMechName() {
@@ -41,10 +41,10 @@ public class Pmss03Entity extends BaseTinyMonsterEntity implements GeoEntity, Ge
    }
 
    @Override
-   public void m_8119_() {
-      super.m_8119_();
+   public void tick() {
+      super.tick();
       if (this.isAttacking()) {
-         this.m_20334_(0.0, this.m_20184_().f_82480_, 0.0);
+         this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
       }
 
       int fuse = this.getFuse();
@@ -57,26 +57,26 @@ public class Pmss03Entity extends BaseTinyMonsterEntity implements GeoEntity, Ge
    }
 
    @Override
-   protected void m_8097_() {
-      super.m_8097_();
-      this.f_19804_.m_135372_(FUSE, -1);
+   protected void defineSynchedData() {
+      super.defineSynchedData();
+      this.entityData.define(FUSE, -1);
    }
 
    public void startSelfDestruct() {
-      this.f_19804_.m_135381_(FUSE, 40);
+      this.entityData.set(FUSE, 40);
    }
 
    public void stopSelfDestruct() {
-      this.f_19804_.m_135381_(FUSE, -1);
+      this.entityData.set(FUSE, -1);
       this.attackingTime = 0;
    }
 
    public int getFuse() {
-      return (Integer)this.f_19804_.m_135370_(FUSE);
+      return (Integer)this.entityData.get(FUSE);
    }
 
    public void setFuse(int fuse) {
-      this.f_19804_.m_135381_(FUSE, fuse);
+      this.entityData.set(FUSE, fuse);
    }
 
    public boolean isSelfDestructing() {
@@ -84,11 +84,11 @@ public class Pmss03Entity extends BaseTinyMonsterEntity implements GeoEntity, Ge
    }
 
    private void explode() {
-      if (!this.m_9236_().f_46443_) {
+      if (!this.level().isClientSide) {
          Utils.explode(
-            this, this.m_20185_(), this.m_20186_(), this.m_20189_(), this.getMechData().grenadeExplosionScale, ExplosionInteraction.MOB, this.m_9236_()
+            this, this.getX(), this.getY(), this.getZ(), this.getMechData().grenadeExplosionScale, ExplosionInteraction.MOB, this.level()
          );
-         this.m_146870_();
+         this.discard();
       }
    }
 
@@ -115,21 +115,21 @@ public class Pmss03Entity extends BaseTinyMonsterEntity implements GeoEntity, Ge
    }
 
    @Override
-   public boolean m_6469_(DamageSource source, float amount) {
+   public boolean hurt(DamageSource source, float amount) {
       if (this.isSelfDestructing()) {
          this.stopSelfDestruct();
       }
 
-      return super.m_6469_(source, amount);
+      return super.hurt(source, amount);
    }
 
    @Override
-   protected void m_8099_() {
-      super.m_8099_();
-      this.f_21345_.m_25352_(1, new MeleeAttackGoal2(this, this.getMechData().speed, false));
-      this.f_21345_.m_25352_(2, new WaterAvoidingRandomStrollGoal(this, this.getMechData().speed));
-      this.f_21345_.m_25352_(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
-      this.f_21345_.m_25352_(4, new RandomLookAroundGoal(this));
+   protected void registerGoals() {
+      super.registerGoals();
+      this.goalSelector.addGoal(1, new MeleeAttackGoal2(this, this.getMechData().speed, false));
+      this.goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, this.getMechData().speed));
+      this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
+      this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

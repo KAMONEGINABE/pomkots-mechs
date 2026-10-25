@@ -28,47 +28,47 @@ public class KeycardItem extends Item {
       super(properties);
    }
 
-   public InteractionResult m_6880_(ItemStack itemStack, Player player, LivingEntity target, InteractionHand interactionHand) {
-      Level level = player.m_9236_();
+   public InteractionResult interactLivingEntity(ItemStack itemStack, Player player, LivingEntity target, InteractionHand interactionHand) {
+      Level level = player.level();
       if (level instanceof ServerLevel serverLevel && target instanceof Pmvc01Entity mech && this.isTargetMech(mech, itemStack, serverLevel)) {
          if (mech.isLocked()) {
-            player.m_213846_(Utils.string2Component("{text.pomkotsmechs.messages.pmvc01.unlock}"));
+            player.sendSystemMessage(Utils.string2Component("{text.pomkotsmechs.messages.pmvc01.unlock}"));
          } else {
-            player.m_213846_(Utils.string2Component("{text.pomkotsmechs.messages.pmvc01.lock}"));
+            player.sendSystemMessage(Utils.string2Component("{text.pomkotsmechs.messages.pmvc01.lock}"));
          }
 
          mech.setLocked(!mech.isLocked());
       }
 
-      return InteractionResult.m_19078_(level.m_5776_());
+      return InteractionResult.sidedSuccess(level.isClientSide());
    }
 
    public boolean isTargetMech(Pmvc01Entity mech, ItemStack stack, Level level) {
-      if (stack.m_41782_() && stack.m_41783_().m_128441_(NBT_MECH_UUID) && level instanceof ServerLevel sl) {
-         UUID uuid = stack.m_41783_().m_128342_(NBT_MECH_UUID);
-         return uuid.equals(mech.m_20148_());
+      if (stack.hasTag() && stack.getTag().contains(NBT_MECH_UUID) && level instanceof ServerLevel sl) {
+         UUID uuid = stack.getTag().getUUID(NBT_MECH_UUID);
+         return uuid.equals(mech.getUUID());
       } else {
          return false;
       }
    }
 
    public void setMech(ItemStack stack, Pmvc01Entity mech, Level level) {
-      CompoundTag tag = stack.m_41784_();
-      tag.m_128362_(NBT_MECH_UUID, mech.m_20148_());
-      if (mech.m_8077_()) {
-         tag.m_128359_(NBT_MECH_NAME, mech.m_7770_().getString());
+      CompoundTag tag = stack.getOrCreateTag();
+      tag.putUUID(NBT_MECH_UUID, mech.getUUID());
+      if (mech.hasCustomName()) {
+         tag.putString(NBT_MECH_NAME, mech.getCustomName().getString());
       }
 
-      stack.m_41751_(tag);
+      stack.setTag(tag);
    }
 
    public static UUID getMechUuid(ItemStack stack) {
-      return stack.m_41782_() && stack.m_41783_().m_128441_(NBT_MECH_UUID) ? stack.m_41783_().m_128342_(NBT_MECH_UUID) : null;
+      return stack.hasTag() && stack.getTag().contains(NBT_MECH_UUID) ? stack.getTag().getUUID(NBT_MECH_UUID) : null;
    }
 
    public static String getMechName(ItemStack stack) {
-      if (stack.m_41782_() && stack.m_41783_().m_128441_(NBT_MECH_NAME)) {
-         String name = stack.m_41783_().m_128461_(NBT_MECH_NAME);
+      if (stack.hasTag() && stack.getTag().contains(NBT_MECH_NAME)) {
+         String name = stack.getTag().getString(NBT_MECH_NAME);
          if (!name.isEmpty()) {
             return name;
          }
@@ -77,8 +77,8 @@ public class KeycardItem extends Item {
       return "NO_NAME";
    }
 
-   public void m_7373_(@NotNull ItemStack stack, @Nullable Level level, List<Component> tooltip, @NotNull TooltipFlag flag) {
-      super.m_7373_(stack, level, tooltip, flag);
-      tooltip.add(Component.m_237113_("Mech Name : " + getMechName(stack)));
+   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, List<Component> tooltip, @NotNull TooltipFlag flag) {
+      super.appendHoverText(stack, level, tooltip, flag);
+      tooltip.add(Component.literal("Mech Name : " + getMechName(stack)));
    }
 }

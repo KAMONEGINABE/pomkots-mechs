@@ -53,7 +53,7 @@ public class PomkotsHud implements RenderHud {
    private static final ResourceLocation TARGET_LOCK_SOFT_TEXTURE2 = PomkotsMechs.id("textures/crosshair/custom/target_icon.png");
    private static final ResourceLocation TARGET_LOCK_MULTI_TEXTURE = PomkotsMechs.id("textures/crosshair/custom/target_multi.png");
    private static final ResourceLocation REPAIR_KIT_ICON = PomkotsMechs.id("textures/crosshair/custom/repair_icon.png");
-   protected Minecraft mc = Minecraft.m_91087_();
+   protected Minecraft mc = Minecraft.getInstance();
    private static final Logger LOGGER = LoggerFactory.getLogger("pomkotsmechs");
    private float curHealth = 0.0F;
    private float prevHealth = 0.0F;
@@ -89,7 +89,7 @@ public class PomkotsHud implements RenderHud {
    }
 
    public void renderHud(GuiGraphics guiGraphics, float tickDelta) {
-      LocalPlayer pl = this.mc.f_91074_;
+      LocalPlayer pl = this.mc.player;
       if (pl != null) {
          if (ScreenFadeManager.isActive()) {
             screenFade(guiGraphics);
@@ -100,8 +100,8 @@ public class PomkotsHud implements RenderHud {
             return;
          }
 
-         if (pl.m_20202_() instanceof PomkotsVehicleBase mech) {
-            if (this.prevTick != pl.f_19797_) {
+         if (pl.getVehicle() instanceof PomkotsVehicleBase mech) {
+            if (this.prevTick != pl.tickCount) {
                this.updateValues(mech);
             }
 
@@ -116,7 +116,7 @@ public class PomkotsHud implements RenderHud {
                this.renderHudNormal(mech, guiGraphics, tickDelta);
             }
 
-            this.prevTick = pl.f_19797_;
+            this.prevTick = pl.tickCount;
          }
       }
    }
@@ -124,11 +124,11 @@ public class PomkotsHud implements RenderHud {
    public static void screenFade(GuiGraphics gui) {
       float alpha = ScreenFadeManager.getAlpha();
       if (!(alpha <= 0.0F)) {
-         int width = Minecraft.m_91087_().m_91268_().m_85445_();
-         int height = Minecraft.m_91087_().m_91268_().m_85446_();
+         int width = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+         int height = Minecraft.getInstance().getWindow().getGuiScaledHeight();
          int a = (int)(alpha * 255.0F);
          int color = a << 24;
-         gui.m_280509_(0, 0, width, height, color);
+         gui.fill(0, 0, width, height, color);
       }
    }
 
@@ -168,43 +168,43 @@ public class PomkotsHud implements RenderHud {
          int screenX = (int)screenPos.x();
          int screenY = (int)screenPos.y();
          if (renderDistance && mech instanceof Pmvc01Entity pmvc01) {
-            renderDistance(pmvc01, screenX, screenY, new EntityHitResult(targetEntity), guiGraphics, tickDelta, Minecraft.m_91087_());
+            renderDistance(pmvc01, screenX, screenY, new EntityHitResult(targetEntity), guiGraphics, tickDelta, Minecraft.getInstance());
          }
 
          int size = 16;
          int sizeSub = 10;
-         guiGraphics.m_280163_(texture, screenX - size / 2, screenY - size / 2, 0.0F, 0.0F, size, size, size, size);
+         guiGraphics.blit(texture, screenX - size / 2, screenY - size / 2, 0.0F, 0.0F, size, size, size, size);
       }
    }
 
    private Vector3f projectEntityToScreen(Entity entity, float tickDelta) {
-      Camera camera = this.mc.f_91063_.m_109153_();
-      Vec3 entityPos = entity.m_20182_().m_82520_(0.0, entity.m_20206_() / 2.0F, 0.0);
-      Vec3 camPos = camera.m_90583_();
-      Quaternionf cameraRotation = camera.m_253121_();
-      double x = Mth.m_14139_(tickDelta, entity.f_19790_, entity.m_20185_()) - camPos.f_82479_;
-      double y = Mth.m_14139_(tickDelta, entity.f_19791_ + entity.m_20206_() / 2.0F, entity.m_20186_() + entity.m_20206_() / 2.0F) - camPos.f_82480_;
-      double z = Mth.m_14139_(tickDelta, entity.f_19792_, entity.m_20189_()) - camPos.f_82481_;
+      Camera camera = this.mc.gameRenderer.getMainCamera();
+      Vec3 entityPos = entity.position().add(0.0, entity.getBbHeight() / 2.0F, 0.0);
+      Vec3 camPos = camera.getPosition();
+      Quaternionf cameraRotation = camera.rotation();
+      double x = Mth.lerp(tickDelta, entity.xOld, entity.getX()) - camPos.x;
+      double y = Mth.lerp(tickDelta, entity.yOld + entity.getBbHeight() / 2.0F, entity.getY() + entity.getBbHeight() / 2.0F) - camPos.y;
+      double z = Mth.lerp(tickDelta, entity.zOld, entity.getZ()) - camPos.z;
       Vec3 relativePos = new Vec3(x, y, z);
       Quaternionf q = new Quaternionf();
-      Vector3f transformed = new Vector3f((float)relativePos.f_82479_, (float)relativePos.f_82480_, (float)relativePos.f_82481_);
+      Vector3f transformed = new Vector3f((float)relativePos.x, (float)relativePos.y, (float)relativePos.z);
       transformed.rotate(cameraRotation.conjugate(q));
       if (transformed.z() < 0.1F) {
          return null;
       }
 
-      Window window = this.mc.m_91268_();
-      float aRatio = (float)window.m_85445_() / window.m_85446_();
-      float fov = (float)Math.toRadians(((Integer)this.mc.f_91066_.m_231837_().m_231551_()).intValue());
+      Window window = this.mc.getWindow();
+      float aRatio = (float)window.getGuiScaledWidth() / window.getGuiScaledHeight();
+      float fov = (float)Math.toRadians(((Integer)this.mc.options.fov().get()).intValue());
       float halfFov = (float)Math.tan(fov / 2.0F);
-      float screenX = window.m_85445_() / 2.0F * (1.0F - transformed.x() / (transformed.z() * halfFov * aRatio));
-      float screenY = window.m_85446_() / 2.0F * (1.0F - transformed.y() / (transformed.z() * halfFov));
+      float screenX = window.getGuiScaledWidth() / 2.0F * (1.0F - transformed.x() / (transformed.z() * halfFov * aRatio));
+      float screenY = window.getGuiScaledHeight() / 2.0F * (1.0F - transformed.y() / (transformed.z() * halfFov));
       return new Vector3f(screenX, screenY, transformed.z());
    }
 
    private void updateValues(PomkotsVehicleBase vehicle) {
       this.prevHealth = this.curHealth;
-      this.curHealth = vehicle.m_21223_();
+      this.curHealth = vehicle.getHealth();
       this.prevEN = this.curEN;
       this.curEN = vehicle.getEnergy();
       this.maxEN = vehicle.getMaxEnergy();
@@ -274,22 +274,22 @@ public class PomkotsHud implements RenderHud {
    private void renderCrossHair(GuiGraphics guiGraphics, float tickDelta) {
       int textureWidth = 32;
       int textureHeight = 32;
-      int screenWidth = this.mc.m_91268_().m_85445_();
-      int screenHeight = this.mc.m_91268_().m_85446_();
+      int screenWidth = this.mc.getWindow().getGuiScaledWidth();
+      int screenHeight = this.mc.getWindow().getGuiScaledHeight();
       int startX = screenWidth / 2 - textureWidth / 2;
       int startY = screenHeight / 2 - textureHeight / 2;
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.6F);
-      RenderSystem.setShader(GameRenderer::m_172817_);
+      RenderSystem.setShader(GameRenderer::getPositionTexShader);
       RenderSystem.setShaderTexture(0, CROSSHAIR_TEXTURE);
-      guiGraphics.m_280398_(CROSSHAIR_TEXTURE, startX, startY, 0, 0.0F, 0.0F, textureWidth, textureHeight, textureWidth, textureHeight);
+      guiGraphics.blit(CROSSHAIR_TEXTURE, startX, startY, 0, 0.0F, 0.0F, textureWidth, textureHeight, textureWidth, textureHeight);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 
    private void renderHealthBar(PomkotsVehicleBase protobot, GuiGraphics guiGraphics, float tickDelta) {
-      int screenWidth = this.mc.m_91268_().m_85445_();
-      int screenHeight = this.mc.m_91268_().m_85446_();
+      int screenWidth = this.mc.getWindow().getGuiScaledWidth();
+      int screenHeight = this.mc.getWindow().getGuiScaledHeight();
       int width = 120;
       int height = 3;
       int x = screenWidth / 2 - width / 2;
@@ -298,30 +298,30 @@ public class PomkotsHud implements RenderHud {
          y -= 20;
       }
 
-      int maxHealth = (int)protobot.m_21233_();
-      guiGraphics.m_280509_(x, y, x + width, y + height, 1431655765);
-      int healthWidthCur = (int)(width * Mth.m_14179_(tickDelta, this.curHealth / maxHealth, this.curHealth / maxHealth));
-      int healthWidthPrev = (int)(width * Mth.m_14179_(tickDelta, this.prevHealth / maxHealth, this.prevHealth / maxHealth));
-      guiGraphics.m_280509_(x, y, x + Mth.m_269140_(tickDelta, healthWidthPrev, healthWidthCur), y + height, -1728018743);
+      int maxHealth = (int)protobot.getMaxHealth();
+      guiGraphics.fill(x, y, x + width, y + height, 1431655765);
+      int healthWidthCur = (int)(width * Mth.lerp(tickDelta, this.curHealth / maxHealth, this.curHealth / maxHealth));
+      int healthWidthPrev = (int)(width * Mth.lerp(tickDelta, this.prevHealth / maxHealth, this.prevHealth / maxHealth));
+      guiGraphics.fill(x, y, x + Mth.lerpInt(tickDelta, healthWidthPrev, healthWidthCur), y + height, -1728018743);
    }
 
    private void renderEnergyBar(PomkotsVehicleBase protobot, GuiGraphics guiGraphics, float tickDelta) {
-      int screenWidth = this.mc.m_91268_().m_85445_();
-      int screenHeight = this.mc.m_91268_().m_85446_();
+      int screenWidth = this.mc.getWindow().getGuiScaledWidth();
+      int screenHeight = this.mc.getWindow().getGuiScaledHeight();
       int maxFuel = this.maxEN;
       int width = 25;
       int height = 2;
       int x = screenWidth / 2 - width / 2;
       int y = screenHeight / 2 + 19;
-      guiGraphics.m_280509_(x, y, x + width, y + height, 1431655765);
-      float enLerp = Mth.m_14179_(tickDelta, this.prevEN, this.curEN);
+      guiGraphics.fill(x, y, x + width, y + height, 1431655765);
+      float enLerp = Mth.lerp(tickDelta, this.prevEN, this.curEN);
       float fuelWidth = width * (enLerp / maxFuel);
-      guiGraphics.m_280509_((int)(x + (width - fuelWidth) / 2.0F), y, (int)(x + (width - fuelWidth) / 2.0F + fuelWidth) + 1, y + height, -1728018743);
+      guiGraphics.fill((int)(x + (width - fuelWidth) / 2.0F), y, (int)(x + (width - fuelWidth) / 2.0F + fuelWidth) + 1, y + height, -1728018743);
    }
 
    private void renderCooldowns(PomkotsVehicleBase protobot, GuiGraphics guiGraphics, float tickDelta) {
-      int offx = this.mc.m_91268_().m_85445_() / 2;
-      int offy = this.mc.m_91268_().m_85446_() / 2;
+      int offx = this.mc.getWindow().getGuiScaledWidth() / 2;
+      int offy = this.mc.getWindow().getGuiScaledHeight() / 2;
       this.renderCooldown(this.prevCTRightArm, this.curCTRightArm, this.maxCTRightArm, offx + 19, offy - 9, false, guiGraphics, tickDelta);
       this.renderCooldown(this.prevCTLeftArm, this.curCTLeftArm, this.maxCTLeftArm, offx - 21, offy - 9, true, guiGraphics, tickDelta);
       this.renderCooldown(this.prevCTRightShoulder, this.curCTRightShoulder, this.maxCTRightShoulder, offx + 19, offy + 1, false, guiGraphics, tickDelta);
@@ -331,20 +331,20 @@ public class PomkotsHud implements RenderHud {
    private void renderCooldown(int prevCT, int curCT, int maxCT, int x, int y, boolean reverse, GuiGraphics guiGraphics, float tickDelta) {
       int blockWidth = 2;
       int blockHeight = 8;
-      float ctLerp = Mth.m_14179_(tickDelta, prevCT, curCT);
+      float ctLerp = Mth.lerp(tickDelta, prevCT, curCT);
       int cooldownHeight = (int)(blockHeight * ((maxCT - ctLerp) / maxCT));
-      guiGraphics.m_280509_(x, y, x + blockWidth, y + blockHeight, 1431655765);
-      guiGraphics.m_280509_(x, y + blockHeight - cooldownHeight, x + blockWidth, y + blockHeight, -1728018743);
+      guiGraphics.fill(x, y, x + blockWidth, y + blockHeight, 1431655765);
+      guiGraphics.fill(x, y + blockHeight - cooldownHeight, x + blockWidth, y + blockHeight, -1728018743);
    }
 
    protected void renderCustomMechHud(Pmvc01Entity mech, GuiGraphics guiGraphics, float tickDelta) {
-      PoseStack pose = guiGraphics.m_280168_();
-      pose.m_85836_();
+      PoseStack pose = guiGraphics.pose();
+      pose.pushPose();
       float shake = ClientHudShake.shake;
       if (shake > 0.0F) {
-         float offsetX = (Minecraft.m_91087_().f_91073_.f_46441_.m_188501_() - 0.5F) * shake;
-         float offsetY = (Minecraft.m_91087_().f_91073_.f_46441_.m_188501_() - 0.5F) * shake;
-         pose.m_252880_(offsetX, offsetY, 0.0F);
+         float offsetX = (Minecraft.getInstance().level.random.nextFloat() - 0.5F) * shake;
+         float offsetY = (Minecraft.getInstance().level.random.nextFloat() - 0.5F) * shake;
+         pose.translate(offsetX, offsetY, 0.0F);
       }
 
       this.renderCrossHair2(guiGraphics, tickDelta);
@@ -355,21 +355,21 @@ public class PomkotsHud implements RenderHud {
       this.renderEnergyBar2(mech, guiGraphics, tickDelta);
       this.renderRepairKitNum(mech, guiGraphics, tickDelta);
       this.renderMechHPWarnings(mech, guiGraphics, tickDelta);
-      pose.m_85849_();
+      pose.popPose();
    }
 
    public static void renderPickedDistance(Pmvc01Entity mech, GuiGraphics guiGraphics, float partialTick) {
       if (!shouldRenderDistanceOnTarget()) {
-         Minecraft mc = Minecraft.m_91087_();
-         if (mc.f_91074_ != null && mc.f_91073_ != null) {
-            if (!mc.f_91066_.f_92062_) {
+         Minecraft mc = Minecraft.getInstance();
+         if (mc.player != null && mc.level != null) {
+            if (!mc.options.hideGui) {
                double maxDist = 150.0;
-               Vec3 eyePos = mc.f_91074_.m_20299_(partialTick);
-               Vec3 lookVec = mc.f_91074_.m_20252_(partialTick);
-               Vec3 endPos = eyePos.m_82549_(lookVec.m_82490_(maxDist));
-               BlockHitResult blockHit = mc.f_91073_.m_45547_(new ClipContext(eyePos, endPos, Block.OUTLINE, Fluid.NONE, mc.f_91074_));
-               int centerX = guiGraphics.m_280182_() / 2;
-               int centerY = guiGraphics.m_280206_() / 2;
+               Vec3 eyePos = mc.player.getEyePosition(partialTick);
+               Vec3 lookVec = mc.player.getViewVector(partialTick);
+               Vec3 endPos = eyePos.add(lookVec.scale(maxDist));
+               BlockHitResult blockHit = mc.level.clip(new ClipContext(eyePos, endPos, Block.OUTLINE, Fluid.NONE, mc.player));
+               int centerX = guiGraphics.guiWidth() / 2;
+               int centerY = guiGraphics.guiHeight() / 2;
                renderDistance(mech, centerX, centerY, blockHit, guiGraphics, partialTick, mc);
             }
          }
@@ -381,36 +381,36 @@ public class PomkotsHud implements RenderHud {
    ) {
       String distText;
       int[] color;
-      if (hitResult.m_6662_() == Type.MISS) {
+      if (hitResult.getType() == Type.MISS) {
          distText = "-- m";
          color = DIST_COLOR_GREEN;
       } else {
-         Vec3 playerEye = mc.f_91074_.m_20299_(partialTick);
-         double dist = playerEye.m_82554_(hitResult.m_82450_());
+         Vec3 playerEye = mc.player.getEyePosition(partialTick);
+         double dist = playerEye.distanceTo(hitResult.getLocation());
          distText = String.format("%.1fm", dist);
-         color = chooseColor(mech, hitResult.m_6662_() == Type.ENTITY, dist);
+         color = chooseColor(mech, hitResult.getType() == Type.ENTITY, dist);
       }
 
       int lineStartX = centerX + 12;
       int lineEndX = centerX + 40;
       int lineY = centerY;
-      guiGraphics.m_280509_(lineStartX, lineY, lineEndX, lineY + 1, color[0]);
-      guiGraphics.m_280509_(lineEndX, lineY - 4, lineEndX + 1, lineY + 1, color[0]);
-      Font font = mc.f_91062_;
+      guiGraphics.fill(lineStartX, lineY, lineEndX, lineY + 1, color[0]);
+      guiGraphics.fill(lineEndX, lineY - 4, lineEndX + 1, lineY + 1, color[0]);
+      Font font = mc.font;
       int textX = lineEndX + 3;
       int textY = lineY - 9 / 2;
-      guiGraphics.m_280056_(font, distText, textX + 1, textY + 1, color[1], false);
-      guiGraphics.m_280056_(font, distText, textX, textY, color[0], false);
+      guiGraphics.drawString(font, distText, textX + 1, textY + 1, color[1], false);
+      guiGraphics.drawString(font, distText, textX, textY, color[0], false);
    }
 
    private static int[] chooseColor(Pmvc01Entity mech, boolean isEntity, double dist) {
       if (isEntity) {
          if (mech.getDriverInput().isWeaponRightHandPressed()) {
-            return chooseColorFromWeapon(mech.getRightArmWeapon().m_41720_(), dist);
+            return chooseColorFromWeapon(mech.getRightArmWeapon().getItem(), dist);
          } else {
             return mech.getDriverInput().isWeaponLeftHandPressed()
-               ? chooseColorFromWeapon(mech.getLeftArmWeapon().m_41720_(), dist)
-               : chooseColorFromWeapon(mech.getRightArmWeapon().m_41720_(), dist);
+               ? chooseColorFromWeapon(mech.getLeftArmWeapon().getItem(), dist)
+               : chooseColorFromWeapon(mech.getRightArmWeapon().getItem(), dist);
          }
       } else {
          return DIST_COLOR_GREEN;
@@ -431,8 +431,8 @@ public class PomkotsHud implements RenderHud {
    }
 
    private static HitResult pickClosest(Vec3 eyePos, BlockHitResult blockHit, EntityHitResult entityHit) {
-      double blockDist = blockHit != null && blockHit.m_6662_() != Type.MISS ? eyePos.m_82557_(blockHit.m_82450_()) : Double.MAX_VALUE;
-      double entityDist = entityHit != null && entityHit.m_6662_() != Type.MISS ? eyePos.m_82557_(entityHit.m_82450_()) : Double.MAX_VALUE;
+      double blockDist = blockHit != null && blockHit.getType() != Type.MISS ? eyePos.distanceToSqr(blockHit.getLocation()) : Double.MAX_VALUE;
+      double entityDist = entityHit != null && entityHit.getType() != Type.MISS ? eyePos.distanceToSqr(entityHit.getLocation()) : Double.MAX_VALUE;
       return (HitResult)(blockDist <= entityDist ? blockHit : entityHit);
    }
 
@@ -442,8 +442,8 @@ public class PomkotsHud implements RenderHud {
    }
 
    private void renderWeaponInformation(Pmvc01Entity mech, GuiGraphics guiGraphics, float tickDelta) {
-      int offx = this.mc.m_91268_().m_85445_() / 2;
-      int offy = this.mc.m_91268_().m_85446_() / 2;
+      int offx = this.mc.getWindow().getGuiScaledWidth() / 2;
+      int offy = this.mc.getWindow().getGuiScaledHeight() / 2;
       this.renderCooldown2(this.prevCTRightArm, this.curCTRightArm, this.maxCTRightArm, offx + 36 - 2, offy - 20, false, guiGraphics, tickDelta);
       this.renderBulletNum(mech.getAmmoManager(6), offx + 36 + 3 - 2, offy - 20, guiGraphics);
       this.renderAmmoRight(mech.getAmmoManager(6), offx + 36 + 12 - 2, offy - 18, guiGraphics);
@@ -461,10 +461,10 @@ public class PomkotsHud implements RenderHud {
    private void renderCooldown2(int prevCT, int curCT, int maxCT, int x, int y, boolean reverse, GuiGraphics guiGraphics, float tickDelta) {
       int blockWidth = 2;
       int blockHeight = 12;
-      float ctLerp = Mth.m_14179_(tickDelta, prevCT, curCT);
+      float ctLerp = Mth.lerp(tickDelta, prevCT, curCT);
       int cooldownHeight = (int)(blockHeight * ((maxCT - ctLerp) / maxCT));
-      guiGraphics.m_280509_(x, y, x + blockWidth, y + blockHeight, 1431655765);
-      guiGraphics.m_280509_(x, y + blockHeight - cooldownHeight, x + blockWidth, y + blockHeight, -3681058);
+      guiGraphics.fill(x, y, x + blockWidth, y + blockHeight, 1431655765);
+      guiGraphics.fill(x, y + blockHeight - cooldownHeight, x + blockWidth, y + blockHeight, -3681058);
    }
 
    private void renderBulletNum(Pmvc01Entity.AmmoManager amm, int x, int y, GuiGraphics guiGraphics) {
@@ -476,16 +476,16 @@ public class PomkotsHud implements RenderHud {
          if (!amm.isReloading()) {
             int bulletNumHeight = (int)(blockHeight * ((float)bulletNum / maxBulletNum));
             if (bulletNum == 0) {
-               guiGraphics.m_280509_(x, y, x + blockWidth, y + blockHeight, 1437204480);
+               guiGraphics.fill(x, y, x + blockWidth, y + blockHeight, 1437204480);
             } else {
-               guiGraphics.m_280509_(x, y, x + blockWidth, y + blockHeight, 1431655765);
+               guiGraphics.fill(x, y, x + blockWidth, y + blockHeight, 1431655765);
             }
 
-            guiGraphics.m_280509_(x, y + blockHeight - bulletNumHeight, x + blockWidth, y + blockHeight, -3681058);
+            guiGraphics.fill(x, y + blockHeight - bulletNumHeight, x + blockWidth, y + blockHeight, -3681058);
          } else {
             int bulletNumHeight = (int)(blockHeight * ((float)(amm.RELOAD_TICKS - amm.getReloadTicks()) / amm.RELOAD_TICKS));
-            guiGraphics.m_280509_(x, y, x + blockWidth, y + blockHeight, 1437204480);
-            guiGraphics.m_280509_(x, y + blockHeight - bulletNumHeight, x + blockWidth, y + blockHeight, -1431699456);
+            guiGraphics.fill(x, y, x + blockWidth, y + blockHeight, 1437204480);
+            guiGraphics.fill(x, y + blockHeight - bulletNumHeight, x + blockWidth, y + blockHeight, -1431699456);
          }
       }
    }
@@ -502,7 +502,7 @@ public class PomkotsHud implements RenderHud {
             mColor = 16711680;
          }
 
-         gui.m_280056_(Minecraft.m_91087_().f_91062_, String.format("%2s", amm.getMagazineNum()), x - 20, y, mColor, false);
+         gui.drawString(Minecraft.getInstance().font, String.format("%2s", amm.getMagazineNum()), x - 20, y, mColor, false);
       }
    }
 
@@ -518,29 +518,29 @@ public class PomkotsHud implements RenderHud {
             mColor = 16711680;
          }
 
-         gui.m_280056_(Minecraft.m_91087_().f_91062_, String.format("%-2s", amm.getMagazineNum()), x, y, mColor, false);
+         gui.drawString(Minecraft.getInstance().font, String.format("%-2s", amm.getMagazineNum()), x, y, mColor, false);
       }
    }
 
    private void renderCrossHair2(GuiGraphics guiGraphics, float tickDelta) {
       int textureWidth = 64;
       int textureHeight = 64;
-      int screenWidth = this.mc.m_91268_().m_85445_();
-      int screenHeight = this.mc.m_91268_().m_85446_();
+      int screenWidth = this.mc.getWindow().getGuiScaledWidth();
+      int screenHeight = this.mc.getWindow().getGuiScaledHeight();
       int startX = screenWidth / 2 - textureWidth / 2;
       int startY = screenHeight / 2 - textureHeight / 2;
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.6F);
-      RenderSystem.setShader(GameRenderer::m_172817_);
+      RenderSystem.setShader(GameRenderer::getPositionTexShader);
       RenderSystem.setShaderTexture(0, CROSSHAIR_TEXTURE2);
-      guiGraphics.m_280398_(CROSSHAIR_TEXTURE2, startX, startY, 0, 0.0F, 0.0F, textureWidth, textureHeight, textureWidth, textureHeight);
+      guiGraphics.blit(CROSSHAIR_TEXTURE2, startX, startY, 0, 0.0F, 0.0F, textureWidth, textureHeight, textureWidth, textureHeight);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 
    private void renderHealthBar2(PomkotsVehicleBase protobot, GuiGraphics guiGraphics, float tickDelta) {
-      int screenWidth = this.mc.m_91268_().m_85445_();
-      int screenHeight = this.mc.m_91268_().m_85446_();
+      int screenWidth = this.mc.getWindow().getGuiScaledWidth();
+      int screenHeight = this.mc.getWindow().getGuiScaledHeight();
       int width = 120;
       int height = 3;
       int x = screenWidth / 2 - width / 2;
@@ -549,17 +549,17 @@ public class PomkotsHud implements RenderHud {
          y -= 20;
       }
 
-      int maxHealth = (int)protobot.m_21233_();
-      guiGraphics.m_280509_(x, y, x + width, y + height, 1431655765);
-      int healthWidthCur = (int)(width * Mth.m_14179_(tickDelta, this.curHealth / maxHealth, this.curHealth / maxHealth));
-      int healthWidthPrev = (int)(width * Mth.m_14179_(tickDelta, this.prevHealth / maxHealth, this.prevHealth / maxHealth));
-      int healthWidth = Mth.m_269140_(tickDelta, healthWidthPrev, healthWidthCur);
-      guiGraphics.m_280509_(x, y, x + healthWidth, y + height, healthWidth < 40 ? -1431699456 : -3681058);
+      int maxHealth = (int)protobot.getMaxHealth();
+      guiGraphics.fill(x, y, x + width, y + height, 1431655765);
+      int healthWidthCur = (int)(width * Mth.lerp(tickDelta, this.curHealth / maxHealth, this.curHealth / maxHealth));
+      int healthWidthPrev = (int)(width * Mth.lerp(tickDelta, this.prevHealth / maxHealth, this.prevHealth / maxHealth));
+      int healthWidth = Mth.lerpInt(tickDelta, healthWidthPrev, healthWidthCur);
+      guiGraphics.fill(x, y, x + healthWidth, y + height, healthWidth < 40 ? -1431699456 : -3681058);
    }
 
    private void renderFuelBar(Pmvc01Entity protobot, GuiGraphics guiGraphics, float tickDelta) {
-      int screenWidth = this.mc.m_91268_().m_85445_();
-      int screenHeight = this.mc.m_91268_().m_85446_();
+      int screenWidth = this.mc.getWindow().getGuiScaledWidth();
+      int screenHeight = this.mc.getWindow().getGuiScaledHeight();
       int width = 120;
       int height = 3;
       int x = screenWidth / 2 - width / 2;
@@ -570,23 +570,23 @@ public class PomkotsHud implements RenderHud {
 
       int maxFuel = protobot.getMaxFuel();
       float fuelWidth = (maxFuel == 0 ? 0.0F : (float)protobot.getFuelNow() / maxFuel) * width;
-      guiGraphics.m_280509_(x, y, x + width, y + height, fuelWidth == 0.0F ? 1437204480 : 1431655765);
-      guiGraphics.m_280509_(x, y, x + (int)fuelWidth, y + height, fuelWidth < 40.0F ? -1431699456 : -3681058);
+      guiGraphics.fill(x, y, x + width, y + height, fuelWidth == 0.0F ? 1437204480 : 1431655765);
+      guiGraphics.fill(x, y, x + (int)fuelWidth, y + height, fuelWidth < 40.0F ? -1431699456 : -3681058);
    }
 
    private void renderEnergyBar2(PomkotsVehicleBase protobot, GuiGraphics guiGraphics, float tickDelta) {
-      int screenWidth = this.mc.m_91268_().m_85445_();
-      int screenHeight = this.mc.m_91268_().m_85446_();
+      int screenWidth = this.mc.getWindow().getGuiScaledWidth();
+      int screenHeight = this.mc.getWindow().getGuiScaledHeight();
       int maxFuel = this.maxEN;
       int width = 35;
       int height = 2;
       int x = screenWidth / 2 - width / 2;
       int y = screenHeight / 2 - 40;
-      float enLerp = Mth.m_14179_(tickDelta, this.prevEN, this.curEN);
+      float enLerp = Mth.lerp(tickDelta, this.prevEN, this.curEN);
       float fuelWidth = width * (enLerp / maxFuel);
       if (protobot instanceof Pmvc01Entity mech) {
-         guiGraphics.m_280509_(x, y, x + width, y + height, mech.isOverHeat() ? 1437204480 : 1431655765);
-         guiGraphics.m_280509_(
+         guiGraphics.fill(x, y, x + width, y + height, mech.isOverHeat() ? 1437204480 : 1431655765);
+         guiGraphics.fill(
             (int)(x + (width - fuelWidth) / 2.0F),
             y,
             (int)(x + (width - fuelWidth) / 2.0F + fuelWidth) + 1,
@@ -594,15 +594,15 @@ public class PomkotsHud implements RenderHud {
             mech.isOverHeat() ? -1431699456 : -3681058
          );
       } else {
-         guiGraphics.m_280509_(x, y, x + width, y + height, fuelWidth < width * 0.2 ? 1437204480 : 1431655765);
-         guiGraphics.m_280509_((int)(x + (width - fuelWidth) / 2.0F), y, (int)(x + (width - fuelWidth) / 2.0F + fuelWidth) + 1, y + height, -3681058);
+         guiGraphics.fill(x, y, x + width, y + height, fuelWidth < width * 0.2 ? 1437204480 : 1431655765);
+         guiGraphics.fill((int)(x + (width - fuelWidth) / 2.0F), y, (int)(x + (width - fuelWidth) / 2.0F + fuelWidth) + 1, y + height, -3681058);
       }
    }
 
    private void renderRepairKitNum(PomkotsVehicleBase protobot, GuiGraphics guiGraphics, float tickDelta) {
       if (protobot instanceof Pmvc01Entity pmvc01) {
-         int screenWidth = this.mc.m_91268_().m_85445_();
-         int screenHeight = this.mc.m_91268_().m_85446_();
+         int screenWidth = this.mc.getWindow().getGuiScaledWidth();
+         int screenHeight = this.mc.getWindow().getGuiScaledHeight();
          byte width = 120;
          int x = screenWidth / 2 + width / 2 + 8;
          int y = screenHeight - 13;
@@ -611,14 +611,14 @@ public class PomkotsHud implements RenderHud {
          }
 
          int size = 8;
-         guiGraphics.m_280163_(REPAIR_KIT_ICON, x, y, 0.0F, 0.0F, size, size, size, size);
-         guiGraphics.m_280056_(Minecraft.m_91087_().f_91062_, String.format("%2s", pmvc01.getRepairKitNum()), x + 10, y, -3681058, false);
+         guiGraphics.blit(REPAIR_KIT_ICON, x, y, 0.0F, 0.0F, size, size, size, size);
+         guiGraphics.drawString(Minecraft.getInstance().font, String.format("%2s", pmvc01.getRepairKitNum()), x + 10, y, -3681058, false);
       }
    }
 
    private void renderMechHPWarnings(PomkotsVehicleBase mech, GuiGraphics guiGraphics, float tickDelta) {
-      Minecraft mc = Minecraft.m_91087_();
-      float hpRatio = mech.m_21223_() / mech.m_21233_();
+      Minecraft mc = Minecraft.getInstance();
+      float hpRatio = mech.getHealth() / mech.getMaxHealth();
       if (hpRatio <= 0.4F) {
          String text;
          int rgb;
@@ -633,56 +633,56 @@ public class PomkotsHud implements RenderHud {
             speed = 0.15F;
          }
 
-         float time = (mc.f_91074_.f_19797_ + tickDelta) * speed;
-         float alpha = (Mth.m_14031_(time) + 1.0F) * 0.5F;
+         float time = (mc.player.tickCount + tickDelta) * speed;
+         float alpha = (Mth.sin(time) + 1.0F) * 0.5F;
          alpha = 0.2F + alpha * 0.8F;
          int a = (int)(alpha * 255.0F);
          int color = a << 24 | rgb;
-         int screenWidth = mc.m_91268_().m_85445_();
-         int screenHeight = mc.m_91268_().m_85446_();
+         int screenWidth = mc.getWindow().getGuiScaledWidth();
+         int screenHeight = mc.getWindow().getGuiScaledHeight();
          int x = screenWidth / 2;
          int y = screenHeight / 2 + 40;
-         Font font = mc.f_91062_;
-         int textWidth = font.m_92895_(text);
+         Font font = mc.font;
+         int textWidth = font.width(text);
          int xx = x - textWidth / 2;
-         guiGraphics.m_280056_(font, text, xx, y, color, false);
+         guiGraphics.drawString(font, text, xx, y, color, false);
       }
    }
 
    private void renderHealthBar(LivingEntity entity, GuiGraphics guiGraphics, float tickDelta) {
-      Minecraft client = Minecraft.m_91087_();
-      Vec3 cameraPos = client.f_91063_.m_109153_().m_90583_();
-      double distance = entity.m_20238_(cameraPos);
+      Minecraft client = Minecraft.getInstance();
+      Vec3 cameraPos = client.gameRenderer.getMainCamera().getPosition();
+      double distance = entity.distanceToSqr(cameraPos);
       if (!(distance > 4096.0)) {
-         double x = entity.f_19790_ + (entity.m_20185_() - entity.f_19790_) * tickDelta;
-         double y = entity.f_19791_ + (entity.m_20186_() - entity.f_19791_) * tickDelta + entity.m_20206_() + 0.5;
-         double z = entity.f_19792_ + (entity.m_20189_() - entity.f_19792_) * tickDelta;
-         Vec3 projectedPos = new Vec3(x, y, z).m_82546_(cameraPos);
-         Vector4f pos = new Vector4f((float)projectedPos.f_82479_, (float)projectedPos.f_82480_, (float)projectedPos.f_82481_, 1.0F);
-         pos = client.f_91063_.m_253088_(tickDelta).transform(pos);
-         int screenX = (int)(client.m_91268_().m_85445_() / 2 + pos.x() / pos.w() * client.m_91268_().m_85445_() / 2.0F);
-         int screenY = (int)(client.m_91268_().m_85446_() / 2 - pos.y() / pos.w() * client.m_91268_().m_85446_() / 2.0F);
+         double x = entity.xOld + (entity.getX() - entity.xOld) * tickDelta;
+         double y = entity.yOld + (entity.getY() - entity.yOld) * tickDelta + entity.getBbHeight() + 0.5;
+         double z = entity.zOld + (entity.getZ() - entity.zOld) * tickDelta;
+         Vec3 projectedPos = new Vec3(x, y, z).subtract(cameraPos);
+         Vector4f pos = new Vector4f((float)projectedPos.x, (float)projectedPos.y, (float)projectedPos.z, 1.0F);
+         pos = client.gameRenderer.getProjectionMatrix(tickDelta).transform(pos);
+         int screenX = (int)(client.getWindow().getGuiScaledWidth() / 2 + pos.x() / pos.w() * client.getWindow().getGuiScaledWidth() / 2.0F);
+         int screenY = (int)(client.getWindow().getGuiScaledHeight() / 2 - pos.y() / pos.w() * client.getWindow().getGuiScaledHeight() / 2.0F);
          int barWidth = 40;
          int barHeight = 6;
-         int maxHealth = (int)entity.m_21233_();
-         int currentHealth = (int)entity.m_21223_();
+         int maxHealth = (int)entity.getMaxHealth();
+         int currentHealth = (int)entity.getHealth();
          int healthBarWidth = (int)((float)currentHealth / maxHealth * barWidth);
-         guiGraphics.m_280509_(screenX - barWidth / 2, screenY, screenX + barWidth / 2, screenY + barHeight, 1711276032);
-         guiGraphics.m_280509_(screenX - barWidth / 2, screenY, screenX - barWidth / 2 + healthBarWidth, screenY + barHeight, -16711936);
+         guiGraphics.fill(screenX - barWidth / 2, screenY, screenX + barWidth / 2, screenY + barHeight, 1711276032);
+         guiGraphics.fill(screenX - barWidth / 2, screenY, screenX - barWidth / 2 + healthBarWidth, screenY + barHeight, -16711936);
          LOGGER.info(screenX + ":" + screenY);
       }
    }
 
    private void renderHealthBar(Monster monster, Camera camera, GuiGraphics guiGraphics, float tickDelta) {
       Vec3 entityPos = this.getEntityRenderPosition(monster, tickDelta);
-      Vec3 cameraPos = camera.m_90583_();
-      double x = entityPos.f_82479_ - cameraPos.f_82479_;
-      double y = entityPos.f_82480_ - cameraPos.f_82480_ + monster.m_20206_() + 0.5;
-      double z = entityPos.f_82481_ - cameraPos.f_82481_;
-      int screenX = (int)(this.mc.m_91268_().m_85445_() / 2.0 + x * 100.0);
-      int screenY = (int)(this.mc.m_91268_().m_85446_() / 2.0 - y * 100.0 - z * 50.0);
-      float health = monster.m_21223_();
-      float maxHealth = monster.m_21233_();
+      Vec3 cameraPos = camera.getPosition();
+      double x = entityPos.x - cameraPos.x;
+      double y = entityPos.y - cameraPos.y + monster.getBbHeight() + 0.5;
+      double z = entityPos.z - cameraPos.z;
+      int screenX = (int)(this.mc.getWindow().getGuiScaledWidth() / 2.0 + x * 100.0);
+      int screenY = (int)(this.mc.getWindow().getGuiScaledHeight() / 2.0 - y * 100.0 - z * 50.0);
+      float health = monster.getHealth();
+      float maxHealth = monster.getMaxHealth();
       float healthPercentage = health / maxHealth;
       int barWidth = 50;
       int barHeight = 5;
@@ -691,15 +691,15 @@ public class PomkotsHud implements RenderHud {
    }
 
    private Vec3 getEntityRenderPosition(LivingEntity entity, float tickDelta) {
-      double x = entity.f_19790_ + (entity.m_20185_() - entity.f_19790_) * tickDelta;
-      double y = entity.f_19791_ + (entity.m_20186_() - entity.f_19791_) * tickDelta;
-      double z = entity.f_19792_ + (entity.m_20189_() - entity.f_19792_) * tickDelta;
+      double x = entity.xOld + (entity.getX() - entity.xOld) * tickDelta;
+      double y = entity.yOld + (entity.getY() - entity.yOld) * tickDelta;
+      double z = entity.zOld + (entity.getZ() - entity.zOld) * tickDelta;
       return new Vec3(x, y, z);
    }
 
    private void fill(GuiGraphics guiGraphics, int x1, int y1, int x2, int y2, int color) {
-      RenderSystem.setShader(GameRenderer::m_172811_);
-      guiGraphics.m_280509_(x1, y1, x2, y2, color);
+      RenderSystem.setShader(GameRenderer::getPositionColorShader);
+      guiGraphics.fill(x1, y1, x2, y2, color);
       LOGGER.info(x1 + ":" + y1 + ":" + x2 + ":" + y2);
    }
 }

@@ -35,15 +35,15 @@ public class TsubameItem extends BasePartsItem.WeaponShoulder {
    public void tickWeaponInAction(ActionWeapon.WeaponMechInterface mechInterface, int tick, boolean isOnFire) {
       Level world = mechInterface.getWorld();
       if (isOnFire) {
-         if (!world.m_5776_()) {
+         if (!world.isClientSide()) {
             Entity target = mechInterface.consumeMultiLockTargetsSingle();
             if (target != null && mechInterface.consumeAmmoFromServerSide(1)) {
                Vec3 offset = mechInterface.getOffset();
                Vec3 muzzlPos = new Vec3(1.8 * mechInterface.isRight(), 5.0, 2.0);
                int i = tick / 2 - 1;
                if (i < 3) {
-                  Vec3 worldMuzzlPos = muzzlPos.m_82520_(mechInterface.isRight() * 1.4, 1.0 - 0.5 * (i % 3), 0.0)
-                     .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+                  Vec3 worldMuzzlPos = muzzlPos.add(mechInterface.isRight() * 1.4, 1.0 - 0.5 * (i % 3), 0.0)
+                     .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
                   MissileGenericEntity be = new MissileGenericEntity(
                      (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_GENERIC.get(),
                      world,
@@ -52,8 +52,8 @@ public class TsubameItem extends BasePartsItem.WeaponShoulder {
                      mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory()),
                      BattleBalance.MECH_MISSILE_GENERIC_SPEED2
                   );
-                  be.m_146884_(offset.m_82549_(worldMuzzlPos));
-                  be.m_37251_(
+                  be.setPos(offset.add(worldMuzzlPos));
+                  be.shootFromRotation(
                      be,
                      0.0F,
                      mechInterface.getYRot() - 45 * mechInterface.isRight(),
@@ -61,7 +61,7 @@ public class TsubameItem extends BasePartsItem.WeaponShoulder {
                      BattleBalance.MECH_MISSILE_GENERIC_SPEED2,
                      0.0F
                   );
-                  world.m_7967_(be);
+                  world.addFreshEntity(be);
                }
             }
          } else {

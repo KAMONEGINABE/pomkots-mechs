@@ -13,9 +13,9 @@ public abstract class BaseBossGoal extends Goal {
       this.goalDice = mob.goalDice;
    }
 
-   public boolean m_8036_() {
-      LivingEntity target = this.mob.m_5448_();
-      return target != null && target.m_6084_() && !this.mob.getActionController().isInActionAll() && this.goalDice.canUse(this);
+   public boolean canUse() {
+      LivingEntity target = this.mob.getTarget();
+      return target != null && target.isAlive() && !this.mob.getActionController().isInActionAll() && this.goalDice.canUse(this);
    }
 
    abstract boolean canUseInternal();

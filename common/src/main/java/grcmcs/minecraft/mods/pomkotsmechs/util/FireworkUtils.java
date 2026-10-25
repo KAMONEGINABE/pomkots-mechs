@@ -16,55 +16,55 @@ import net.minecraft.world.phys.Vec3;
 public class FireworkUtils {
    public static void launchRandomFirework(ServerLevel level, Vec3 pos) {
       ItemStack fireworkStack = createRandomFirework(level);
-      FireworkRocketEntity firework = new FireworkRocketEntity(level, pos.f_82479_, pos.f_82480_, pos.f_82481_, fireworkStack);
-      level.m_7967_(firework);
+      FireworkRocketEntity firework = new FireworkRocketEntity(level, pos.x, pos.y, pos.z, fireworkStack);
+      level.addFreshEntity(firework);
    }
 
    public static ItemStack createRandomFirework(Level level) {
-      ItemStack stack = new ItemStack(Items.f_42688_);
-      CompoundTag tag = stack.m_41698_("Fireworks");
-      int flightDuration = 1 + level.f_46441_.m_188503_(3);
-      tag.m_128344_("Flight", (byte)flightDuration);
-      int explosionCount = 1 + level.f_46441_.m_188503_(3);
+      ItemStack stack = new ItemStack(Items.FIREWORK_ROCKET);
+      CompoundTag tag = stack.getOrCreateTagElement("Fireworks");
+      int flightDuration = 1 + level.random.nextInt(3);
+      tag.putByte("Flight", (byte)flightDuration);
+      int explosionCount = 1 + level.random.nextInt(3);
       ListTag explosions = new ListTag();
 
       for (int i = 0; i < explosionCount; i++) {
-         explosions.add(createRandomExplosion(level.f_46441_));
+         explosions.add(createRandomExplosion(level.random));
       }
 
-      tag.m_128365_("Explosions", explosions);
+      tag.put("Explosions", explosions);
       return stack;
    }
 
    private static CompoundTag createRandomExplosion(RandomSource random) {
       CompoundTag explosion = new CompoundTag();
       int[] shapes = new int[]{0, 1, 2, 3, 4};
-      explosion.m_128344_("Type", (byte)shapes[random.m_188503_(shapes.length)]);
-      int colorCount = 1 + random.m_188503_(5);
+      explosion.putByte("Type", (byte)shapes[random.nextInt(shapes.length)]);
+      int colorCount = 1 + random.nextInt(5);
       int[] colors = new int[colorCount];
 
       for (int i = 0; i < colorCount; i++) {
          colors[i] = getRandomFireworkColor(random);
       }
 
-      explosion.m_128385_("Colors", colors);
-      if (random.m_188499_()) {
-         int fadeColorCount = 1 + random.m_188503_(3);
+      explosion.putIntArray("Colors", colors);
+      if (random.nextBoolean()) {
+         int fadeColorCount = 1 + random.nextInt(3);
          int[] fadeColors = new int[fadeColorCount];
 
          for (int i = 0; i < fadeColorCount; i++) {
             fadeColors[i] = getRandomFireworkColor(random);
          }
 
-         explosion.m_128385_("FadeColors", fadeColors);
+         explosion.putIntArray("FadeColors", fadeColors);
       }
 
-      if (random.m_188501_() < 0.3F) {
-         explosion.m_128379_("Trail", true);
+      if (random.nextFloat() < 0.3F) {
+         explosion.putBoolean("Trail", true);
       }
 
-      if (random.m_188501_() < 0.3F) {
-         explosion.m_128379_("Flicker", true);
+      if (random.nextFloat() < 0.3F) {
+         explosion.putBoolean("Flicker", true);
       }
 
       return explosion;
@@ -72,23 +72,23 @@ public class FireworkUtils {
 
    private static int getRandomFireworkColor(RandomSource random) {
       int[] commonColors = new int[]{16711680, 65280, 255, 16776960, 16711935, 65535, 16777215, 16746496, 8913151, 16711816};
-      return commonColors[random.m_188503_(commonColors.length)];
+      return commonColors[random.nextInt(commonColors.length)];
    }
 
    public static void launchFireworkShow(ServerLevel level, Vec3 centerPos, int count, int delayTicks) {
       for (int i = 0; i < count; i++) {
          int index = i;
-         level.m_7654_().execute(() -> scheduleFirework(level, centerPos, index * delayTicks));
+         level.getServer().execute(() -> scheduleFirework(level, centerPos, index * delayTicks));
       }
    }
 
    private static void scheduleFirework(ServerLevel level, Vec3 centerPos, int delayTicks) {
-      MinecraftServer server = level.m_7654_();
-      server.m_6937_(new TickTask(server.m_129921_() + delayTicks, () -> {
-         double offsetX = (level.f_46441_.m_188500_() - 0.5) * 10.0;
-         double offsetZ = (level.f_46441_.m_188500_() - 0.5) * 10.0;
-         Vec3 pos = centerPos.m_82520_(offsetX, 0.0, offsetZ);
-         FireworkUtils.FireworkTheme theme = FireworkUtils.FireworkTheme.values()[level.f_46441_.m_188503_(FireworkUtils.FireworkTheme.values().length)];
+      MinecraftServer server = level.getServer();
+      server.tell(new TickTask(server.getTickCount() + delayTicks, () -> {
+         double offsetX = (level.random.nextDouble() - 0.5) * 10.0;
+         double offsetZ = (level.random.nextDouble() - 0.5) * 10.0;
+         Vec3 pos = centerPos.add(offsetX, 0.0, offsetZ);
+         FireworkUtils.FireworkTheme theme = FireworkUtils.FireworkTheme.values()[level.random.nextInt(FireworkUtils.FireworkTheme.values().length)];
          launchThemedFirework(level, pos, theme);
       }));
    }
@@ -96,68 +96,68 @@ public class FireworkUtils {
    public static void launchCircleFireworks(ServerLevel level, Vec3 centerPos, int count, double radius) {
       for (int i = 0; i < count; i++) {
          double angle = (Math.PI * 2) * i / count;
-         double x = centerPos.f_82479_ + Math.cos(angle) * radius;
-         double z = centerPos.f_82481_ + Math.sin(angle) * radius;
-         Vec3 pos = new Vec3(x, centerPos.f_82480_, z);
+         double x = centerPos.x + Math.cos(angle) * radius;
+         double z = centerPos.z + Math.sin(angle) * radius;
+         Vec3 pos = new Vec3(x, centerPos.y, z);
          int delay = i * 2;
-         level.m_7654_().m_6937_(new TickTask(level.m_7654_().m_129921_() + delay, () -> launchRandomFirework(level, pos)));
+         level.getServer().tell(new TickTask(level.getServer().getTickCount() + delay, () -> launchRandomFirework(level, pos)));
       }
    }
 
    public static void launchRandomAreaFireworks(ServerLevel level, Vec3 centerPos, double range, int count, int totalDurationTicks) {
       for (int i = 0; i < count; i++) {
-         int delay = level.f_46441_.m_188503_(totalDurationTicks);
-         level.m_7654_().m_6937_(new TickTask(level.m_7654_().m_129921_() + delay, () -> {
-            double x = centerPos.f_82479_ + (level.f_46441_.m_188500_() - 0.5) * range * 2.0;
-            double z = centerPos.f_82481_ + (level.f_46441_.m_188500_() - 0.5) * range * 2.0;
-            launchRandomFirework(level, new Vec3(x, centerPos.f_82480_, z));
+         int delay = level.random.nextInt(totalDurationTicks);
+         level.getServer().tell(new TickTask(level.getServer().getTickCount() + delay, () -> {
+            double x = centerPos.x + (level.random.nextDouble() - 0.5) * range * 2.0;
+            double z = centerPos.z + (level.random.nextDouble() - 0.5) * range * 2.0;
+            launchRandomFirework(level, new Vec3(x, centerPos.y, z));
          }));
       }
    }
 
    public static void launchThemedFirework(ServerLevel level, Vec3 pos, FireworkUtils.FireworkTheme theme) {
-      ItemStack fireworkStack = createThemedFirework(level.f_46441_, theme);
-      FireworkRocketEntity firework = new FireworkRocketEntity(level, pos.f_82479_, pos.f_82480_, pos.f_82481_, fireworkStack);
-      level.m_7967_(firework);
+      ItemStack fireworkStack = createThemedFirework(level.random, theme);
+      FireworkRocketEntity firework = new FireworkRocketEntity(level, pos.x, pos.y, pos.z, fireworkStack);
+      level.addFreshEntity(firework);
    }
 
    public static ItemStack createThemedFirework(RandomSource random, FireworkUtils.FireworkTheme theme) {
-      ItemStack stack = new ItemStack(Items.f_42688_);
-      CompoundTag tag = stack.m_41698_("Fireworks");
-      tag.m_128344_("Flight", (byte)theme.flightDuration);
+      ItemStack stack = new ItemStack(Items.FIREWORK_ROCKET);
+      CompoundTag tag = stack.getOrCreateTagElement("Fireworks");
+      tag.putByte("Flight", (byte)theme.flightDuration);
       ListTag explosions = new ListTag();
 
       for (int i = 0; i < theme.explosionCount; i++) {
          explosions.add(createThemedExplosion(random, theme));
       }
 
-      tag.m_128365_("Explosions", explosions);
+      tag.put("Explosions", explosions);
       return stack;
    }
 
    private static CompoundTag createThemedExplosion(RandomSource random, FireworkUtils.FireworkTheme theme) {
       CompoundTag explosion = new CompoundTag();
-      explosion.m_128344_("Type", (byte)theme.shapes[random.m_188503_(theme.shapes.length)]);
-      int colorCount = Math.min(theme.colors.length, 1 + random.m_188503_(3));
+      explosion.putByte("Type", (byte)theme.shapes[random.nextInt(theme.shapes.length)]);
+      int colorCount = Math.min(theme.colors.length, 1 + random.nextInt(3));
       int[] colors = new int[colorCount];
 
       for (int i = 0; i < colorCount; i++) {
-         colors[i] = theme.colors[random.m_188503_(theme.colors.length)];
+         colors[i] = theme.colors[random.nextInt(theme.colors.length)];
       }
 
-      explosion.m_128385_("Colors", colors);
-      if (theme.useFadeColors && random.m_188499_()) {
-         int[] fadeColors = new int[1 + random.m_188503_(2)];
+      explosion.putIntArray("Colors", colors);
+      if (theme.useFadeColors && random.nextBoolean()) {
+         int[] fadeColors = new int[1 + random.nextInt(2)];
 
          for (int i = 0; i < fadeColors.length; i++) {
-            fadeColors[i] = theme.fadeColors[random.m_188503_(theme.fadeColors.length)];
+            fadeColors[i] = theme.fadeColors[random.nextInt(theme.fadeColors.length)];
          }
 
-         explosion.m_128385_("FadeColors", fadeColors);
+         explosion.putIntArray("FadeColors", fadeColors);
       }
 
-      explosion.m_128379_("Trail", theme.trail);
-      explosion.m_128379_("Flicker", theme.flicker);
+      explosion.putBoolean("Trail", theme.trail);
+      explosion.putBoolean("Flicker", theme.flicker);
       return explosion;
    }
 

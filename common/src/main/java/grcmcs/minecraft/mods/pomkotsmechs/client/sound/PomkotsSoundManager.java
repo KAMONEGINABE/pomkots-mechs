@@ -16,7 +16,7 @@ public class PomkotsSoundManager {
 
       PomkotsSoundInstance sound = new PomkotsSoundInstance(soundEvent, config);
       activeSounds.put(id, sound);
-      Minecraft.m_91087_().m_91106_().m_120367_(sound);
+      Minecraft.getInstance().getSoundManager().play(sound);
       return id;
    }
 
@@ -26,7 +26,7 @@ public class PomkotsSoundManager {
 
    public static void stopSound(String id, boolean fadeOut) {
       PomkotsSoundInstance sound = activeSounds.get(id);
-      if (sound != null && !sound.m_7801_()) {
+      if (sound != null && !sound.isStopped()) {
          if (fadeOut) {
             sound.startFadeOut();
          } else {
@@ -50,11 +50,11 @@ public class PomkotsSoundManager {
 
    public static boolean isPlaying(String id) {
       PomkotsSoundInstance sound = activeSounds.get(id);
-      return sound != null && !sound.m_7801_();
+      return sound != null && !sound.isStopped();
    }
 
    public static void cleanup() {
-      activeSounds.entrySet().removeIf(entry -> entry.getValue().m_7801_());
+      activeSounds.entrySet().removeIf(entry -> entry.getValue().isStopped());
    }
 
    public static void cleanup(Minecraft minecraft) {

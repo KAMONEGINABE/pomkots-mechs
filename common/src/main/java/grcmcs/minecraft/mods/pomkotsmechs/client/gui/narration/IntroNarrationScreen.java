@@ -33,11 +33,11 @@ public class IntroNarrationScreen extends Screen {
    private int tickNum = 0;
 
    public IntroNarrationScreen() {
-      super(Component.m_237119_());
+      super(Component.empty());
       this.tickNum = 0;
    }
 
-   public void m_86600_() {
+   public void tick() {
       if (this.tickNum == 10) {
          PomkotsBGMManager.setState(BGMState.OPENING);
       }
@@ -57,30 +57,30 @@ public class IntroNarrationScreen extends Screen {
 
    private void quitIntro() {
       if (Platform.isForge()) {
-         Minecraft mc = Minecraft.m_91087_();
-         mc.m_6937_(() -> mc.m_91152_(null));
+         Minecraft mc = Minecraft.getInstance();
+         mc.tell(() -> mc.setScreen(null));
       } else {
-         this.f_96541_.m_91152_(null);
+         this.minecraft.setScreen(null);
       }
 
       PomkotsBGMManager.setState(BGMState.RUIN_CITY);
    }
 
-   public void m_88315_(GuiGraphics gfx, int mouseX, int mouseY, float partialTicks) {
-      gfx.m_280509_(0, 0, this.f_96543_, this.f_96544_, -16777216);
+   public void render(GuiGraphics gfx, int mouseX, int mouseY, float partialTicks) {
+      gfx.fill(0, 0, this.width, this.height, -16777216);
       if (this.cutIndex < this.cutsDefinition.size()) {
-         this.cutsDefinition.get(this.cutIndex).render(gfx, this, this.f_96547_, partialTicks);
+         this.cutsDefinition.get(this.cutIndex).render(gfx, this, this.font, partialTicks);
       }
 
-      super.m_88315_(gfx, mouseX, mouseY, partialTicks);
+      super.render(gfx, mouseX, mouseY, partialTicks);
    }
 
-   public boolean m_7933_(int keyCode, int scanCode, int modifiers) {
+   public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
       if (keyCode == 256) {
          this.quitIntro();
          return true;
       } else {
-         return super.m_7933_(keyCode, scanCode, modifiers);
+         return super.keyPressed(keyCode, scanCode, modifiers);
       }
    }
 }

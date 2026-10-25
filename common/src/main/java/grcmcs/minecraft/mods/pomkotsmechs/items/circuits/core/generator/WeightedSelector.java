@@ -24,7 +24,7 @@ public final class WeightedSelector {
          return null;
       }
 
-      int roll = random.m_188503_(totalWeight);
+      int roll = random.nextInt(totalWeight);
 
       for (T value : values) {
          int weight = Math.max(0, weightGetter.applyAsInt(value));

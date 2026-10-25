@@ -36,16 +36,16 @@ public class PomkotsSpannerItem extends Item {
    }
 
    @NotNull
-   public InteractionResult m_6225_(UseOnContext ctx) {
-      Level level = ctx.m_43725_();
-      if (level.f_46443_) {
+   public InteractionResult useOn(UseOnContext ctx) {
+      Level level = ctx.getLevel();
+      if (level.isClientSide) {
          return InteractionResult.SUCCESS;
       }
 
-      BlockPos pos = ctx.m_8083_();
-      BlockState state = level.m_8055_(pos);
-      Player player = ctx.m_43723_();
-      Block block = state.m_60734_();
+      BlockPos pos = ctx.getClickedPos();
+      BlockState state = level.getBlockState(pos);
+      Player player = ctx.getPlayer();
+      Block block = state.getBlock();
       if (block instanceof PersonalPomkotsCubeBlock) {
          return this.retrievePersonalCube(ctx, level, pos, state, player);
       }
@@ -54,37 +54,37 @@ public class PomkotsSpannerItem extends Item {
          return InteractionResult.PASS;
       }
 
-      if (level.m_7702_(pos) instanceof Container container) {
-         Containers.m_19002_(level, pos, container);
+      if (level.getBlockEntity(pos) instanceof Container container) {
+         Containers.dropContents(level, pos, container);
       }
 
-      Block.m_49840_(level, pos, new ItemStack(state.m_60734_()));
-      level.m_7471_(pos, false);
-      level.m_5594_(null, pos, SoundEvents.f_11664_, SoundSource.BLOCKS, 1.0F, 1.0F);
-      if (player != null && !player.m_150110_().f_35937_) {
-         ctx.m_43722_().m_41622_(1, player, p -> p.m_21190_(ctx.m_43724_()));
+      Block.popResource(level, pos, new ItemStack(state.getBlock()));
+      level.removeBlock(pos, false);
+      level.playSound(null, pos, SoundEvents.ANVIL_BREAK, SoundSource.BLOCKS, 1.0F, 1.0F);
+      if (player != null && !player.getAbilities().instabuild) {
+         ctx.getItemInHand().hurtAndBreak(1, player, p -> p.broadcastBreakEvent(ctx.getHand()));
       }
 
       return InteractionResult.CONSUME;
    }
 
    private InteractionResult retrievePersonalCube(UseOnContext ctx, Level level, BlockPos pos, BlockState state, Player player) {
-      if (level.m_7702_(pos) instanceof PersonalPomkotsCubeBlockEntity blockEntity) {
+      if (level.getBlockEntity(pos) instanceof PersonalPomkotsCubeBlockEntity blockEntity) {
          if (player != null && blockEntity.isOwner(player)) {
             ItemStack retrievedCube = new ItemStack((ItemLike)PomkotsMechs.PERSONAL_POMKOTS_CUBE_BLOCK_ITEM.get());
-            BlockItem.m_186338_(retrievedCube, (BlockEntityType)PomkotsMechs.PERSONAL_POMKOTS_CUBE_BLOCK_ENTITY.get(), blockEntity.m_187482_());
-            blockEntity.m_6211_();
-            Block.m_49840_(level, pos, retrievedCube);
-            level.m_7471_(pos, false);
-            level.m_5594_(null, pos, SoundEvents.f_11664_, SoundSource.BLOCKS, 1.0F, 1.0F);
-            if (!player.m_150110_().f_35937_) {
-               ctx.m_43722_().m_41622_(1, player, p -> p.m_21190_(ctx.m_43724_()));
+            BlockItem.setBlockEntityData(retrievedCube, (BlockEntityType)PomkotsMechs.PERSONAL_POMKOTS_CUBE_BLOCK_ENTITY.get(), blockEntity.saveWithoutMetadata());
+            blockEntity.clearContent();
+            Block.popResource(level, pos, retrievedCube);
+            level.removeBlock(pos, false);
+            level.playSound(null, pos, SoundEvents.ANVIL_BREAK, SoundSource.BLOCKS, 1.0F, 1.0F);
+            if (!player.getAbilities().instabuild) {
+               ctx.getItemInHand().hurtAndBreak(1, player, p -> p.broadcastBreakEvent(ctx.getHand()));
             }
 
             return InteractionResult.CONSUME;
          } else {
             if (player != null) {
-               player.m_213846_(Component.m_237115_("text.pomkotsmechs.messages.personal_pomkots_cube.not_owner"));
+               player.sendSystemMessage(Component.translatable("text.pomkotsmechs.messages.personal_pomkots_cube.not_owner"));
             }
 
             return InteractionResult.CONSUME;
@@ -94,8 +94,8 @@ public class PomkotsSpannerItem extends Item {
       }
    }
 
-   public void m_7373_(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-      tooltip.add(Component.m_237115_("tooltip.pomkotsmechs.pomkots_spanner").m_130940_(ChatFormatting.GRAY));
-      super.m_7373_(stack, level, tooltip, flag);
+   public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+      tooltip.add(Component.translatable("tooltip.pomkotsmechs.pomkots_spanner").withStyle(ChatFormatting.GRAY));
+      super.appendHoverText(stack, level, tooltip, flag);
    }
 }

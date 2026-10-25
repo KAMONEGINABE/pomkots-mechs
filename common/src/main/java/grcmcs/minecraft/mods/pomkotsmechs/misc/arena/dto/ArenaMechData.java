@@ -13,7 +13,7 @@ import net.minecraft.world.item.ItemStack;
 public class ArenaMechData {
    private String mechName;
    private int textureColor;
-   private NonNullList<ItemStack> parts = NonNullList.m_122780_(18, ItemStack.f_41583_);
+   private NonNullList<ItemStack> parts = NonNullList.withSize(18, ItemStack.EMPTY);
 
    public String getMechName() {
       return this.mechName;
@@ -41,39 +41,39 @@ public class ArenaMechData {
 
    public CompoundTag save() {
       CompoundTag tag = new CompoundTag();
-      tag.m_128359_("MechName", this.mechName);
-      tag.m_128405_("TextureColor", this.textureColor);
+      tag.putString("MechName", this.mechName);
+      tag.putInt("TextureColor", this.textureColor);
       ListTag partsList = new ListTag();
 
       for (int i = 0; i < this.parts.size(); i++) {
          ItemStack stack = (ItemStack)this.parts.get(i);
-         if (!stack.m_41619_()) {
+         if (!stack.isEmpty()) {
             CompoundTag stackTag = new CompoundTag();
-            stackTag.m_128405_("Slot", i);
-            if (stack.m_41720_() instanceof BasePartsItem basePartsItem) {
-               stackTag.m_128405_(PomkotsMechs.nbtName("Level"), basePartsItem.getLevel(stack));
+            stackTag.putInt("Slot", i);
+            if (stack.getItem() instanceof BasePartsItem basePartsItem) {
+               stackTag.putInt(PomkotsMechs.nbtName("Level"), basePartsItem.getLevel(stack));
             }
 
-            stack.m_41739_(stackTag);
+            stack.save(stackTag);
             partsList.add(stackTag);
          }
       }
 
-      tag.m_128365_("Parts", partsList);
+      tag.put("Parts", partsList);
       return tag;
    }
 
    public static ArenaMechData load(CompoundTag tag) {
       ArenaMechData data = new ArenaMechData();
-      data.mechName = tag.m_128461_("MechName");
-      data.textureColor = tag.m_128451_("TextureColor");
-      ListTag partsList = tag.m_128437_("Parts", 10);
-      NonNullList<ItemStack> parts = NonNullList.m_122780_(18, ItemStack.f_41583_);
+      data.mechName = tag.getString("MechName");
+      data.textureColor = tag.getInt("TextureColor");
+      ListTag partsList = tag.getList("Parts", 10);
+      NonNullList<ItemStack> parts = NonNullList.withSize(18, ItemStack.EMPTY);
 
       for (Tag element : partsList) {
          CompoundTag stackTag = (CompoundTag)element;
-         int slot = stackTag.m_128451_("Slot");
-         parts.set(slot, ItemStack.m_41712_(stackTag));
+         int slot = stackTag.getInt("Slot");
+         parts.set(slot, ItemStack.of(stackTag));
       }
 
       data.parts = parts;
@@ -82,7 +82,7 @@ public class ArenaMechData {
 
    public static ArenaMechData fromMechInstance(Pmvc01Entity mech) {
       ArenaMechData data = new ArenaMechData();
-      Component cName = mech.m_7770_();
+      Component cName = mech.getCustomName();
       if (cName == null) {
          data.setMechName("No Name");
       } else {

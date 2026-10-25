@@ -50,32 +50,32 @@ public final class CircuitSkillSnapshot {
 
    public CompoundTag save() {
       CompoundTag tag = new CompoundTag();
-      tag.m_128359_("Id", this.id.toString());
-      tag.m_128359_("NameKey", this.nameKey);
-      tag.m_128359_("FallbackName", this.fallbackName);
+      tag.putString("Id", this.id.toString());
+      tag.putString("NameKey", this.nameKey);
+      tag.putString("FallbackName", this.fallbackName);
       ListTag effectsTag = new ListTag();
 
       for (SkillEffect effect : this.effects) {
          effectsTag.add(saveEffect(effect));
       }
 
-      tag.m_128365_("Effects", effectsTag);
+      tag.put("Effects", effectsTag);
       return tag;
    }
 
    public static CircuitSkillSnapshot load(CompoundTag tag) {
-      ResourceLocation id = ResourceLocation.m_135820_(tag.m_128461_("Id"));
+      ResourceLocation id = ResourceLocation.tryParse(tag.getString("Id"));
       if (id == null) {
          return null;
       }
 
-      String nameKey = tag.m_128461_("NameKey");
-      String fallbackName = tag.m_128461_("FallbackName");
+      String nameKey = tag.getString("NameKey");
+      String fallbackName = tag.getString("FallbackName");
       List<SkillEffect> effects = new ArrayList<>();
-      ListTag effectsTag = tag.m_128437_("Effects", 10);
+      ListTag effectsTag = tag.getList("Effects", 10);
 
       for (int i = 0; i < effectsTag.size(); i++) {
-         SkillEffect effect = loadEffect(effectsTag.m_128728_(i));
+         SkillEffect effect = loadEffect(effectsTag.getCompound(i));
          if (effect != null) {
             effects.add(effect);
          }
@@ -86,15 +86,15 @@ public final class CircuitSkillSnapshot {
 
    private static CompoundTag saveEffect(SkillEffect effect) {
       CompoundTag tag = new CompoundTag();
-      tag.m_128359_("Kind", effect.kind().name().toLowerCase());
+      tag.putString("Kind", effect.kind().name().toLowerCase());
       if (effect.isStatEffect()) {
-         tag.m_128359_("Stat", effect.stat().name().toLowerCase());
-         tag.m_128359_("Operation", effect.operation().name().toLowerCase());
-         tag.m_128347_("Value", effect.value());
+         tag.putString("Stat", effect.stat().name().toLowerCase());
+         tag.putString("Operation", effect.operation().name().toLowerCase());
+         tag.putDouble("Value", effect.value());
          return tag;
       } else if (effect.isFeatureEffect()) {
-         tag.m_128359_("Feature", effect.feature().name().toLowerCase());
-         tag.m_128379_("Enabled", effect.enabled());
+         tag.putString("Feature", effect.feature().name().toLowerCase());
+         tag.putBoolean("Enabled", effect.enabled());
          return tag;
       } else {
          return tag;
@@ -102,22 +102,22 @@ public final class CircuitSkillSnapshot {
    }
 
    private static SkillEffect loadEffect(CompoundTag tag) {
-      if (tag.m_128441_("Feature")) {
-         MechFeatureType feature = MechFeatureType.byName(tag.m_128461_("Feature"), null);
+      if (tag.contains("Feature")) {
+         MechFeatureType feature = MechFeatureType.byName(tag.getString("Feature"), null);
          if (feature == null) {
             return null;
          }
 
-         boolean enabled = !tag.m_128441_("Enabled") || tag.m_128471_("Enabled");
+         boolean enabled = !tag.contains("Enabled") || tag.getBoolean("Enabled");
          return SkillEffect.feature(feature, enabled);
-      } else if (tag.m_128441_("Stat")) {
-         MechStatType stat = MechStatType.byName(tag.m_128461_("Stat"), null);
+      } else if (tag.contains("Stat")) {
+         MechStatType stat = MechStatType.byName(tag.getString("Stat"), null);
          if (stat == null) {
             return null;
          }
 
-         CircuitOperation operation = CircuitOperation.byName(tag.m_128461_("Operation"), CircuitOperation.ADD);
-         double value = tag.m_128459_("Value");
+         CircuitOperation operation = CircuitOperation.byName(tag.getString("Operation"), CircuitOperation.ADD);
+         double value = tag.getDouble("Value");
          return SkillEffect.stat(stat, operation, value);
       } else {
          return null;

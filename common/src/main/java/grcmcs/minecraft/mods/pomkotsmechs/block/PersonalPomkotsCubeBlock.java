@@ -30,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
 public class PersonalPomkotsCubeBlock extends ChestBlock implements PomkotsUnbreakableBlock {
    public PersonalPomkotsCubeBlock() {
       this(
-         Properties.m_284310_().m_60913_(-1.0F, 3600000.0F).m_278166_(PushReaction.BLOCK).m_60918_(SoundType.f_56743_),
+         Properties.of().strength(-1.0F, 3600000.0F).pushReaction(PushReaction.BLOCK).sound(SoundType.METAL),
          PomkotsMechs.PERSONAL_POMKOTS_CUBE_BLOCK_ENTITY::get
       );
    }
@@ -39,43 +39,43 @@ public class PersonalPomkotsCubeBlock extends ChestBlock implements PomkotsUnbre
       super(properties, blockEntityType);
    }
 
-   public BlockState m_5573_(BlockPlaceContext context) {
-      return (BlockState)((BlockState)((BlockState)this.m_49966_().m_61124_(f_51478_, context.m_8125_().m_122424_())).m_61124_(f_51479_, ChestType.SINGLE))
-         .m_61124_(f_51480_, context.m_43725_().m_6425_(context.m_8083_()).m_76152_() == Fluids.f_76193_);
+   public BlockState getStateForPlacement(BlockPlaceContext context) {
+      return (BlockState)((BlockState)((BlockState)this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite())).setValue(TYPE, ChestType.SINGLE))
+         .setValue(WATERLOGGED, context.getLevel().getFluidState(context.getClickedPos()).getType() == Fluids.WATER);
    }
 
-   public void m_6402_(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-      super.m_6402_(level, pos, state, placer, stack);
-      if (!level.f_46443_ && placer instanceof Player player && level.m_7702_(pos) instanceof PersonalPomkotsCubeBlockEntity blockEntity) {
-         blockEntity.setOwnerIfAbsent(player.m_20148_());
+   public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+      super.setPlacedBy(level, pos, state, placer, stack);
+      if (!level.isClientSide && placer instanceof Player player && level.getBlockEntity(pos) instanceof PersonalPomkotsCubeBlockEntity blockEntity) {
+         blockEntity.setOwnerIfAbsent(player.getUUID());
       }
    }
 
-   public InteractionResult m_6227_(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-      if (player.m_21120_(hand).m_150930_((Item)PomkotsMechs.SPANNER_ITEM.get())) {
+   public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+      if (player.getItemInHand(hand).is((Item)PomkotsMechs.SPANNER_ITEM.get())) {
          return InteractionResult.PASS;
       }
 
-      if (level.m_7702_(pos) instanceof PersonalPomkotsCubeBlockEntity blockEntity && !blockEntity.isOwner(player)) {
-         if (!level.f_46443_) {
-            player.m_213846_(Component.m_237115_("text.pomkotsmechs.messages.personal_pomkots_cube.not_owner"));
+      if (level.getBlockEntity(pos) instanceof PersonalPomkotsCubeBlockEntity blockEntity && !blockEntity.isOwner(player)) {
+         if (!level.isClientSide) {
+            player.sendSystemMessage(Component.translatable("text.pomkotsmechs.messages.personal_pomkots_cube.not_owner"));
          }
 
-         return InteractionResult.m_19078_(level.f_46443_);
+         return InteractionResult.sidedSuccess(level.isClientSide);
       } else {
-         return super.m_6227_(state, level, pos, player, hand, hit);
+         return super.use(state, level, pos, player, hand, hit);
       }
    }
 
-   public BlockEntity m_142194_(BlockPos pos, BlockState state) {
+   public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
       return new PersonalPomkotsCubeBlockEntity(pos, state);
    }
 
-   public <T extends BlockEntity> BlockEntityTicker<T> m_142354_(Level level, BlockState state, BlockEntityType<T> type) {
-      return level.f_46443_ ? m_152132_(type, this.m_153066_(), ChestBlockEntity::m_155343_) : null;
+   public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+      return level.isClientSide ? createTickerHelper(type, this.blockEntityType(), ChestBlockEntity::lidAnimateTick) : null;
    }
 
-   public RenderShape m_7514_(BlockState state) {
+   public RenderShape getRenderShape(BlockState state) {
       return RenderShape.ENTITYBLOCK_ANIMATED;
    }
 }

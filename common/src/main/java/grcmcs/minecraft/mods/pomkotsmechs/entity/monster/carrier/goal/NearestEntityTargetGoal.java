@@ -35,13 +35,13 @@ public class NearestEntityTargetGoal<T extends LivingEntity> extends TargetGoal 
    public NearestEntityTargetGoal(Mob mob, Class<T> class_, int i, boolean bl, boolean bl2, @Nullable Predicate<LivingEntity> predicate) {
       super(mob, bl, bl2);
       this.targetType = class_;
-      this.randomInterval = m_186073_(i);
-      this.m_7021_(EnumSet.of(Flag.TARGET));
-      this.targetConditions = TargetingConditions.m_148353_().m_26883_(300.0).m_148355_().m_26888_(predicate);
+      this.randomInterval = reducedTickDelay(i);
+      this.setFlags(EnumSet.of(Flag.TARGET));
+      this.targetConditions = TargetingConditions.forNonCombat().range(300.0).ignoreLineOfSight().selector(predicate);
    }
 
-   public boolean m_8036_() {
-      if (this.randomInterval > 0 && this.f_26135_.m_217043_().m_188503_(this.randomInterval) != 0) {
+   public boolean canUse() {
+      if (this.randomInterval > 0 && this.mob.getRandom().nextInt(this.randomInterval) != 0) {
          return false;
       }
 
@@ -50,34 +50,34 @@ public class NearestEntityTargetGoal<T extends LivingEntity> extends TargetGoal 
    }
 
    protected AABB getTargetSearchArea(double d) {
-      return this.f_26135_.m_20191_().m_82377_(d, 4.0, d);
+      return this.mob.getBoundingBox().inflate(d, 4.0, d);
    }
 
    protected void findTarget() {
       if (this.targetType != Player.class && this.targetType != ServerPlayer.class) {
-         this.target = this.f_26135_
-            .m_9236_()
-            .m_45982_(
-               this.f_26135_.m_9236_().m_6443_(this.targetType, this.getTargetSearchArea(this.m_7623_()), livingEntity -> true),
+         this.target = this.mob
+            .level()
+            .getNearestEntity(
+               this.mob.level().getEntitiesOfClass(this.targetType, this.getTargetSearchArea(this.getFollowDistance()), livingEntity -> true),
                this.targetConditions,
-               this.f_26135_,
-               this.f_26135_.m_20185_(),
-               this.f_26135_.m_20188_(),
-               this.f_26135_.m_20189_()
+               this.mob,
+               this.mob.getX(),
+               this.mob.getEyeY(),
+               this.mob.getZ()
             );
       } else {
-         this.target = this.f_26135_
-            .m_9236_()
-            .m_45949_(this.targetConditions, this.f_26135_, this.f_26135_.m_20185_(), this.f_26135_.m_20188_(), this.f_26135_.m_20189_());
-         if (this.target != null && ((Player)this.target).m_7500_()) {
+         this.target = this.mob
+            .level()
+            .getNearestPlayer(this.targetConditions, this.mob, this.mob.getX(), this.mob.getEyeY(), this.mob.getZ());
+         if (this.target != null && ((Player)this.target).isCreative()) {
             this.target = null;
          }
       }
    }
 
-   public void m_8056_() {
-      this.f_26135_.m_6710_(this.target);
-      super.m_8056_();
+   public void start() {
+      this.mob.setTarget(this.target);
+      super.start();
    }
 
    public void setTarget(@Nullable LivingEntity livingEntity) {

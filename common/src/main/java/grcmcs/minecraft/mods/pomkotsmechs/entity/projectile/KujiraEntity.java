@@ -26,42 +26,42 @@ public class KujiraEntity extends LivingEntity implements GeoEntity, GeoAnimatab
    private int lifeTicks = 0;
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_().m_22266_(Attributes.f_22282_).m_22268_(Attributes.f_22276_, 50.0);
+      return LivingEntity.createLivingAttributes().add(Attributes.ATTACK_KNOCKBACK).add(Attributes.MAX_HEALTH, 50.0);
    }
 
    public KujiraEntity(EntityType<? extends KujiraEntity> entityType, Level world) {
       super(entityType, world);
-      this.m_20242_(true);
-      this.f_19811_ = true;
+      this.setNoGravity(true);
+      this.noCulling = true;
    }
 
-   public void m_8119_() {
-      this.m_20242_(true);
-      super.m_8119_();
-      if (!this.m_9236_().f_46443_) {
-         this.f_19812_ = true;
+   public void tick() {
+      this.setNoGravity(true);
+      super.tick();
+      if (!this.level().isClientSide) {
+         this.hasImpulse = true;
       }
 
       if (this.lifeTicks++ >= 300) {
-         this.m_146870_();
+         this.discard();
       }
    }
 
    private void generateLava() {
-      if (this.m_9236_().f_46443_) {
-         RandomSource random = this.m_9236_().m_213780_();
+      if (this.level().isClientSide) {
+         RandomSource random = this.level().getRandom();
 
          for (int i = 0; i < 20; i++) {
-            double velocityX = random.m_188500_() * 2.0 - 1.0;
-            double velocityY = random.m_188500_() * 2.0 - 1.0;
-            double velocityZ = random.m_188500_() * 2.0 - 1.0;
-            this.m_9236_().m_7106_(ParticleTypes.f_123756_, this.m_20185_(), this.m_20186_(), this.m_20189_(), velocityX, velocityY, velocityZ);
+            double velocityX = random.nextDouble() * 2.0 - 1.0;
+            double velocityY = random.nextDouble() * 2.0 - 1.0;
+            double velocityZ = random.nextDouble() * 2.0 - 1.0;
+            this.level().addParticle(ParticleTypes.LAVA, this.getX(), this.getY(), this.getZ(), velocityX, velocityY, velocityZ);
          }
       }
    }
 
-   protected void m_8097_() {
-      super.m_8097_();
+   protected void defineSynchedData() {
+      super.defineSynchedData();
    }
 
    public void registerControllers(ControllerRegistrar controllers) {
@@ -76,31 +76,31 @@ public class KujiraEntity extends LivingEntity implements GeoEntity, GeoAnimatab
       return this.geoCache;
    }
 
-   public boolean m_6000_(double cameraX, double cameraY, double cameraZ) {
+   public boolean shouldRender(double cameraX, double cameraY, double cameraZ) {
       double maxDistance = 1000.0;
       return true;
    }
 
-   public boolean m_6783_(double d) {
+   public boolean shouldRenderAtSqrDistance(double d) {
       return true;
    }
 
-   public Iterable<ItemStack> m_6168_() {
-      return NonNullList.m_122780_(4, ItemStack.f_41583_);
+   public Iterable<ItemStack> getArmorSlots() {
+      return NonNullList.withSize(4, ItemStack.EMPTY);
    }
 
-   public ItemStack m_6844_(EquipmentSlot equipmentSlot) {
-      return ItemStack.f_41583_;
+   public ItemStack getItemBySlot(EquipmentSlot equipmentSlot) {
+      return ItemStack.EMPTY;
    }
 
-   public void m_8061_(EquipmentSlot equipmentSlot, ItemStack itemStack) {
+   public void setItemSlot(EquipmentSlot equipmentSlot, ItemStack itemStack) {
    }
 
-   public boolean m_142535_(float f1, float f2, DamageSource damageSource) {
+   public boolean causeFallDamage(float f1, float f2, DamageSource damageSource) {
       return false;
    }
 
-   public HumanoidArm m_5737_() {
+   public HumanoidArm getMainArm() {
       return null;
    }
 }

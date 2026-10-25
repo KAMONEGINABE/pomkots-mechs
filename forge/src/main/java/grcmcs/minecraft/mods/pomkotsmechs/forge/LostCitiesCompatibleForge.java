@@ -16,12 +16,12 @@ public class LostCitiesCompatibleForge extends LostCitiesCompatible {
    @Override
    public BGMState getBGMState(ServerPlayer serverPlayer, BGMState oldState) {
       LostCitiesImp lostCitiesImp = LostCities.lostCitiesImp;
-      ILostCityInformation lostCitiesInfo = lostCitiesImp.getLostInfo(serverPlayer.m_9236_());
+      ILostCityInformation lostCitiesInfo = lostCitiesImp.getLostInfo(serverPlayer.level());
       if (lostCitiesInfo == null) {
          return null;
       } else {
-         ChunkPos chunkPos = serverPlayer.m_146902_();
-         ILostChunkInfo chunkInfo = lostCitiesInfo.getChunkInfo(chunkPos.f_45578_, chunkPos.f_45579_);
+         ChunkPos chunkPos = serverPlayer.chunkPosition();
+         ILostChunkInfo chunkInfo = lostCitiesInfo.getChunkInfo(chunkPos.x, chunkPos.z);
          if (chunkInfo != null) {
             return chunkInfo.isCity() ? BGMState.RUIN_CITY : null;
          } else {
@@ -32,8 +32,8 @@ public class LostCitiesCompatibleForge extends LostCitiesCompatible {
 
    private void showTitlesForPlayers(String title, ServerPlayer player) {
       ClientboundSetTitlesAnimationPacket timesPacket = new ClientboundSetTitlesAnimationPacket(20, 60, 20);
-      ClientboundSetTitleTextPacket titlePacket = new ClientboundSetTitleTextPacket(Component.m_237113_(title));
-      player.f_8906_.m_9829_(timesPacket);
-      player.f_8906_.m_9829_(titlePacket);
+      ClientboundSetTitleTextPacket titlePacket = new ClientboundSetTitleTextPacket(Component.literal(title));
+      player.connection.send(timesPacket);
+      player.connection.send(titlePacket);
    }
 }

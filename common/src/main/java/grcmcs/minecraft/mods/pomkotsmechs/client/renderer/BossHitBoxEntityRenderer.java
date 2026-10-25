@@ -13,7 +13,7 @@ public class BossHitBoxEntityRenderer extends EntityRenderer<BossHitBoxEntity> {
    }
 
    public void render(BossHitBoxEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-      super.m_7392_(entity, entityYaw, partialTicks, poseStack, bufferSource, packedLight);
+      super.render(entity, entityYaw, partialTicks, poseStack, bufferSource, packedLight);
    }
 
    public ResourceLocation getTextureLocation(BossHitBoxEntity entity) {

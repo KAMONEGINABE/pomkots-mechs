@@ -24,90 +24,90 @@ public class CoreStoneBlockEntity extends BlockEntity {
       super((BlockEntityType)PomkotsMechs.CORE_STONE_BLOCK_ENTITY.get(), pos, state);
    }
 
-   public void m_142466_(CompoundTag tag) {
-      super.m_142466_(tag);
-      if (tag.m_128441_(PomkotsMechs.nbtName("StartTargetRaidName"))) {
-         this.startTargetRaidName = tag.m_128461_(PomkotsMechs.nbtName("StartTargetRaidName"));
+   public void load(CompoundTag tag) {
+      super.load(tag);
+      if (tag.contains(PomkotsMechs.nbtName("StartTargetRaidName"))) {
+         this.startTargetRaidName = tag.getString(PomkotsMechs.nbtName("StartTargetRaidName"));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("RaidControllerEntityUUID"))) {
-         this.raidControllerEntityUUID = tag.m_128342_(PomkotsMechs.nbtName("RaidControllerEntityUUID"));
+      if (tag.contains(PomkotsMechs.nbtName("RaidControllerEntityUUID"))) {
+         this.raidControllerEntityUUID = tag.getUUID(PomkotsMechs.nbtName("RaidControllerEntityUUID"));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("RaidOwnerUUID"))) {
-         this.raidOwnerUUID = tag.m_128342_(PomkotsMechs.nbtName("RaidOwnerUUID"));
+      if (tag.contains(PomkotsMechs.nbtName("RaidOwnerUUID"))) {
+         this.raidOwnerUUID = tag.getUUID(PomkotsMechs.nbtName("RaidOwnerUUID"));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"))) {
-         this.raidFinalizeCommandSuccess = tag.m_128461_(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"));
+      if (tag.contains(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"))) {
+         this.raidFinalizeCommandSuccess = tag.getString(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("RaidFinalizeCommandFail"))) {
-         this.raidFinalizeCommandFail = tag.m_128461_(PomkotsMechs.nbtName("RaidFinalizeCommandFail"));
+      if (tag.contains(PomkotsMechs.nbtName("RaidFinalizeCommandFail"))) {
+         this.raidFinalizeCommandFail = tag.getString(PomkotsMechs.nbtName("RaidFinalizeCommandFail"));
       }
    }
 
-   protected void m_183515_(CompoundTag tag) {
-      super.m_183515_(tag);
+   protected void saveAdditional(CompoundTag tag) {
+      super.saveAdditional(tag);
       if (this.startTargetRaidName != null) {
-         tag.m_128359_(PomkotsMechs.nbtName("StartTargetRaidName"), this.startTargetRaidName);
+         tag.putString(PomkotsMechs.nbtName("StartTargetRaidName"), this.startTargetRaidName);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("StartTargetRaidName"));
+         tag.remove(PomkotsMechs.nbtName("StartTargetRaidName"));
       }
 
       if (this.raidControllerEntityUUID != null) {
-         tag.m_128362_(PomkotsMechs.nbtName("RaidControllerEntityUUID"), this.raidControllerEntityUUID);
+         tag.putUUID(PomkotsMechs.nbtName("RaidControllerEntityUUID"), this.raidControllerEntityUUID);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("RaidControllerEntityUUID"));
+         tag.remove(PomkotsMechs.nbtName("RaidControllerEntityUUID"));
       }
 
       if (this.raidOwnerUUID != null) {
-         tag.m_128362_(PomkotsMechs.nbtName("RaidOwnerUUID"), this.raidOwnerUUID);
+         tag.putUUID(PomkotsMechs.nbtName("RaidOwnerUUID"), this.raidOwnerUUID);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("RaidOwnerUUID"));
+         tag.remove(PomkotsMechs.nbtName("RaidOwnerUUID"));
       }
 
       if (this.raidFinalizeCommandSuccess != null) {
-         tag.m_128359_(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"), this.raidFinalizeCommandSuccess);
+         tag.putString(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"), this.raidFinalizeCommandSuccess);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"));
+         tag.remove(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"));
       }
 
       if (this.raidFinalizeCommandFail != null) {
-         tag.m_128359_(PomkotsMechs.nbtName("RaidFinalizeCommandFail"), this.raidFinalizeCommandFail);
+         tag.putString(PomkotsMechs.nbtName("RaidFinalizeCommandFail"), this.raidFinalizeCommandFail);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("RaidFinalizeCommandFail"));
+         tag.remove(PomkotsMechs.nbtName("RaidFinalizeCommandFail"));
       }
    }
 
    public static void tick(Level level, BlockPos pos, BlockState state, CoreStoneBlockEntity be) {
-      if (be.f_58857_ != null && !be.f_58857_.f_46443_) {
-         ServerLevel serverLevel = (ServerLevel)be.f_58857_;
+      if (be.level != null && !be.level.isClientSide) {
+         ServerLevel serverLevel = (ServerLevel)be.level;
          if (be.startTargetRaidName != null) {
             if (be.raidControllerEntityUUID == null) {
-               RaidControllerEntity rce = (RaidControllerEntity)((EntityType)PomkotsMechs.RAID_CONTROLLER.get()).m_20615_(serverLevel);
+               RaidControllerEntity rce = (RaidControllerEntity)((EntityType)PomkotsMechs.RAID_CONTROLLER.get()).create(serverLevel);
                if (rce != null) {
-                  rce.m_6034_(pos.m_123341_(), pos.m_123342_(), pos.m_123343_());
+                  rce.setPos(pos.getX(), pos.getY(), pos.getZ());
                   CompoundTag tag = RaidControllerEntity.buildCompoundTag(
                      be.startTargetRaidName, be.raidOwnerUUID, be.raidFinalizeCommandSuccess, be.raidFinalizeCommandFail
                   );
-                  rce.m_7378_(tag);
-                  be.f_58857_.m_7967_(rce);
+                  rce.readAdditionalSaveData(tag);
+                  be.level.addFreshEntity(rce);
                   be.raidControllerEntity = rce;
-                  be.raidControllerEntityUUID = rce.m_20148_();
-                  be.m_6596_();
+                  be.raidControllerEntityUUID = rce.getUUID();
+                  be.setChanged();
                }
             } else if (be.raidControllerEntity == null) {
-               be.raidControllerEntity = (RaidControllerEntity)serverLevel.m_8791_(be.raidControllerEntityUUID);
+               be.raidControllerEntity = (RaidControllerEntity)serverLevel.getEntity(be.raidControllerEntityUUID);
                if (be.raidControllerEntity == null) {
                   be.resetInternalStatus();
-                  be.m_6596_();
+                  be.setChanged();
                }
             }
 
-            if (be.raidControllerEntity == null || !be.raidControllerEntity.m_6084_()) {
+            if (be.raidControllerEntity == null || !be.raidControllerEntity.isAlive()) {
                be.resetInternalStatus();
-               be.m_6596_();
+               be.setChanged();
             }
          }
       }

@@ -14,21 +14,21 @@ import org.jetbrains.annotations.Nullable;
 
 public class StructureSpawnerBlock extends BaseEntityBlock {
    public StructureSpawnerBlock() {
-      super(Properties.m_284310_().m_60978_(2.5F).m_60918_(SoundType.f_56743_));
+      super(Properties.of().strength(2.5F).sound(SoundType.METAL));
    }
 
-   public RenderShape m_7514_(BlockState state) {
+   public RenderShape getRenderShape(BlockState state) {
       return RenderShape.MODEL;
    }
 
    @Nullable
-   public BlockEntity m_142194_(BlockPos pos, BlockState state) {
+   public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
       return new StructureSpawnerBlockEntity(pos, state);
    }
 
    @Nullable
-   public <T extends BlockEntity> BlockEntityTicker<T> m_142354_(Level level, BlockState state, BlockEntityType<T> type) {
-      return level.f_46443_ ? null : (lvl, pos, st, be) -> {
+   public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+      return level.isClientSide ? null : (lvl, pos, st, be) -> {
          if (be instanceof StructureSpawnerBlockEntity spawner) {
             StructureSpawnerBlockEntity.tick(lvl, pos, st, spawner);
          }

@@ -36,25 +36,25 @@ public class PomkotsDatapadItem3 extends Item {
       super(properties);
    }
 
-   public InteractionResultHolder<ItemStack> m_7203_(Level level, Player player, InteractionHand hand) {
-      if (!level.m_5776_()) {
-         player.m_5893_(new SimpleMenuProvider((id, inv, p) -> new DataPadMenu(id, inv, p, p.m_21120_(hand)), Component.m_237113_("Pomkots Datapad")));
+   public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+      if (!level.isClientSide()) {
+         player.openMenu(new SimpleMenuProvider((id, inv, p) -> new DataPadMenu(id, inv, p, p.getItemInHand(hand)), Component.literal("Pomkots Datapad")));
       }
 
-      return InteractionResultHolder.m_19090_(player.m_21120_(hand));
+      return InteractionResultHolder.success(player.getItemInHand(hand));
    }
 
    public static SimpleContainer createKeyCardContainer(ItemStack datapad) {
       SimpleContainer container = new SimpleContainer(8);
-      CompoundTag tag = datapad.m_41783_();
+      CompoundTag tag = datapad.getTag();
       if (tag == null) {
          return container;
       }
 
-      ListTag list = tag.m_128437_(TAG_KEY_CARDS, 10);
+      ListTag list = tag.getList(TAG_KEY_CARDS, 10);
 
       for (int i = 0; i < list.size() && i < 8; i++) {
-         container.m_6836_(i, ItemStack.m_41712_(list.m_128728_(i)));
+         container.setItem(i, ItemStack.of(list.getCompound(i)));
       }
 
       return container;
@@ -63,16 +63,16 @@ public class PomkotsDatapadItem3 extends Item {
    public static void saveKeyCardContainer(ItemStack datapad, Container container) {
       ListTag list = new ListTag();
 
-      for (int i = 0; i < container.m_6643_(); i++) {
-         ItemStack stack = container.m_8020_(i);
-         if (!stack.m_41619_()) {
+      for (int i = 0; i < container.getContainerSize(); i++) {
+         ItemStack stack = container.getItem(i);
+         if (!stack.isEmpty()) {
             CompoundTag itemTag = new CompoundTag();
-            stack.m_41739_(itemTag);
+            stack.save(itemTag);
             list.add(itemTag);
          }
       }
 
-      datapad.m_41784_().m_128365_(TAG_KEY_CARDS, list);
+      datapad.getOrCreateTag().put(TAG_KEY_CARDS, list);
    }
 
    public static boolean isMatchApplied(ItemStack stack) {
@@ -84,16 +84,16 @@ public class PomkotsDatapadItem3 extends Item {
    }
 
    public static void setArenaRequest(ItemStack datapad, UUID requestUuid, String arenaId) {
-      CompoundTag tag = datapad.m_41784_();
-      tag.m_128362_(TAG_ARENA_REQUEST_UUID, requestUuid);
-      tag.m_128359_(TAG_ARENA_ID, arenaId);
+      CompoundTag tag = datapad.getOrCreateTag();
+      tag.putUUID(TAG_ARENA_REQUEST_UUID, requestUuid);
+      tag.putString(TAG_ARENA_ID, arenaId);
    }
 
    @Nullable
    public static PomkotsDatapadItem3.ArenaRequestInfo getArenaRequest(ItemStack datapad) {
-      CompoundTag tag = datapad.m_41783_();
-      return tag != null && tag.m_128403_(TAG_ARENA_REQUEST_UUID) && tag.m_128441_(TAG_ARENA_ID)
-         ? new PomkotsDatapadItem3.ArenaRequestInfo(tag.m_128342_(TAG_ARENA_REQUEST_UUID), tag.m_128461_(TAG_ARENA_ID))
+      CompoundTag tag = datapad.getTag();
+      return tag != null && tag.hasUUID(TAG_ARENA_REQUEST_UUID) && tag.contains(TAG_ARENA_ID)
+         ? new PomkotsDatapadItem3.ArenaRequestInfo(tag.getUUID(TAG_ARENA_REQUEST_UUID), tag.getString(TAG_ARENA_ID))
          : null;
    }
 
@@ -102,28 +102,28 @@ public class PomkotsDatapadItem3 extends Item {
    }
 
    public static void clearArenaRequest(ItemStack datapad) {
-      CompoundTag tag = datapad.m_41783_();
+      CompoundTag tag = datapad.getTag();
       if (tag != null) {
-         tag.m_128473_(TAG_ARENA_REQUEST_UUID);
-         tag.m_128473_(TAG_ARENA_ID);
+         tag.remove(TAG_ARENA_REQUEST_UUID);
+         tag.remove(TAG_ARENA_ID);
       }
    }
 
    public static void setReturnLocation(ItemStack datapad, ResourceKey<Level> dimension, BlockPos pos) {
-      CompoundTag tag = datapad.m_41784_();
-      tag.m_128359_(TAG_RETURN_DIMENSION, dimension.m_135782_().toString());
-      tag.m_128405_(TAG_RETURN_X, pos.m_123341_());
-      tag.m_128405_(TAG_RETURN_Y, pos.m_123342_());
-      tag.m_128405_(TAG_RETURN_Z, pos.m_123343_());
+      CompoundTag tag = datapad.getOrCreateTag();
+      tag.putString(TAG_RETURN_DIMENSION, dimension.location().toString());
+      tag.putInt(TAG_RETURN_X, pos.getX());
+      tag.putInt(TAG_RETURN_Y, pos.getY());
+      tag.putInt(TAG_RETURN_Z, pos.getZ());
    }
 
    @Nullable
    public static PomkotsDatapadItem3.ReturnLocation getReturnLocation(ItemStack datapad) {
-      CompoundTag tag = datapad.m_41783_();
-      if (tag != null && tag.m_128441_(TAG_RETURN_DIMENSION)) {
-         ResourceLocation dimensionId = new ResourceLocation(tag.m_128461_(TAG_RETURN_DIMENSION));
-         ResourceKey<Level> dimension = ResourceKey.m_135785_(Registries.f_256858_, dimensionId);
-         BlockPos pos = new BlockPos(tag.m_128451_(TAG_RETURN_X), tag.m_128451_(TAG_RETURN_Y), tag.m_128451_(TAG_RETURN_Z));
+      CompoundTag tag = datapad.getTag();
+      if (tag != null && tag.contains(TAG_RETURN_DIMENSION)) {
+         ResourceLocation dimensionId = new ResourceLocation(tag.getString(TAG_RETURN_DIMENSION));
+         ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, dimensionId);
+         BlockPos pos = new BlockPos(tag.getInt(TAG_RETURN_X), tag.getInt(TAG_RETURN_Y), tag.getInt(TAG_RETURN_Z));
          return new PomkotsDatapadItem3.ReturnLocation(dimension, pos);
       } else {
          return null;
@@ -131,17 +131,17 @@ public class PomkotsDatapadItem3 extends Item {
    }
 
    public static boolean hasReturnLocation(ItemStack datapad) {
-      CompoundTag tag = datapad.m_41783_();
-      return tag != null && tag.m_128441_(TAG_RETURN_DIMENSION);
+      CompoundTag tag = datapad.getTag();
+      return tag != null && tag.contains(TAG_RETURN_DIMENSION);
    }
 
    public static void clearReturnLocation(ItemStack datapad) {
-      CompoundTag tag = datapad.m_41783_();
+      CompoundTag tag = datapad.getTag();
       if (tag != null) {
-         tag.m_128473_(TAG_RETURN_DIMENSION);
-         tag.m_128473_(TAG_RETURN_X);
-         tag.m_128473_(TAG_RETURN_Y);
-         tag.m_128473_(TAG_RETURN_Z);
+         tag.remove(TAG_RETURN_DIMENSION);
+         tag.remove(TAG_RETURN_X);
+         tag.remove(TAG_RETURN_Y);
+         tag.remove(TAG_RETURN_Z);
       }
    }
 

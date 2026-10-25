@@ -31,7 +31,7 @@ public class PomkotsArmorItemRenderer extends GeoArmorRenderer<PomkotsArmorItem>
       float alpha
    ) {
       super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
-      if (this.f_102817_) {
+      if (this.crouching) {
          GeoBone body = this.getBodyBone();
          if (body != null) {
             body.setRotX(body.getRotX() + 0.5F);

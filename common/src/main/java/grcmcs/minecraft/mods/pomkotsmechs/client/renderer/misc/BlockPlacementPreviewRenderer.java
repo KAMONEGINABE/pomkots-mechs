@@ -20,20 +20,20 @@ public class BlockPlacementPreviewRenderer extends EntityRenderer<BlockPlacement
    }
 
    public void render(BlockPlacementPreviewEntity entity, float yaw, float partial, PoseStack poseStack, MultiBufferSource buffer, int light) {
-      poseStack.m_85836_();
-      poseStack.m_85837_(0.0, 0.0, 0.0);
-      VertexConsumer vc = buffer.m_6299_(RenderType.m_110504_());
-      int q = entity.yawToQuarter(entity.m_146908_());
+      poseStack.pushPose();
+      poseStack.translate(0.0, 0.0, 0.0);
+      VertexConsumer vc = buffer.getBuffer(RenderType.lines());
+      int q = entity.yawToQuarter(entity.getYRot());
 
       for (BlockPos bPos : entity.getCurrentPattern()) {
          BlockPos bp = entity.rotate(bPos, q);
-         poseStack.m_85836_();
-         poseStack.m_252880_(bp.m_123341_(), bp.m_123342_(), bp.m_123343_());
-         LevelRenderer.m_109646_(poseStack, vc, new AABB(0.0, 0.0, 0.0, 1.0, 1.0, 1.0), 0.0F, 1.0F, 0.0F, 1.0F);
-         poseStack.m_85849_();
+         poseStack.pushPose();
+         poseStack.translate(bp.getX(), bp.getY(), bp.getZ());
+         LevelRenderer.renderLineBox(poseStack, vc, new AABB(0.0, 0.0, 0.0, 1.0, 1.0, 1.0), 0.0F, 1.0F, 0.0F, 1.0F);
+         poseStack.popPose();
       }
 
-      poseStack.m_85849_();
+      poseStack.popPose();
    }
 
    public ResourceLocation getTextureLocation(BlockPlacementPreviewEntity entity) {

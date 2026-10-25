@@ -9,13 +9,13 @@ public abstract class GenericPomkotsMonsterPercistant extends GenericPomkotsMons
       super(entityType, level);
    }
 
-   public boolean m_21532_() {
+   public boolean isPersistenceRequired() {
       return true;
    }
 
-   public void m_6043_() {
-      if (!this.m_21532_()) {
-         super.m_6043_();
+   public void checkDespawn() {
+      if (!this.isPersistenceRequired()) {
+         super.checkDespawn();
       }
    }
 }

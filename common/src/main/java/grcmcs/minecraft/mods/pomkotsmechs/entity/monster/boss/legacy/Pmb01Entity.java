@@ -59,10 +59,10 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
    private HitBoxEntity hitBox2 = null;
    private boolean breakFlag = false;
    private int waitTicks = 60;
-   private final ServerBossEvent bossInfo = new ServerBossEvent(this.m_5446_(), BossBarColor.RED, BossBarOverlay.PROGRESS);
-   private Vec3 clientSeatPos = Vec3.f_82478_;
+   private final ServerBossEvent bossInfo = new ServerBossEvent(this.getDisplayName(), BossBarColor.RED, BossBarOverlay.PROGRESS);
+   private Vec3 clientSeatPos = Vec3.ZERO;
    private DriverInput driverInput = null;
-   private static final EntityDataAccessor<Boolean> MODE = SynchedEntityData.m_135353_(Pmb01Entity.class, EntityDataSerializers.f_135035_);
+   private static final EntityDataAccessor<Boolean> MODE = SynchedEntityData.defineId(Pmb01Entity.class, EntityDataSerializers.BOOLEAN);
 
    @Override
    public String getMechName() {
@@ -72,12 +72,12 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
    public Pmb01Entity(EntityType<? extends GenericPomkotsMonster> entityType, Level world) {
       super(entityType, world);
       this.actionController = new BossActionController();
-      this.m_274367_(this.getMechData().maxStepUp);
-      this.m_7910_(this.getMechData().speed);
-      this.m_21530_();
-      this.m_20242_(false);
-      this.m_146922_(0.0F);
-      this.f_19811_ = true;
+      this.setMaxUpStep(this.getMechData().maxStepUp);
+      this.setSpeed(this.getMechData().speed);
+      this.setPersistenceRequired();
+      this.setNoGravity(false);
+      this.setYRot(0.0F);
+      this.noCulling = true;
       this.actionController.registerAction("punch", new BossActionController.BossAction(180, 20, 15, Void -> {
          if (this.isServerSide()) {
             this.triggerAnim("action_controller", "punch");
@@ -118,31 +118,31 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
             this.triggerAnim("action_controller", "lbrk");
          }
       }, Void -> {}));
-      this.f_21346_.m_25352_(1, new NearestAttackableTargetGoal(this, Player.class, false, false));
-      this.f_21345_.m_25352_(1, new AttackBreakBossGoal(this.actionController.getAction("lbrk"), this, 0.8F));
-      this.f_21345_.m_25352_(1, new AttackMeleeBossGoal(this.actionController.getAction("punch"), this, 0.8F));
-      this.f_21345_.m_25352_(1, new AttackMeleeBossGoal(this.actionController.getAction("upper"), this, 0.8F));
-      this.f_21345_.m_25352_(1, new AttackMeleeBossGoal(this.actionController.getAction("jump"), this, 0.8F));
-      this.f_21345_.m_25352_(1, new AttackLongRangeBossGoal(this.actionController.getAction("msl"), this, 0.8F));
-      this.f_21345_.m_25352_(1, new AttackLongRangeBossGoal(this.actionController.getAction("lmsl"), this, 0.8F));
-      this.f_21345_.m_25352_(1, new AttackLongRangeBossGoal(this.actionController.getAction("gat"), this, 0.8F, true));
-      this.f_21345_.m_25352_(1, new AttackLongRangeBossGoal(this.actionController.getAction("grn"), this, 0.8F));
-      this.f_21345_.m_25352_(2, new WalkBossGoal(this, 0.6F));
-      this.f_21345_.m_25352_(3, new RandomLookAroundGoal(this));
+      this.targetSelector.addGoal(1, new NearestAttackableTargetGoal(this, Player.class, false, false));
+      this.goalSelector.addGoal(1, new AttackBreakBossGoal(this.actionController.getAction("lbrk"), this, 0.8F));
+      this.goalSelector.addGoal(1, new AttackMeleeBossGoal(this.actionController.getAction("punch"), this, 0.8F));
+      this.goalSelector.addGoal(1, new AttackMeleeBossGoal(this.actionController.getAction("upper"), this, 0.8F));
+      this.goalSelector.addGoal(1, new AttackMeleeBossGoal(this.actionController.getAction("jump"), this, 0.8F));
+      this.goalSelector.addGoal(1, new AttackLongRangeBossGoal(this.actionController.getAction("msl"), this, 0.8F));
+      this.goalSelector.addGoal(1, new AttackLongRangeBossGoal(this.actionController.getAction("lmsl"), this, 0.8F));
+      this.goalSelector.addGoal(1, new AttackLongRangeBossGoal(this.actionController.getAction("gat"), this, 0.8F, true));
+      this.goalSelector.addGoal(1, new AttackLongRangeBossGoal(this.actionController.getAction("grn"), this, 0.8F));
+      this.goalSelector.addGoal(2, new WalkBossGoal(this, 0.6F));
+      this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
    }
 
    private void attackPunch() {
       if (this.isServerSide()) {
-         Vec3 offset = this.m_20182_();
+         Vec3 offset = this.position();
 
          for (int i = 0; i < 12; i++) {
             Vec3 muzzlPos = new Vec3(0.0, 0.0, 4.0);
-            muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-90 + i * 15));
-            muzzlPos = offset.m_82549_(muzzlPos);
-            SlashEntity be = new SlashEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.EXPLOADSLASH.get(), this.m_9236_());
-            be.m_146884_(offset);
-            be.m_37251_(be, 0.0F, -180 + i * 30, this.m_21256_(), 1.5F, 0.0F);
-            this.m_9236_().m_7967_(be);
+            muzzlPos = muzzlPos.yRot((float)Math.toRadians(-90 + i * 15));
+            muzzlPos = offset.add(muzzlPos);
+            SlashEntity be = new SlashEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.EXPLOADSLASH.get(), this.level());
+            be.setPos(offset);
+            be.shootFromRotation(be, 0.0F, -180 + i * 30, this.getFallFlyingTicks(), 1.5F, 0.0F);
+            this.level().addFreshEntity(be);
          }
       } else {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_EXPLOADSPARK_EVENT.get());
@@ -151,15 +151,15 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
 
    private void attackUpper() {
       if (this.isServerSide()) {
-         Vec3 offset = this.m_20182_();
+         Vec3 offset = this.position();
          Vec3 muzzlPos = new Vec3(0.0, 0.0, 3.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         Vec3 vec = muzzlPos.m_82541_().m_82542_(6.0, 6.0, 6.0);
-         muzzlPos = offset.m_82549_(muzzlPos);
-         EarthraiseEntity be = new EarthraiseEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.EARTHRAISE.get(), this.m_9236_(), vec, this, 8);
-         be.m_146884_(muzzlPos);
-         be.m_146922_((float)(Math.toDegrees(Math.atan2(vec.f_82481_, vec.f_82479_)) - 90.0));
-         this.m_9236_().m_7967_(be);
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         Vec3 vec = muzzlPos.normalize().multiply(6.0, 6.0, 6.0);
+         muzzlPos = offset.add(muzzlPos);
+         EarthraiseEntity be = new EarthraiseEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.EARTHRAISE.get(), this.level(), vec, this, 8);
+         be.setPos(muzzlPos);
+         be.setYRot((float)(Math.toDegrees(Math.atan2(vec.z, vec.x)) - 90.0));
+         this.level().addFreshEntity(be);
       } else {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_PILEBUNKER_EVENT.get());
       }
@@ -167,14 +167,14 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
 
    private void attackJump() {
       if (this.isServerSide()) {
-         Vec3 offset = this.m_20182_();
+         Vec3 offset = this.position();
          Vec3 muzzlPos = new Vec3(0.0, 0.0, -3.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         muzzlPos = offset.m_82549_(muzzlPos);
-         EarthbreakEntity be = new EarthbreakEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.EARTHBREAK.get(), this.m_9236_(), this);
-         be.m_146884_(muzzlPos);
-         be.m_37251_(be, 0.0F, 0.0F, this.m_21256_(), 0.0F, 0.0F);
-         this.m_9236_().m_7967_(be);
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         muzzlPos = offset.add(muzzlPos);
+         EarthbreakEntity be = new EarthbreakEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.EARTHBREAK.get(), this.level(), this);
+         be.setPos(muzzlPos);
+         be.shootFromRotation(be, 0.0F, 0.0F, this.getFallFlyingTicks(), 0.0F, 0.0F);
+         this.level().addFreshEntity(be);
       } else {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_PILEBUNKER_EVENT.get());
       }
@@ -182,31 +182,31 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
 
    private void attackMissile() {
       if (this.isServerSide()) {
-         Vec3 offset = this.m_20182_();
+         Vec3 offset = this.position();
          Vec3 muzzlPos = new Vec3(-10.0, 15.0, 0.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         muzzlPos = offset.m_82549_(muzzlPos);
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         muzzlPos = offset.add(muzzlPos);
 
          for (int i = 0; i < 5; i++) {
             MissileEnemyEntity be = new MissileEnemyEntity(
-               (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_ENEMY.get(), this.m_9236_(), this, this.m_5448_(), 15.0F, 1.5F
+               (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_ENEMY.get(), this.level(), this, this.getTarget(), 15.0F, 1.5F
             );
-            be.m_146884_(muzzlPos.m_82520_(0.0, i, 0.0));
-            be.m_37251_(be, -i * 2, this.m_146908_() + 20.0F, this.m_21256_(), 1.5F, 0.0F);
-            this.m_9236_().m_7967_(be);
+            be.setPos(muzzlPos.add(0.0, i, 0.0));
+            be.shootFromRotation(be, -i * 2, this.getYRot() + 20.0F, this.getFallFlyingTicks(), 1.5F, 0.0F);
+            this.level().addFreshEntity(be);
          }
 
          muzzlPos = new Vec3(10.0, 15.0, 0.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         muzzlPos = offset.m_82549_(muzzlPos);
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         muzzlPos = offset.add(muzzlPos);
 
          for (int i = 0; i < 5; i++) {
             MissileEnemyEntity be = new MissileEnemyEntity(
-               (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_ENEMY.get(), this.m_9236_(), this, this.m_5448_(), 15.0F, 1.5F
+               (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_ENEMY.get(), this.level(), this, this.getTarget(), 15.0F, 1.5F
             );
-            be.m_146884_(muzzlPos.m_82520_(0.0, i, 0.0));
-            be.m_37251_(be, -i * 2, this.m_146908_() - 20.0F, this.m_21256_(), 1.5F, 0.0F);
-            this.m_9236_().m_7967_(be);
+            be.setPos(muzzlPos.add(0.0, i, 0.0));
+            be.shootFromRotation(be, -i * 2, this.getYRot() - 20.0F, this.getFallFlyingTicks(), 1.5F, 0.0F);
+            this.level().addFreshEntity(be);
          }
       } else {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_MISSILE_EVENT.get());
@@ -215,16 +215,16 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
 
    private void attackLargeMissile() {
       if (this.isServerSide()) {
-         Vec3 offset = this.m_20182_();
+         Vec3 offset = this.position();
          Vec3 muzzlPos = new Vec3(0.0, 15.0, 1.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         muzzlPos = offset.m_82549_(muzzlPos);
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         muzzlPos = offset.add(muzzlPos);
          MissileEnemyLargeEntity be = new MissileEnemyLargeEntity(
-            (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_ENEMY_LARGE.get(), this.m_9236_(), this
+            (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_ENEMY_LARGE.get(), this.level(), this
          );
-         be.m_146884_(muzzlPos);
-         be.m_37251_(be, -89.0F, this.m_146908_(), this.m_21256_(), 1.5F, 0.0F);
-         this.m_9236_().m_7967_(be);
+         be.setPos(muzzlPos);
+         be.shootFromRotation(be, -89.0F, this.getYRot(), this.getFallFlyingTicks(), 1.5F, 0.0F);
+         this.level().addFreshEntity(be);
       } else {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_MISSILE_EVENT.get());
       }
@@ -232,23 +232,23 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
 
    private void attackGatling() {
       if (this.isServerSide()) {
-         LivingEntity target = this.m_5448_();
-         if (target != null && !this.m_20160_()) {
+         LivingEntity target = this.getTarget();
+         if (target != null && !this.isVehicle()) {
             this.rotateToTarget(target);
          }
 
-         GrenadeEntity be = new GrenadeEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.GRENADE.get(), this.m_9236_(), this, 2.0F, 10.0F);
-         Vec3 offset = this.m_20182_();
+         GrenadeEntity be = new GrenadeEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.GRENADE.get(), this.level(), this, 2.0F, 10.0F);
+         Vec3 offset = this.position();
          Vec3 muzzlPos = new Vec3(-8.0, 8.0, -1.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         be.m_146884_(offset.m_82549_(muzzlPos));
-         be.m_146922_(this.m_146908_());
-         be.m_146926_(this.m_146909_());
-         be.f_19859_ = this.m_146908_();
-         be.f_19860_ = this.m_146909_();
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         be.setPos(offset.add(muzzlPos));
+         be.setYRot(this.getYRot());
+         be.setXRot(this.getXRot());
+         be.yRotO = this.getYRot();
+         be.xRotO = this.getXRot();
          float[] angle = this.getShootingAngle(be, target);
-         be.m_37251_(be, angle[0], angle[1], this.m_21256_(), 2.0F, 0.0F);
-         this.m_9236_().m_7967_(be);
+         be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), 2.0F, 0.0F);
+         this.level().addFreshEntity(be);
       } else {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_HIT_EVENT.get());
       }
@@ -256,23 +256,23 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
 
    private void attackGrenade() {
       if (this.isServerSide()) {
-         LivingEntity target = this.m_5448_();
-         if (target != null && !this.m_20160_()) {
+         LivingEntity target = this.getTarget();
+         if (target != null && !this.isVehicle()) {
             this.rotateToTarget(target);
          }
 
-         GrenadeLargeEntity be = new GrenadeLargeEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.GRENADELARGE.get(), this.m_9236_(), this, 8.0F);
-         Vec3 offset = this.m_20182_();
+         GrenadeLargeEntity be = new GrenadeLargeEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.GRENADELARGE.get(), this.level(), this, 8.0F);
+         Vec3 offset = this.position();
          Vec3 muzzlPos = new Vec3(8.0, 8.0, -1.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         be.m_146884_(offset.m_82549_(muzzlPos));
-         be.m_146922_(this.m_146908_());
-         be.m_146926_(this.m_146909_());
-         be.f_19859_ = this.m_146908_();
-         be.f_19860_ = this.m_146909_();
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         be.setPos(offset.add(muzzlPos));
+         be.setYRot(this.getYRot());
+         be.setXRot(this.getXRot());
+         be.yRotO = this.getYRot();
+         be.xRotO = this.getXRot();
          float[] angle = this.getShootingAngle(be, target);
-         be.m_37251_(be, angle[0], angle[1], this.m_21256_(), 2.0F, 0.0F);
-         this.m_9236_().m_7967_(be);
+         be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), 2.0F, 0.0F);
+         this.level().addFreshEntity(be);
       } else {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_GRENADE_EVENT.get());
       }
@@ -281,23 +281,23 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
    private float[] getShootingAngle(Entity bullet, LivingEntity target) {
       double xRot = 0.0;
       double yRot = 0.0;
-      if (target != null && this.m_6688_() == null) {
-         Vec3 positionA = bullet.m_20182_();
-         Vec3 positionB = target.m_20191_().m_82399_();
-         double deltaX = positionB.f_82479_ - positionA.f_82479_;
-         double deltaY = target.m_20191_().f_82289_ - positionA.f_82480_;
-         double deltaZ = positionB.f_82481_ - positionA.f_82481_;
+      if (target != null && this.getControllingPassenger() == null) {
+         Vec3 positionA = bullet.position();
+         Vec3 positionB = target.getBoundingBox().getCenter();
+         double deltaX = positionB.x - positionA.x;
+         double deltaY = target.getBoundingBox().minY - positionA.y;
+         double deltaZ = positionB.z - positionA.z;
          yRot = Math.toDegrees(Math.atan2(deltaZ, deltaX)) - 90.0;
          double distanceXZ = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
          xRot = -Math.toDegrees(Math.atan2(deltaY, distanceXZ));
-      } else if (this.m_6688_() == null) {
-         Vec3 lookAngle = this.m_20154_();
-         xRot = -Math.toDegrees(Math.asin(lookAngle.f_82480_)) - 7.5;
-         yRot = Math.toDegrees(Math.atan2(lookAngle.f_82481_, lookAngle.f_82479_)) - 90.0;
+      } else if (this.getControllingPassenger() == null) {
+         Vec3 lookAngle = this.getLookAngle();
+         xRot = -Math.toDegrees(Math.asin(lookAngle.y)) - 7.5;
+         yRot = Math.toDegrees(Math.atan2(lookAngle.z, lookAngle.x)) - 90.0;
       } else {
-         Vec3 lookAngle = this.m_6688_().m_20154_();
-         xRot = -Math.toDegrees(Math.asin(lookAngle.f_82480_)) - 20.0;
-         yRot = Math.toDegrees(Math.atan2(lookAngle.f_82481_, lookAngle.f_82479_)) - 90.0;
+         Vec3 lookAngle = this.getControllingPassenger().getLookAngle();
+         xRot = -Math.toDegrees(Math.asin(lookAngle.y)) - 20.0;
+         yRot = Math.toDegrees(Math.atan2(lookAngle.z, lookAngle.x)) - 90.0;
       }
 
       return new float[]{(float)xRot, (float)yRot};
@@ -351,59 +351,59 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
    }
 
    @Override
-   public void m_8119_() {
-      if (!this.m_9236_().f_46443_) {
-         Vec3 offset = this.m_20182_();
-         if (this.f_19803_) {
-            this.hitBox1 = new HitBoxEntity((EntityType<? extends LivingEntity>)PomkotsMechs.HITBOX1.get(), this.m_9236_(), this);
-            this.hitBox1.m_6034_(offset.f_82479_, offset.f_82480_ + 9.0, offset.f_82481_);
+   public void tick() {
+      if (!this.level().isClientSide) {
+         Vec3 offset = this.position();
+         if (this.firstTick) {
+            this.hitBox1 = new HitBoxEntity((EntityType<? extends LivingEntity>)PomkotsMechs.HITBOX1.get(), this.level(), this);
+            this.hitBox1.setPos(offset.x, offset.y + 9.0, offset.z);
             this.hitBox1.setBreakCallback(Void -> {
                if (this.isServerSide()) {
                   this.triggerAnim("break_controller", "break");
                }
             });
-            this.m_9236_().m_7967_(this.hitBox1);
-            this.hitBox2 = new HitBoxLegsEntity((EntityType<? extends LivingEntity>)PomkotsMechs.HITBOX2.get(), this.m_9236_(), this);
-            this.hitBox2.m_6034_(offset.f_82479_, offset.f_82480_, offset.f_82481_);
+            this.level().addFreshEntity(this.hitBox1);
+            this.hitBox2 = new HitBoxLegsEntity((EntityType<? extends LivingEntity>)PomkotsMechs.HITBOX2.get(), this.level(), this);
+            this.hitBox2.setPos(offset.x, offset.y, offset.z);
             this.hitBox2.setBreakCallback(Void -> {
                if (this.isServerSide()) {
                   this.setBreakFlag(true);
                }
             });
-            this.m_9236_().m_7967_(this.hitBox2);
+            this.level().addFreshEntity(this.hitBox2);
          } else {
             if (this.actionController.getAction("lbrk").isInAction()) {
-               this.hitBox1.m_6034_(offset.f_82479_, offset.f_82480_, offset.f_82481_);
+               this.hitBox1.setPos(offset.x, offset.y, offset.z);
             } else {
-               this.hitBox1.m_6034_(offset.f_82479_, offset.f_82480_ + 9.0, offset.f_82481_);
+               this.hitBox1.setPos(offset.x, offset.y + 9.0, offset.z);
             }
 
-            this.hitBox2.m_6034_(offset.f_82479_, offset.f_82480_, offset.f_82481_);
+            this.hitBox2.setPos(offset.x, offset.y, offset.z);
          }
       }
 
-      super.m_8119_();
+      super.tick();
       this.actionController.tick();
-      if (this.m_6084_() && this.m_20160_()) {
+      if (this.isAlive() && this.isVehicle()) {
          if (this.rideCoolTick == 0) {
             this.applyPlayerControll();
          }
-      } else if (!this.m_21525_()) {
-         this.rotateToTarget(this.m_5448_());
+      } else if (!this.isNoAi()) {
+         this.rotateToTarget(this.getTarget());
       }
    }
 
-   public void m_8107_() {
+   public void aiStep() {
       if (this.waitTicks > 0) {
          this.waitTicks--;
-         this.m_20256_(Vec3.f_82478_);
-         this.m_21557_(true);
+         this.setDeltaMovement(Vec3.ZERO);
+         this.setNoAi(true);
       } else {
-         if (this.m_21525_()) {
-            this.m_21557_(false);
+         if (this.isNoAi()) {
+            this.setNoAi(false);
          }
 
-         super.m_8107_();
+         super.aiStep();
       }
    }
 
@@ -438,43 +438,43 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
    }
 
    @Override
-   public boolean m_6469_(DamageSource source, float amount) {
-      if (source.m_276093_(DamageTypes.f_268565_)) {
+   public boolean hurt(DamageSource source, float amount) {
+      if (source.is(DamageTypes.EXPLOSION)) {
          amount *= this.getMechData().explosionDamageModifier;
       }
 
       amount *= this.getMechData().baseDamageModifier;
       ParticleUtil.addParticles(source, this);
-      return super.m_6469_(source, amount);
+      return super.hurt(source, amount);
    }
 
-   public void m_6457_(ServerPlayer player) {
-      super.m_6457_(player);
-      this.bossInfo.m_6543_(player);
+   public void startSeenByPlayer(ServerPlayer player) {
+      super.startSeenByPlayer(player);
+      this.bossInfo.addPlayer(player);
    }
 
-   public void m_6452_(ServerPlayer player) {
-      super.m_6452_(player);
-      this.bossInfo.m_6539_(player);
+   public void stopSeenByPlayer(ServerPlayer player) {
+      super.stopSeenByPlayer(player);
+      this.bossInfo.removePlayer(player);
    }
 
-   public void m_8024_() {
-      super.m_8024_();
-      this.bossInfo.m_142711_(this.m_21223_() / this.m_21233_());
+   public void customServerAiStep() {
+      super.customServerAiStep();
+      this.bossInfo.setProgress(this.getHealth() / this.getMaxHealth());
    }
 
    @Override
    public void rotateToTarget(LivingEntity target) {
       if (target != null) {
-         Vec3 tgtPos = target.m_20182_();
-         Vec3 slfPos = this.m_20182_();
-         Vec3 v = slfPos.m_82505_(tgtPos);
-         this.m_146922_((float)Math.toDegrees(Mth.m_14136_(v.f_82481_, v.f_82479_)) - 90.0F);
-         this.m_5618_(this.m_146908_());
-         this.m_5616_(this.m_146908_());
-         this.f_19859_ = this.m_146908_();
-         this.f_20884_ = this.m_146908_();
-         this.f_20886_ = this.m_146908_();
+         Vec3 tgtPos = target.position();
+         Vec3 slfPos = this.position();
+         Vec3 v = slfPos.vectorTo(tgtPos);
+         this.setYRot((float)Math.toDegrees(Mth.atan2(v.z, v.x)) - 90.0F);
+         this.setYBodyRot(this.getYRot());
+         this.setYHeadRot(this.getYRot());
+         this.yRotO = this.getYRot();
+         this.yBodyRotO = this.getYRot();
+         this.yHeadRotO = this.getYRot();
       }
    }
 
@@ -492,7 +492,7 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
       return 100;
    }
 
-   public double m_6048_() {
+   public double getPassengersRidingOffset() {
       return 19.0;
    }
 
@@ -508,8 +508,8 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
       return this.geoCache;
    }
 
-   public void m_7355_(BlockPos blockPos, BlockState blockState) {
-      if (this.isClientSide() && this.f_19797_ % 10 == 0) {
+   public void playStepSound(BlockPos blockPos, BlockState blockState) {
+      if (this.isClientSide() && this.tickCount % 10 == 0) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_WALK_EVENT.get());
       }
    }
@@ -523,20 +523,20 @@ public class Pmb01Entity extends GenericPomkotsMonsterPercistant implements GeoE
    }
 
    @Override
-   protected void m_8097_() {
-      super.m_8097_();
-      this.f_19804_.m_135372_(MODE, true);
+   protected void defineSynchedData() {
+      super.defineSynchedData();
+      this.entityData.define(MODE, true);
    }
 
    private void setMainMode(boolean value) {
-      this.f_19804_.m_135381_(MODE, value);
+      this.entityData.set(MODE, value);
    }
 
    public boolean isMainMode() {
-      return (Boolean)this.f_19804_.m_135370_(MODE);
+      return (Boolean)this.entityData.get(MODE);
    }
 
-   public boolean m_142535_(float f1, float f2, DamageSource damageSource) {
+   public boolean causeFallDamage(float f1, float f2, DamageSource damageSource) {
       return false;
    }
 }

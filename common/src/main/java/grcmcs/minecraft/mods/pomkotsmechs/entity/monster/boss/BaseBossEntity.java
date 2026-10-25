@@ -67,13 +67,13 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
    protected float gravity = 0.98F;
    private int waitTicks = 60;
    private int bootTicks = -1;
-   private final ServerBossEvent bossInfo = new ServerBossEvent(this.m_5446_(), BossBarColor.RED, BossBarOverlay.PROGRESS);
-   private Vec3 clientSeatPos = Vec3.f_82478_;
+   private final ServerBossEvent bossInfo = new ServerBossEvent(this.getDisplayName(), BossBarColor.RED, BossBarOverlay.PROGRESS);
+   private Vec3 clientSeatPos = Vec3.ZERO;
    private DriverInput driverInput = null;
    private boolean isActivated = true;
-   private static final EntityDataAccessor<Boolean> MODE = SynchedEntityData.m_135353_(BaseBossEntity.class, EntityDataSerializers.f_135035_);
-   private static final EntityDataAccessor<Integer> AI_MODE = SynchedEntityData.m_135353_(BaseBossEntity.class, EntityDataSerializers.f_135028_);
-   private static final EntityDataAccessor<Integer> STUN_POINT = SynchedEntityData.m_135353_(BaseBossEntity.class, EntityDataSerializers.f_135028_);
+   private static final EntityDataAccessor<Boolean> MODE = SynchedEntityData.defineId(BaseBossEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Integer> AI_MODE = SynchedEntityData.defineId(BaseBossEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> STUN_POINT = SynchedEntityData.defineId(BaseBossEntity.class, EntityDataSerializers.INT);
    protected int aiMode = 1;
    public static final int AI_MODE_CARRYING = -3;
    public static final int AI_MODE_INACTIVE = -2;
@@ -93,18 +93,18 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
    public BaseBossEntity(EntityType<? extends GenericPomkotsMonster> entityType, Level world) {
       super(entityType, world);
       this.actionController = new BossActionController();
-      this.m_274367_(this.getMechData().maxStepUp);
-      this.m_7910_(this.getMechData().speed);
-      this.m_21530_();
-      this.m_20242_(false);
-      this.m_146922_(0.0F);
+      this.setMaxUpStep(this.getMechData().maxStepUp);
+      this.setSpeed(this.getMechData().speed);
+      this.setPersistenceRequired();
+      this.setNoGravity(false);
+      this.setYRot(0.0F);
       this.goalDice = new GoalDice(this);
       this.registerTargetSelectorGoals();
    }
 
    protected void registerTargetSelectorGoals() {
-      this.hateTargetGoal = new HateTargetGoal(this, this.m_21133_(Attributes.f_22277_), 30.0);
-      this.f_21346_.m_25352_(2, this.hateTargetGoal);
+      this.hateTargetGoal = new HateTargetGoal(this, this.getAttributeValue(Attributes.FOLLOW_RANGE), 30.0);
+      this.targetSelector.addGoal(2, this.hateTargetGoal);
    }
 
    protected void registerAdditionalHitBox(BossHitBoxEntity box) {
@@ -112,49 +112,49 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
    }
 
    @Override
-   public void m_8119_() {
+   public void tick() {
       if (this.isServerSide()) {
-         if (this.isCarrying && this.m_20096_()) {
+         if (this.isCarrying && this.onGround()) {
             this.isCarrying = false;
          }
 
          this.updateAiMode();
-         Vec3 offset = this.m_20182_();
-         if (this.f_19803_) {
+         Vec3 offset = this.position();
+         if (this.firstTick) {
             for (BossHitBoxEntity hitBox : this.hitBoxes) {
-               hitBox.m_146884_(hitBox.getRelativeParentPos().m_82549_(offset));
-               this.m_9236_().m_7967_(hitBox);
+               hitBox.setPos(hitBox.getRelativeParentPos().add(offset));
+               this.level().addFreshEntity(hitBox);
             }
          } else {
             for (BossHitBoxEntity hitBox : this.hitBoxes) {
-               hitBox.m_146884_(hitBox.getRelativeParentPos().m_82549_(offset));
+               hitBox.setPos(hitBox.getRelativeParentPos().add(offset));
             }
          }
 
          this.updateStunPoint();
       }
 
-      super.m_8119_();
+      super.tick();
       this.actionController.tick();
-      if (this.m_6084_() && this.m_20160_() && this.rideCoolTick == 0) {
+      if (this.isAlive() && this.isVehicle() && this.rideCoolTick == 0) {
          this.applyPlayerControll();
       }
 
       if (this.isServerSide()) {
          this.goalDice.tick();
-         if (!this.m_20096_() && !this.m_20068_()) {
-            this.m_5997_(0.0, -0.17640000343322754, 0.0);
+         if (!this.onGround() && !this.isNoGravity()) {
+            this.push(0.0, -0.17640000343322754, 0.0);
          }
       }
    }
 
    protected void registerActionGoal(BaseBossGoal goal, int[] availableMode, int weight) {
-      this.f_21345_.m_25352_(1, goal);
+      this.goalSelector.addGoal(1, goal);
       this.goalDice.registerGoal(goal, availableMode, -1.0F, -1.0F, weight);
    }
 
    protected void registerActionGoal(BaseBossGoal goal, int[] availableMode, float availableDistanceMin, float availableDistanceMax, int weight) {
-      this.f_21345_.m_25352_(1, goal);
+      this.goalSelector.addGoal(1, goal);
       this.goalDice.registerGoal(goal, availableMode, availableDistanceMin, availableDistanceMax, weight);
    }
 
@@ -163,34 +163,34 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
    protected abstract void applyPlayerControll();
 
    protected void rangeAttack(Vec3 aabb1, Vec3 aabb2, float damage, int knockBack) {
-      Vec3 pilePos1 = aabb1.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())).m_82549_(this.m_20182_());
-      Vec3 pilePos2 = aabb2.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())).m_82549_(this.m_20182_());
-      Level world = this.m_9236_();
-      Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+      Vec3 pilePos1 = aabb1.yRot((float)Math.toRadians(-1.0 * this.getYRot())).add(this.position());
+      Vec3 pilePos2 = aabb2.yRot((float)Math.toRadians(-1.0 * this.getYRot())).add(this.position());
+      Level world = this.level();
+      Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).yRot((float)Math.toRadians(-1.0 * this.getYRot()));
 
-      for (Entity ent : world.m_45933_(null, new AABB(pilePos1, pilePos2))) {
+      for (Entity ent : world.getEntities(null, new AABB(pilePos1, pilePos2))) {
          if (!this.isSelf(ent) && ent instanceof LivingEntity le) {
-            le.m_147240_(knockBack, kbVel.f_82479_, kbVel.f_82481_);
-            DamageSource ds = this.m_269291_().m_269264_();
-            le.m_6469_(ds, damage);
+            le.knockback(knockBack, kbVel.x, kbVel.z);
+            DamageSource ds = this.damageSources().generic();
+            le.hurt(ds, damage);
          }
       }
    }
 
-   public void m_8107_() {
+   public void aiStep() {
       if (this.isServerSide()) {
          if (this.waitTicks > 0) {
             this.waitTicks--;
-            this.m_20256_(Vec3.f_82478_);
-            this.m_21557_(true);
+            this.setDeltaMovement(Vec3.ZERO);
+            this.setNoAi(true);
             return;
          }
 
          if (this.getAiMode() == -2) {
             if (this.bootTicks > 0) {
                this.bootTicks--;
-               this.m_20256_(Vec3.f_82478_);
-               this.m_21557_(true);
+               this.setDeltaMovement(Vec3.ZERO);
+               this.setNoAi(true);
                return;
             }
 
@@ -198,12 +198,12 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
                this.isActivated = true;
                this.setAiMode(1);
             }
-         } else if (this.m_21525_()) {
-            this.m_21557_(false);
+         } else if (this.isNoAi()) {
+            this.setNoAi(false);
          }
       }
 
-      super.m_8107_();
+      super.aiStep();
    }
 
    public void boot() {
@@ -211,8 +211,8 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
    }
 
    @Override
-   public boolean m_6469_(DamageSource source, float amount) {
-      return Utils.isSystemicDamage(source) ? super.m_6469_(source, amount) : false;
+   public boolean hurt(DamageSource source, float amount) {
+      return Utils.isSystemicDamage(source) ? super.hurt(source, amount) : false;
    }
 
    public boolean hurtFromAdditionalHitBox(DamageSource source, float amount) {
@@ -220,7 +220,7 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
          return false;
       }
 
-      if (source.m_276093_(DamageTypes.f_268565_)) {
+      if (source.is(DamageTypes.EXPLOSION)) {
          amount *= this.getMechData().explosionDamageModifier;
       }
 
@@ -238,18 +238,18 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
          }
       }
 
-      return super.m_6469_(source, amount);
+      return super.hurt(source, amount);
    }
 
-   protected void m_6475_(DamageSource damageSource, float f) {
-      float beforeRatio = this.m_21223_() / this.m_21233_();
-      super.m_6475_(damageSource, f);
-      if (!this.m_9236_().f_46443_ && !this.isStunning()) {
-         float afterRatio = this.m_21223_() / this.m_21233_();
+   protected void actuallyHurt(DamageSource damageSource, float f) {
+      float beforeRatio = this.getHealth() / this.getMaxHealth();
+      super.actuallyHurt(damageSource, f);
+      if (!this.level().isClientSide && !this.isStunning()) {
+         float afterRatio = this.getHealth() / this.getMaxHealth();
          int beforeStage = (int)(beforeRatio * 5.0F);
          int afterStage = (int)(afterRatio * 5.0F);
          if (afterStage != 4 && afterStage < beforeStage) {
-            this.f_21345_.m_25386_().forEach(WrappedGoal::m_8041_);
+            this.goalSelector.getRunningGoals().forEach(WrappedGoal::stop);
             this.onSmallDown();
             this.burstArmorDrops(1.0F, true);
          }
@@ -257,31 +257,31 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
    }
 
    private void burstArmorDrops(float ratio, boolean dropBlueprint) {
-      if (this.m_9236_() instanceof ServerLevel serverLevel) {
-         LootTable var12 = serverLevel.m_7654_().m_278653_().m_278676_(this.m_5743_());
+      if (this.level() instanceof ServerLevel serverLevel) {
+         LootTable var12 = serverLevel.getServer().getLootData().getLootTable(this.getLootTable());
          LootParams params = new Builder(serverLevel)
-            .m_287286_(LootContextParams.f_81455_, this)
-            .m_287286_(LootContextParams.f_81460_, this.m_20182_())
-            .m_287286_(LootContextParams.f_81457_, this.m_269291_().m_269264_())
-            .m_287235_(LootContextParamSets.f_81415_);
-         ObjectArrayList drops = var12.m_287195_(params);
-         RandomSource random = this.f_19796_;
+            .withParameter(LootContextParams.THIS_ENTITY, this)
+            .withParameter(LootContextParams.ORIGIN, this.position())
+            .withParameter(LootContextParams.DAMAGE_SOURCE, this.damageSources().generic())
+            .create(LootContextParamSets.ENTITY);
+         ObjectArrayList<ItemStack> drops = var12.getRandomItems(params);
+         RandomSource random = this.random;
 
          for (ItemStack stack : drops) {
-            if (!(stack.m_41720_() instanceof BluePrintItem) || dropBlueprint && random.m_188502_() % 8 >= 7) {
-               Vec3 pos = new Vec3(this.m_20185_(), this.m_20186_() + this.m_20206_() * 0.7, this.m_20189_());
-               stack.m_41764_(1);
-               ItemEntity item = new ItemEntity(this.m_9236_(), pos.f_82479_, pos.f_82480_, pos.f_82481_, stack.m_41777_());
-               item.m_20334_(random.m_188583_() * 0.5, random.m_188500_() * 0.5 + 0.2, random.m_188583_() * 0.5);
-               item.m_32010_(40);
-               this.m_9236_().m_7967_(item);
+            if (!(stack.getItem() instanceof BluePrintItem) || dropBlueprint && random.nextInt() % 8 >= 7) {
+               Vec3 pos = new Vec3(this.getX(), this.getY() + this.getBbHeight() * 0.7, this.getZ());
+               stack.setCount(1);
+               ItemEntity item = new ItemEntity(this.level(), pos.x, pos.y, pos.z, stack.copy());
+               item.setDeltaMovement(random.nextGaussian() * 0.5, random.nextDouble() * 0.5 + 0.2, random.nextGaussian() * 0.5);
+               item.setPickUpDelay(40);
+               this.level().addFreshEntity(item);
             }
          }
       }
    }
 
    private LivingEntity getCause(DamageSource source) {
-      Entity sourceEntity = source.m_7639_();
+      Entity sourceEntity = source.getEntity();
       LivingEntity res;
       if (sourceEntity instanceof Projectile p) {
          res = Utils.getProjectileOwner(p);
@@ -320,43 +320,43 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
       }
    }
 
-   public void m_6457_(ServerPlayer player) {
-      super.m_6457_(player);
-      this.bossInfo.m_6543_(player);
-      this.bossInfo.m_8321_(false);
+   public void startSeenByPlayer(ServerPlayer player) {
+      super.startSeenByPlayer(player);
+      this.bossInfo.addPlayer(player);
+      this.bossInfo.setVisible(false);
    }
 
-   public void m_6452_(ServerPlayer player) {
-      super.m_6452_(player);
-      this.bossInfo.m_6539_(player);
+   public void stopSeenByPlayer(ServerPlayer player) {
+      super.stopSeenByPlayer(player);
+      this.bossInfo.removePlayer(player);
    }
 
-   public void m_8024_() {
-      super.m_8024_();
-      this.bossInfo.m_142711_(this.m_21223_() / this.m_21233_());
+   public void customServerAiStep() {
+      super.customServerAiStep();
+      this.bossInfo.setProgress(this.getHealth() / this.getMaxHealth());
    }
 
    public void choiMove() {
-      this.m_246865_(new Vec3(0.0, 0.0, 0.001).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())));
+      this.addDeltaMovement(new Vec3(0.0, 0.0, 0.001).yRot((float)Math.toRadians(-1.0 * this.getYRot())));
    }
 
    @Override
    public void rotateToTarget(LivingEntity target) {
       if (target != null) {
-         Vec3 tgtPos = target.m_20182_();
-         Vec3 slfPos = this.m_20182_();
-         Vec3 v = slfPos.m_82505_(tgtPos);
-         this.rotateDegree((float)Math.toDegrees(Mth.m_14136_(v.f_82481_, v.f_82479_)) - 90.0F);
+         Vec3 tgtPos = target.position();
+         Vec3 slfPos = this.position();
+         Vec3 v = slfPos.vectorTo(tgtPos);
+         this.rotateDegree((float)Math.toDegrees(Mth.atan2(v.z, v.x)) - 90.0F);
       }
    }
 
    public void rotateDegree(float degree) {
-      this.m_146922_(degree);
-      this.m_5618_(this.m_146908_());
-      this.m_5616_(this.m_146908_());
-      this.f_19859_ = this.m_146908_();
-      this.f_20884_ = this.m_146908_();
-      this.f_20886_ = this.m_146908_();
+      this.setYRot(degree);
+      this.setYBodyRot(this.getYRot());
+      this.setYHeadRot(this.getYRot());
+      this.yRotO = this.getYRot();
+      this.yBodyRotO = this.getYRot();
+      this.yHeadRotO = this.getYRot();
    }
 
    @Override
@@ -373,7 +373,7 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
       return 100;
    }
 
-   public double m_6048_() {
+   public double getPassengersRidingOffset() {
       return 19.0;
    }
 
@@ -398,23 +398,23 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
    }
 
    @Override
-   public void m_7380_(CompoundTag compound) {
-      super.m_7380_(compound);
-      compound.m_128379_(PomkotsMechs.nbtName("BossActivated"), this.isActivated);
-      compound.m_128379_(PomkotsMechs.nbtName("IsCarrying"), this.isCarrying);
+   public void addAdditionalSaveData(CompoundTag compound) {
+      super.addAdditionalSaveData(compound);
+      compound.putBoolean(PomkotsMechs.nbtName("BossActivated"), this.isActivated);
+      compound.putBoolean(PomkotsMechs.nbtName("IsCarrying"), this.isCarrying);
    }
 
    @Override
-   public void m_7378_(CompoundTag compound) {
-      super.m_7378_(compound);
-      if (compound.m_128441_(PomkotsMechs.nbtName("BossActivated"))) {
-         this.isActivated = compound.m_128471_(PomkotsMechs.nbtName("BossActivated"));
+   public void readAdditionalSaveData(CompoundTag compound) {
+      super.readAdditionalSaveData(compound);
+      if (compound.contains(PomkotsMechs.nbtName("BossActivated"))) {
+         this.isActivated = compound.getBoolean(PomkotsMechs.nbtName("BossActivated"));
       } else {
          this.isActivated = true;
       }
 
-      if (compound.m_128441_(PomkotsMechs.nbtName("IsCarrying"))) {
-         this.isCarrying = compound.m_128471_(PomkotsMechs.nbtName("IsCarrying"));
+      if (compound.contains(PomkotsMechs.nbtName("IsCarrying"))) {
+         this.isCarrying = compound.getBoolean(PomkotsMechs.nbtName("IsCarrying"));
       } else {
          this.isCarrying = false;
       }
@@ -432,19 +432,19 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
    }
 
    @Override
-   protected void m_8097_() {
-      super.m_8097_();
-      this.f_19804_.m_135372_(MODE, true);
-      this.f_19804_.m_135372_(AI_MODE, 1);
-      this.f_19804_.m_135372_(STUN_POINT, 0);
+   protected void defineSynchedData() {
+      super.defineSynchedData();
+      this.entityData.define(MODE, true);
+      this.entityData.define(AI_MODE, 1);
+      this.entityData.define(STUN_POINT, 0);
    }
 
    private void setMainMode(boolean value) {
-      this.f_19804_.m_135381_(MODE, value);
+      this.entityData.set(MODE, value);
    }
 
    public boolean isMainMode() {
-      return (Boolean)this.f_19804_.m_135370_(MODE);
+      return (Boolean)this.entityData.get(MODE);
    }
 
    protected void updateAiMode() {
@@ -453,7 +453,7 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
          nextMode = -3;
       } else if (this.isActivated) {
          if (this.aiMode > 0) {
-            float healthPercentage = this.m_21223_() / this.m_21233_();
+            float healthPercentage = this.getHealth() / this.getMaxHealth();
             if (healthPercentage > 0.8) {
                nextMode = 1;
             } else if (healthPercentage > 0.6) {
@@ -474,16 +474,16 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
          int currentMode = this.getAiMode();
          if (currentMode == -2 && nextMode != -2) {
             ClientboundSetTitlesAnimationPacket timesPacket = new ClientboundSetTitlesAnimationPacket(20, 60, 20);
-            ClientboundSetTitleTextPacket titlePacket = new ClientboundSetTitleTextPacket(this.m_5446_());
-            ClientboundSetSubtitleTextPacket subtitlePacket = new ClientboundSetSubtitleTextPacket(Component.m_237113_("Activated!!"));
+            ClientboundSetTitleTextPacket titlePacket = new ClientboundSetTitleTextPacket(this.getDisplayName());
+            ClientboundSetSubtitleTextPacket subtitlePacket = new ClientboundSetSubtitleTextPacket(Component.literal("Activated!!"));
 
-            for (ServerPlayer player : this.bossInfo.m_8324_()) {
-               player.f_8906_.m_9829_(timesPacket);
-               player.f_8906_.m_9829_(titlePacket);
-               player.f_8906_.m_9829_(subtitlePacket);
+            for (ServerPlayer player : this.bossInfo.getPlayers()) {
+               player.connection.send(timesPacket);
+               player.connection.send(titlePacket);
+               player.connection.send(subtitlePacket);
             }
 
-            this.bossInfo.m_7005_(true);
+            this.bossInfo.setPlayBossMusic(true);
          }
       }
 
@@ -491,11 +491,11 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
    }
 
    public void setAiMode(int value) {
-      this.f_19804_.m_135381_(AI_MODE, value);
+      this.entityData.set(AI_MODE, value);
    }
 
    public int getAiMode() {
-      return (Integer)this.f_19804_.m_135370_(AI_MODE);
+      return (Integer)this.entityData.get(AI_MODE);
    }
 
    public void addStunPoint(int point) {
@@ -504,8 +504,8 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
          current += point;
          if (current >= 200) {
             current = 300;
-            this.m_21051_(Attributes.f_22284_).m_22100_(0.0);
-            this.f_21345_.m_25386_().forEach(WrappedGoal::m_8041_);
+            this.getAttribute(Attributes.ARMOR).setBaseValue(0.0);
+            this.goalSelector.getRunningGoals().forEach(WrappedGoal::stop);
             this.actionController.reset();
             this.onStun();
          }
@@ -516,7 +516,7 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
 
    public void updateStunPoint() {
       int stunPoint = this.getStunPoint();
-      if (stunPoint > 0 && this.f_19797_ % 5 == 0) {
+      if (stunPoint > 0 && this.tickCount % 5 == 0) {
          if (stunPoint < 200) {
             stunPoint--;
          } else {
@@ -524,7 +524,7 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
          }
 
          if (stunPoint == 210) {
-            this.m_21051_(Attributes.f_22284_).m_22100_(this.mechData.armor);
+            this.getAttribute(Attributes.ARMOR).setBaseValue(this.mechData.armor);
             this.offStun();
          } else if (stunPoint == 200) {
             stunPoint = 0;
@@ -544,11 +544,11 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
    }
 
    public void setStunPoint(int value) {
-      this.f_19804_.m_135381_(STUN_POINT, value);
+      this.entityData.set(STUN_POINT, value);
    }
 
    public int getStunPoint() {
-      return (Integer)this.f_19804_.m_135370_(STUN_POINT);
+      return (Integer)this.entityData.get(STUN_POINT);
    }
 
    public boolean isStunning() {
@@ -556,16 +556,16 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
    }
 
    public BaseBossEntity.MoveDirection getDominantMoveDirection() {
-      Vec3 velocity = this.m_20184_();
-      if (velocity.m_82556_() < 0.001) {
+      Vec3 velocity = this.getDeltaMovement();
+      if (velocity.lengthSqr() < 0.001) {
          return BaseBossEntity.MoveDirection.NONE;
       } else {
-         float yawDeg = this.m_146908_();
+         float yawDeg = this.getYRot();
          double yawRad = Math.toRadians(yawDeg);
          Vec3 forward = new Vec3(-Math.sin(yawRad), 0.0, Math.cos(yawRad));
          Vec3 right = new Vec3(Math.cos(yawRad), 0.0, Math.sin(yawRad));
-         double forwardDot = velocity.m_82526_(forward);
-         double rightDot = velocity.m_82526_(right);
+         double forwardDot = velocity.dot(forward);
+         double rightDot = velocity.dot(right);
          double absForward = Math.abs(forwardDot);
          double absRight = Math.abs(rightDot);
          if (absForward >= absRight) {
@@ -576,11 +576,11 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
       }
    }
 
-   public boolean m_6128_() {
+   public boolean ignoreExplosion() {
       return true;
    }
 
-   public boolean m_142535_(float f1, float f2, DamageSource damageSource) {
+   public boolean causeFallDamage(float f1, float f2, DamageSource damageSource) {
       return false;
    }
 
@@ -594,7 +594,7 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
       return res || this.equals(ent);
    }
 
-   protected void m_20101_() {
+   protected void checkInsideBlocks() {
    }
 
    protected void playSounds(SoundKeyframeEvent event) {
@@ -641,8 +641,8 @@ public abstract class BaseBossEntity extends GenericPomkotsMonsterPercistant imp
       }
    }
 
-   public AABB m_6921_() {
-      return this.m_20191_().m_82377_(20.0, 0.0, 20.0);
+   public AABB getBoundingBoxForCulling() {
+      return this.getBoundingBox().inflate(20.0, 0.0, 20.0);
    }
 
    public enum MoveDirection {

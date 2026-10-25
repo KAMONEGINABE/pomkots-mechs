@@ -75,12 +75,12 @@ public class Pmv02Entity extends PomkotsVehicleBase {
    }
 
    @Override
-   public void m_8119_() {
-      super.m_8119_();
+   public void tick() {
+      super.tick();
       if (this.isServerSide() && this.heldBlockMassEntity != null) {
-         Vec3 offset = this.m_20182_();
-         this.heldBlockMassEntity.m_6034_(offset.f_82479_, offset.f_82480_ + 6.0, offset.f_82481_);
-         this.heldBlockMassEntity.f_19812_ = true;
+         Vec3 offset = this.position();
+         this.heldBlockMassEntity.setPos(offset.x, offset.y + 6.0, offset.z);
+         this.heldBlockMassEntity.hasImpulse = true;
       }
    }
 
@@ -120,14 +120,14 @@ public class Pmv02Entity extends PomkotsVehicleBase {
             this.actionController.getAction(9).startAction();
          } else {
             this.actionController.getAction(10).startAction();
-            this.fireThrowBlock(this.m_9236_(), false);
+            this.fireThrowBlock(this.level(), false);
             this.isHoldingBlockMassEntity = false;
             this.actionController.getAction(9).currentCoolTime = 20;
          }
       } else if (driverInput.isWeaponLeftShoulderPressed()) {
          if (this.isHoldingBlockMassEntity) {
             this.actionController.getAction(10).startAction();
-            this.fireThrowBlock(this.m_9236_(), true);
+            this.fireThrowBlock(this.level(), true);
             this.isHoldingBlockMassEntity = false;
             this.actionController.getAction(9).currentCoolTime = 20;
          } else {
@@ -138,7 +138,7 @@ public class Pmv02Entity extends PomkotsVehicleBase {
 
    @Override
    protected void fireWeapons() {
-      Level level = this.m_9236_();
+      Level level = this.level();
       if (this.actionController.getAction(2).isOnFire()) {
          this.fireNeedle(level);
       } else if (this.actionController.getAction(3).isOnFire()) {
@@ -162,26 +162,26 @@ public class Pmv02Entity extends PomkotsVehicleBase {
 
    public void fireBlockInjection(Level level) {
       if (this.isServerSide() && this.getDrivingPassenger() instanceof Player player) {
-         ItemStack mainHand = player.m_21205_();
-         if (mainHand.m_41720_() instanceof BlockItem blockItem) {
-            if (!this.isAvailableBlock(blockItem.m_40614_().m_49966_())) {
+         ItemStack mainHand = player.getMainHandItem();
+         if (mainHand.getItem() instanceof BlockItem blockItem) {
+            if (!this.isAvailableBlock(blockItem.getBlock().defaultBlockState())) {
                return;
             }
 
-            Block block = blockItem.m_40614_();
+            Block block = blockItem.getBlock();
             BlockProjectileEntity blockEntity = new BlockProjectileEntity(
-               (EntityType<? extends BlockProjectileEntity>)PomkotsMechs.BLOCK_PROJECTILE.get(), player.m_9236_()
+               (EntityType<? extends BlockProjectileEntity>)PomkotsMechs.BLOCK_PROJECTILE.get(), player.level()
             );
             blockEntity.setBlock(block);
             Vec3 offset = this.posHistory.getFirst();
             Vec3 muzzlPos = new Vec3(-1.65, 2.0, 3.5);
-            muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-            blockEntity.m_146884_(offset.m_82549_(muzzlPos));
+            muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+            blockEntity.setPos(offset.add(muzzlPos));
             float[] angle = this.getShootAngleNolock(player);
-            blockEntity.m_37251_(blockEntity, angle[0], angle[1], this.m_21256_(), 1.2F, 0.0F);
-            player.m_9236_().m_7967_(blockEntity);
+            blockEntity.shootFromRotation(blockEntity, angle[0], angle[1], this.getFallFlyingTicks(), 1.2F, 0.0F);
+            player.level().addFreshEntity(blockEntity);
             if (PomkotsMechs.CONFIG.consumeBlocksWhenPlacing) {
-               mainHand.m_41774_(1);
+               mainHand.shrink(1);
             }
          }
       }
@@ -190,18 +190,18 @@ public class Pmv02Entity extends PomkotsVehicleBase {
    public void fireVacume(Level level) {
       if (this.isServerSide() && this.getDrivingPassenger() instanceof Player player) {
          BlockHitResult hitResult = this.raycastBlock(player, true);
-         if (hitResult.m_6662_() == Type.BLOCK
-            && level.m_8055_(hitResult.m_82425_()).m_60734_() instanceof LiquidBlock liquidBlock
-            && (liquidBlock == Blocks.f_49990_ || liquidBlock == Blocks.f_49991_)) {
-            BlockPos offset = hitResult.m_82425_();
+         if (hitResult.getType() == Type.BLOCK
+            && level.getBlockState(hitResult.getBlockPos()).getBlock() instanceof LiquidBlock liquidBlock
+            && (liquidBlock == Blocks.WATER || liquidBlock == Blocks.LAVA)) {
+            BlockPos offset = hitResult.getBlockPos();
 
             for (int x = 0; x < 3; x++) {
                for (int z = 0; z < 3; z++) {
-                  BlockPos pos = new BlockPos(offset.m_123341_() + x - 1, offset.m_123342_(), offset.m_123343_() + z - 1);
-                  BlockState bs = level.m_8055_(pos);
-                  Block b = bs.m_60734_();
-                  if (b == Blocks.f_49990_ || b == Blocks.f_49991_) {
-                     level.m_7731_(pos, Blocks.f_50016_.m_49966_(), 3);
+                  BlockPos pos = new BlockPos(offset.getX() + x - 1, offset.getY(), offset.getZ() + z - 1);
+                  BlockState bs = level.getBlockState(pos);
+                  Block b = bs.getBlock();
+                  if (b == Blocks.WATER || b == Blocks.LAVA) {
+                     level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
                   }
                }
             }
@@ -213,13 +213,13 @@ public class Pmv02Entity extends PomkotsVehicleBase {
       if (this.isServerSide() && this.heldBlockMassEntity == null && this.getDrivingPassenger() instanceof Player player) {
          BlockState blockState = this.getMainHandBlock(player);
          if (blockState != null && this.isAvailableBlock(blockState)) {
-            List<ItemStack> stacks = this.getItemStacks(player.m_21205_(), player, 64);
+            List<ItemStack> stacks = this.getItemStacks(player.getMainHandItem(), player, 64);
             if (!PomkotsMechs.CONFIG.consumeBlocksWhenPlacing || stacks != null) {
-               BlockMassEntity blockMass = new BlockMassEntity((EntityType<? extends BlockMassEntity>)PomkotsMechs.BLOCK_MASS.get(), this.m_9236_());
+               BlockMassEntity blockMass = new BlockMassEntity((EntityType<? extends BlockMassEntity>)PomkotsMechs.BLOCK_MASS.get(), this.level());
                blockMass.initializeBlocksServer(blockState);
-               blockMass.m_6034_(this.m_20185_(), this.m_20186_() + 6.0, this.m_20189_());
-               blockMass.m_20242_(true);
-               this.m_9236_().m_7967_(blockMass);
+               blockMass.setPos(this.getX(), this.getY() + 6.0, this.getZ());
+               blockMass.setNoGravity(true);
+               this.level().addFreshEntity(blockMass);
                this.heldBlockMassEntity = blockMass;
                if (PomkotsMechs.CONFIG.consumeBlocksWhenPlacing) {
                   this.consumeItemStackFromTop(stacks, 64);
@@ -230,20 +230,20 @@ public class Pmv02Entity extends PomkotsVehicleBase {
    }
 
    private BlockState getMainHandBlock(LivingEntity player) {
-      return player != null && player.m_21205_() != null && player.m_21205_().m_41720_() instanceof BlockItem blockItem
-         ? blockItem.m_40614_().m_49966_()
+      return player != null && player.getMainHandItem() != null && player.getMainHandItem().getItem() instanceof BlockItem blockItem
+         ? blockItem.getBlock().defaultBlockState()
          : null;
    }
 
    private List<ItemStack> getItemStacks(ItemStack mainHandStack, Player player, int totalAmountToConsume) {
       List<ItemStack> stacks = new LinkedList<>();
       int remainingAmount = totalAmountToConsume;
-      Item mainHandItem = mainHandStack.m_41720_();
+      Item mainHandItem = mainHandStack.getItem();
 
-      for (ItemStack stack : player.m_150109_().f_35974_) {
-         if (stack != mainHandStack && stack.m_41720_() == mainHandItem) {
+      for (ItemStack stack : player.getInventory().items) {
+         if (stack != mainHandStack && stack.getItem() == mainHandItem) {
             stacks.add(stack);
-            int stackCount = stack.m_41613_();
+            int stackCount = stack.getCount();
             if (stackCount > remainingAmount) {
                return stacks;
             }
@@ -254,7 +254,7 @@ public class Pmv02Entity extends PomkotsVehicleBase {
 
       if (remainingAmount > 0) {
          stacks.add(mainHandStack);
-         int mainHandCount = mainHandStack.m_41613_();
+         int mainHandCount = mainHandStack.getCount();
          if (mainHandCount <= remainingAmount) {
             remainingAmount -= mainHandCount;
          } else {
@@ -267,33 +267,33 @@ public class Pmv02Entity extends PomkotsVehicleBase {
 
    private void consumeItemStackFromTop(List<ItemStack> stacks, int num) {
       for (ItemStack stack : stacks) {
-         if (stack.m_41613_() > num) {
-            stack.m_41764_(stack.m_41613_() - num);
+         if (stack.getCount() > num) {
+            stack.setCount(stack.getCount() - num);
             return;
          }
 
-         num -= stack.m_41613_();
-         stack.m_41764_(0);
+         num -= stack.getCount();
+         stack.setCount(0);
       }
    }
 
    private void fireThrowBlock(Level level, boolean vertical) {
       if (this.heldBlockMassEntity != null && this.isServerSide()) {
          if (vertical) {
-            this.heldBlockMassEntity.m_20256_(new Vec3(0.0, -1.0, 0.0));
+            this.heldBlockMassEntity.setDeltaMovement(new Vec3(0.0, -1.0, 0.0));
          } else {
-            this.heldBlockMassEntity.m_20256_(this.m_20154_().m_82490_(1.5));
+            this.heldBlockMassEntity.setDeltaMovement(this.getLookAngle().scale(1.5));
          }
 
-         this.heldBlockMassEntity.m_20242_(false);
+         this.heldBlockMassEntity.setNoGravity(false);
          this.heldBlockMassEntity = null;
       }
    }
 
    private float[] getShootAngleNolock(LivingEntity driver) {
-      Vec3 lookAngle = driver.m_20154_();
-      double xRot = -Math.toDegrees(Math.asin(lookAngle.f_82480_)) - 6.5;
-      double yRot = Math.toDegrees(Math.atan2(lookAngle.f_82481_, lookAngle.f_82479_)) - 95.0;
+      Vec3 lookAngle = driver.getLookAngle();
+      double xRot = -Math.toDegrees(Math.asin(lookAngle.y)) - 6.5;
+      double yRot = Math.toDegrees(Math.atan2(lookAngle.z, lookAngle.x)) - 95.0;
       return new float[]{(float)xRot, (float)yRot};
    }
 
@@ -301,26 +301,26 @@ public class Pmv02Entity extends PomkotsVehicleBase {
       LivingEntity player = this.getDrivingPassenger();
       if (this.isServerSide() && player != null) {
          BlockHitResult hitResult = this.raycastBlock(player, false);
-         if (hitResult.m_6662_() == Type.BLOCK) {
-            BlockPos blockPos = hitResult.m_82425_();
+         if (hitResult.getType() == Type.BLOCK) {
+            BlockPos blockPos = hitResult.getBlockPos();
             Utils.destroyBlock(level, blockPos, PomkotsMechs.CONFIG.dropItemsWhenDestroyBlock);
          }
       }
    }
 
    private BlockHitResult raycastBlock(LivingEntity player, boolean targetFluid) {
-      Vec3 eyePosition = player.m_20299_(1.0F);
-      eyePosition = new Vec3(eyePosition.f_82479_, eyePosition.f_82480_ + 1.0, eyePosition.f_82481_);
-      Vec3 lookDirection = player.m_20154_();
-      Vec3 rayEnd = eyePosition.m_82549_(lookDirection.m_82490_(40.0));
-      return this.m_9236_()
-         .m_45547_(
+      Vec3 eyePosition = player.getEyePosition(1.0F);
+      eyePosition = new Vec3(eyePosition.x, eyePosition.y + 1.0, eyePosition.z);
+      Vec3 lookDirection = player.getLookAngle();
+      Vec3 rayEnd = eyePosition.add(lookDirection.scale(40.0));
+      return this.level()
+         .clip(
             new ClipContext(eyePosition, rayEnd, net.minecraft.world.level.ClipContext.Block.OUTLINE, targetFluid ? Fluid.SOURCE_ONLY : Fluid.NONE, player)
          );
    }
 
    public void fireDrill(Level level) {
-      if (this.isServerSide() && this.f_19797_ % 10 == 0 && this.getDrivingPassenger() != null) {
+      if (this.isServerSide() && this.tickCount % 10 == 0 && this.getDrivingPassenger() != null) {
          this.breakBlockSphere(5, this.getOffsetByLookingDirection(this.getDrivingPassenger(), 5));
       }
    }
@@ -330,16 +330,16 @@ public class Pmv02Entity extends PomkotsVehicleBase {
    }
 
    public Vec3 getOffsetByLookingDirection(LivingEntity entity, int distance) {
-      Vec3 lookDirection = entity.m_20154_();
+      Vec3 lookDirection = entity.getLookAngle();
       Vec3 playerPosition = new Vec3(0.0, 4.0, 0.0);
-      return playerPosition.m_82520_(0.0, lookDirection.f_82480_ * distance, (1.0 - Math.abs(lookDirection.f_82480_)) * distance);
+      return playerPosition.add(0.0, lookDirection.y * distance, (1.0 - Math.abs(lookDirection.y)) * distance);
    }
 
    public void fireRollerPlace(Level level, boolean place) {
-      if (this.isServerSide() && this.f_19797_ % 4 == 0) {
-         double forwardX = -Math.sin(Math.toRadians(this.m_146908_()));
-         double forwardZ = Math.cos(Math.toRadians(this.m_146908_()));
-         BlockPos origin = this.m_20183_().m_7918_((int)(forwardX * 5.0), 0, (int)(forwardZ * 5.0));
+      if (this.isServerSide() && this.tickCount % 4 == 0) {
+         double forwardX = -Math.sin(Math.toRadians(this.getYRot()));
+         double forwardZ = Math.cos(Math.toRadians(this.getYRot()));
+         BlockPos origin = this.blockPosition().offset((int)(forwardX * 5.0), 0, (int)(forwardZ * 5.0));
          int rangeX = 7;
          int rangeY = 15;
          int rangeZ = 7;
@@ -347,8 +347,8 @@ public class Pmv02Entity extends PomkotsVehicleBase {
             for (int x = -rangeX / 2; x <= rangeX / 2; x++) {
                for (int y = 0; y <= rangeY; y++) {
                   for (int z = -rangeZ / 2; z <= rangeZ / 2; z++) {
-                     BlockPos targetPos = origin.m_7918_(x, y, z);
-                     if (!level.m_46859_(targetPos)) {
+                     BlockPos targetPos = origin.offset(x, y, z);
+                     if (!level.isEmptyBlock(targetPos)) {
                         Utils.destroyBlock(level, targetPos, PomkotsMechs.CONFIG.dropItemsWhenDestroyBlock);
                      }
                   }
@@ -357,18 +357,18 @@ public class Pmv02Entity extends PomkotsVehicleBase {
          } else if (this.getDrivingPassenger() instanceof Player player) {
             BlockState blockState = this.getMainHandBlock(player);
             if (blockState != null && this.isAvailableBlock(blockState)) {
-               Block blockToPlace = blockState.m_60734_();
-               List<ItemStack> stacks = this.getItemStacks(player.m_21205_(), player, rangeX * rangeZ);
+               Block blockToPlace = blockState.getBlock();
+               List<ItemStack> stacks = this.getItemStacks(player.getMainHandItem(), player, rangeX * rangeZ);
                if (!PomkotsMechs.CONFIG.consumeBlocksWhenPlacing || stacks != null) {
                   int consumedBlocks = 0;
 
                   for (int x = -rangeX / 2; x <= rangeX / 2; x++) {
                      for (int z = -rangeZ / 2; z <= rangeZ / 2; z++) {
-                        BlockPos targetPos = origin.m_7918_(x, -1, z);
-                        BlockPos a = new BlockPos(targetPos.m_123341_(), targetPos.m_123342_(), targetPos.m_123343_());
-                        BlockState bs = this.m_9236_().m_8055_(a);
+                        BlockPos targetPos = origin.offset(x, -1, z);
+                        BlockPos a = new BlockPos(targetPos.getX(), targetPos.getY(), targetPos.getZ());
+                        BlockState bs = this.level().getBlockState(a);
                         if (!blockState.equals(bs)) {
-                           Utils.setBlock(level, a, blockToPlace.m_49966_(), 3);
+                           Utils.setBlock(level, a, blockToPlace.defaultBlockState(), 3);
                            consumedBlocks++;
                         }
                      }
@@ -384,7 +384,7 @@ public class Pmv02Entity extends PomkotsVehicleBase {
    }
 
    private void fireHummer(Level world) {
-      if (!world.m_5776_()) {
+      if (!world.isClientSide()) {
          int rad = 0;
          byte var3;
          if (this.hummerChargeNum < 10) {
@@ -404,19 +404,19 @@ public class Pmv02Entity extends PomkotsVehicleBase {
    }
 
    private void breakBlocksCube(int radius) {
-      BlockPos curBP = this.m_20183_();
+      BlockPos curBP = this.blockPosition();
       Vec3 vec = new Vec3(0.0, 0.0, 5.0);
-      vec = vec.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-      BlockPos pos = new BlockPos(curBP.m_123341_() + (int)vec.f_82479_, curBP.m_123342_() + (int)vec.f_82480_, curBP.m_123343_() + (int)vec.f_82481_);
+      vec = vec.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+      BlockPos pos = new BlockPos(curBP.getX() + (int)vec.x, curBP.getY() + (int)vec.y, curBP.getZ() + (int)vec.z);
       int height = 8;
 
       for (int y = 0; y < height; y++) {
          for (int x = -radius; x <= radius; x++) {
             for (int z = -radius; z <= radius; z++) {
-               BlockPos blockPos = pos.m_7918_(x, y, z);
-               BlockState state = this.m_9236_().m_8055_(blockPos);
-               if (!state.m_60795_() && x * x + z * z <= radius * radius) {
-                  Utils.destroyBlock(this.m_9236_(), blockPos, PomkotsMechs.CONFIG.dropItemsWhenDestroyBlock);
+               BlockPos blockPos = pos.offset(x, y, z);
+               BlockState state = this.level().getBlockState(blockPos);
+               if (!state.isAir() && x * x + z * z <= radius * radius) {
+                  Utils.destroyBlock(this.level(), blockPos, PomkotsMechs.CONFIG.dropItemsWhenDestroyBlock);
                }
             }
          }
@@ -425,19 +425,19 @@ public class Pmv02Entity extends PomkotsVehicleBase {
 
    private void breakBlockSphere(int radius, Vec3 offset) {
       int radiusSquared = radius * radius;
-      BlockPos curBP = this.m_20183_();
+      BlockPos curBP = this.blockPosition();
       Vec3 vec = offset;
-      vec = vec.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-      BlockPos pos = new BlockPos(curBP.m_123341_() + (int)vec.f_82479_, curBP.m_123342_() + (int)vec.f_82480_, curBP.m_123343_() + (int)vec.f_82481_);
+      vec = vec.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+      BlockPos pos = new BlockPos(curBP.getX() + (int)vec.x, curBP.getY() + (int)vec.y, curBP.getZ() + (int)vec.z);
 
       for (int x = -radius; x <= radius; x++) {
          for (int y = -radius; y <= radius; y++) {
             for (int z = -radius; z <= radius; z++) {
                if (x * x + y * y + z * z <= radiusSquared) {
-                  BlockPos targetPos = pos.m_7918_(x, y, z);
-                  BlockState state = this.m_9236_().m_8055_(targetPos);
-                  if (!state.m_60795_()) {
-                     Utils.destroyBlock(this.m_9236_(), targetPos, PomkotsMechs.CONFIG.dropItemsWhenDestroyBlock);
+                  BlockPos targetPos = pos.offset(x, y, z);
+                  BlockState state = this.level().getBlockState(targetPos);
+                  if (!state.isAir()) {
+                     Utils.destroyBlock(this.level(), targetPos, PomkotsMechs.CONFIG.dropItemsWhenDestroyBlock);
                   }
                }
             }
@@ -446,7 +446,7 @@ public class Pmv02Entity extends PomkotsVehicleBase {
    }
 
    private boolean isAvailableBlock(BlockState bs) {
-      return !(bs.m_60734_() instanceof ShulkerBoxBlock);
+      return !(bs.getBlock() instanceof ShulkerBoxBlock);
    }
 
    @Override

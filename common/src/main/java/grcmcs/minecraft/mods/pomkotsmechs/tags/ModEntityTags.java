@@ -6,7 +6,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 
 public final class ModEntityTags {
-   public static final TagKey<EntityType<?>> SCAN_TARGETS = TagKey.m_203882_(Registries.f_256939_, new ResourceLocation("pomkotsmechs", "scan_targets"));
+   public static final TagKey<EntityType<?>> SCAN_TARGETS = TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation("pomkotsmechs", "scan_targets"));
 
    private ModEntityTags() {
    }

@@ -53,7 +53,7 @@ public class Pmb99EntityRenderer extends GeoEntityRenderer<Pmb99Entity> {
       super.actuallyRender(
          poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha
       );
-      if (animatable.m_6688_() != null) {
+      if (animatable.getControllingPassenger() != null) {
          animatable.seatPos = this.getSeatPosition(model);
          animatable.seatRots[0] = this.getSeatPitch(model);
       }
@@ -66,10 +66,10 @@ public class Pmb99EntityRenderer extends GeoEntityRenderer<Pmb99Entity> {
          Vector3d seatPos = vcSeat.getLocalPosition();
          Vector3d rootPos = vcRoot.getLocalPosition();
          return new Vec3(
-            seatPos.x * 1.0 - rootPos.x * 1.0, seatPos.y * 1.0 - rootPos.y * 1.0 - ((Pmb99Entity)this.animatable).m_6048_(), seatPos.z * 1.0 - rootPos.z * 1.0
+            seatPos.x * 1.0 - rootPos.x * 1.0, seatPos.y * 1.0 - rootPos.y * 1.0 - ((Pmb99Entity)this.animatable).getPassengersRidingOffset(), seatPos.z * 1.0 - rootPos.z * 1.0
          );
       } else {
-         return Vec3.f_82478_;
+         return Vec3.ZERO;
       }
    }
 
@@ -90,14 +90,14 @@ public class Pmb99EntityRenderer extends GeoEntityRenderer<Pmb99Entity> {
          animatable.seatRots[0] = vcSeat.getRotX();
          animatable.seatRots[1] = vcSeat.getRotY();
       } else {
-         animatable.seatPos = Vec3.f_82478_;
+         animatable.seatPos = Vec3.ZERO;
          animatable.seatRots[0] = 0.0F;
          animatable.seatRots[1] = 0.0F;
       }
    }
 
    public void render(Pmb99Entity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-      super.m_7392_(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
-      RenderUtils.renderBossBars(entity, poseStack, bufferSource, this.f_114476_, 7.0F);
+      super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+      RenderUtils.renderBossBars(entity, poseStack, bufferSource, this.entityRenderDispatcher, 7.0F);
    }
 }

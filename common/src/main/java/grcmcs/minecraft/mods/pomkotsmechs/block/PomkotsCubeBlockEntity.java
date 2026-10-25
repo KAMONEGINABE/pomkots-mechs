@@ -59,35 +59,35 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
    private boolean playLockedAnimation = false;
    private float prevOpeness = 0.0F;
 
-   public void m_183515_(@NotNull CompoundTag tag) {
-      super.m_183515_(tag);
-      tag.m_128405_(PomkotsMechs.nbtName("CubeMode"), this.mode);
-      tag.m_128379_(PomkotsMechs.nbtName("OpenedOnce"), this.openedOnce);
-      tag.m_128356_(PomkotsMechs.nbtName("LastRefillTime"), this.lastRefillGameTime);
+   public void saveAdditional(@NotNull CompoundTag tag) {
+      super.saveAdditional(tag);
+      tag.putInt(PomkotsMechs.nbtName("CubeMode"), this.mode);
+      tag.putBoolean(PomkotsMechs.nbtName("OpenedOnce"), this.openedOnce);
+      tag.putLong(PomkotsMechs.nbtName("LastRefillTime"), this.lastRefillGameTime);
       if (this.refillLootTable != null) {
-         tag.m_128359_(PomkotsMechs.nbtName("RefillLootTable"), this.refillLootTable.toString());
+         tag.putString(PomkotsMechs.nbtName("RefillLootTable"), this.refillLootTable.toString());
       }
 
       if (this.raidControllerUUID != null) {
-         tag.m_128362_(PomkotsMechs.nbtName("RaidControllerUUID"), this.raidControllerUUID);
+         tag.putUUID(PomkotsMechs.nbtName("RaidControllerUUID"), this.raidControllerUUID);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("RaidControllerUUID"));
+         tag.remove(PomkotsMechs.nbtName("RaidControllerUUID"));
       }
    }
 
-   public void m_142466_(@NotNull CompoundTag tag) {
-      super.m_142466_(tag);
-      this.mode = tag.m_128451_(PomkotsMechs.nbtName("CubeMode"));
-      this.openedOnce = tag.m_128471_(PomkotsMechs.nbtName("OpenedOnce"));
-      this.lastRefillGameTime = tag.m_128454_(PomkotsMechs.nbtName("LastRefillTime"));
-      if (tag.m_128441_(PomkotsMechs.nbtName("RefillLootTable"))) {
-         this.refillLootTable = new ResourceLocation(tag.m_128461_(PomkotsMechs.nbtName("RefillLootTable")));
+   public void load(@NotNull CompoundTag tag) {
+      super.load(tag);
+      this.mode = tag.getInt(PomkotsMechs.nbtName("CubeMode"));
+      this.openedOnce = tag.getBoolean(PomkotsMechs.nbtName("OpenedOnce"));
+      this.lastRefillGameTime = tag.getLong(PomkotsMechs.nbtName("LastRefillTime"));
+      if (tag.contains(PomkotsMechs.nbtName("RefillLootTable"))) {
+         this.refillLootTable = new ResourceLocation(tag.getString(PomkotsMechs.nbtName("RefillLootTable")));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("RaidControllerUUID"))) {
-         this.raidControllerUUID = tag.m_128342_(PomkotsMechs.nbtName("RaidControllerUUID"));
-         if (this.f_58857_ instanceof ServerLevel sl) {
-            if (sl.m_8791_(this.raidControllerUUID) instanceof RaidControllerEntity raid) {
+      if (tag.contains(PomkotsMechs.nbtName("RaidControllerUUID"))) {
+         this.raidControllerUUID = tag.getUUID(PomkotsMechs.nbtName("RaidControllerUUID"));
+         if (this.level instanceof ServerLevel sl) {
+            if (sl.getEntity(this.raidControllerUUID) instanceof RaidControllerEntity raid) {
                this.raidControllerEntity = raid;
             } else {
                this.raidControllerUUID = null;
@@ -99,8 +99,8 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
    }
 
    @NotNull
-   public CompoundTag m_5995_() {
-      return this.m_187482_();
+   public CompoundTag getUpdateTag() {
+      return this.saveWithoutMetadata();
    }
 
    public PomkotsCubeBlockEntity(BlockPos pos, BlockState state) {
@@ -125,14 +125,14 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
    }
 
    public void updateMode(int mode) {
-      this.updateMode(mode, this.f_58857_);
+      this.updateMode(mode, this.level);
    }
 
    public void updateMode(int mode, Level level) {
       this.mode = mode;
-      this.m_6596_();
-      BlockState state = this.m_58900_();
-      level.m_7260_(this.f_58858_, state, state, 3);
+      this.setChanged();
+      BlockState state = this.getBlockState();
+      level.sendBlockUpdated(this.worldPosition, state, state, 3);
    }
 
    public int getDefaultMode() {
@@ -140,21 +140,21 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
    }
 
    public ClientboundBlockEntityDataPacket getUpdatePacket() {
-      return ClientboundBlockEntityDataPacket.m_195640_(this);
+      return ClientboundBlockEntityDataPacket.create(this);
    }
 
    public void openBox(Player p) {
       this.opener = p;
       switch (this.getMode()) {
          case 0:
-            if (!this.f_58857_.f_46443_ && !this.openedOnce) {
+            if (!this.level.isClientSide && !this.openedOnce) {
                this.openedOnce = true;
-               this.lastRefillGameTime = this.f_58857_.m_8044_();
-               this.m_6596_();
+               this.lastRefillGameTime = this.level.dayTime();
+               this.setChanged();
             }
             break;
          case 1:
-            if (!this.f_58857_.f_46443_) {
+            if (!this.level.isClientSide) {
                if (this.raidControllerUUID == null && this.summonActionTickCount == 0) {
                   this.summonActionTickCount = 1;
                }
@@ -163,14 +163,14 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
             }
             break;
          case 2:
-            if (!this.f_58857_.f_46443_) {
-               if (p.m_21205_().m_150930_((Item)PomkotsMechs.CUBEKEY_ITEM.get())) {
-                  if (this.raidControllerUUID == null && this.summonActionTickCount == 0 && this.f_59605_ != null) {
-                     PomkotsDataPack.ChestData chestData = PomkotsDataPackManager.getInstance().getDataPack().getChestData(this.f_59605_.toString());
+            if (!this.level.isClientSide) {
+               if (p.getMainHandItem().is((Item)PomkotsMechs.CUBEKEY_ITEM.get())) {
+                  if (this.raidControllerUUID == null && this.summonActionTickCount == 0 && this.lootTable != null) {
+                     PomkotsDataPack.ChestData chestData = PomkotsDataPackManager.getInstance().getDataPack().getChestData(this.lootTable.toString());
                      RaidDefinition raidData = PomkotsDataPackManager.getInstance().getDataPack().getRaidData(chestData.raid_id);
                      if (raidData != null) {
                         if ("activate".equals(raidData.type)) {
-                           List<BaseBossEntity> bosses = RaidControllerEntity.getInactiveBossesAroundPos(this.f_58857_, this.m_58899_());
+                           List<BaseBossEntity> bosses = RaidControllerEntity.getInactiveBossesAroundPos(this.level, this.getBlockPos());
                            if (bosses.isEmpty()) {
                               this.sendMessageForOpener("{text.pomkotsmechs.messages.pomkotscube.01}");
                               break;
@@ -179,7 +179,7 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
 
                         this.summonActionTickCount = 1;
                         if (!PomkotsMechs.CONFIG.debugModeEnabled) {
-                           p.m_21205_().m_41774_(1);
+                           p.getMainHandItem().shrink(1);
                         }
                      }
                   }
@@ -191,14 +191,14 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
             }
             break;
          case 3:
-            if (!this.f_58857_.f_46443_) {
-               if (p.m_21205_().m_150930_((Item)PomkotsMechs.CUBEKEY_ITEM_PURPLE.get())) {
-                  if (this.raidControllerUUID == null && this.summonActionTickCount == 0 && this.f_59605_ != null) {
-                     PomkotsDataPack.ChestData chestData = PomkotsDataPackManager.getInstance().getDataPack().getChestData(this.f_59605_.toString());
+            if (!this.level.isClientSide) {
+               if (p.getMainHandItem().is((Item)PomkotsMechs.CUBEKEY_ITEM_PURPLE.get())) {
+                  if (this.raidControllerUUID == null && this.summonActionTickCount == 0 && this.lootTable != null) {
+                     PomkotsDataPack.ChestData chestData = PomkotsDataPackManager.getInstance().getDataPack().getChestData(this.lootTable.toString());
                      RaidDefinition raidData = PomkotsDataPackManager.getInstance().getDataPack().getRaidData(chestData.raid_id);
                      if (raidData != null) {
                         if ("activate".equals(raidData.type)) {
-                           List<BaseBossEntity> bosses = RaidControllerEntity.getInactiveBossesAroundPos(this.f_58857_, this.m_58899_());
+                           List<BaseBossEntity> bosses = RaidControllerEntity.getInactiveBossesAroundPos(this.level, this.getBlockPos());
                            if (bosses.isEmpty()) {
                               this.sendMessageForOpener("{text.pomkotsmechs.messages.pomkotscube.01}");
                               break;
@@ -206,7 +206,7 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
                         }
 
                         this.summonActionTickCount = 1;
-                        p.m_21205_().m_41774_(1);
+                        p.getMainHandItem().shrink(1);
                      }
                   }
                } else {
@@ -226,11 +226,11 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
    }
 
    public void tick() {
-      if (this.f_58857_ != null && !this.f_58857_.f_46443_) {
+      if (this.level != null && !this.level.isClientSide) {
          if (this.mode == 0) {
             this.tryRefill();
          } else if (this.summonActionTickCount > 0) {
-            if (this.opener == null || !this.opener.m_6084_()) {
+            if (this.opener == null || !this.opener.isAlive()) {
                this.summonActionTickCount = 0;
                return;
             }
@@ -242,10 +242,10 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
                this.startRaid();
                this.summonActionTickCount = 0;
             }
-         } else if (this.raidControllerEntity == null || !this.raidControllerEntity.m_6084_()) {
+         } else if (this.raidControllerEntity == null || !this.raidControllerEntity.isAlive()) {
             this.raidControllerUUID = null;
             this.raidControllerEntity = null;
-            this.m_6596_();
+            this.setChanged();
          }
       }
    }
@@ -253,37 +253,37 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
    private void spawnAlertEffect() {
       AlertEntity e;
       if (this.getMode() == 1) {
-         e = new AlertEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.ALERT.get(), this.f_58857_);
+         e = new AlertEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.ALERT.get(), this.level);
       } else {
-         e = new AlertEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.ALERTRED.get(), this.f_58857_);
+         e = new AlertEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.ALERTRED.get(), this.level);
       }
 
-      BlockPos bp = this.m_58899_();
-      e.m_6034_(bp.m_123341_() + 0.5, bp.m_123342_(), bp.m_123343_() + 0.5);
-      this.f_58857_.m_7967_(e);
+      BlockPos bp = this.getBlockPos();
+      e.setPos(bp.getX() + 0.5, bp.getY(), bp.getZ() + 0.5);
+      this.level.addFreshEntity(e);
    }
 
    private void startRaid() {
       if (this.opener != null
-         && this.f_59605_ != null
-         && this.f_59605_.m_135827_().equals("pomkotsmechs")
-         && PomkotsDataPackManager.getInstance().getDataPack().getChestData(this.f_59605_.toString()) != null) {
-         PomkotsDataPack.ChestData chestData = PomkotsDataPackManager.getInstance().getDataPack().getChestData(this.f_59605_.toString());
+         && this.lootTable != null
+         && this.lootTable.getNamespace().equals("pomkotsmechs")
+         && PomkotsDataPackManager.getInstance().getDataPack().getChestData(this.lootTable.toString()) != null) {
+         PomkotsDataPack.ChestData chestData = PomkotsDataPackManager.getInstance().getDataPack().getChestData(this.lootTable.toString());
          RaidDefinition raidData = PomkotsDataPackManager.getInstance().getDataPack().getRaidData(chestData.raid_id);
          if (raidData != null) {
-            RaidControllerEntity rce = (RaidControllerEntity)((EntityType)PomkotsMechs.RAID_CONTROLLER.get()).m_20615_(this.f_58857_);
+            RaidControllerEntity rce = (RaidControllerEntity)((EntityType)PomkotsMechs.RAID_CONTROLLER.get()).create(this.level);
             if (rce != null) {
                BlockPos raidEntityPos = this.getRaidEntitySpawnPos(raidData);
-               rce.m_6034_(raidEntityPos.m_123341_(), raidEntityPos.m_123342_(), raidEntityPos.m_123343_());
-               BlockPos cubePos = this.m_58899_();
+               rce.setPos(raidEntityPos.getX(), raidEntityPos.getY(), raidEntityPos.getZ());
+               BlockPos cubePos = this.getBlockPos();
                String failCommand;
                if (raidData.type.equals(RaidControllerEntity.RaidType.ACTIVATE.getId())) {
-                  List<BaseBossEntity> bosses = RaidControllerEntity.getInactiveBossesAroundPos(this.f_58857_, this.m_58899_());
+                  List<BaseBossEntity> bosses = RaidControllerEntity.getInactiveBossesAroundPos(this.level, this.getBlockPos());
                   if (bosses != null && !bosses.isEmpty()) {
                      BaseBossEntity boss = bosses.get(0);
-                     UUID uuid = boss.m_20148_();
-                     BlockPos pos = boss.m_20183_();
-                     failCommand = String.format("pomkots:reset_boss_pos %s %d %d %d", uuid, pos.m_123341_(), pos.m_123342_(), pos.m_123343_());
+                     UUID uuid = boss.getUUID();
+                     BlockPos pos = boss.blockPosition();
+                     failCommand = String.format("pomkots:reset_boss_pos %s %d %d %d", uuid, pos.getX(), pos.getY(), pos.getZ());
                   } else {
                      failCommand = "say mission failed...";
                   }
@@ -293,15 +293,15 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
 
                CompoundTag tag = RaidControllerEntity.buildCompoundTag(
                   chestData.raid_id,
-                  this.opener.m_20148_(),
-                  "data modify block " + cubePos.m_123341_() + " " + cubePos.m_123342_() + " " + cubePos.m_123343_() + " pomkotsmechsCubeMode set value 0",
+                  this.opener.getUUID(),
+                  "data modify block " + cubePos.getX() + " " + cubePos.getY() + " " + cubePos.getZ() + " pomkotsmechsCubeMode set value 0",
                   failCommand
                );
-               rce.m_7378_(tag);
-               this.f_58857_.m_7967_(rce);
-               this.raidControllerUUID = rce.m_20148_();
+               rce.readAdditionalSaveData(tag);
+               this.level.addFreshEntity(rce);
+               this.raidControllerUUID = rce.getUUID();
                this.raidControllerEntity = rce;
-               this.m_6596_();
+               this.setChanged();
             }
          } else {
             PomkotsMechs.LOGGER.error("Specified raid does not exist:" + chestData.raid_id);
@@ -311,42 +311,42 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
 
    private BlockPos getRaidEntitySpawnPos(RaidDefinition raidData) {
       if (RaidControllerEntity.RaidType.SWEEP_BOSS_BOX.getId().equals(raidData.type)) {
-         Direction facing = (Direction)this.m_58900_().m_61143_(BlockStateProperties.f_61374_);
-         Direction behind = facing.m_122424_();
-         return this.m_58899_().m_5484_(behind, 15);
+         Direction facing = (Direction)this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
+         Direction behind = facing.getOpposite();
+         return this.getBlockPos().relative(behind, 15);
       } else {
-         return this.m_58899_();
+         return this.getBlockPos();
       }
    }
 
-   public void m_59640_(Player player) {
-      if (!this.f_58857_.f_46443_ && this.refillLootTable == null) {
-         this.refillLootTable = this.f_59605_;
-         super.m_59640_(player);
+   public void unpackLootTable(Player player) {
+      if (!this.level.isClientSide && this.refillLootTable == null) {
+         this.refillLootTable = this.lootTable;
+         super.unpackLootTable(player);
          this.compactStacksRespectNBT();
-         this.m_6596_();
+         this.setChanged();
       }
    }
 
    private void compactStacksRespectNBT() {
-      NonNullList<ItemStack> items = this.m_7086_();
+      NonNullList<ItemStack> items = this.getItems();
       List<ItemStack> merged = new ArrayList<>();
 
       for (ItemStack stack : items) {
-         if (!stack.m_41619_()) {
+         if (!stack.isEmpty()) {
             for (ItemStack existing : merged) {
-               if (ItemStack.m_150942_(existing, stack) && existing.m_41613_() < existing.m_41741_()) {
-                  int move = Math.min(stack.m_41613_(), existing.m_41741_() - existing.m_41613_());
-                  existing.m_41769_(move);
-                  stack.m_41774_(move);
-                  if (stack.m_41619_()) {
+               if (ItemStack.isSameItemSameTags(existing, stack) && existing.getCount() < existing.getMaxStackSize()) {
+                  int move = Math.min(stack.getCount(), existing.getMaxStackSize() - existing.getCount());
+                  existing.grow(move);
+                  stack.shrink(move);
+                  if (stack.isEmpty()) {
                      break;
                   }
                }
             }
 
-            if (!stack.m_41619_()) {
-               merged.add(stack.m_41777_());
+            if (!stack.isEmpty()) {
+               merged.add(stack.copy());
             }
          }
       }
@@ -368,70 +368,70 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
    private void compactStacksRespectNBT2() {
       List<ItemStack> merged = new ArrayList<>();
 
-      for (int i = 0; i < this.m_6643_(); i++) {
-         ItemStack stack = this.m_8020_(i);
-         if (!stack.m_41619_()) {
+      for (int i = 0; i < this.getContainerSize(); i++) {
+         ItemStack stack = this.getItem(i);
+         if (!stack.isEmpty()) {
             boolean mergedFlag = false;
 
             for (ItemStack existing : merged) {
-               if (ItemStack.m_150942_(existing, stack) && existing.m_41613_() < existing.m_41741_()) {
-                  int move = Math.min(stack.m_41613_(), existing.m_41741_() - existing.m_41613_());
-                  existing.m_41769_(move);
-                  stack.m_41774_(move);
-                  if (stack.m_41619_()) {
+               if (ItemStack.isSameItemSameTags(existing, stack) && existing.getCount() < existing.getMaxStackSize()) {
+                  int move = Math.min(stack.getCount(), existing.getMaxStackSize() - existing.getCount());
+                  existing.grow(move);
+                  stack.shrink(move);
+                  if (stack.isEmpty()) {
                      mergedFlag = true;
                      break;
                   }
                }
             }
 
-            if (!stack.m_41619_()) {
-               merged.add(stack.m_41777_());
+            if (!stack.isEmpty()) {
+               merged.add(stack.copy());
             }
          }
       }
 
-      for (int i = 0; i < this.m_6643_(); i++) {
-         this.m_6836_(i, ItemStack.f_41583_);
+      for (int i = 0; i < this.getContainerSize(); i++) {
+         this.setItem(i, ItemStack.EMPTY);
       }
 
       int slot = 0;
 
       for (ItemStack stack : merged) {
-         while (!stack.m_41619_() && slot < this.m_6643_()) {
-            ItemStack split = stack.m_41620_(stack.m_41741_());
-            this.m_6836_(slot++, split);
+         while (!stack.isEmpty() && slot < this.getContainerSize()) {
+            ItemStack split = stack.split(stack.getMaxStackSize());
+            this.setItem(slot++, split);
          }
       }
    }
 
    private void tryRefill() {
       if (this.openedOnce) {
-         if (this.f_58857_ != null && !this.f_58857_.f_46443_) {
-            long now = this.f_58857_.m_8044_();
+         if (this.level != null && !this.level.isClientSide) {
+            long now = this.level.dayTime();
             if (now - this.lastRefillGameTime >= 24000L) {
                this.refillLoot();
                this.lastRefillGameTime = now;
                this.openedOnce = false;
                this.updateMode(this.getDefaultMode());
-               this.m_6596_();
+               this.setChanged();
             }
          }
       }
    }
 
    private void refillLoot() {
-      if (this.f_58857_ instanceof ServerLevel serverLevel) {
+      if (this.level instanceof ServerLevel serverLevel) {
          if (this.refillLootTable != null) {
-            this.m_6211_();
-            this.m_59626_(this.refillLootTable, new Random().nextLong());
+            this.clearContent();
+            this.setLootTable(this.refillLootTable, new Random().nextLong());
             this.refillLootTable = null;
          }
       }
    }
 
    public void playOpenFailAnimation() {
-      if (this.f_58857_.f_46443_) {
+      if (this.level.isClientSide) {
          this.playLockedAnimation = true;
       }
    }
@@ -442,7 +442,7 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
             new AnimationController(
                this,
                event -> {
-                  float curOpenness = ((PomkotsCubeBlockEntity)event.getAnimatable()).m_6683_(event.getPartialTick());
+                  float curOpenness = ((PomkotsCubeBlockEntity)event.getAnimatable()).getOpenNess(event.getPartialTick());
                   float prevOpenness = this.prevOpeness;
                   this.prevOpeness = curOpenness;
                   if (this.playLockedAnimation) {
@@ -467,7 +467,7 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
    }
 
    public double getTick(Object blockEntity) {
-      return this.f_58857_ != null ? this.f_58857_.m_46467_() : 0.0;
+      return this.level != null ? this.level.getGameTime() : 0.0;
    }
 
    private void sendMessageForOpener(String message) {
@@ -480,7 +480,7 @@ public class PomkotsCubeBlockEntity extends ChestBlockEntity implements GeoBlock
 
    private void sendMessage(String message, Collection<ServerPlayer> players) {
       for (ServerPlayer player : players) {
-         player.m_213846_(Utils.string2Component(message));
+         player.sendSystemMessage(Utils.string2Component(message));
       }
    }
 }

@@ -24,10 +24,10 @@ public final class AssetMigrationManager {
    }
 
    public static void queueCheck(AssetAnchorBlockEntity be) {
-      if (be.m_58904_() instanceof ServerLevel level) {
+      if (be.getLevel() instanceof ServerLevel level) {
          PomkotsDataPack.AssetDefinition def = PomkotsDataPackManager.getInstance().getDataPack().getAssetDefinitions().get(be.getAssetId());
          if (def != null && def.getLatestVersion() > be.getAssetVersion()) {
-            QUEUE.add(new AssetMigrationManager.MigrationTask(level, be.m_58899_()));
+            QUEUE.add(new AssetMigrationManager.MigrationTask(level, be.getBlockPos()));
          }
       }
    }
@@ -35,7 +35,7 @@ public final class AssetMigrationManager {
    public static void tick(MinecraftServer server) {
       while (!QUEUE.isEmpty()) {
          AssetMigrationManager.MigrationTask task = QUEUE.poll();
-         if (task.level().m_7702_(task.pos()) instanceof AssetAnchorBlockEntity anchor) {
+         if (task.level().getBlockEntity(task.pos()) instanceof AssetAnchorBlockEntity anchor) {
             checkMigration(anchor);
          }
       }
@@ -79,13 +79,13 @@ public final class AssetMigrationManager {
 
    private static void migrateSmallStructure(AssetAnchorBlockEntity anchor, PomkotsDataPack.AssetDefinition definition) {
       if (anchor.getAssetVersion() < definition.getLatestVersion() && definition.getStructureId() != null && !definition.getStructureId().isEmpty()) {
-         ServerLevel serverLevel = (ServerLevel)anchor.m_58904_();
-         StructureTemplateManager manager = serverLevel.m_215082_();
-         Optional<StructureTemplate> templateOpt = manager.m_230407_(new ResourceLocation(definition.getStructureId()));
+         ServerLevel serverLevel = (ServerLevel)anchor.getLevel();
+         StructureTemplateManager manager = serverLevel.getStructureManager();
+         Optional<StructureTemplate> templateOpt = manager.get(new ResourceLocation(definition.getStructureId()));
          if (templateOpt.isPresent()) {
             StructureTemplate template = templateOpt.get();
-            StructurePlaceSettings settings = new StructurePlaceSettings().m_74377_(Mirror.NONE).m_74379_(Rotation.NONE).m_74392_(false);
-            if (template.m_230328_(serverLevel, anchor.m_58899_().m_7494_(), anchor.m_58899_().m_7494_(), settings, serverLevel.f_46441_, 2)) {
+            StructurePlaceSettings settings = new StructurePlaceSettings().setMirror(Mirror.NONE).setRotation(Rotation.NONE).setIgnoreEntities(false);
+            if (template.placeInWorld(serverLevel, anchor.getBlockPos().above(), anchor.getBlockPos().above(), settings, serverLevel.random, 2)) {
                anchor.setAssetVersion(definition.getLatestVersion());
             }
          }

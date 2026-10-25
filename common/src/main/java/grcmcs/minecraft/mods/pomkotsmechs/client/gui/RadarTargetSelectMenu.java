@@ -30,25 +30,25 @@ public class RadarTargetSelectMenu extends AbstractContainerMenu {
    public RadarTargetSelectMenu(int syncId, Inventory inv, Player p, boolean openedFromDatapad) {
       super((MenuType)PomkotsMechs.POMKOTS_RADAR_GUI.get(), syncId);
       this.openedFromDatapad = openedFromDatapad;
-      ItemStack mainItem = inv.f_35978_.m_21205_();
-      ItemStack offItem = inv.f_35978_.m_21206_();
-      List<ItemStack> fromInv = PomkotsDatapadItem.getPlayersDataPads(inv.f_35978_);
-      if (mainItem.m_41720_() instanceof PomkotsRadarItem || mainItem.m_41720_() instanceof PomkotsDatapadItem) {
+      ItemStack mainItem = inv.player.getMainHandItem();
+      ItemStack offItem = inv.player.getOffhandItem();
+      List<ItemStack> fromInv = PomkotsDatapadItem.getPlayersDataPads(inv.player);
+      if (mainItem.getItem() instanceof PomkotsRadarItem || mainItem.getItem() instanceof PomkotsDatapadItem) {
          this.dataPadStack = mainItem;
-      } else if (offItem.m_41720_() instanceof PomkotsRadarItem || offItem.m_41720_() instanceof PomkotsDatapadItem) {
+      } else if (offItem.getItem() instanceof PomkotsRadarItem || offItem.getItem() instanceof PomkotsDatapadItem) {
          this.dataPadStack = offItem;
       } else if (!fromInv.isEmpty()) {
          this.dataPadStack = fromInv.get(0);
       } else {
-         this.dataPadStack = ItemStack.f_41583_;
+         this.dataPadStack = ItemStack.EMPTY;
       }
    }
 
    public void setSelectedTarget(int idx) {
       ItemStack stack = this.getRadarStack();
-      if (stack.m_41720_() instanceof PomkotsRadarItem) {
+      if (stack.getItem() instanceof PomkotsRadarItem) {
          PomkotsRadarItem.setSelectedIndex(stack, idx);
-      } else if (stack.m_41720_() instanceof PomkotsDatapadItem) {
+      } else if (stack.getItem() instanceof PomkotsDatapadItem) {
          PomkotsDatapadItem.setSelectedIndex(stack, idx);
       }
    }
@@ -57,16 +57,16 @@ public class RadarTargetSelectMenu extends AbstractContainerMenu {
       return this.dataPadStack;
    }
 
-   public boolean m_6875_(Player player) {
+   public boolean stillValid(Player player) {
       return this.stillValid;
    }
 
-   public ItemStack m_7648_(Player player, int i) {
-      return ItemStack.f_41583_;
+   public ItemStack quickMoveStack(Player player, int i) {
+      return ItemStack.EMPTY;
    }
 
-   public void m_6877_(Player player) {
-      super.m_6877_(player);
+   public void removed(Player player) {
+      super.removed(player);
    }
 
    private boolean isOpenedFromDatapad() {
@@ -81,11 +81,11 @@ public class RadarTargetSelectMenu extends AbstractContainerMenu {
       if (player instanceof ServerPlayer serverPlayer
          && this.isOpenedFromDatapad()
          && this.getDatapadItemStackForMenu() != null
-         && this.getDatapadItemStackForMenu().m_41720_() instanceof PomkotsDatapadItem) {
-         serverPlayer.f_8924_
+         && this.getDatapadItemStackForMenu().getItem() instanceof PomkotsDatapadItem) {
+         serverPlayer.server
             .execute(
-               () -> serverPlayer.m_5893_(
-                  new SimpleMenuProvider((id, inv, p) -> new DataPadMenu(id, inv, p, this.getDatapadItemStackForMenu()), Component.m_237113_("Pomkots Datapad"))
+               () -> serverPlayer.openMenu(
+                  new SimpleMenuProvider((id, inv, p) -> new DataPadMenu(id, inv, p, this.getDatapadItemStackForMenu()), Component.literal("Pomkots Datapad"))
                )
             );
       }

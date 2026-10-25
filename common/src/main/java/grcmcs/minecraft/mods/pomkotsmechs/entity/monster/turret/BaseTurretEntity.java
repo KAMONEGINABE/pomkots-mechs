@@ -31,32 +31,32 @@ public abstract class BaseTurretEntity extends GenericPomkotsMonsterPercistant i
 
    public BaseTurretEntity(EntityType<? extends GenericPomkotsMonster> entityType, Level world) {
       super(entityType, world);
-      this.m_274367_(this.getMechData().maxStepUp);
-      this.m_7910_(this.getMechData().speed);
-      this.m_21530_();
-      this.m_20242_(false);
-      this.m_146922_(0.0F);
+      this.setMaxUpStep(this.getMechData().maxStepUp);
+      this.setSpeed(this.getMechData().speed);
+      this.setPersistenceRequired();
+      this.setNoGravity(false);
+      this.setYRot(0.0F);
    }
 
    @Override
-   public void m_8119_() {
-      if (this.f_19803_) {
+   public void tick() {
+      if (this.firstTick) {
          this.registerTargetSelectorGoals();
          if (this.targetEntityType == BaseTurretEntity.TargetEntityType.POMKOTS_MONSTERS) {
-            this.m_21051_(Attributes.f_22276_).m_22100_(this.mechData.health * 3.0F);
-            this.m_21153_(this.mechData.health * 3.0F);
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.mechData.health * 3.0F);
+            this.setHealth(this.mechData.health * 3.0F);
          }
       }
 
-      super.m_8119_();
+      super.tick();
    }
 
    protected void registerTargetSelectorGoals() {
       if (this.targetEntityType == BaseTurretEntity.TargetEntityType.POMKOTS_MONSTERS) {
-         this.f_21346_
-            .m_25352_(1, new NearestEntityTargetGoal(this, GenericPomkotsMonster.class, false, livingEntity -> !(livingEntity instanceof BaseTurretEntity)));
+         this.targetSelector
+            .addGoal(1, new NearestEntityTargetGoal(this, GenericPomkotsMonster.class, false, livingEntity -> !(livingEntity instanceof BaseTurretEntity)));
       } else {
-         this.f_21346_.m_25352_(1, new NearestEntityTargetGoal(this, Player.class, false, false));
+         this.targetSelector.addGoal(1, new NearestEntityTargetGoal(this, Player.class, false, false));
       }
    }
 
@@ -64,12 +64,12 @@ public abstract class BaseTurretEntity extends GenericPomkotsMonsterPercistant i
 
    public abstract void stopActionAnimation();
 
-   public boolean m_142535_(float f1, float f2, DamageSource damageSource) {
+   public boolean causeFallDamage(float f1, float f2, DamageSource damageSource) {
       return false;
    }
 
    @Override
-   public void m_7023_(Vec3 pos) {
+   public void travel(Vec3 pos) {
    }
 
    @Override
@@ -82,12 +82,12 @@ public abstract class BaseTurretEntity extends GenericPomkotsMonsterPercistant i
    }
 
    @Override
-   public InteractionResult m_6071_(Player player, InteractionHand hand) {
-      if (!player.m_9236_().f_46443_ && player.m_7500_() && player.m_6144_()) {
+   public InteractionResult mobInteract(Player player, InteractionHand hand) {
+      if (!player.level().isClientSide && player.isCreative() && player.isShiftKeyDown()) {
          this.rotateToTarget(player);
          return InteractionResult.SUCCESS;
       } else {
-         return super.m_6071_(player, hand);
+         return super.mobInteract(player, hand);
       }
    }
 
@@ -104,17 +104,17 @@ public abstract class BaseTurretEntity extends GenericPomkotsMonsterPercistant i
    }
 
    @Override
-   public void m_7378_(CompoundTag compound) {
-      super.m_7378_(compound);
-      if (compound.m_128441_(PomkotsMechs.nbtName("TargetEntityType"))) {
-         this.targetEntityType = BaseTurretEntity.TargetEntityType.of(compound.m_128451_(PomkotsMechs.nbtName("TargetEntityType")));
+   public void readAdditionalSaveData(CompoundTag compound) {
+      super.readAdditionalSaveData(compound);
+      if (compound.contains(PomkotsMechs.nbtName("TargetEntityType"))) {
+         this.targetEntityType = BaseTurretEntity.TargetEntityType.of(compound.getInt(PomkotsMechs.nbtName("TargetEntityType")));
       }
    }
 
    @Override
-   public void m_7380_(CompoundTag compound) {
-      super.m_7380_(compound);
-      compound.m_128405_(PomkotsMechs.nbtName("TargetEntityType"), this.targetEntityType.getNum());
+   public void addAdditionalSaveData(CompoundTag compound) {
+      super.addAdditionalSaveData(compound);
+      compound.putInt(PomkotsMechs.nbtName("TargetEntityType"), this.targetEntityType.getNum());
    }
 
    public enum TargetEntityType {

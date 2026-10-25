@@ -34,12 +34,12 @@ public class DodoItem extends BasePartsItem.WeaponShoulder {
    public void tickWeaponInAction(ActionWeapon.WeaponMechInterface mechInterface, int tick, boolean isOnFire) {
       Level world = mechInterface.getWorld();
       if (isOnFire) {
-         if (!world.m_5776_()) {
+         if (!world.isClientSide()) {
             Entity target = mechInterface.consumeMultiLockTargetsSingle();
             if (target != null && mechInterface.consumeAmmoFromServerSide(1)) {
                Vec3 offset = mechInterface.getOffset();
                Vec3 muzzlPos = new Vec3(1.4 * mechInterface.isRight(), 4.8F, 2.0);
-               Vec3 worldMuzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+               Vec3 worldMuzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
                MissileGenericLargeEntity be = new MissileGenericLargeEntity(
                   (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_GENERIC_LARGE.get(),
                   world,
@@ -48,9 +48,9 @@ public class DodoItem extends BasePartsItem.WeaponShoulder {
                   mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory()),
                   BattleBalance.MECH_MISSILE_GENERIC_SPEED2
                );
-               be.m_146884_(offset.m_82549_(worldMuzzlPos));
-               be.m_37251_(be, -80.0F, mechInterface.getYRot(), mechInterface.getFallFlyingTicks(), BattleBalance.MECH_MISSILE_GENERIC_SPEED2, 0.0F);
-               world.m_7967_(be);
+               be.setPos(offset.add(worldMuzzlPos));
+               be.shootFromRotation(be, -80.0F, mechInterface.getYRot(), mechInterface.getFallFlyingTicks(), BattleBalance.MECH_MISSILE_GENERIC_SPEED2, 0.0F);
+               world.addFreshEntity(be);
             }
          } else if (tick == 4) {
             mechInterface.playSoundEffect((SoundEvent)PomkotsMechs.SE_MISSILE_EVENT.get());
@@ -74,14 +74,14 @@ public class DodoItem extends BasePartsItem.WeaponShoulder {
 
    @Override
    public void startUsing(ActionWeapon.WeaponMechInterface context) {
-      if (!context.getWorld().f_46443_ && context.getPlayer() != null && context.getItemStack() != null) {
+      if (!context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
          this.triggerAnim(context.getPlayer(), GeoItem.getOrAssignId(context.getItemStack(), (ServerLevel)context.getWorld()), "Activation", "use");
       }
    }
 
    @Override
    public void endUsing(ActionWeapon.WeaponMechInterface context) {
-      if (!context.getWorld().f_46443_ && context.getPlayer() != null && context.getItemStack() != null) {
+      if (!context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
          this.triggerAnim(context.getPlayer(), GeoItem.getOrAssignId(context.getItemStack(), (ServerLevel)context.getWorld()), "Activation", "stop");
       }
    }

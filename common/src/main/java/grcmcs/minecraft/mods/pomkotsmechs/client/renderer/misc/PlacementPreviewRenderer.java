@@ -21,27 +21,27 @@ public class PlacementPreviewRenderer extends EntityRenderer<PlacementPreviewEnt
    }
 
    public void render2(PlacementPreviewEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-      poseStack.m_85836_();
-      poseStack.m_85837_(0.0, 0.0, 0.0);
-      poseStack.m_252781_(Axis.f_252436_.m_252977_(-entity.m_146908_()));
+      poseStack.pushPose();
+      poseStack.translate(0.0, 0.0, 0.0);
+      poseStack.mulPose(Axis.YP.rotationDegrees(-entity.getYRot()));
       AABB box = new AABB(-4.5, -4.5, -4.5, 4.5, 4.5, 4.5);
-      VertexConsumer solid = buffer.m_6299_(RenderType.m_110470_(TextureAtlas.f_118259_));
-      LevelRenderer.m_109646_(poseStack, solid, box, 1.0F, 0.0F, 0.0F, 0.25F);
-      VertexConsumer lines = buffer.m_6299_(RenderType.m_110504_());
-      LevelRenderer.m_109646_(poseStack, lines, box, 1.0F, 0.2F, 0.2F, 0.9F);
-      poseStack.m_85849_();
-      super.m_7392_(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
+      VertexConsumer solid = buffer.getBuffer(RenderType.entityTranslucentCull(TextureAtlas.LOCATION_BLOCKS));
+      LevelRenderer.renderLineBox(poseStack, solid, box, 1.0F, 0.0F, 0.0F, 0.25F);
+      VertexConsumer lines = buffer.getBuffer(RenderType.lines());
+      LevelRenderer.renderLineBox(poseStack, lines, box, 1.0F, 0.2F, 0.2F, 0.9F);
+      poseStack.popPose();
+      super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
    }
 
    public void render(PlacementPreviewEntity entity, float yaw, float partial, PoseStack poseStack, MultiBufferSource buffer, int light) {
-      poseStack.m_85836_();
-      poseStack.m_85837_(0.0, 0.0, 0.0);
-      VertexConsumer vc = buffer.m_6299_(RenderType.m_110504_());
-      LevelRenderer.m_109646_(poseStack, vc, new AABB(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0), 0.0F, 1.0F, 0.0F, 1.0F);
-      poseStack.m_85849_();
+      poseStack.pushPose();
+      poseStack.translate(0.0, 0.0, 0.0);
+      VertexConsumer vc = buffer.getBuffer(RenderType.lines());
+      LevelRenderer.renderLineBox(poseStack, vc, new AABB(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0), 0.0F, 1.0F, 0.0F, 1.0F);
+      poseStack.popPose();
    }
 
    public ResourceLocation getTextureLocation(PlacementPreviewEntity entity) {
-      return TextureAtlas.f_118259_;
+      return TextureAtlas.LOCATION_BLOCKS;
    }
 }

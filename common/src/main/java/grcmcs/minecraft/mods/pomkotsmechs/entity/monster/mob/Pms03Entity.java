@@ -37,22 +37,22 @@ public class Pms03Entity extends BaseSmallMonsterEntity implements GeoEntity, Ge
 
    @Override
    public void doAttack() {
-      if (this.isServerSide() && this.m_5448_() != null) {
-         this.rotateToTarget(this.m_5448_());
+      if (this.isServerSide() && this.getTarget() != null) {
+         this.rotateToTarget(this.getTarget());
          BulletMiddleEntity be = new BulletMiddleEntity(
-            (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLETMIDDLE.get(), this.m_9236_(), this, this.getMechData().bulletDamage
+            (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLETMIDDLE.get(), this.level(), this, this.getMechData().bulletDamage
          );
-         Vec3 offset = this.m_20182_();
+         Vec3 offset = this.position();
          Vec3 muzzlPos = new Vec3(1.0, 3.0, 3.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         be.m_146884_(offset.m_82549_(muzzlPos));
-         be.m_146922_(this.m_146908_());
-         be.m_146926_(this.m_146909_());
-         be.f_19859_ = this.m_146908_();
-         be.f_19860_ = this.m_146909_();
-         float[] angle = Utils.getShootingAngle(be, this.m_5448_(), true);
-         be.m_37251_(be, angle[0], angle[1], this.m_21256_(), this.getMechData().bulletSpeed, 0.0F);
-         this.m_9236_().m_7967_(be);
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         be.setPos(offset.add(muzzlPos));
+         be.setYRot(this.getYRot());
+         be.setXRot(this.getXRot());
+         be.yRotO = this.getYRot();
+         be.xRotO = this.getXRot();
+         float[] angle = Utils.getShootingAngle(be, this.getTarget(), true);
+         be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), this.getMechData().bulletSpeed, 0.0F);
+         this.level().addFreshEntity(be);
          this.triggerAnim("shoot_controller", "shoot");
       }
    }
@@ -63,9 +63,9 @@ public class Pms03Entity extends BaseSmallMonsterEntity implements GeoEntity, Ge
    }
 
    @Override
-   protected void m_8099_() {
-      super.m_8099_();
-      this.f_21345_.m_25352_(1, new SimpleMobGoal(this, this.getMechData().speed));
+   protected void registerGoals() {
+      super.registerGoals();
+      this.goalSelector.addGoal(1, new SimpleMobGoal(this, this.getMechData().speed));
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

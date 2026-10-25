@@ -23,11 +23,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MultiPlayerGameModeMixin {
    @Shadow
    @Final
-   private Minecraft f_105189_;
+   private Minecraft minecraft;
 
    @Inject(method = "startDestroyBlock", at = @At("HEAD"), cancellable = true)
    private void onStartDestroyBlock(BlockPos blockPos, Direction direction, CallbackInfoReturnable<Boolean> cir) {
-      if (this.f_105189_ != null && Utils.isRidingPomkotsMechs(this.f_105189_.f_91074_)) {
+      if (this.minecraft != null && Utils.isRidingPomkotsMechs(this.minecraft.player)) {
          cir.setReturnValue(false);
          cir.cancel();
       }
@@ -35,7 +35,7 @@ public class MultiPlayerGameModeMixin {
 
    @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
    private void onUseItemOn(LocalPlayer player, InteractionHand hand, BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
-      if (this.f_105189_ != null && Utils.isRidingPomkotsMechs(this.f_105189_.f_91074_)) {
+      if (this.minecraft != null && Utils.isRidingPomkotsMechs(this.minecraft.player)) {
          cir.setReturnValue(InteractionResult.FAIL);
          cir.cancel();
       }
@@ -43,7 +43,7 @@ public class MultiPlayerGameModeMixin {
 
    @Inject(method = "useItem", at = @At("HEAD"), cancellable = true)
    private void onUseItem(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
-      if (this.f_105189_ != null && Utils.isRidingPomkotsMechs(this.f_105189_.f_91074_)) {
+      if (this.minecraft != null && Utils.isRidingPomkotsMechs(this.minecraft.player)) {
          cir.setReturnValue(InteractionResult.FAIL);
          cir.cancel();
       }
@@ -51,7 +51,7 @@ public class MultiPlayerGameModeMixin {
 
    @Inject(method = "interact", at = @At("HEAD"), cancellable = true)
    private void onInteract(Player player, Entity target, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
-      if (this.f_105189_ != null && Utils.isRidingPomkotsMechs(this.f_105189_.f_91074_)) {
+      if (this.minecraft != null && Utils.isRidingPomkotsMechs(this.minecraft.player)) {
          cir.setReturnValue(InteractionResult.FAIL);
          cir.cancel();
       }
@@ -59,7 +59,7 @@ public class MultiPlayerGameModeMixin {
 
    @Inject(method = "attack", at = @At("HEAD"), cancellable = true)
    private void onAttack(Player player, Entity target, CallbackInfo ci) {
-      if (this.f_105189_ != null && Utils.isRidingPomkotsMechs(this.f_105189_.f_91074_)) {
+      if (this.minecraft != null && Utils.isRidingPomkotsMechs(this.minecraft.player)) {
          ci.cancel();
       }
    }

@@ -18,22 +18,22 @@ public final class TitleUtil {
 
    public static void showArenaMessage(Entity entity, String title, String subtitle, int fadeIn, int stay, int fadeOut) {
       if (entity instanceof ServerPlayer player) {
-         showTitle(player, Component.m_237113_(title), Component.m_237113_(subtitle), fadeIn, stay, fadeOut);
+         showTitle(player, Component.literal(title), Component.literal(subtitle), fadeIn, stay, fadeOut);
       }
    }
 
    public static void showTitle(ServerPlayer player, Component title, Component subtitle, int fadeIn, int stay, int fadeOut) {
-      player.f_8906_.m_9829_(new ClientboundSetTitlesAnimationPacket(fadeIn, stay, fadeOut));
+      player.connection.send(new ClientboundSetTitlesAnimationPacket(fadeIn, stay, fadeOut));
       if (title != null) {
-         player.f_8906_.m_9829_(new ClientboundSetTitleTextPacket(title));
+         player.connection.send(new ClientboundSetTitleTextPacket(title));
       }
 
       if (subtitle != null) {
-         player.f_8906_.m_9829_(new ClientboundSetSubtitleTextPacket(subtitle));
+         player.connection.send(new ClientboundSetSubtitleTextPacket(subtitle));
       }
    }
 
    public static void clear(ServerPlayer player) {
-      player.f_8906_.m_9829_(new ClientboundClearTitlesPacket(true));
+      player.connection.send(new ClientboundClearTitlesPacket(true));
    }
 }

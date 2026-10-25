@@ -32,7 +32,7 @@ public class BulletRifleEntityRenderer extends GeoEntityRenderer<BulletRifleEnti
       this.scaleHeight = 1.2F;
       this.scaleWidth = 1.2F;
       super.preApplyRenderLayers(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
-      ((GeoBone)model.getBone("root").get()).setRotX((float)Math.toRadians(animatable.m_146909_()));
-      ((GeoBone)model.getBone("root").get()).setRotY((float)Math.toRadians(animatable.m_146908_()));
+      ((GeoBone)model.getBone("root").get()).setRotX((float)Math.toRadians(animatable.getXRot()));
+      ((GeoBone)model.getBone("root").get()).setRotY((float)Math.toRadians(animatable.getYRot()));
    }
 }

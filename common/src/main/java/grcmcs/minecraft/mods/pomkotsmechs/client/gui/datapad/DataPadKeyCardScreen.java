@@ -26,12 +26,12 @@ public class DataPadKeyCardScreen extends AbstractContainerScreen<DataPadKeyCard
 
    public DataPadKeyCardScreen(DataPadKeyCardMenu menu, Inventory inventory, Component title) {
       super(menu, inventory, title);
-      this.f_97726_ = 480;
-      this.f_97727_ = 270;
+      this.imageWidth = 480;
+      this.imageHeight = 270;
    }
 
-   protected void m_7856_() {
-      super.m_7856_();
+   protected void init() {
+      super.init();
       int offsetX = 20;
       int offsetY = 40;
       this.leftCardOffsetX = offsetX + 28;
@@ -40,31 +40,31 @@ public class DataPadKeyCardScreen extends AbstractContainerScreen<DataPadKeyCard
       this.rightCardOffsetY = offsetY;
    }
 
-   public void m_88315_(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-      this.m_280273_(graphics);
-      super.m_88315_(graphics, mouseX, mouseY, partialTick);
-      this.m_280072_(graphics, mouseX, mouseY);
+   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+      this.renderBackground(graphics);
+      super.render(graphics, mouseX, mouseY, partialTick);
+      this.renderTooltip(graphics, mouseX, mouseY);
    }
 
-   protected void m_7286_(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+   protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
       this.renderBgTexture(TEXTURE_ITEM_CONTAINER_KEYCARD, this.leftCardOffsetX, this.leftCardOffsetY, 164, 170, guiGraphics);
-      guiGraphics.m_280488_(this.f_96547_, "Put mech Key Cards here", this.leftCardOffsetX + 18, this.leftCardOffsetY + 4, -1);
+      guiGraphics.drawString(this.font, "Put mech Key Cards here", this.leftCardOffsetX + 18, this.leftCardOffsetY + 4, -1);
 
-      for (int i = 0; i < 8 && i < ((DataPadKeyCardMenu)this.f_97732_).f_38839_.size(); i++) {
-         if (((Slot)((DataPadKeyCardMenu)this.f_97732_).f_38839_.get(i)).m_7993_().m_41720_() instanceof KeycardItem) {
-            ItemStack stack = ((Slot)((DataPadKeyCardMenu)this.f_97732_).f_38839_.get(i)).m_7993_();
+      for (int i = 0; i < 8 && i < ((DataPadKeyCardMenu)this.menu).slots.size(); i++) {
+         if (((Slot)((DataPadKeyCardMenu)this.menu).slots.get(i)).getItem().getItem() instanceof KeycardItem) {
+            ItemStack stack = ((Slot)((DataPadKeyCardMenu)this.menu).slots.get(i)).getItem();
             String name = KeycardItem.getMechName(stack);
             if (!name.isEmpty()) {
-               guiGraphics.m_280488_(this.f_96547_, name, this.leftCardOffsetX + 36, this.leftCardOffsetY + 30 + i * 18 - 4, -1);
+               guiGraphics.drawString(this.font, name, this.leftCardOffsetX + 36, this.leftCardOffsetY + 30 + i * 18 - 4, -1);
             }
          }
       }
 
       this.renderBgTexture(TEXTURE_PANEL_INV_PLAYER, this.rightCardOffsetX, this.leftCardOffsetY, 164, 94, guiGraphics);
-      guiGraphics.m_280488_(this.f_96547_, "Player Inventory", this.rightCardOffsetX + 18, this.leftCardOffsetY + 4, -1);
+      guiGraphics.drawString(this.font, "Player Inventory", this.rightCardOffsetX + 18, this.leftCardOffsetY + 4, -1);
    }
 
-   protected void m_280003_(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+   protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
    }
 
    private void renderBgTexture(ResourceLocation texture, int x, int y, int width, int height, GuiGraphics guiGraphics) {
@@ -75,7 +75,7 @@ public class DataPadKeyCardScreen extends AbstractContainerScreen<DataPadKeyCard
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
       RenderSystem.enableBlend();
       RenderSystem.setShaderTexture(0, texture);
-      guiGraphics.m_280163_(texture, x, y, 0.0F, 0.0F, width, height, width, height);
+      guiGraphics.blit(texture, x, y, 0.0F, 0.0F, width, height, width, height);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 }

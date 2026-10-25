@@ -27,50 +27,50 @@ public class MechCapsuleProjectileEntity extends ThrowableItemProjectile {
       super((EntityType)PomkotsMechs.MECH_CAPSULE_PROJECTILE.get(), owner, level);
    }
 
-   protected Item m_7881_() {
+   protected Item getDefaultItem() {
       return (Item)PomkotsMechs.MECH_CAPSULE_ITEM.get();
    }
 
-   protected void m_6532_(HitResult result) {
-      super.m_6532_(result);
-      if (!this.m_9236_().f_46443_) {
-         LivingEntity ent = MechCapsuleItem.generateEntity(this.m_9236_(), this.m_7846_());
+   protected void onHit(HitResult result) {
+      super.onHit(result);
+      if (!this.level().isClientSide) {
+         LivingEntity ent = MechCapsuleItem.generateEntity(this.level(), this.getItem());
          if (ent != null) {
-            Vec3 safePos = resolveSpawnCollision(this.m_9236_(), this.m_20182_(), ent.m_20191_(), this.m_20184_().m_82541_().m_82548_());
-            ent.m_20219_(safePos);
-            this.m_9236_().m_7967_(ent);
+            Vec3 safePos = resolveSpawnCollision(this.level(), this.position(), ent.getBoundingBox(), this.getDeltaMovement().normalize().reverse());
+            ent.moveTo(safePos);
+            this.level().addFreshEntity(ent);
          }
 
-         this.m_146870_();
+         this.discard();
       } else {
-         playBasicExplosion(this.m_9236_(), this.m_20182_());
+         playBasicExplosion(this.level(), this.position());
       }
    }
 
    public static Vec3 resolveSpawnCollision(Level level, Vec3 desiredPos, AABB baseAabb, Vec3 incomingDir) {
-      AABB aabb = baseAabb.m_82383_(desiredPos.m_82546_(baseAabb.m_82399_()));
-      Iterable<VoxelShape> collisions = level.m_186434_(null, aabb);
-      double dx = incomingDir.f_82479_;
-      double dy = incomingDir.f_82480_;
-      double dz = incomingDir.f_82481_;
-      Direction hitDir = Direction.m_122366_(incomingDir.f_82479_, incomingDir.f_82480_, incomingDir.f_82481_);
-      switch (hitDir.m_122434_()) {
+      AABB aabb = baseAabb.move(desiredPos.subtract(baseAabb.getCenter()));
+      Iterable<VoxelShape> collisions = level.getBlockCollisions(null, aabb);
+      double dx = incomingDir.x;
+      double dy = incomingDir.y;
+      double dz = incomingDir.z;
+      Direction hitDir = Direction.getNearest(incomingDir.x, incomingDir.y, incomingDir.z);
+      switch (hitDir.getAxis()) {
          case X:
-            dx = Shapes.m_193135_(Axis.X, aabb, collisions, dx);
+            dx = Shapes.collide(Axis.X, aabb, collisions, dx);
             break;
          case Z:
-            dz = Shapes.m_193135_(Axis.Z, aabb, collisions, dz);
+            dz = Shapes.collide(Axis.Z, aabb, collisions, dz);
             break;
          case Y:
-            dy = Shapes.m_193135_(Axis.Y, aabb, collisions, dy);
+            dy = Shapes.collide(Axis.Y, aabb, collisions, dy);
       }
 
-      return desiredPos.m_82520_(dx, dy, dz);
+      return desiredPos.add(dx, dy, dz);
    }
 
-   public void m_142036_() {
-      if (this.m_9236_().f_46443_) {
-         playBasicExplosion(this.m_9236_(), this.m_20182_());
+   public void onClientRemoval() {
+      if (this.level().isClientSide) {
+         playBasicExplosion(this.level(), this.position());
       }
    }
 
@@ -82,7 +82,7 @@ public class MechCapsuleProjectileEntity extends ThrowableItemProjectile {
          double velocityX = offsetX * 0.1;
          double velocityY = 0.1 + Math.random() * 0.1;
          double velocityZ = offsetZ * 0.1;
-         level.m_7106_(ParticleTypes.f_123759_, pos.f_82479_ + offsetX, pos.f_82480_ + offsetY, pos.f_82481_ + offsetZ, velocityX, velocityY, velocityZ);
+         level.addParticle(ParticleTypes.POOF, pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ, velocityX, velocityY, velocityZ);
       }
 
       for (int i = 0; i < 20; i++) {
@@ -91,9 +91,9 @@ public class MechCapsuleProjectileEntity extends ThrowableItemProjectile {
          double offsetX = Math.cos(angle) * distance;
          double offsetZ = Math.sin(angle) * distance;
          double offsetY = Math.random() * distance;
-         level.m_7106_(ParticleTypes.f_123813_, pos.f_82479_ + offsetX, pos.f_82480_ + offsetY, pos.f_82481_ + offsetZ, 0.0, 0.0, 0.0);
+         level.addParticle(ParticleTypes.EXPLOSION, pos.x + offsetX, pos.y + offsetY, pos.z + offsetZ, 0.0, 0.0, 0.0);
       }
 
-      level.m_7785_(pos.f_82479_, pos.f_82480_, pos.f_82481_, SoundEvents.f_11913_, SoundSource.BLOCKS, 0.5F, 1.2F, false);
+      level.playLocalSound(pos.x, pos.y, pos.z, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 0.5F, 1.2F, false);
    }
 }

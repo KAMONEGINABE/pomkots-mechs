@@ -45,35 +45,35 @@ public class FinFunnelGoal extends SmallMobGoalBase {
       this.midRange = midRange;
       this.closeRange = closeRange;
       this.attackCooldown = attackCooldown;
-      this.m_7021_(EnumSet.of(Flag.MOVE, Flag.LOOK));
+      this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
       this.currentRange = FinFunnelGoal.CombatRange.LONG_RANGE;
-      this.targetVelocity = Vec3.f_82478_;
-      this.currentVelocity = Vec3.f_82478_;
+      this.targetVelocity = Vec3.ZERO;
+      this.currentVelocity = Vec3.ZERO;
       this.sphereRadius = midRange * 0.7;
       this.directionChangeCooldown = 60;
       this.hoverDuration = 20;
    }
 
    @Override
-   public boolean m_8036_() {
-      if (!super.m_8036_()) {
+   public boolean canUse() {
+      if (!super.canUse()) {
          return false;
       }
 
-      this.target = this.mob.m_5448_();
-      return this.target != null && this.target.m_6084_();
+      this.target = this.mob.getTarget();
+      return this.target != null && this.target.isAlive();
    }
 
-   public boolean m_8045_() {
-      return this.target != null && this.target.m_6084_() && this.mob.m_20280_(this.target) < this.longRange * this.longRange * 4.0F;
+   public boolean canContinueToUse() {
+      return this.target != null && this.target.isAlive() && this.mob.distanceToSqr(this.target) < this.longRange * this.longRange * 4.0F;
    }
 
-   public void m_8056_() {
+   public void start() {
       this.determineRange();
       this.initializeMovementPattern();
    }
 
-   public void m_8037_() {
+   public void tick() {
       if (this.target != null) {
          this.mob.rotateToTarget(this.target);
          this.rangeTimer++;
@@ -95,12 +95,12 @@ public class FinFunnelGoal extends SmallMobGoalBase {
          }
 
          this.handleAttacking();
-         this.mob.m_21563_().m_24960_(this.target, 30.0F, 30.0F);
+         this.mob.getLookControl().setLookAt(this.target, 30.0F, 30.0F);
       }
    }
 
    private void determineRange() {
-      double distance = this.mob.m_20270_(this.target);
+      double distance = this.mob.distanceTo(this.target);
       if (distance > this.longRange) {
          this.currentRange = FinFunnelGoal.CombatRange.LONG_RANGE;
       } else if (distance > this.midRange) {
@@ -113,7 +113,7 @@ public class FinFunnelGoal extends SmallMobGoalBase {
    }
 
    private void updateRange() {
-      double distance = this.mob.m_20270_(this.target);
+      double distance = this.mob.distanceTo(this.target);
       FinFunnelGoal.CombatRange newRange = this.currentRange;
       switch (this.currentRange) {
          case LONG_RANGE:
@@ -122,7 +122,7 @@ public class FinFunnelGoal extends SmallMobGoalBase {
             }
             break;
          case MID_RANGE:
-            if (distance <= this.closeRange || this.mob.m_217043_().m_188503_(100) < 5) {
+            if (distance <= this.closeRange || this.mob.getRandom().nextInt(100) < 5) {
                newRange = FinFunnelGoal.CombatRange.CLOSE_RANGE;
             } else if (distance > this.longRange) {
                newRange = FinFunnelGoal.CombatRange.LONG_RANGE;
@@ -143,19 +143,19 @@ public class FinFunnelGoal extends SmallMobGoalBase {
    }
 
    private void initializeMovementPattern() {
-      RandomSource random = this.mob.m_217043_();
+      RandomSource random = this.mob.getRandom();
       switch (this.currentRange) {
          case LONG_RANGE:
          default:
             break;
          case MID_RANGE:
-            this.sphereCenter = this.target.m_20182_();
-            this.sphereRadius = this.midRange * (0.6 + random.m_188500_() * 0.3);
-            Vec3 toMob = this.mob.m_20182_().m_82546_(this.sphereCenter).m_82541_();
-            this.sphereTheta = Math.acos(toMob.f_82480_);
-            this.spherePhi = Math.atan2(toMob.f_82481_, toMob.f_82479_);
-            this.sphereThetaSpeed = (random.m_188500_() - 0.5) * 0.03;
-            this.spherePhiSpeed = (random.m_188500_() * 0.04 + 0.02) * (random.m_188499_() ? 1 : -1);
+            this.sphereCenter = this.target.position();
+            this.sphereRadius = this.midRange * (0.6 + random.nextDouble() * 0.3);
+            Vec3 toMob = this.mob.position().subtract(this.sphereCenter).normalize();
+            this.sphereTheta = Math.acos(toMob.y);
+            this.spherePhi = Math.atan2(toMob.z, toMob.x);
+            this.sphereThetaSpeed = (random.nextDouble() - 0.5) * 0.03;
+            this.spherePhiSpeed = (random.nextDouble() * 0.04 + 0.02) * (random.nextBoolean() ? 1 : -1);
             this.directionChangeTimer = 0;
             break;
          case CLOSE_RANGE:
@@ -167,37 +167,37 @@ public class FinFunnelGoal extends SmallMobGoalBase {
    }
 
    private void handleLongRangeMovement() {
-      Vec3 mobPos = this.mob.m_20182_();
-      Vec3 targetPos = this.target.m_20182_();
-      Vec3 direction = targetPos.m_82546_(mobPos).m_82541_();
+      Vec3 mobPos = this.mob.position();
+      Vec3 targetPos = this.target.position();
+      Vec3 direction = targetPos.subtract(mobPos).normalize();
       double desiredDistance = this.midRange * 0.8;
-      Vec3 desiredPos = targetPos.m_82546_(direction.m_82490_(desiredDistance));
-      Vec3 movement = desiredPos.m_82546_(mobPos);
-      if (movement.m_82553_() > 0.1) {
-         this.targetVelocity = movement.m_82541_().m_82490_(this.baseSpeed * 1.2);
+      Vec3 desiredPos = targetPos.subtract(direction.scale(desiredDistance));
+      Vec3 movement = desiredPos.subtract(mobPos);
+      if (movement.length() > 0.1) {
+         this.targetVelocity = movement.normalize().scale(this.baseSpeed * 1.2);
          this.applySmoothedMovement();
       }
    }
 
    private void handleMidRangeMovement() {
-      this.sphereCenter = this.sphereCenter.m_165921_(this.target.m_20182_(), 0.08);
-      if (this.directionChangeTimer >= this.directionChangeCooldown && this.mob.m_217043_().m_188503_(100) < 25) {
-         this.sphereThetaSpeed = (this.mob.m_217043_().m_188500_() - 0.5) * 0.04;
-         this.spherePhiSpeed = (this.mob.m_217043_().m_188500_() * 0.05 + 0.02) * (this.mob.m_217043_().m_188499_() ? 1 : -1);
+      this.sphereCenter = this.sphereCenter.lerp(this.target.position(), 0.08);
+      if (this.directionChangeTimer >= this.directionChangeCooldown && this.mob.getRandom().nextInt(100) < 25) {
+         this.sphereThetaSpeed = (this.mob.getRandom().nextDouble() - 0.5) * 0.04;
+         this.spherePhiSpeed = (this.mob.getRandom().nextDouble() * 0.05 + 0.02) * (this.mob.getRandom().nextBoolean() ? 1 : -1);
          this.directionChangeTimer = 0;
-         this.directionChangeCooldown = 40 + this.mob.m_217043_().m_188503_(80);
+         this.directionChangeCooldown = 40 + this.mob.getRandom().nextInt(80);
       }
 
       this.sphereTheta = this.sphereTheta + this.sphereThetaSpeed;
       this.spherePhi = this.spherePhi + this.spherePhiSpeed;
-      this.sphereTheta = Mth.m_14008_(this.sphereTheta, 0.3, 2.8415926535897933);
-      double x = this.sphereCenter.f_82479_ + this.sphereRadius * Math.sin(this.sphereTheta) * Math.cos(this.spherePhi);
-      double y = this.sphereCenter.f_82480_ + this.sphereRadius * Math.cos(this.sphereTheta);
-      double z = this.sphereCenter.f_82481_ + this.sphereRadius * Math.sin(this.sphereTheta) * Math.sin(this.spherePhi);
+      this.sphereTheta = Mth.clamp(this.sphereTheta, 0.3, 2.8415926535897933);
+      double x = this.sphereCenter.x + this.sphereRadius * Math.sin(this.sphereTheta) * Math.cos(this.spherePhi);
+      double y = this.sphereCenter.y + this.sphereRadius * Math.cos(this.sphereTheta);
+      double z = this.sphereCenter.z + this.sphereRadius * Math.sin(this.sphereTheta) * Math.sin(this.spherePhi);
       Vec3 targetPos = new Vec3(x, y, z);
-      Vec3 movement = targetPos.m_82546_(this.mob.m_20182_());
-      if (movement.m_82553_() > 0.1) {
-         this.targetVelocity = movement.m_82541_().m_82490_(this.baseSpeed * 0.8);
+      Vec3 movement = targetPos.subtract(this.mob.position());
+      if (movement.length() > 0.1) {
+         this.targetVelocity = movement.normalize().scale(this.baseSpeed * 0.8);
          this.applySmoothedMovement();
       }
    }
@@ -212,65 +212,66 @@ public class FinFunnelGoal extends SmallMobGoalBase {
          }
 
          Vec3 wobble = new Vec3(
-            (this.mob.m_217043_().m_188500_() - 0.5) * 0.1, (this.mob.m_217043_().m_188500_() - 0.5) * 0.1, (this.mob.m_217043_().m_188500_() - 0.5) * 0.1
+            (this.mob.getRandom().nextDouble() - 0.5) * 0.1, (this.mob.getRandom().nextDouble() - 0.5) * 0.1, (this.mob.getRandom().nextDouble() - 0.5) * 0.1
          );
-         this.targetVelocity = this.currentVelocity.m_82490_(0.1).m_82549_(wobble);
+         this.targetVelocity = this.currentVelocity.scale(0.1).add(wobble);
          this.applySmoothedMovement();
       } else {
-         Vec3 mobPos = this.mob.m_20182_();
-         Vec3 movement = this.targetPosition.m_82546_(mobPos);
-         if (movement.m_82553_() < 0.8) {
+         Vec3 mobPos = this.mob.position();
+         Vec3 movement = this.targetPosition.subtract(mobPos);
+         if (movement.length() < 0.8) {
             this.isHovering = true;
             this.hoverTimer = 0;
-            this.hoverDuration = 15 + this.mob.m_217043_().m_188503_(20);
-            this.applyCloseRangeMovement(Vec3.f_82478_);
+            this.hoverDuration = 15 + this.mob.getRandom().nextInt(20);
+            this.applyCloseRangeMovement(Vec3.ZERO);
          } else {
-            this.targetVelocity = movement.m_82541_().m_82490_(this.baseSpeed * 1.5);
+            this.targetVelocity = movement.normalize().scale(this.baseSpeed * 1.5);
             this.applySmoothedMovement();
          }
       }
    }
 
    private void applyCloseRangeMovement(Vec3 movement) {
-      if (this.mob.m_20068_()) {
-         this.mob.m_20256_(movement);
+      if (this.mob.isNoGravity()) {
+         this.mob.setDeltaMovement(movement);
       } else {
-         Vec3 currentMovement = this.mob.m_20184_();
-         this.mob.m_20334_(movement.f_82479_, currentMovement.f_82480_, movement.f_82481_);
+         Vec3 currentMovement = this.mob.getDeltaMovement();
+         this.mob.setDeltaMovement(movement.x, currentMovement.y, movement.z);
       }
    }
 
    private void generateRandomClosePosition() {
-      RandomSource random = this.mob.m_217043_();
-      Vec3 targetPos = this.target.m_20182_();
-      double distance = this.closeRange * (0.3 + random.m_188500_() * 0.4);
-      double theta = random.m_188500_() * Math.PI * 2.0;
-      double phi = random.m_188500_() * Math.PI;
-      double x = targetPos.f_82479_ + distance * Math.sin(phi) * Math.cos(theta);
-      double y = targetPos.f_82480_ + distance * Math.cos(phi);
-      double z = targetPos.f_82481_ + distance * Math.sin(phi) * Math.sin(theta);
-      y = Math.max(targetPos.f_82480_ - 2.0, Math.min(targetPos.f_82480_ + 4.0, y));
+      RandomSource random = this.mob.getRandom();
+      Vec3 targetPos = this.target.position();
+      double distance = this.closeRange * (0.3 + random.nextDouble() * 0.4);
+      double theta = random.nextDouble() * Math.PI * 2.0;
+      double phi = random.nextDouble() * Math.PI;
+      double x = targetPos.x + distance * Math.sin(phi) * Math.cos(theta);
+      double y = targetPos.y + distance * Math.cos(phi);
+      double z = targetPos.z + distance * Math.sin(phi) * Math.sin(theta);
+      y = Math.max(targetPos.y - 2.0, Math.min(targetPos.y + 4.0, y));
       this.targetPosition = new Vec3(x, y, z);
    }
 
    private void applySmoothedMovement() {
-      this.currentVelocity = this.currentVelocity.m_165921_(this.targetVelocity, 0.15);
-      if (this.mob.m_20068_()) {
-         this.mob.m_20256_(this.currentVelocity);
+      this.currentVelocity = this.currentVelocity.lerp(this.targetVelocity, 0.15);
+      if (this.mob.isNoGravity()) {
+         this.mob.setDeltaMovement(this.currentVelocity);
       } else {
-         Vec3 currentMovement = this.mob.m_20184_();
-         this.mob.m_20334_(this.currentVelocity.f_82479_, currentMovement.f_82480_, this.currentVelocity.f_82481_);
+         Vec3 currentMovement = this.mob.getDeltaMovement();
+         this.mob.setDeltaMovement(this.currentVelocity.x, currentMovement.y, this.currentVelocity.z);
       }
    }
 
    private void handleAttacking() {
       if (this.attackTimer >= this.attackCooldown) {
-         double distance = this.mob.m_20270_(this.target);
+         double distance = this.mob.distanceTo(this.target);
          boolean shouldAttack = false;
 
          if (switch (this.currentRange) {
-            case MID_RANGE -> this.mob.m_217043_().m_188503_(100) < 20;
+            case MID_RANGE -> this.mob.getRandom().nextInt(100) < 20;
             case CLOSE_RANGE -> this.isHovering && this.hoverTimer > 5;
+            default -> false;
          }) {
             this.performAttack();
             this.attackTimer = 0;
@@ -296,10 +297,10 @@ public class FinFunnelGoal extends SmallMobGoalBase {
       this.mob.tryAttack();
    }
 
-   public void m_8041_() {
+   public void stop() {
       this.target = null;
-      this.currentVelocity = Vec3.f_82478_;
-      this.targetVelocity = Vec3.f_82478_;
+      this.currentVelocity = Vec3.ZERO;
+      this.targetVelocity = Vec3.ZERO;
       this.isHovering = false;
       this.closeRangeTimer = 0;
    }

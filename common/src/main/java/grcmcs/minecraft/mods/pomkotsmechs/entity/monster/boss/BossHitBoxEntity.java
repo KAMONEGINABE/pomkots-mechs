@@ -23,7 +23,7 @@ public class BossHitBoxEntity extends LivingEntity {
    protected Consumer<Void> breakCallback;
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_().m_22266_(Attributes.f_22282_).m_22268_(Attributes.f_22276_, 50.0);
+      return LivingEntity.createLivingAttributes().add(Attributes.ATTACK_KNOCKBACK).add(Attributes.MAX_HEALTH, 50.0);
    }
 
    public BossHitBoxEntity(EntityType<? extends LivingEntity> entityType, Level world) {
@@ -33,8 +33,8 @@ public class BossHitBoxEntity extends LivingEntity {
    public BossHitBoxEntity(EntityType<? extends LivingEntity> entityType, Level world, BaseBossEntity parent) {
       super(entityType, world);
       this.parentEntity = parent;
-      this.f_19794_ = true;
-      this.m_20242_(true);
+      this.noPhysics = true;
+      this.setNoGravity(true);
    }
 
    public void setBreakCallback(Consumer<Void> breakCallback) {
@@ -42,27 +42,27 @@ public class BossHitBoxEntity extends LivingEntity {
    }
 
    public Vec3 getRelativeParentPos() {
-      return Vec3.f_82478_;
+      return Vec3.ZERO;
    }
 
-   public void m_8119_() {
-      super.m_8119_();
+   public void tick() {
+      super.tick();
       if (!this.isParentActive() || this.parentEntity.getAiMode() != -2) {
-         if (!this.m_9236_().f_46443_) {
-            AABB bossBoundingBox = this.m_20191_();
-            List<PomkotsThrowableProjectile> projectiles = this.m_9236_()
-               .m_6443_(PomkotsThrowableProjectile.class, bossBoundingBox.m_82400_(1.0), projectilex -> !projectilex.m_213877_());
+         if (!this.level().isClientSide) {
+            AABB bossBoundingBox = this.getBoundingBox();
+            List<PomkotsThrowableProjectile> projectiles = this.level()
+               .getEntitiesOfClass(PomkotsThrowableProjectile.class, bossBoundingBox.inflate(1.0), projectilex -> !projectilex.isRemoved());
             new ArrayList();
 
             for (PomkotsThrowableProjectile projectile : projectiles) {
-               if (!this.isRelatedShooter(projectile) && bossBoundingBox.m_82381_(projectile.m_20191_())) {
+               if (!this.isRelatedShooter(projectile) && bossBoundingBox.intersects(projectile.getBoundingBox())) {
                   projectile.onHitEntityPublic(this);
                }
             }
          }
 
-         if (!this.m_9236_().f_46443_ && !this.f_19803_ && !this.isParentActive()) {
-            this.m_146870_();
+         if (!this.level().isClientSide && !this.firstTick && !this.isParentActive()) {
+            this.discard();
          }
       }
    }
@@ -72,16 +72,16 @@ public class BossHitBoxEntity extends LivingEntity {
    }
 
    protected boolean isParentActive() {
-      return this.parentEntity != null && !this.parentEntity.m_21224_();
+      return this.parentEntity != null && !this.parentEntity.isDeadOrDying();
    }
 
-   public boolean m_6469_(DamageSource source, float amount) {
+   public boolean hurt(DamageSource source, float amount) {
       if (this.isParentActive()) {
-         this.parentEntity.f_19802_ = 0;
-         this.f_19802_ = 0;
+         this.parentEntity.invulnerableTime = 0;
+         this.invulnerableTime = 0;
          return this.parentEntity.hurtFromAdditionalHitBox(source, amount);
       } else {
-         return Utils.isSystemicDamage(source) ? super.m_6469_(source, amount) : false;
+         return Utils.isSystemicDamage(source) ? super.hurt(source, amount) : false;
       }
    }
 
@@ -91,22 +91,22 @@ public class BossHitBoxEntity extends LivingEntity {
       }
    }
 
-   public boolean m_6051_() {
+   public boolean displayFireAnimation() {
       return false;
    }
 
-   public Iterable<ItemStack> m_6168_() {
-      return NonNullList.m_122780_(4, ItemStack.f_41583_);
+   public Iterable<ItemStack> getArmorSlots() {
+      return NonNullList.withSize(4, ItemStack.EMPTY);
    }
 
-   public ItemStack m_6844_(EquipmentSlot equipmentSlot) {
-      return ItemStack.f_41583_;
+   public ItemStack getItemBySlot(EquipmentSlot equipmentSlot) {
+      return ItemStack.EMPTY;
    }
 
-   public void m_8061_(EquipmentSlot equipmentSlot, ItemStack itemStack) {
+   public void setItemSlot(EquipmentSlot equipmentSlot, ItemStack itemStack) {
    }
 
-   public HumanoidArm m_5737_() {
+   public HumanoidArm getMainArm() {
       return null;
    }
 }

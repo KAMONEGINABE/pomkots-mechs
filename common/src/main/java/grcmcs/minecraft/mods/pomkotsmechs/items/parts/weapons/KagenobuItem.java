@@ -37,24 +37,24 @@ public class KagenobuItem extends BasePartsItem.WeaponArm {
       if (isOnFire) {
          Entity driver = mechInterface.getDrivingPassenger();
          Vec3 pilePos1 = new Vec3(6.5 * mechInterface.isRight(), 4.0, 18.0)
-            .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-            .m_82549_(mechInterface.position());
+            .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+            .add(mechInterface.position());
          Vec3 pilePos2 = new Vec3(-2 * mechInterface.isRight(), -4.0, -4.0)
-            .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-            .m_82549_(mechInterface.position());
-         Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+            .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+            .add(mechInterface.position());
+         Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
          float damage = mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory());
 
-         for (Entity ent : world.m_45933_(null, new AABB(pilePos1, pilePos2))) {
+         for (Entity ent : world.getEntities(null, new AABB(pilePos1, pilePos2))) {
             if (!mechInterface.isSelf(ent) && ent instanceof LivingEntity le) {
-               if (!world.m_5776_()) {
+               if (!world.isClientSide()) {
                   int sbModifier = mechInterface.isSuperBoost() ? 2 : 1;
-                  le.m_147240_(sbModifier * 4, sbModifier * kbVel.f_82479_, sbModifier * kbVel.f_82481_);
+                  le.knockback(sbModifier * 4, sbModifier * kbVel.x, sbModifier * kbVel.z);
                   DamageSource ds;
                   if (driver instanceof Player p) {
-                     ds = mechInterface.damageSources().m_269075_(p);
+                     ds = mechInterface.damageSources().playerAttack(p);
                   } else {
-                     ds = mechInterface.damageSources().m_269264_();
+                     ds = mechInterface.damageSources().generic();
                   }
 
                   float baseDamage = damage;
@@ -64,14 +64,14 @@ public class KagenobuItem extends BasePartsItem.WeaponArm {
                      baseDamage *= 1.5F;
                   }
 
-                  le.m_6469_(ds, sbModifier * baseDamage);
+                  le.hurt(ds, sbModifier * baseDamage);
                } else {
                   mechInterface.addHitParticles(le);
                }
             }
          }
 
-         if (world.f_46443_) {
+         if (world.isClientSide) {
             mechInterface.playSoundEffect((SoundEvent)PomkotsMechs.SE_PILEBUNKER_EVENT.get());
          }
       }
@@ -79,14 +79,14 @@ public class KagenobuItem extends BasePartsItem.WeaponArm {
 
    @Override
    public void startUsing(ActionWeapon.WeaponMechInterface context) {
-      if (!context.getWorld().f_46443_ && context.getPlayer() != null && context.getItemStack() != null) {
+      if (!context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
          this.triggerAnim(context.getPlayer(), GeoItem.getOrAssignId(context.getItemStack(), (ServerLevel)context.getWorld()), "Activation", "use");
       }
    }
 
    @Override
    public void endUsing(ActionWeapon.WeaponMechInterface context) {
-      if (!context.getWorld().f_46443_ && context.getPlayer() != null && context.getItemStack() != null) {
+      if (!context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
          this.triggerAnim(context.getPlayer(), GeoItem.getOrAssignId(context.getItemStack(), (ServerLevel)context.getWorld()), "Activation", "stop");
       }
    }
@@ -102,9 +102,9 @@ public class KagenobuItem extends BasePartsItem.WeaponArm {
       );
    }
 
-   public void m_6883_(ItemStack stack, Level level, Entity ent, int slotIndex, boolean bl) {
-      super.m_6883_(stack, level, ent, slotIndex, bl);
-      if (!level.f_46443_ && level instanceof ServerLevel serverLevel) {
+   public void inventoryTick(ItemStack stack, Level level, Entity ent, int slotIndex, boolean bl) {
+      super.inventoryTick(stack, level, ent, slotIndex, bl);
+      if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
          GeoItem.getOrAssignId(stack, serverLevel);
       }
    }

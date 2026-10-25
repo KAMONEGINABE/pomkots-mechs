@@ -19,30 +19,30 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 
 public class ArenaBattleFieldAnchorBlock extends BaseEntityBlock implements PomkotsUnbreakableBlock {
-   public static final DirectionProperty FACING = HorizontalDirectionalBlock.f_54117_;
+   public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
    public ArenaBattleFieldAnchorBlock() {
-      super(Properties.m_284310_().m_60913_(-1.0F, 3600000.0F).m_60918_(SoundType.f_56743_));
-      this.m_49959_((BlockState)((BlockState)this.f_49792_.m_61090_()).m_61124_(FACING, Direction.NORTH));
+      super(Properties.of().strength(-1.0F, 3600000.0F).sound(SoundType.METAL));
+      this.registerDefaultState((BlockState)((BlockState)this.stateDefinition.any()).setValue(FACING, Direction.NORTH));
    }
 
-   public float m_5880_(BlockState state, Player player, BlockGetter level, BlockPos pos) {
+   public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
       return 0.0F;
    }
 
-   protected void m_7926_(Builder<Block, BlockState> builder) {
-      builder.m_61104_(new Property[]{FACING});
+   protected void createBlockStateDefinition(Builder<Block, BlockState> builder) {
+      builder.add(new Property[]{FACING});
    }
 
-   public BlockState m_5573_(BlockPlaceContext context) {
-      return (BlockState)this.m_49966_().m_61124_(FACING, context.m_8125_().m_122424_());
+   public BlockState getStateForPlacement(BlockPlaceContext context) {
+      return (BlockState)this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
    }
 
-   public RenderShape m_7514_(BlockState state) {
+   public RenderShape getRenderShape(BlockState state) {
       return RenderShape.MODEL;
    }
 
-   public BlockEntity m_142194_(BlockPos pos, BlockState state) {
+   public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
       return new ArenaBattleFieldAnchorBlockEntity(pos, state);
    }
 }

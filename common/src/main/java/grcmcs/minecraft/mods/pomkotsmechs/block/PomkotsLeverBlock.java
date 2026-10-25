@@ -24,32 +24,32 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class PomkotsLeverBlock extends BaseEntityBlock {
-   protected static final VoxelShape SHAPE = Block.m_49796_(0.1, 0.1, 0.1, 15.9, 15.9, 15.9);
+   protected static final VoxelShape SHAPE = Block.box(0.1, 0.1, 0.1, 15.9, 15.9, 15.9);
 
    public PomkotsLeverBlock() {
-      super(Properties.m_284310_().m_60913_(-1.0F, 3600000.0F).m_60918_(SoundType.f_56743_));
-      this.m_49959_((BlockState)((BlockState)this.f_49792_.m_61090_()).m_61124_(BlockStateProperties.f_61374_, Direction.NORTH));
+      super(Properties.of().strength(-1.0F, 3600000.0F).sound(SoundType.METAL));
+      this.registerDefaultState((BlockState)((BlockState)this.stateDefinition.any()).setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH));
    }
 
-   public float m_5880_(BlockState state, Player player, BlockGetter level, BlockPos pos) {
+   public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
       return 0.0F;
    }
 
-   protected void m_7926_(Builder<Block, BlockState> builder) {
-      builder.m_61104_(new Property[]{BlockStateProperties.f_61374_});
+   protected void createBlockStateDefinition(Builder<Block, BlockState> builder) {
+      builder.add(new Property[]{BlockStateProperties.HORIZONTAL_FACING});
    }
 
-   public BlockState m_5573_(BlockPlaceContext context) {
-      return (BlockState)this.m_49966_().m_61124_(BlockStateProperties.f_61374_, context.m_8125_().m_122424_());
+   public BlockState getStateForPlacement(BlockPlaceContext context) {
+      return (BlockState)this.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, context.getHorizontalDirection().getOpposite());
    }
 
-   public BlockEntity m_142194_(BlockPos pos, BlockState state) {
+   public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
       return new PomkotsLeverBlockEntity(pos, state);
    }
 
-   public InteractionResult m_6227_(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-      if (level.m_7702_(pos) instanceof PomkotsLeverBlockEntity le) {
-         if (level.f_46443_) {
+   public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+      if (level.getBlockEntity(pos) instanceof PomkotsLeverBlockEntity le) {
+         if (level.isClientSide) {
             le.playAnimation();
             return InteractionResult.CONSUME;
          } else {
@@ -61,11 +61,11 @@ public class PomkotsLeverBlock extends BaseEntityBlock {
       }
    }
 
-   public VoxelShape m_5940_(BlockState bs, BlockGetter bg, BlockPos bp, CollisionContext cc) {
+   public VoxelShape getShape(BlockState bs, BlockGetter bg, BlockPos bp, CollisionContext cc) {
       return SHAPE;
    }
 
-   public RenderShape m_7514_(BlockState state) {
+   public RenderShape getRenderShape(BlockState state) {
       return RenderShape.ENTITYBLOCK_ANIMATED;
    }
 }

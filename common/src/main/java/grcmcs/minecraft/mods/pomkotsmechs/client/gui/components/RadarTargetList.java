@@ -21,10 +21,10 @@ public class RadarTargetList extends AbstractPomkotsSelectionList<RadarTargetLis
    }
 
    public void addTargets(List<RadarTarget> targets) {
-      this.m_93516_();
+      this.clearEntries();
 
       for (int i = 0; i < targets.size(); i++) {
-         this.m_7085_(new RadarTargetList.Entry(this.parent, targets.get(i), i));
+         this.addEntry(new RadarTargetList.Entry(this.parent, targets.get(i), i));
       }
    }
 
@@ -42,24 +42,24 @@ public class RadarTargetList extends AbstractPomkotsSelectionList<RadarTargetLis
       }
 
       @Override
-      public void m_6311_(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovered, float partialTick) {
-         super.m_6311_(graphics, index, top, left, width, height, mouseX, mouseY, hovered, partialTick);
-         graphics.m_280056_(
-            Minecraft.m_91087_().f_91062_, this.target.label() + " : " + this.dimensionName(this.target.dimension()), left + 8, top + 7, 16777215, false
+      public void render(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovered, float partialTick) {
+         super.render(graphics, index, top, left, width, height, mouseX, mouseY, hovered, partialTick);
+         graphics.drawString(
+            Minecraft.getInstance().font, this.target.label() + " : " + this.dimensionName(this.target.dimension()), left + 8, top + 7, 16777215, false
          );
       }
 
-      public boolean m_6375_(double mouseX, double mouseY, int button) {
+      public boolean mouseClicked(double mouseX, double mouseY, int button) {
          this.parent.onTargetSelected(this.index);
          return true;
       }
 
       public String dimensionName(ResourceLocation dim) {
-         return switch (dim.m_135815_()) {
+         return switch (dim.getPath()) {
             case "overworld" -> "Over World";
             case "the_nether" -> "The Nether";
             case "the_end" -> "The End";
-            default -> dim.m_135815_();
+            default -> dim.getPath();
          };
       }
    }

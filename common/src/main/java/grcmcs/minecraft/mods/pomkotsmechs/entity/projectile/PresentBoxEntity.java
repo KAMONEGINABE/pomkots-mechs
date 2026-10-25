@@ -28,22 +28,22 @@ public class PresentBoxEntity extends LivingEntity implements GeoEntity, GeoAnim
    private int openCount = 0;
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_().m_22266_(Attributes.f_22282_).m_22268_(Attributes.f_22276_, 50.0);
+      return LivingEntity.createLivingAttributes().add(Attributes.ATTACK_KNOCKBACK).add(Attributes.MAX_HEALTH, 50.0);
    }
 
    public PresentBoxEntity(EntityType<? extends PresentBoxEntity> type, Level level) {
       super(type, level);
-      this.m_20242_(false);
+      this.setNoGravity(false);
    }
 
-   public boolean m_6094_() {
+   public boolean isPushable() {
       return false;
    }
 
-   public void m_8119_() {
-      super.m_8119_();
-      this.f_19812_ = true;
-      if (this.m_20096_() && this.openCount == 0) {
+   public void tick() {
+      super.tick();
+      this.hasImpulse = true;
+      if (this.onGround() && this.openCount == 0) {
          this.openCount = 1;
       }
 
@@ -51,21 +51,21 @@ public class PresentBoxEntity extends LivingEntity implements GeoEntity, GeoAnim
          this.openCount++;
          if (this.openCount > 80) {
             this.openCount = -1;
-            if (!this.m_9236_().f_46443_) {
-               KujiraEntity blockMass = new KujiraEntity((EntityType<? extends KujiraEntity>)PomkotsMechs.KUJIRA.get(), this.m_9236_());
-               float rot = this.m_146908_();
-               blockMass.m_146922_(rot);
-               blockMass.m_5618_(rot);
-               blockMass.m_5616_(rot);
-               blockMass.f_19859_ = rot;
-               blockMass.m_6034_(this.m_20185_(), this.m_20186_(), this.m_20189_());
-               this.m_9236_().m_7967_(blockMass);
+            if (!this.level().isClientSide) {
+               KujiraEntity blockMass = new KujiraEntity((EntityType<? extends KujiraEntity>)PomkotsMechs.KUJIRA.get(), this.level());
+               float rot = this.getYRot();
+               blockMass.setYRot(rot);
+               blockMass.setYBodyRot(rot);
+               blockMass.setYHeadRot(rot);
+               blockMass.yRotO = rot;
+               blockMass.setPos(this.getX(), this.getY(), this.getZ());
+               this.level().addFreshEntity(blockMass);
             }
          }
       }
    }
 
-   public InteractionResult m_6096_(Player p, InteractionHand h) {
+   public InteractionResult interact(Player p, InteractionHand h) {
       this.openCount = 1;
       return InteractionResult.SUCCESS;
    }
@@ -95,35 +95,35 @@ public class PresentBoxEntity extends LivingEntity implements GeoEntity, GeoAnim
       return this.geoCache;
    }
 
-   public boolean m_6000_(double cameraX, double cameraY, double cameraZ) {
+   public boolean shouldRender(double cameraX, double cameraY, double cameraZ) {
       double maxDistance = 1000.0;
       return true;
    }
 
-   public boolean m_6783_(double d) {
+   public boolean shouldRenderAtSqrDistance(double d) {
       return true;
    }
 
-   protected void m_8097_() {
-      super.m_8097_();
+   protected void defineSynchedData() {
+      super.defineSynchedData();
    }
 
-   public Iterable<ItemStack> m_6168_() {
-      return NonNullList.m_122780_(4, ItemStack.f_41583_);
+   public Iterable<ItemStack> getArmorSlots() {
+      return NonNullList.withSize(4, ItemStack.EMPTY);
    }
 
-   public ItemStack m_6844_(EquipmentSlot equipmentSlot) {
-      return ItemStack.f_41583_;
+   public ItemStack getItemBySlot(EquipmentSlot equipmentSlot) {
+      return ItemStack.EMPTY;
    }
 
-   public void m_8061_(EquipmentSlot equipmentSlot, ItemStack itemStack) {
+   public void setItemSlot(EquipmentSlot equipmentSlot, ItemStack itemStack) {
    }
 
-   public boolean m_142535_(float f1, float f2, DamageSource damageSource) {
+   public boolean causeFallDamage(float f1, float f2, DamageSource damageSource) {
       return false;
    }
 
-   public HumanoidArm m_5737_() {
+   public HumanoidArm getMainArm() {
       return null;
    }
 }

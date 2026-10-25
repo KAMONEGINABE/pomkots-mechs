@@ -27,7 +27,7 @@ public class RaidTargetGoal<T extends LivingEntity> extends TargetGoal {
       this.raidActiveSupplier = raidActiveSupplier;
    }
 
-   public boolean m_8036_() {
+   public boolean canUse() {
       if (!this.raidActiveSupplier.get()) {
          return false;
       }
@@ -37,49 +37,49 @@ public class RaidTargetGoal<T extends LivingEntity> extends TargetGoal {
    }
 
    protected LivingEntity findTarget() {
-      long time = this.f_26135_.f_19797_;
-      long lastHurtTime = this.f_26135_.m_21213_();
-      return (LivingEntity)(time - lastHurtTime < this.playerRetargetTicks && this.f_26135_.m_21188_() instanceof Player attacker
+      long time = this.mob.tickCount;
+      long lastHurtTime = this.mob.getLastHurtByMobTimestamp();
+      return (LivingEntity)(time - lastHurtTime < this.playerRetargetTicks && this.mob.getLastHurtByMob() instanceof Player attacker
          ? attacker
          : this.findBaseTarget());
    }
 
-   public void m_8056_() {
+   public void start() {
       if (this.currentTarget != null) {
-         this.f_26135_.m_6710_(this.currentTarget);
-         super.m_8056_();
+         this.mob.setTarget(this.currentTarget);
+         super.start();
       }
    }
 
-   public boolean m_8045_() {
+   public boolean canContinueToUse() {
       if (!this.raidActiveSupplier.get()) {
          return false;
       }
 
       LivingEntity target = this.findTarget();
-      this.f_26135_.m_6710_(target);
-      return target != null && target.m_6084_();
+      this.mob.setTarget(target);
+      return target != null && target.isAlive();
    }
 
-   public void m_8041_() {
-      super.m_8041_();
-      this.f_26135_.m_6710_(null);
+   public void stop() {
+      super.stop();
+      this.mob.setTarget(null);
       this.currentTarget = null;
    }
 
    @Nullable
    private T findBaseTarget() {
-      if (this.f_26135_.m_9236_() instanceof ServerLevel level) {
-         Vec3 var5 = this.f_26135_.m_20182_();
+      if (this.mob.level() instanceof ServerLevel level) {
+         Vec3 var5 = this.mob.position();
          AABB area = new AABB(
-            var5.f_82479_ - this.targetRange,
-            var5.f_82480_ - 100.0,
-            var5.f_82481_ - this.targetRange,
-            var5.f_82479_ + this.targetRange,
-            var5.f_82480_ + 100.0,
-            var5.f_82481_ + this.targetRange
+            var5.x - this.targetRange,
+            var5.y - 100.0,
+            var5.z - this.targetRange,
+            var5.x + this.targetRange,
+            var5.y + 100.0,
+            var5.z + this.targetRange
          );
-         List<T> list = level.m_6443_(this.baseTargetClass, area, e -> e.m_6084_() && !e.m_213877_());
+         List<T> list = level.getEntitiesOfClass(this.baseTargetClass, area, e -> e.isAlive() && !e.isRemoved());
          return list.isEmpty() ? null : list.get(0);
       } else {
          return null;

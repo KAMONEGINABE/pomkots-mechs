@@ -36,35 +36,35 @@ public class Pms08Entity extends BaseSmallMonsterEntity implements GeoEntity, Ge
    }
 
    @Override
-   protected void m_8099_() {
-      super.m_8099_();
-      this.f_21345_.m_25352_(1, new RollerDashGoal(this, this.getMechData().speed * 2.0F, 5.0F, 20, 3, 3, 30, 20));
+   protected void registerGoals() {
+      super.registerGoals();
+      this.goalSelector.addGoal(1, new RollerDashGoal(this, this.getMechData().speed * 2.0F, 5.0F, 20, 3, 3, 30, 20));
    }
 
    @Override
    public void doAttack() {
-      if (this.isServerSide() && this.m_5448_() != null) {
-         Level level = this.m_9236_();
+      if (this.isServerSide() && this.getTarget() != null) {
+         Level level = this.level();
          ExplosionEntity e = new ExplosionEntity(
             (EntityType<? extends ThrowableProjectile>)PomkotsMechs.EXPLOSION.get(), level, (int)this.getMechData().grenadeExplosionScale
          );
-         e.m_146884_(this.m_20182_());
-         level.m_7967_(e);
+         e.setPos(this.position());
+         level.addFreshEntity(e);
          this.hasBeenKilled = false;
-         this.m_6074_();
+         this.kill();
       }
    }
 
    @Override
-   protected void m_6153_() {
-      this.f_20919_++;
-      if (this.f_20919_ == 10) {
-         this.m_142687_(RemovalReason.KILLED);
+   protected void tickDeath() {
+      this.deathTime++;
+      if (this.deathTime == 10) {
+         this.remove(RemovalReason.KILLED);
          if (this.isServerSide() && this.hasBeenKilled) {
-            Level level = this.m_9236_();
+            Level level = this.level();
             ExplosionEntity e = new ExplosionEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.EXPLOSION.get(), level);
-            e.m_146884_(this.m_20182_());
-            level.m_7967_(e);
+            e.setPos(this.position());
+            level.addFreshEntity(e);
          }
       }
    }

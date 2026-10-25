@@ -22,8 +22,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public class BlockPlacementPreviewEntity extends Entity {
-   protected static final EntityDataAccessor<Integer> PATTERN_INDEX = SynchedEntityData.m_135353_(
-      BlockPlacementPreviewEntity.class, EntityDataSerializers.f_135028_
+   protected static final EntityDataAccessor<Integer> PATTERN_INDEX = SynchedEntityData.defineId(
+      BlockPlacementPreviewEntity.class, EntityDataSerializers.INT
    );
    public static List<BlockPos> LINE_5X1X1 = new ArrayList<>();
    public static List<BlockPos> PILLAR_1X5X1;
@@ -37,50 +37,50 @@ public class BlockPlacementPreviewEntity extends Entity {
 
    public BlockPlacementPreviewEntity(EntityType<?> type, Level level) {
       super(type, level);
-      this.f_19794_ = true;
-      this.f_19811_ = true;
+      this.noPhysics = true;
+      this.noCulling = true;
    }
 
    public BlockPlacementPreviewEntity(Level level, Vec3 position) {
       this((EntityType<?>)PomkotsMechs.BLOCK_PLACEMENT_PREVIEW.get(), level);
-      this.m_146884_(position);
+      this.setPos(position);
    }
 
-   public void m_8119_() {
-      this.m_20242_(true);
-      super.m_8119_();
-      this.f_19812_ = true;
+   public void tick() {
+      this.setNoGravity(true);
+      super.tick();
+      this.hasImpulse = true;
    }
 
    public void placeBlocks(ServerLevel level, ServerPlayer player) {
-      ItemStack stack = player.m_21205_();
-      if (stack.m_41720_() instanceof BlockItem blockItem) {
-         List var14 = Utils.getItemStacks(player.m_21205_(), player, this.getCurrentPattern().size());
-         if (!PomkotsMechs.CONFIG.consumeBlocksWhenPlacing || player.m_150110_().f_35937_ || var14 != null) {
-            BlockState state = blockItem.m_40614_().m_49966_();
-            int q = this.yawToQuarter(this.m_146908_());
-            BlockPos offset = this.m_20183_();
+      ItemStack stack = player.getMainHandItem();
+      if (stack.getItem() instanceof BlockItem blockItem) {
+         List var14 = Utils.getItemStacks(player.getMainHandItem(), player, this.getCurrentPattern().size());
+         if (!PomkotsMechs.CONFIG.consumeBlocksWhenPlacing || player.getAbilities().instabuild || var14 != null) {
+            BlockState state = blockItem.getBlock().defaultBlockState();
+            int q = this.yawToQuarter(this.getYRot());
+            BlockPos offset = this.blockPosition();
             int consumedBlockNum = 0;
 
             for (BlockPos bPos : this.getCurrentPattern()) {
                BlockPos localPos = this.rotate(bPos, q);
                BlockPos worldPos = new BlockPos(
-                  offset.m_123341_() + localPos.m_123341_(), offset.m_123342_() + localPos.m_123342_(), offset.m_123343_() + localPos.m_123343_()
+                  offset.getX() + localPos.getX(), offset.getY() + localPos.getY(), offset.getZ() + localPos.getZ()
                );
-               if (level.m_8055_(worldPos).m_247087_() && level.m_7731_(worldPos, state, 3)) {
+               if (level.getBlockState(worldPos).canBeReplaced() && level.setBlock(worldPos, state, 3)) {
                   consumedBlockNum++;
                }
             }
 
-            if (PomkotsMechs.CONFIG.consumeBlocksWhenPlacing && !player.m_150110_().f_35937_ && var14 != null) {
+            if (PomkotsMechs.CONFIG.consumeBlocksWhenPlacing && !player.getAbilities().instabuild && var14 != null) {
                Utils.consumeItemStackFromTop(var14, consumedBlockNum);
             }
          }
       }
    }
 
-   protected void m_8097_() {
-      this.f_19804_.m_135372_(PATTERN_INDEX, 0);
+   protected void defineSynchedData() {
+      this.entityData.define(PATTERN_INDEX, 0);
    }
 
    public void incrementPatternIndex() {
@@ -89,40 +89,40 @@ public class BlockPlacementPreviewEntity extends Entity {
    }
 
    public void setPatternIndex(int num) {
-      this.f_19804_.m_135381_(PATTERN_INDEX, num);
+      this.entityData.set(PATTERN_INDEX, num);
    }
 
    public int getPatternIndex() {
-      return (Integer)this.f_19804_.m_135370_(PATTERN_INDEX);
+      return (Integer)this.entityData.get(PATTERN_INDEX);
    }
 
    public List<BlockPos> getCurrentPattern() {
       return BLOCK_TEMPLATES[this.getPatternIndex()];
    }
 
-   protected void m_7378_(CompoundTag tag) {
+   protected void readAdditionalSaveData(CompoundTag tag) {
    }
 
-   protected void m_7380_(CompoundTag tag) {
+   protected void addAdditionalSaveData(CompoundTag tag) {
    }
 
-   public boolean m_6783_(double distance) {
+   public boolean shouldRenderAtSqrDistance(double distance) {
       return true;
    }
 
-   public boolean m_142391_() {
+   public boolean shouldBeSaved() {
       return false;
    }
 
    public int yawToQuarter(float yaw) {
       float rot = (yaw % 360.0F + 360.0F) % 360.0F;
-      return Mth.m_14143_((rot + 45.0F) / 90.0F) & 3;
+      return Mth.floor((rot + 45.0F) / 90.0F) & 3;
    }
 
    public BlockPos rotate(BlockPos pos, int quarter) {
-      int x = pos.m_123341_();
-      int y = pos.m_123342_();
-      int z = pos.m_123343_();
+      int x = pos.getX();
+      int y = pos.getY();
+      int z = pos.getZ();
 
       return switch (quarter & 3) {
          case 1 -> new BlockPos(-z, y, x);
@@ -139,7 +139,7 @@ public class BlockPlacementPreviewEntity extends Entity {
       BlockPos center = new BlockPos(0, 0, 0);
 
       for (int x = -2; x <= 2; x++) {
-         BlockPos pos = center.m_5484_(right, x).m_5484_(back, 0).m_5484_(up, 0);
+         BlockPos pos = center.relative(right, x).relative(back, 0).relative(up, 0);
          LINE_5X1X1.add(pos);
       }
 
@@ -150,7 +150,7 @@ public class BlockPlacementPreviewEntity extends Entity {
       center = new BlockPos(0, 0, 0);
 
       for (int y = 0; y <= 4; y++) {
-         BlockPos pos = center.m_5484_(right, 0).m_5484_(back, 0).m_5484_(up, y);
+         BlockPos pos = center.relative(right, 0).relative(back, 0).relative(up, y);
          PILLAR_1X5X1.add(pos);
       }
 
@@ -163,7 +163,7 @@ public class BlockPlacementPreviewEntity extends Entity {
       for (int x = -1; x <= 1; x++) {
          for (int z = -1; z <= 1; z++) {
             for (int y = 0; y <= 4; y++) {
-               BlockPos pos = center.m_5484_(right, x).m_5484_(back, z).m_5484_(up, y);
+               BlockPos pos = center.relative(right, x).relative(back, z).relative(up, y);
                PILLAR_3X5X3.add(pos);
             }
          }
@@ -176,7 +176,7 @@ public class BlockPlacementPreviewEntity extends Entity {
 
       for (int x = -2; x <= 2; x++) {
          for (int y = 0; y <= 4; y++) {
-            BlockPos pos = centerx.m_5484_(right, x).m_5484_(back, y);
+            BlockPos pos = centerx.relative(right, x).relative(back, y);
             WALL_5X5X1.add(pos);
          }
       }
@@ -191,7 +191,7 @@ public class BlockPlacementPreviewEntity extends Entity {
          for (int z = -2; z <= 2; z++) {
             for (int y = 0; y <= 4; y++) {
                if (x == z) {
-                  BlockPos pos = center.m_5484_(right, x).m_5484_(back, z).m_5484_(up, y);
+                  BlockPos pos = center.relative(right, x).relative(back, z).relative(up, y);
                   WALL_NANAME.add(pos);
                }
             }
@@ -207,7 +207,7 @@ public class BlockPlacementPreviewEntity extends Entity {
       for (int x = -2; x <= 2; x++) {
          for (int z = -2; z <= 2; z++) {
             for (int y = 0; y <= 0; y++) {
-               BlockPos pos = center.m_5484_(right, x).m_5484_(back, z).m_5484_(up, y);
+               BlockPos pos = center.relative(right, x).relative(back, z).relative(up, y);
                PLATE_5X1X5.add(pos);
             }
          }
@@ -222,7 +222,7 @@ public class BlockPlacementPreviewEntity extends Entity {
       for (int y = 0; y <= 2; y++) {
          for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1 - y; z++) {
-               BlockPos pos = center.m_5484_(right, x).m_5484_(back, z).m_5484_(up, y);
+               BlockPos pos = center.relative(right, x).relative(back, z).relative(up, y);
                STAIR_3X3X3.add(pos);
             }
          }
@@ -237,7 +237,7 @@ public class BlockPlacementPreviewEntity extends Entity {
       for (int x = -1; x <= 1; x++) {
          for (int z = -1; z <= 1; z++) {
             for (int y = 0; y <= 2; y++) {
-               BlockPos pos = center.m_5484_(right, x).m_5484_(back, z).m_5484_(up, y);
+               BlockPos pos = center.relative(right, x).relative(back, z).relative(up, y);
                CUBE_3X3X3.add(pos);
             }
          }

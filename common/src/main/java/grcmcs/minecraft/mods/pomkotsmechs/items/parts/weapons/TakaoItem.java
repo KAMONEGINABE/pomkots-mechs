@@ -29,24 +29,24 @@ public class TakaoItem extends BasePartsItem.WeaponArm {
       if (isOnFire) {
          Entity driver = mechInterface.getDrivingPassenger();
          Vec3 pilePos1 = new Vec3(6.5 * mechInterface.isRight(), 4.0, 18.0)
-            .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-            .m_82549_(mechInterface.position());
+            .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+            .add(mechInterface.position());
          Vec3 pilePos2 = new Vec3(-6.5 * mechInterface.isRight(), -4.0, -4.0)
-            .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-            .m_82549_(mechInterface.position());
-         Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+            .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+            .add(mechInterface.position());
+         Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
          float baseDamage = mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory());
 
-         for (Entity ent : world.m_45933_(null, new AABB(pilePos1, pilePos2))) {
+         for (Entity ent : world.getEntities(null, new AABB(pilePos1, pilePos2))) {
             if (!mechInterface.isSelf(ent) && ent instanceof LivingEntity le) {
-               if (!world.m_5776_()) {
+               if (!world.isClientSide()) {
                   int sbModifier = mechInterface.isSuperBoost() ? 2 : 1;
-                  le.m_147240_(sbModifier * 4, sbModifier * kbVel.f_82479_, sbModifier * kbVel.f_82481_);
+                  le.knockback(sbModifier * 4, sbModifier * kbVel.x, sbModifier * kbVel.z);
                   DamageSource ds;
                   if (driver instanceof Player p) {
-                     ds = mechInterface.damageSources().m_269075_(p);
+                     ds = mechInterface.damageSources().playerAttack(p);
                   } else {
-                     ds = mechInterface.damageSources().m_269264_();
+                     ds = mechInterface.damageSources().generic();
                   }
 
                   int chargeModifier = 1;
@@ -60,14 +60,14 @@ public class TakaoItem extends BasePartsItem.WeaponArm {
                      hit.addStunPoint(10 * chargeModifier);
                   }
 
-                  le.m_6469_(ds, baseDamage * chargeModifier * sbModifier);
+                  le.hurt(ds, baseDamage * chargeModifier * sbModifier);
                } else {
                   mechInterface.addHitParticles(le);
                }
             }
          }
 
-         if (world.f_46443_) {
+         if (world.isClientSide) {
             mechInterface.playSoundEffect((SoundEvent)PomkotsMechs.SE_PILEBUNKER_EVENT.get());
          } else if (Utils.isBlockDestructionAllowed(mechInterface.getMechEntity())) {
             int rad = 5;

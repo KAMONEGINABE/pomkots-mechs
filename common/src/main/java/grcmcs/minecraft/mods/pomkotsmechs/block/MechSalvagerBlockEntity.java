@@ -35,7 +35,7 @@ import net.minecraft.world.phys.Vec3;
 public class MechSalvagerBlockEntity extends BlockEntity implements MenuProvider, Container {
    private static final int MAX_SUMMON_TICK = 60;
    private int summonTick = 0;
-   private final NonNullList<ItemStack> items = NonNullList.m_122780_(2, ItemStack.f_41583_);
+   private final NonNullList<ItemStack> items = NonNullList.withSize(2, ItemStack.EMPTY);
    private MechSalvagerBlockEntity.LoadTicket ticket = null;
    private ServerLevel sourceLevel = null;
    private ServerPlayer targetPlayer = null;
@@ -46,59 +46,59 @@ public class MechSalvagerBlockEntity extends BlockEntity implements MenuProvider
       super((BlockEntityType)PomkotsMechs.MECH_SALVAGER_BLOCK_ENTITY.get(), pos, state);
    }
 
-   public Component m_5446_() {
-      return Component.m_237113_("Mech Salvager");
+   public Component getDisplayName() {
+      return Component.literal("Mech Salvager");
    }
 
-   public int m_6643_() {
+   public int getContainerSize() {
       return this.items.size();
    }
 
-   public boolean m_7983_() {
-      return this.items.stream().allMatch(ItemStack::m_41619_);
+   public boolean isEmpty() {
+      return this.items.stream().allMatch(ItemStack::isEmpty);
    }
 
-   public ItemStack m_8020_(int index) {
+   public ItemStack getItem(int index) {
       return (ItemStack)this.items.get(index);
    }
 
-   public ItemStack m_7407_(int index, int count) {
-      return ContainerHelper.m_18969_(this.items, index, count);
+   public ItemStack removeItem(int index, int count) {
+      return ContainerHelper.removeItem(this.items, index, count);
    }
 
-   public ItemStack m_8016_(int index) {
-      return ContainerHelper.m_18966_(this.items, index);
+   public ItemStack removeItemNoUpdate(int index) {
+      return ContainerHelper.takeItem(this.items, index);
    }
 
-   public void m_6836_(int index, ItemStack stack) {
+   public void setItem(int index, ItemStack stack) {
       this.items.set(index, stack);
-      if (stack.m_41613_() > this.m_6893_()) {
-         stack.m_41764_(this.m_6893_());
+      if (stack.getCount() > this.getMaxStackSize()) {
+         stack.setCount(this.getMaxStackSize());
       }
 
-      this.m_6596_();
+      this.setChanged();
    }
 
-   public void m_6211_() {
+   public void clearContent() {
       this.items.clear();
    }
 
-   public boolean m_6542_(Player player) {
-      return player.m_20238_(Vec3.m_82512_(this.f_58858_)) <= 64.0;
+   public boolean stillValid(Player player) {
+      return player.distanceToSqr(Vec3.atCenterOf(this.worldPosition)) <= 64.0;
    }
 
-   public AbstractContainerMenu m_7208_(int id, Inventory playerInv, Player player) {
-      return new MechSalvagerMenu(id, playerInv, this, ContainerLevelAccess.m_39289_(this.f_58857_, this.m_58899_()));
+   public AbstractContainerMenu createMenu(int id, Inventory playerInv, Player player) {
+      return new MechSalvagerMenu(id, playerInv, this, ContainerLevelAccess.create(this.level, this.getBlockPos()));
    }
 
-   protected void m_183515_(CompoundTag tag) {
-      super.m_183515_(tag);
-      ContainerHelper.m_18973_(tag, this.items);
+   protected void saveAdditional(CompoundTag tag) {
+      super.saveAdditional(tag);
+      ContainerHelper.saveAllItems(tag, this.items);
    }
 
-   public void m_142466_(CompoundTag tag) {
-      super.m_142466_(tag);
-      ContainerHelper.m_18980_(tag, this.items);
+   public void load(CompoundTag tag) {
+      super.load(tag);
+      ContainerHelper.loadAllItems(tag, this.items);
    }
 
    public static void serverTick(Level level, BlockPos pos, BlockState state, MechSalvagerBlockEntity be) {
@@ -106,7 +106,7 @@ public class MechSalvagerBlockEntity extends BlockEntity implements MenuProvider
    }
 
    public void tick() {
-      if (this.f_58857_ instanceof ServerLevel) {
+      if (this.level instanceof ServerLevel) {
          if (this.summonTick == 0) {
             return;
          }
@@ -117,15 +117,15 @@ public class MechSalvagerBlockEntity extends BlockEntity implements MenuProvider
    }
 
    public void checkSummonMech() {
-      Entity e = this.sourceLevel.m_8791_(this.targetUUID);
+      Entity e = this.sourceLevel.getEntity(this.targetUUID);
       if (e != null) {
          this.sendMessage(this.targetPlayer, "{text.pomkotsmechs.messages.mechsalvager.01}");
-         this.teleportMech(this.targetPlayer, e, (ServerLevel)this.f_58857_, this.targetPosition);
+         this.teleportMech(this.targetPlayer, e, (ServerLevel)this.level, this.targetPosition);
          this.summonTick = 1;
       }
 
       if (this.summonTick == 1) {
-         this.sourceLevel.m_7726_().m_8438_(this.ticket.ticketType, this.ticket.chunkPos, this.ticket.i, this.ticket.chunkPos);
+         this.sourceLevel.getChunkSource().removeRegionTicket(this.ticket.ticketType, this.ticket.chunkPos, this.ticket.i, this.ticket.chunkPos);
          this.clearContext();
       }
    }
@@ -140,33 +140,33 @@ public class MechSalvagerBlockEntity extends BlockEntity implements MenuProvider
 
    public void summon(ServerPlayer player, UUID mechUuid) {
       if (this.summonTick <= 0) {
-         ServerLevel level = player.m_284548_();
-         MinecraftServer server = level.m_7654_();
+         ServerLevel level = player.serverLevel();
+         MinecraftServer server = level.getServer();
          Vec3 targetPos = this.getTargetPos();
          this.summonMech(player, server, mechUuid, level, targetPos);
       }
    }
 
    public void summonMech(ServerPlayer player, MinecraftServer server, UUID mechId, ServerLevel targetLevel, Vec3 summonPos) {
-      for (ServerLevel lvl : server.m_129785_()) {
-         Entity e = lvl.m_8791_(mechId);
+      for (ServerLevel lvl : server.getAllLevels()) {
+         Entity e = lvl.getEntity(mechId);
          if (e != null) {
             this.teleportMech(player, e, targetLevel, summonPos);
             return;
          }
       }
 
-      PomkotsMechsSaveData data = PomkotsMechsSaveData.get(server.m_129783_());
+      PomkotsMechsSaveData data = PomkotsMechsSaveData.get(server.overworld());
       PomkotsMechsSaveData.MechLocation info = data.get(mechId);
       if (info == null) {
          this.sendMessage(player, "{text.pomkotsmechs.messages.mechsalvager.04}");
       } else {
-         ServerLevel sourceLevel = server.m_129880_(info.dimension());
+         ServerLevel sourceLevel = server.getLevel(info.dimension());
          if (sourceLevel == null) {
             this.sendMessage(player, "{text.pomkotsmechs.messages.mechsalvager.05}");
          } else {
             this.ticket = this.createTicket(info.chunkPos());
-            sourceLevel.m_7726_().m_8387_(this.ticket.ticketType, this.ticket.chunkPos, this.ticket.i, this.ticket.chunkPos);
+            sourceLevel.getChunkSource().addRegionTicket(this.ticket.ticketType, this.ticket.chunkPos, this.ticket.i, this.ticket.chunkPos);
             this.sendMessage(player, "{text.pomkotsmechs.messages.mechsalvager.06}");
             this.targetPosition = summonPos;
             this.sourceLevel = sourceLevel;
@@ -178,27 +178,27 @@ public class MechSalvagerBlockEntity extends BlockEntity implements MenuProvider
    }
 
    public Vec3 getTargetPos() {
-      BlockPos pos = this.m_58899_();
-      Direction facing = (Direction)this.m_58900_().m_61143_(BlockStateProperties.f_61374_);
+      BlockPos pos = this.getBlockPos();
+      Direction facing = (Direction)this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
 
       Vec3 offset = switch (facing) {
          case NORTH -> new Vec3(0.0, 0.0, -2.0);
          case SOUTH -> new Vec3(0.0, 0.0, 2.0);
          case WEST -> new Vec3(-2.0, 0.0, 0.0);
          case EAST -> new Vec3(2.0, 0.0, 0.0);
-         default -> Vec3.f_82478_;
+         default -> Vec3.ZERO;
       };
-      return Vec3.m_82512_(pos).m_82549_(offset);
+      return Vec3.atCenterOf(pos).add(offset);
    }
 
    private boolean teleportMech(ServerPlayer player, Entity mech, ServerLevel targetLevel, Vec3 pos) {
-      if (mech.m_9236_() != targetLevel) {
+      if (mech.level() != targetLevel) {
          this.sendMessage(player, "{text.pomkotsmechs.messages.mechsalvager.07}");
          return false;
       }
 
-      mech.m_6021_(pos.m_7096_() + 0.5, pos.m_7098_(), pos.m_7094_() + 0.5);
-      mech.m_20256_(Vec3.f_82478_);
+      mech.teleportTo(pos.x() + 0.5, pos.y(), pos.z() + 0.5);
+      mech.setDeltaMovement(Vec3.ZERO);
       if (mech instanceof Pmvc01Entity pmvc) {
          pmvc.warpEffect(targetLevel);
       }
@@ -208,12 +208,12 @@ public class MechSalvagerBlockEntity extends BlockEntity implements MenuProvider
    }
 
    public void sendMessage(ServerPlayer player, String msg) {
-      player.m_213846_(Utils.string2Component(msg));
+      player.sendSystemMessage(Utils.string2Component(msg));
    }
 
    private MechSalvagerBlockEntity.LoadTicket createTicket(ChunkPos pos) {
       MechSalvagerBlockEntity.LoadTicket ticket = new MechSalvagerBlockEntity.LoadTicket();
-      ticket.ticketType = TicketType.f_9445_;
+      ticket.ticketType = TicketType.FORCED;
       ticket.chunkPos = pos;
       ticket.i = 3;
       return ticket;

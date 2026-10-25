@@ -44,47 +44,47 @@ public class UserInteractionManager {
 
       ClientTickEvent.CLIENT_POST.register((Client)client -> {
          short keyPressStatus = 0;
-         if (client.f_91074_ != null) {
-            if (Utils.isRidingPomkotsControllable(client.f_91074_)) {
+         if (client.player != null) {
+            if (Utils.isRidingPomkotsControllable(client.player)) {
                for (Entry<UserInteractionManager.Keys, KeyMapping> entry : kbMap.entrySet()) {
                   if (entry.getKey() != UserInteractionManager.Keys.LOCK && entry.getKey() != UserInteractionManager.Keys.MODE) {
-                     if (entry.getValue().m_90857_()) {
+                     if (entry.getValue().isDown()) {
                         keyPressStatus |= entry.getKey().keyID;
                      }
-                  } else if (entry.getValue().m_90859_()) {
+                  } else if (entry.getValue().consumeClick()) {
                      keyPressStatus |= entry.getKey().keyID;
                   }
                }
 
-               if (client.f_91074_.f_108618_.f_108568_) {
+               if (client.player.input.up) {
                   keyPressStatus |= UserInteractionManager.Keys.FORWARD.getKeyID();
                }
 
-               if (client.f_91074_.f_108618_.f_108569_) {
+               if (client.player.input.down) {
                   keyPressStatus |= UserInteractionManager.Keys.BACK.getKeyID();
                }
 
-               if (client.f_91074_.f_108618_.f_108571_) {
+               if (client.player.input.right) {
                   keyPressStatus |= UserInteractionManager.Keys.RIGHT.getKeyID();
                }
 
-               if (client.f_91074_.f_108618_.f_108570_) {
+               if (client.player.input.left) {
                   keyPressStatus |= UserInteractionManager.Keys.LEFT.getKeyID();
                }
 
-               if (client.f_91066_.f_92096_.m_90857_()) {
+               if (client.options.keyAttack.isDown()) {
                   keyPressStatus |= UserInteractionManager.Keys.WEAPON_ARM_L.getKeyID();
                }
 
-               if (client.f_91066_.f_92095_.m_90857_()) {
+               if (client.options.keyUse.isDown()) {
                   keyPressStatus |= UserInteractionManager.Keys.WEAPON_ARM_R.getKeyID();
                }
 
-               if (client.f_91066_.f_92089_.m_90857_()) {
+               if (client.options.keyJump.isDown()) {
                   keyPressStatus |= UserInteractionManager.Keys.JUMP.getKeyID();
                }
 
-               if (client.f_91066_.f_92091_.m_90857_()) {
+               if (client.options.keySprint.isDown()) {
                   keyPressStatus |= UserInteractionManager.Keys.EVASION.getKeyID();
                }
 
@@ -93,7 +93,7 @@ public class UserInteractionManager {
                   this.prevDriverInput = keyPressStatus;
                }
 
-               if (client.f_91074_.m_20202_() instanceof PomkotsVehicle bot) {
+               if (client.player.getVehicle() instanceof PomkotsVehicle bot) {
                   DriverInput driverInput = new DriverInput(keyPressStatus);
                   this.targetLocker.tick(driverInput, bot);
                }

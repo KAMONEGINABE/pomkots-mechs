@@ -87,7 +87,7 @@ public class SoundConfig {
    }
 
    public SoundConfig followEntity(Entity entity) {
-      this.positionSupplier = entity::m_20182_;
+      this.positionSupplier = entity::position;
       this.position = null;
       return this;
    }

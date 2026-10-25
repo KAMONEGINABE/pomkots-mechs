@@ -10,19 +10,19 @@ public class MechCameraHandler {
    private static boolean wasRiding = false;
 
    public static void tick(Minecraft mc) {
-      if (mc.f_91074_ != null && PomkotsMechs.CONFIG.forceThirdPersonViewWhenRidingMech) {
-         boolean riding = mc.f_91074_.m_20202_() instanceof Pmvc01Entity;
+      if (mc.player != null && PomkotsMechs.CONFIG.forceThirdPersonViewWhenRidingMech) {
+         boolean riding = mc.player.getVehicle() instanceof Pmvc01Entity;
          if (riding && !wasRiding) {
-            prevCamera = mc.f_91066_.m_92176_();
-            mc.f_91066_.m_92157_(CameraType.THIRD_PERSON_BACK);
+            prevCamera = mc.options.getCameraType();
+            mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
          }
 
          if (!riding && wasRiding) {
             if (prevCamera != null) {
-               mc.f_91066_.m_92157_(prevCamera);
+               mc.options.setCameraType(prevCamera);
                prevCamera = null;
             } else {
-               mc.f_91066_.m_92157_(CameraType.FIRST_PERSON);
+               mc.options.setCameraType(CameraType.FIRST_PERSON);
             }
          }
 

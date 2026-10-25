@@ -13,7 +13,7 @@ import net.minecraft.world.phys.Vec3;
 public class MissileHorizontalEntity extends MissileBaseEntity {
    public MissileHorizontalEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
       super(entityType, world);
-      this.m_20242_(true);
+      this.setNoGravity(true);
    }
 
    public MissileHorizontalEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter, LivingEntity target) {
@@ -25,16 +25,16 @@ public class MissileHorizontalEntity extends MissileBaseEntity {
    @Override
    protected LivingEntity findTarget() {
       int range = this.getSeekRange();
-      List<Entity> candidates = this.m_9236_()
-         .m_6443_(
+      List<Entity> candidates = this.level()
+         .getEntitiesOfClass(
             this.getTargetClass(),
             new AABB(
-               this.m_20185_() - range,
-               this.m_20186_() - range,
-               this.m_20189_() - range,
-               this.m_20185_() + range,
-               this.m_20186_() + range,
-               this.m_20189_() + range
+               this.getX() - range,
+               this.getY() - range,
+               this.getZ() - range,
+               this.getX() + range,
+               this.getY() + range,
+               this.getZ() + range
             ),
             new MissileHorizontalEntity.MissileTargetPredicate()
          );
@@ -46,9 +46,9 @@ public class MissileHorizontalEntity extends MissileBaseEntity {
       double bestScore = Double.MAX_VALUE;
 
       for (Entity entity : entities) {
-         if (entity != this.shooter && entity.m_20202_() != this.shooter && entity != currentEntity) {
-            double heightDifference = Math.abs(entity.m_20186_() - currentEntity.m_20186_());
-            double distance = entity.m_20270_(currentEntity);
+         if (entity != this.shooter && entity.getVehicle() != this.shooter && entity != currentEntity) {
+            double heightDifference = Math.abs(entity.getY() - currentEntity.getY());
+            double distance = entity.distanceTo(currentEntity);
             double score = heightDifference * 100.0 + distance;
             if (score < bestScore) {
                bestScore = score;
@@ -62,11 +62,11 @@ public class MissileHorizontalEntity extends MissileBaseEntity {
 
    @Override
    protected void updateHomingMovement() {
-      Vec3 currentPosition = this.m_20182_();
-      Vec3 targetPosition = this.target.m_20182_().m_82520_(0.0, this.target.m_20206_() / 2.0F, 0.0);
-      Vec3 currentVelocity = this.m_20184_().m_82541_();
-      Vec3 directionToTarget = targetPosition.m_82546_(currentPosition).m_82541_();
-      double angleBetween = Math.acos(currentVelocity.m_82526_(directionToTarget));
+      Vec3 currentPosition = this.position();
+      Vec3 targetPosition = this.target.position().add(0.0, this.target.getBbHeight() / 2.0F, 0.0);
+      Vec3 currentVelocity = this.getDeltaMovement().normalize();
+      Vec3 directionToTarget = targetPosition.subtract(currentPosition).normalize();
+      double angleBetween = Math.acos(currentVelocity.dot(directionToTarget));
       double maxRotationRadians = Math.toRadians(this.getMaxRotationAnglePerTick());
       Vec3 newVelocity;
       if (angleBetween > maxRotationRadians) {
@@ -75,7 +75,7 @@ public class MissileHorizontalEntity extends MissileBaseEntity {
          newVelocity = directionToTarget;
       }
 
-      this.m_20256_(newVelocity.m_82490_(this.getSpeed()));
+      this.setDeltaMovement(newVelocity.scale(this.getSpeed()));
    }
 
    @Override
@@ -110,7 +110,7 @@ public class MissileHorizontalEntity extends MissileBaseEntity {
 
    @Override
    protected Vec3 getNonTargetVelocity() {
-      return this.m_20184_();
+      return this.getDeltaMovement();
    }
 
    @Override

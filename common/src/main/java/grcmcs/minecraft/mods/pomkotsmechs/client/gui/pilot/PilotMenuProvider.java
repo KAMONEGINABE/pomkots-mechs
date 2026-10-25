@@ -14,11 +14,11 @@ public class PilotMenuProvider implements MenuProvider {
       this.mob = mob;
    }
 
-   public Component m_5446_() {
-      return Component.m_237113_("Pilot Config");
+   public Component getDisplayName() {
+      return Component.literal("Pilot Config");
    }
 
-   public AbstractContainerMenu m_7208_(int containerId, Inventory inventory, Player player) {
+   public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
       return new PilotMenu(containerId, inventory, this.mob);
    }
 }

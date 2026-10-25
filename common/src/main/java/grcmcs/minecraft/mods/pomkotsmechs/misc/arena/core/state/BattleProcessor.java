@@ -29,12 +29,12 @@ public class BattleProcessor extends AbstractArenaMatchStateProcessor {
       Entity opponentMechEntity = context.getOpponentMechEntity();
       if (challengerMechEntity instanceof Pmvc01Entity mc && opponentMechEntity instanceof Pmvc01Entity mo) {
          if (context.getChallengerEntity() instanceof ServerPlayer player1) {
-            player1.m_7292_(new MobEffectInstance(MobEffects.f_19606_, 4000, 9, false, false, false));
+            player1.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 4000, 9, false, false, false));
             ServerBGMTracker.forceSetBGMState(player1, BGMState.BATTLE_BOSS);
          }
 
          if (context.getChallengerEntity() instanceof ServerPlayer player2) {
-            player2.m_7292_(new MobEffectInstance(MobEffects.f_19606_, 4000, 9, false, false, false));
+            player2.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 4000, 9, false, false, false));
             ServerBGMTracker.forceSetBGMState(player2, BGMState.BATTLE_BOSS);
          }
 
@@ -47,7 +47,7 @@ public class BattleProcessor extends AbstractArenaMatchStateProcessor {
    }
 
    private boolean unlockElevator(Level level, BlockPos gatePos) {
-      if (level.m_7702_(gatePos) instanceof ArenaGateBlockEntity gateEntity) {
+      if (level.getBlockEntity(gatePos) instanceof ArenaGateBlockEntity gateEntity) {
          ElevatorEntity elev = gateEntity.getElevator();
          if (elev == null) {
             return false;
@@ -107,7 +107,7 @@ public class BattleProcessor extends AbstractArenaMatchStateProcessor {
    }
 
    public static boolean isDefeated(Entity pilot, Entity mech) {
-      if (pilot == null || !pilot.m_6084_()) {
+      if (pilot == null || !pilot.isAlive()) {
          return true;
       } else {
          return mech instanceof Pmvc01Entity mechEntity ? mechEntity.isBroken() : true;

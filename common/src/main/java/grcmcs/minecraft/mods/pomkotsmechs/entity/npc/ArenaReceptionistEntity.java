@@ -44,47 +44,47 @@ public class ArenaReceptionistEntity extends PathfinderMob implements GeoEntity,
    private float soundEffectVolume = -1.0F;
 
    public static @NotNull Builder createMobAttributes() {
-      return LivingEntity.m_21183_().m_22266_(Attributes.f_22282_).m_22268_(Attributes.f_22277_, 20.0).m_22268_(Attributes.f_22276_, 20.0);
+      return LivingEntity.createLivingAttributes().add(Attributes.ATTACK_KNOCKBACK).add(Attributes.FOLLOW_RANGE, 20.0).add(Attributes.MAX_HEALTH, 20.0);
    }
 
    public ArenaReceptionistEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
       super(entityType, level);
-      this.m_274367_(2.0F);
+      this.setMaxUpStep(2.0F);
    }
 
-   protected void m_8099_() {
-      super.m_8099_();
-      this.f_21345_.m_25352_(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
-      this.f_21345_.m_25352_(4, new RandomLookAroundGoal(this));
+   protected void registerGoals() {
+      super.registerGoals();
+      this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
+      this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
    }
 
-   public InteractionResult m_6071_(Player player, InteractionHand hand) {
-      if (!this.m_9236_().m_5776_() && player instanceof ServerPlayer serverPlayer && this.arenaId != null && !this.arenaId.isEmpty()) {
+   public InteractionResult mobInteract(Player player, InteractionHand hand) {
+      if (!this.level().isClientSide() && player instanceof ServerPlayer serverPlayer && this.arenaId != null && !this.arenaId.isEmpty()) {
          ArenaMenuData.Entry extendedData = new ArenaMenuData.Entry(
-            this.arenaId, 0, ItemStack.f_41583_, ArenaManager.buildRanking(serverPlayer.f_8924_, this.arenaId)
+            this.arenaId, 0, ItemStack.EMPTY, ArenaManager.buildRanking(serverPlayer.server, this.arenaId)
          );
          MenuRegistry.openExtendedMenu(
             serverPlayer,
-            new SimpleMenuProvider((id, container, p) -> new ArenaReceptionistMenu(id, container, extendedData), Component.m_237113_("Arena Reception")),
+            new SimpleMenuProvider((id, container, p) -> new ArenaReceptionistMenu(id, container, extendedData), Component.literal("Arena Reception")),
             buf -> ArenaMenuData.write(buf, extendedData)
          );
       }
 
-      return InteractionResult.m_19078_(this.m_9236_().m_5776_());
+      return InteractionResult.sidedSuccess(this.level().isClientSide());
    }
 
-   public void m_8119_() {
-      if (this.m_20202_() instanceof Pmvc01Entity) {
-         this.m_21557_(true);
+   public void tick() {
+      if (this.getVehicle() instanceof Pmvc01Entity) {
+         this.setNoAi(true);
       } else {
-         this.m_21557_(false);
+         this.setNoAi(false);
       }
 
-      super.m_8119_();
+      super.tick();
    }
 
-   public void m_7023_(@NotNull Vec3 pos) {
-      super.m_7023_(pos);
+   public void travel(@NotNull Vec3 pos) {
+      super.travel(pos);
    }
 
    public void registerControllers(ControllerRegistrar controllers) {
@@ -95,10 +95,10 @@ public class ArenaReceptionistEntity extends PathfinderMob implements GeoEntity,
                "basic_move",
                0,
                event -> {
-                  if (this.m_20159_()) {
+                  if (this.isPassenger()) {
                      return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation.mech_pilot.sit"));
                   } else if (event.isMoving()) {
-                     return this.m_20184_().m_165925_() > 0.04
+                     return this.getDeltaMovement().horizontalDistanceSqr() > 0.04
                         ? event.setAndContinue(RawAnimation.begin().thenLoop("animation.mech_pilot.run"))
                         : event.setAndContinue(RawAnimation.begin().thenLoop("animation.mech_pilot.walk"));
                   } else {
@@ -122,39 +122,39 @@ public class ArenaReceptionistEntity extends PathfinderMob implements GeoEntity,
       this.arenaId = arenaId;
    }
 
-   public void m_7378_(@NotNull CompoundTag compound) {
-      super.m_7378_(compound);
-      this.arenaId = compound.m_128461_(PomkotsMechs.nbtName("ArenaId"));
+   public void readAdditionalSaveData(@NotNull CompoundTag compound) {
+      super.readAdditionalSaveData(compound);
+      this.arenaId = compound.getString(PomkotsMechs.nbtName("ArenaId"));
    }
 
-   public void m_7380_(@NotNull CompoundTag compound) {
-      super.m_7380_(compound);
+   public void addAdditionalSaveData(@NotNull CompoundTag compound) {
+      super.addAdditionalSaveData(compound);
       if (this.arenaId != null) {
-         compound.m_128359_(PomkotsMechs.nbtName("ArenaId"), this.arenaId);
+         compound.putString(PomkotsMechs.nbtName("ArenaId"), this.arenaId);
       }
    }
 
-   protected void m_8097_() {
-      super.m_8097_();
+   protected void defineSynchedData() {
+      super.defineSynchedData();
    }
 
-   public boolean m_6129_() {
+   public boolean isAffectedByFluids() {
       return false;
    }
 
-   public int m_7302_(int air) {
+   public int decreaseAirSupply(int air) {
       return 0;
    }
 
-   public boolean m_6785_(double distanceToClosestPlayer) {
+   public boolean removeWhenFarAway(double distanceToClosestPlayer) {
       return false;
    }
 
-   public boolean m_6094_() {
+   public boolean isPushable() {
       return false;
    }
 
-   public boolean m_6783_(double d) {
+   public boolean shouldRenderAtSqrDistance(double d) {
       return true;
    }
 
@@ -163,7 +163,7 @@ public class ArenaReceptionistEntity extends PathfinderMob implements GeoEntity,
    }
 
    protected boolean isClientSide() {
-      return this.m_9236_().m_5776_();
+      return this.level().isClientSide();
    }
 
    protected void playSoundEffect(SoundEvent event) {
@@ -176,23 +176,23 @@ public class ArenaReceptionistEntity extends PathfinderMob implements GeoEntity,
       }
 
       if (this.soundEffectVolume > 0.0F) {
-         this.m_9236_().m_7785_(this.m_20185_(), this.m_20186_(), this.m_20189_(), event, SoundSource.PLAYERS, volume * this.soundEffectVolume, 1.0F, false);
+         this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), event, SoundSource.PLAYERS, volume * this.soundEffectVolume, 1.0F, false);
       }
    }
 
    private float computeVolume(double maxDistance) {
-      Minecraft mc = Minecraft.m_91087_();
-      LocalPlayer player = mc.f_91074_;
+      Minecraft mc = Minecraft.getInstance();
+      LocalPlayer player = mc.player;
       if (player == null) {
          return 0.0F;
       }
 
-      double distance = player.m_20270_(this);
+      double distance = player.distanceTo(this);
       if (distance > maxDistance) {
          return 0.0F;
       }
 
       float volume = 1.0F - (float)(distance / maxDistance);
-      return Mth.m_14036_(volume, 0.0F, 1.0F);
+      return Mth.clamp(volume, 0.0F, 1.0F);
    }
 }

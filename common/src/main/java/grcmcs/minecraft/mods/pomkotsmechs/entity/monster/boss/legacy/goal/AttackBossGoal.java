@@ -21,34 +21,34 @@ public class AttackBossGoal extends BaseBossGoal {
    }
 
    @Override
-   public boolean m_8036_() {
-      return this.action.canAction() && this.mob.m_217043_().m_188501_() < 0.6F;
+   public boolean canUse() {
+      return this.action.canAction() && this.mob.getRandom().nextFloat() < 0.6F;
    }
 
    @Override
-   public boolean m_8045_() {
+   public boolean canContinueToUse() {
       return this.action.isInAction();
    }
 
    @Override
-   public void m_8056_() {
+   public void start() {
       if (this.action.tryAction()) {
          if (!this.adjustRotation) {
-            this.mob.m_21573_().m_26573_();
+            this.mob.getNavigation().stop();
          }
 
-         this.mob.rotateToTarget(this.mob.m_5448_());
+         this.mob.rotateToTarget(this.mob.getTarget());
       }
    }
 
    @Override
-   public void m_8041_() {
+   public void stop() {
    }
 
    @Override
-   public void m_8037_() {
-      if (this.adjustRotation && this.mob.m_5448_() != null) {
-         this.mob.rotateToTarget(this.mob.m_5448_());
+   public void tick() {
+      if (this.adjustRotation && this.mob.getTarget() != null) {
+         this.mob.rotateToTarget(this.mob.getTarget());
       }
    }
 }

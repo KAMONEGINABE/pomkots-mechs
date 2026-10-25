@@ -40,6 +40,12 @@ repositories {
         }
     }
     maven { url "https://maven.shedaniel.me/" }
+    maven {
+        url "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
 }
 
 
@@ -51,6 +57,7 @@ dependencies {
     modImplementation "software.bernie.geckolib:geckolib-forge-${minecraft_version}:${geckolib_version}"
 
     modApi("me.shedaniel.cloth:cloth-config-forge:${cloth_config_version}")
+    modCompileOnly "curse.maven:the-lost-cities-269024:8862717"
 
     common(project(path: ':common', configuration: 'namedElements')) { transitive false }
     shadowBundle project(path: ':common', configuration: 'transformProductionForge')

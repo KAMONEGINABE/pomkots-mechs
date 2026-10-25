@@ -51,7 +51,7 @@ public class MissileEnemyEntity extends MissileBaseEntity {
 
    @Override
    protected Vec3 getNonTargetVelocity() {
-      return this.m_20184_();
+      return this.getDeltaMovement();
    }
 
    @Override

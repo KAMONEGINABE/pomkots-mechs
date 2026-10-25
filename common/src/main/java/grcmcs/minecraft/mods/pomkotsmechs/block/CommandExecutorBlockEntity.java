@@ -26,42 +26,42 @@ public class CommandExecutorBlockEntity extends BlockEntity {
    public static void tick(Level level, BlockPos pos, BlockState state, CommandExecutorBlockEntity be) {
       if (!be.executed && be.command != null && !be.command.isEmpty() && !Utils.isMapEditingMode(level)) {
          CommandSourceStack source = new CommandSourceStack(
-            CommandSource.f_80164_,
-            Vec3.m_82512_(pos),
-            Vec2.f_82462_,
+            CommandSource.NULL,
+            Vec3.atCenterOf(pos),
+            Vec2.ZERO,
             (ServerLevel)level,
             2,
             "command_block_once",
-            Component.m_237113_("command_block_once"),
-            level.m_7654_(),
+            Component.literal("command_block_once"),
+            level.getServer(),
             null
          );
 
          try {
-            level.m_7654_().m_129892_().m_230957_(source, be.command);
+            level.getServer().getCommands().performPrefixedCommand(source, be.command);
          } catch (Exception e) {
             PomkotsMechs.LOGGER.error("Failed to execute command: {}", be.command, e);
          }
 
          be.executed = true;
-         be.m_6596_();
-         level.m_7471_(pos, false);
+         be.setChanged();
+         level.removeBlock(pos, false);
       }
    }
 
-   protected void m_183515_(CompoundTag tag) {
-      super.m_183515_(tag);
-      tag.m_128379_(PomkotsMechs.nbtName("CommandExecutorExecuted"), this.executed);
+   protected void saveAdditional(CompoundTag tag) {
+      super.saveAdditional(tag);
+      tag.putBoolean(PomkotsMechs.nbtName("CommandExecutorExecuted"), this.executed);
       if (!this.command.isEmpty()) {
-         tag.m_128359_(PomkotsMechs.nbtName("CommandExecutorCommand"), this.command);
+         tag.putString(PomkotsMechs.nbtName("CommandExecutorCommand"), this.command);
       }
    }
 
-   public void m_142466_(CompoundTag tag) {
-      super.m_142466_(tag);
-      this.executed = tag.m_128471_(PomkotsMechs.nbtName("CommandExecutorExecuted"));
-      if (tag.m_128441_(PomkotsMechs.nbtName("CommandExecutorCommand"))) {
-         this.command = tag.m_128461_(PomkotsMechs.nbtName("CommandExecutorCommand"));
+   public void load(CompoundTag tag) {
+      super.load(tag);
+      this.executed = tag.getBoolean(PomkotsMechs.nbtName("CommandExecutorExecuted"));
+      if (tag.contains(PomkotsMechs.nbtName("CommandExecutorCommand"))) {
+         this.command = tag.getString(PomkotsMechs.nbtName("CommandExecutorCommand"));
       }
    }
 }

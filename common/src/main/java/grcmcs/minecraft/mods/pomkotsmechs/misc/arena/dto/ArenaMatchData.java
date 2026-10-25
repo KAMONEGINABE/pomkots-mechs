@@ -135,24 +135,24 @@ public class ArenaMatchData {
 
    public CompoundTag save() {
       CompoundTag tag = new CompoundTag();
-      tag.m_128362_("MatchId", this.matchId);
-      tag.m_128362_("ChallengerId", this.challengerId);
-      tag.m_128362_("OpponentId", this.opponentId);
-      tag.m_128359_("State", this.state.name());
-      tag.m_128356_("CreatedTime", this.createdTime);
-      tag.m_128356_("StateChangedTime", this.stateChangedTime);
-      tag.m_128405_("GateAX", this.gatePosA.m_123341_());
-      tag.m_128405_("GateAY", this.gatePosA.m_123342_());
-      tag.m_128405_("GateAZ", this.gatePosA.m_123343_());
-      tag.m_128405_("GateBX", this.gatePosB.m_123341_());
-      tag.m_128405_("GateBY", this.gatePosB.m_123342_());
-      tag.m_128405_("GateBZ", this.gatePosB.m_123343_());
-      tag.m_128405_("BFieldX", this.battleFieldAnchorPos.m_123341_());
-      tag.m_128405_("BFieldY", this.battleFieldAnchorPos.m_123342_());
-      tag.m_128405_("BFieldZ", this.battleFieldAnchorPos.m_123343_());
-      tag.m_128405_("TelepoX", this.teleportPointPos.m_123341_());
-      tag.m_128405_("TelepoY", this.teleportPointPos.m_123342_());
-      tag.m_128405_("TelepoZ", this.teleportPointPos.m_123343_());
+      tag.putUUID("MatchId", this.matchId);
+      tag.putUUID("ChallengerId", this.challengerId);
+      tag.putUUID("OpponentId", this.opponentId);
+      tag.putString("State", this.state.name());
+      tag.putLong("CreatedTime", this.createdTime);
+      tag.putLong("StateChangedTime", this.stateChangedTime);
+      tag.putInt("GateAX", this.gatePosA.getX());
+      tag.putInt("GateAY", this.gatePosA.getY());
+      tag.putInt("GateAZ", this.gatePosA.getZ());
+      tag.putInt("GateBX", this.gatePosB.getX());
+      tag.putInt("GateBY", this.gatePosB.getY());
+      tag.putInt("GateBZ", this.gatePosB.getZ());
+      tag.putInt("BFieldX", this.battleFieldAnchorPos.getX());
+      tag.putInt("BFieldY", this.battleFieldAnchorPos.getY());
+      tag.putInt("BFieldZ", this.battleFieldAnchorPos.getZ());
+      tag.putInt("TelepoX", this.teleportPointPos.getX());
+      tag.putInt("TelepoY", this.teleportPointPos.getY());
+      tag.putInt("TelepoZ", this.teleportPointPos.getZ());
       saveEntityUUID("ChallengerEntityId", this.challengerEntityId, tag);
       saveEntityUUID("ChallengerMechId", this.challengerMechId, tag);
       saveEntityUUID("OpponentEntityId", this.opponentEntityId, tag);
@@ -162,36 +162,36 @@ public class ArenaMatchData {
 
    private static void saveEntityUUID(String name, UUID id, CompoundTag tag) {
       if (id != null) {
-         tag.m_128362_(name, id);
+         tag.putUUID(name, id);
       }
    }
 
    public static ArenaMatchData load(CompoundTag tag) {
       ArenaMatchData data = new ArenaMatchData();
-      data.matchId = tag.m_128342_("MatchId");
-      data.challengerId = tag.m_128342_("ChallengerId");
-      data.opponentId = tag.m_128342_("OpponentId");
-      data.state = ArenaMatchState.byId(tag.m_128461_("State"));
-      data.createdTime = tag.m_128454_("CreatedTime");
-      data.stateChangedTime = tag.m_128454_("StateChangedTime");
-      data.gatePosA = new BlockPos(tag.m_128451_("GateAX"), tag.m_128451_("GateAY"), tag.m_128451_("GateAZ"));
-      data.gatePosB = new BlockPos(tag.m_128451_("GateBX"), tag.m_128451_("GateBY"), tag.m_128451_("GateBZ"));
-      data.battleFieldAnchorPos = new BlockPos(tag.m_128451_("BFieldX"), tag.m_128451_("BFieldY"), tag.m_128451_("BFieldZ"));
-      data.teleportPointPos = new BlockPos(tag.m_128451_("TelepoX"), tag.m_128451_("TelepoY"), tag.m_128451_("TelepoZ"));
-      if (tag.m_128403_("ChallengerEntityId")) {
-         data.challengerEntityId = tag.m_128342_("ChallengerEntityId");
+      data.matchId = tag.getUUID("MatchId");
+      data.challengerId = tag.getUUID("ChallengerId");
+      data.opponentId = tag.getUUID("OpponentId");
+      data.state = ArenaMatchState.byId(tag.getString("State"));
+      data.createdTime = tag.getLong("CreatedTime");
+      data.stateChangedTime = tag.getLong("StateChangedTime");
+      data.gatePosA = new BlockPos(tag.getInt("GateAX"), tag.getInt("GateAY"), tag.getInt("GateAZ"));
+      data.gatePosB = new BlockPos(tag.getInt("GateBX"), tag.getInt("GateBY"), tag.getInt("GateBZ"));
+      data.battleFieldAnchorPos = new BlockPos(tag.getInt("BFieldX"), tag.getInt("BFieldY"), tag.getInt("BFieldZ"));
+      data.teleportPointPos = new BlockPos(tag.getInt("TelepoX"), tag.getInt("TelepoY"), tag.getInt("TelepoZ"));
+      if (tag.hasUUID("ChallengerEntityId")) {
+         data.challengerEntityId = tag.getUUID("ChallengerEntityId");
       }
 
-      if (tag.m_128403_("ChallengerMechId")) {
-         data.challengerEntityId = tag.m_128342_("ChallengerMechId");
+      if (tag.hasUUID("ChallengerMechId")) {
+         data.challengerEntityId = tag.getUUID("ChallengerMechId");
       }
 
-      if (tag.m_128403_("OpponentEntityId")) {
-         data.challengerEntityId = tag.m_128342_("OpponentEntityId");
+      if (tag.hasUUID("OpponentEntityId")) {
+         data.challengerEntityId = tag.getUUID("OpponentEntityId");
       }
 
-      if (tag.m_128403_("OpponentMechId")) {
-         data.challengerEntityId = tag.m_128342_("OpponentMechId");
+      if (tag.hasUUID("OpponentMechId")) {
+         data.challengerEntityId = tag.getUUID("OpponentMechId");
       }
 
       return data;

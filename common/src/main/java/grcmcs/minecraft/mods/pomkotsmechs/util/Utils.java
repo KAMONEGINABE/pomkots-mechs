@@ -74,11 +74,11 @@ public class Utils {
    private static final Random RANDOM;
 
    public static boolean isRidingPomkotsControllable(Entity entity) {
-      return entity != null && entity.m_20202_() instanceof PomkotsControllable;
+      return entity != null && entity.getVehicle() instanceof PomkotsControllable;
    }
 
    public static boolean isRidingPomkotsVehicle(Entity entity) {
-      return entity != null && entity.m_20202_() instanceof PomkotsVehicle;
+      return entity != null && entity.getVehicle() instanceof PomkotsVehicle;
    }
 
    public static void logInfo(String message) {
@@ -90,16 +90,16 @@ public class Utils {
    }
 
    private static Vec3 createEvasionVelocityFromLocalVelocity(Entity ent) {
-      Vec3 localVelocity = ent.m_20184_().m_82524_((float)Math.toRadians(1.0 * ent.m_146908_()));
-      double forward = localVelocity.f_82481_;
-      double sideways = localVelocity.f_82479_;
+      Vec3 localVelocity = ent.getDeltaMovement().yRot((float)Math.toRadians(1.0 * ent.getYRot()));
+      double forward = localVelocity.z;
+      double sideways = localVelocity.x;
       Vec3 vel;
       if (forward == 0.0 && sideways == 0.0) {
          vel = new Vec3(0.0, 0.0, 1.0);
       } else if (Math.abs(sideways) >= 0.1) {
-         vel = new Vec3(sideways, 0.0, 0.0).m_82541_();
+         vel = new Vec3(sideways, 0.0, 0.0).normalize();
       } else {
-         vel = new Vec3(sideways, 0.0, forward).m_82541_();
+         vel = new Vec3(sideways, 0.0, forward).normalize();
       }
 
       return vel;
@@ -110,8 +110,8 @@ public class Utils {
          return false;
       } else {
          return ent instanceof PomkotsVehicleBase
-            ? !ent.m_9236_().f_46443_ && PomkotsMechs.CONFIG.enablePlayerVehicleBlockDestruction
-            : !ent.m_9236_().f_46443_ && PomkotsMechs.CONFIG.enableEntityBlockDestruction;
+            ? !ent.level().isClientSide && PomkotsMechs.CONFIG.enablePlayerVehicleBlockDestruction
+            : !ent.level().isClientSide && PomkotsMechs.CONFIG.enableEntityBlockDestruction;
       }
    }
 
@@ -122,16 +122,16 @@ public class Utils {
    public static void destroyBlockSphere(int radius, Vec3 offset, BlockPos ownerPos, Float ownerYRot, Level level, boolean erase) {
       int radiusSquared = radius * radius;
       Vec3 vec = offset;
-      vec = vec.m_82524_((float)Math.toRadians(-1.0 * ownerYRot.floatValue()));
-      BlockPos pos = new BlockPos(ownerPos.m_123341_() + (int)vec.f_82479_, ownerPos.m_123342_() + (int)vec.f_82480_, ownerPos.m_123343_() + (int)vec.f_82481_);
+      vec = vec.yRot((float)Math.toRadians(-1.0 * ownerYRot.floatValue()));
+      BlockPos pos = new BlockPos(ownerPos.getX() + (int)vec.x, ownerPos.getY() + (int)vec.y, ownerPos.getZ() + (int)vec.z);
 
       for (int x = -radius; x <= radius; x++) {
          for (int y = -radius; y <= radius; y++) {
             for (int z = -radius; z <= radius; z++) {
                if (x * x + y * y + z * z <= radiusSquared) {
-                  BlockPos targetPos = pos.m_7918_(x, y, z);
-                  BlockState state = level.m_8055_(targetPos);
-                  if (!state.m_60795_()) {
+                  BlockPos targetPos = pos.offset(x, y, z);
+                  BlockState state = level.getBlockState(targetPos);
+                  if (!state.isAir()) {
                      if (erase) {
                         eraseBlock(level, targetPos);
                      } else {
@@ -145,26 +145,26 @@ public class Utils {
    }
 
    public static void destroyBlock(Level level, BlockPos blockPos, boolean dropItem) {
-      BlockState state = level.m_8055_(blockPos);
+      BlockState state = level.getBlockState(blockPos);
       if (isDestructiveBLock(state)) {
-         level.m_46961_(blockPos, dropItem && isDroppableBLock(state));
+         level.destroyBlock(blockPos, dropItem && isDroppableBLock(state));
       }
    }
 
    public static void eraseBlock(Level level, BlockPos blockPos) {
-      if (isDestructiveBLock(level.m_8055_(blockPos))) {
-         level.m_46597_(blockPos, Blocks.f_50016_.m_49966_());
+      if (isDestructiveBLock(level.getBlockState(blockPos))) {
+         level.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
       }
    }
 
    public static void setBlock(Level level, BlockPos blockPos, BlockState blockState, int num) {
-      if (isDestructiveBLock(level.m_8055_(blockPos))) {
-         level.m_7731_(blockPos, blockState, num);
+      if (isDestructiveBLock(level.getBlockState(blockPos))) {
+         level.setBlock(blockPos, blockState, num);
       }
    }
 
    public static boolean isDestructiveBLock(BlockState blockState) {
-      return isDestructiveBLock(blockState.m_60734_());
+      return isDestructiveBLock(blockState.getBlock());
    }
 
    public static boolean isDestructiveBLock(Block block) {
@@ -178,8 +178,8 @@ public class Utils {
             resetNonDestructiveBlocks();
 
             for (String blockId : prevDestConfig.split(",")) {
-               Block block = (Block)BuiltInRegistries.f_256975_.m_7745_(new ResourceLocation(blockId));
-               if (!Blocks.f_50016_.equals(block)) {
+               Block block = (Block)BuiltInRegistries.BLOCK.get(new ResourceLocation(blockId));
+               if (!Blocks.AIR.equals(block)) {
                   addNonDestructiveBlock(block);
                }
             }
@@ -196,7 +196,7 @@ public class Utils {
    }
 
    public static boolean isDroppableBLock(BlockState blockState) {
-      return isDroppableBLock(blockState.m_60734_());
+      return isDroppableBLock(blockState.getBlock());
    }
 
    public static boolean isDroppableBLock(Block block) {
@@ -210,8 +210,8 @@ public class Utils {
             resetNonDroppableBlocks();
 
             for (String blockId : prevDropConfig.split(",")) {
-               Block block = (Block)BuiltInRegistries.f_256975_.m_7745_(new ResourceLocation(blockId));
-               if (!Blocks.f_50016_.equals(block)) {
+               Block block = (Block)BuiltInRegistries.BLOCK.get(new ResourceLocation(blockId));
+               if (!Blocks.AIR.equals(block)) {
                   addNonDroppableBlock(block);
                }
             }
@@ -234,7 +234,7 @@ public class Utils {
 
       if (vehicle instanceof Pmvc01Entity pmvc01) {
          ItemStack headStack = pmvc01.getHeadParts();
-         if (headStack != null && !headStack.m_41619_() && headStack.m_41720_() instanceof BasePartsItem.Head headParts && headParts.isFullCovered()) {
+         if (headStack != null && !headStack.isEmpty() && headStack.getItem() instanceof BasePartsItem.Head headParts && headParts.isFullCovered()) {
             return true;
          }
       }
@@ -249,31 +249,31 @@ public class Utils {
    public static float[] getShootingAngle(Entity bullet, Entity target, boolean useDeviation, boolean aimFoot) {
       Vec3 targetPos = getTargetPos(target, useDeviation, aimFoot);
       if (aimFoot) {
-         targetPos = new Vec3(targetPos.f_82479_, targetPos.f_82480_ - 3.0, targetPos.f_82481_);
+         targetPos = new Vec3(targetPos.x, targetPos.y - 3.0, targetPos.z);
       }
 
-      Vec3 bulletPos = bullet.m_20182_();
-      Vec3 bulletDir = targetPos.m_82546_(bulletPos).m_82541_();
-      float yaw = (float)(Math.atan2(-bulletDir.f_82479_, bulletDir.f_82481_) * (180.0 / Math.PI));
-      float pitch = (float)(Math.asin(-bulletDir.f_82480_) * (180.0 / Math.PI));
+      Vec3 bulletPos = bullet.position();
+      Vec3 bulletDir = targetPos.subtract(bulletPos).normalize();
+      float yaw = (float)(Math.atan2(-bulletDir.x, bulletDir.z) * (180.0 / Math.PI));
+      float pitch = (float)(Math.asin(-bulletDir.y) * (180.0 / Math.PI));
       return new float[]{pitch, yaw};
    }
 
    public static Vec3 getTargetPos(Entity target, boolean useDeviation, boolean aimFoot) {
       useDeviation = true;
-      if (target.m_20202_() != null) {
-         target = target.m_20202_();
+      if (target.getVehicle() != null) {
+         target = target.getVehicle();
       }
 
       Vec3 targetPos;
       if (aimFoot) {
-         targetPos = target.m_20182_();
+         targetPos = target.position();
       } else {
-         targetPos = target.m_20191_().m_82399_();
+         targetPos = target.getBoundingBox().getCenter();
       }
 
       if (useDeviation) {
-         targetPos = applyDeviation(2, targetPos, target.m_20184_());
+         targetPos = applyDeviation(2, targetPos, target.getDeltaMovement());
       }
 
       return targetPos;
@@ -281,7 +281,7 @@ public class Utils {
 
    private static Vec3 applyDeviation(int num, Vec3 originalPos, Vec3 targetDelta) {
       for (int i = 0; i < num; i++) {
-         originalPos = originalPos.m_82549_(targetDelta);
+         originalPos = originalPos.add(targetDelta);
       }
 
       return originalPos;
@@ -289,15 +289,15 @@ public class Utils {
 
    public static float[] getShootingAngle2(Entity bullet, Entity target, boolean useDeviation, boolean aimFoot, float bulletSpeed, float inaccuracy) {
       target = getTarget2(target);
-      Vec3 bulletPos = bullet.m_20182_();
+      Vec3 bulletPos = bullet.position();
       Vec3 targetPos = getTargetPos2(target, aimFoot);
-      Vec3 targetVelocity = target.m_20184_();
+      Vec3 targetVelocity = target.getDeltaMovement();
       return useDeviation ? getShootingAngle(bulletPos, bulletSpeed, targetPos, targetVelocity, RANDOM, inaccuracy) : aimDirect(bulletPos, targetPos);
    }
 
    public static Entity getTarget2(Entity target) {
-      if (target.m_20202_() != null) {
-         target = target.m_20202_();
+      if (target.getVehicle() != null) {
+         target = target.getVehicle();
       }
 
       return target;
@@ -308,34 +308,34 @@ public class Utils {
       if (target instanceof Pmvc01Entity pmvc01) {
          targetPos = pmvc01.getPosHistory(2);
       } else {
-         targetPos = target.m_20182_();
+         targetPos = target.position();
       }
 
       if (!aimFoot) {
-         targetPos = targetPos.m_82520_(0.0, target.m_20191_().m_82376_() / 2.0, 0.0);
+         targetPos = targetPos.add(0.0, target.getBoundingBox().getYsize() / 2.0, 0.0);
       }
 
       return targetPos;
    }
 
    public static float[] getShootingAngle(Vec3 bulletPos, float bulletSpeed, Vec3 targetPos, Vec3 targetVelocity, Random random, float inaccuracy) {
-      Vec3 relativePos = targetPos.m_82546_(bulletPos);
-      double a = targetVelocity.m_82526_(targetVelocity) - bulletSpeed * bulletSpeed;
-      double b = 2.0 * relativePos.m_82526_(targetVelocity);
-      double c = relativePos.m_82526_(relativePos);
+      Vec3 relativePos = targetPos.subtract(bulletPos);
+      double a = targetVelocity.dot(targetVelocity) - bulletSpeed * bulletSpeed;
+      double b = 2.0 * relativePos.dot(targetVelocity);
+      double c = relativePos.dot(relativePos);
       double t = solveQuadratic(a, b, c);
-      Vec3 predictedPos = t >= 0.0 ? targetPos.m_82549_(targetVelocity.m_82490_(t)) : targetPos;
+      Vec3 predictedPos = t >= 0.0 ? targetPos.add(targetVelocity.scale(t)) : targetPos;
       if (inaccuracy > 0.0F) {
-         double dist = relativePos.m_82553_();
+         double dist = relativePos.length();
          double offsetScale = dist * inaccuracy * 0.1;
-         predictedPos = predictedPos.m_82520_(
+         predictedPos = predictedPos.add(
             (random.nextDouble() - 0.5) * 2.0 * offsetScale, (random.nextDouble() - 0.5) * 2.0 * offsetScale, (random.nextDouble() - 0.5) * 2.0 * offsetScale
          );
       }
 
-      Vec3 dir = predictedPos.m_82546_(bulletPos).m_82541_();
-      float yaw = (float)(Math.atan2(-dir.f_82479_, dir.f_82481_) * (180.0 / Math.PI));
-      float pitch = (float)(Math.asin(-dir.f_82480_) * (180.0 / Math.PI));
+      Vec3 dir = predictedPos.subtract(bulletPos).normalize();
+      float yaw = (float)(Math.atan2(-dir.x, dir.z) * (180.0 / Math.PI));
+      float pitch = (float)(Math.asin(-dir.y) * (180.0 / Math.PI));
       return new float[]{pitch, yaw};
    }
 
@@ -367,32 +367,32 @@ public class Utils {
    }
 
    private static float[] aimDirect(Vec3 bulletPos, Vec3 targetPos) {
-      Vec3 dir = targetPos.m_82546_(bulletPos).m_82541_();
-      float yaw = (float)(Math.atan2(-dir.f_82479_, dir.f_82481_) * (180.0 / Math.PI));
-      float pitch = (float)(Math.asin(-dir.f_82480_) * (180.0 / Math.PI));
+      Vec3 dir = targetPos.subtract(bulletPos).normalize();
+      float yaw = (float)(Math.atan2(-dir.x, dir.z) * (180.0 / Math.PI));
+      float pitch = (float)(Math.asin(-dir.y) * (180.0 / Math.PI));
       return new float[]{pitch, yaw};
    }
 
    public static boolean isObstructed(Level level, Entity from, Entity to) {
-      Vec3 fromPos = from.m_20299_(1.0F);
-      Vec3 toPos = to.m_20299_(1.0F);
-      BlockHitResult result = level.m_45547_(new ClipContext(fromPos, toPos, net.minecraft.world.level.ClipContext.Block.COLLIDER, Fluid.NONE, from));
-      return result.m_6662_() == Type.BLOCK;
+      Vec3 fromPos = from.getEyePosition(1.0F);
+      Vec3 toPos = to.getEyePosition(1.0F);
+      BlockHitResult result = level.clip(new ClipContext(fromPos, toPos, net.minecraft.world.level.ClipContext.Block.COLLIDER, Fluid.NONE, from));
+      return result.getType() == Type.BLOCK;
    }
 
    private static void playSoundEffect(SoundEvent event, Entity src) {
-      src.m_9236_().m_7785_(src.m_20185_(), src.m_20186_(), src.m_20189_(), event, SoundSource.PLAYERS, 1.0F, 1.0F, false);
+      src.level().playLocalSound(src.getX(), src.getY(), src.getZ(), event, SoundSource.PLAYERS, 1.0F, 1.0F, false);
    }
 
    private static void playSoundEffect(SoundEvent event, Entity src, float volume) {
-      src.m_9236_().m_7785_(src.m_20185_(), src.m_20186_(), src.m_20189_(), event, SoundSource.PLAYERS, volume, 1.0F, false);
+      src.level().playLocalSound(src.getX(), src.getY(), src.getZ(), event, SoundSource.PLAYERS, volume, 1.0F, false);
    }
 
    public static boolean isWithinHorizontalDistance(Entity entityA, Entity entityB, double distance) {
-      Vec3 posA = entityA.m_20182_();
-      Vec3 posB = entityB.m_20182_();
-      double dx = posA.f_82479_ - posB.f_82479_;
-      double dz = posA.f_82481_ - posB.f_82481_;
+      Vec3 posA = entityA.position();
+      Vec3 posB = entityB.position();
+      double dx = posA.x - posB.x;
+      double dz = posA.z - posB.z;
       double horizontalDistSqr = dx * dx + dz * dz;
       return horizontalDistSqr <= distance * distance;
    }
@@ -409,18 +409,18 @@ public class Utils {
             return shooter;
          }
       } else {
-         return projectile.m_19749_() instanceof LivingEntity l ? l : null;
+         return projectile.getOwner() instanceof LivingEntity l ? l : null;
       }
    }
 
    public static boolean isSystemicDamage(DamageSource source) {
-      return "genericKill".equals(source.m_19385_());
+      return "genericKill".equals(source.getMsgId());
    }
 
    public static boolean isInRangeOnAxisXZ(Entity a, Entity b, float distance) {
       if (a != null && b != null) {
-         double dx = a.m_20185_() - b.m_20185_();
-         double dz = a.m_20189_() - b.m_20189_();
+         double dx = a.getX() - b.getX();
+         double dz = a.getZ() - b.getZ();
          double distanceXZSquared = dx * dx + dz * dz;
          return distanceXZSquared <= distance * distance;
       } else {
@@ -429,8 +429,8 @@ public class Utils {
    }
 
    public static boolean isMapEditingMode(Level level) {
-      MinecraftServer server = level.m_7654_();
-      return server == null ? true : level.m_46469_().m_46207_(PomkotsMechs.RULE_MAP_EDIT);
+      MinecraftServer server = level.getServer();
+      return server == null ? true : level.getGameRules().getBoolean(PomkotsMechs.RULE_MAP_EDIT);
    }
 
    public static RegistrySupplier<EntityType<?>> getEntityType(String typeId) {
@@ -449,12 +449,12 @@ public class Utils {
    public static List<ItemStack> getItemStacks(ItemStack mainHandStack, Player player, int totalAmountToConsume) {
       List<ItemStack> stacks = new LinkedList<>();
       int remainingAmount = totalAmountToConsume;
-      Item mainHandItem = mainHandStack.m_41720_();
+      Item mainHandItem = mainHandStack.getItem();
 
-      for (ItemStack stack : player.m_150109_().f_35974_) {
-         if (stack != mainHandStack && stack.m_41720_() == mainHandItem) {
+      for (ItemStack stack : player.getInventory().items) {
+         if (stack != mainHandStack && stack.getItem() == mainHandItem) {
             stacks.add(stack);
-            int stackCount = stack.m_41613_();
+            int stackCount = stack.getCount();
             if (stackCount > remainingAmount) {
                return stacks;
             }
@@ -465,7 +465,7 @@ public class Utils {
 
       if (remainingAmount > 0) {
          stacks.add(mainHandStack);
-         int mainHandCount = mainHandStack.m_41613_();
+         int mainHandCount = mainHandStack.getCount();
          if (mainHandCount <= remainingAmount) {
             remainingAmount -= mainHandCount;
          } else {
@@ -478,97 +478,97 @@ public class Utils {
 
    public static void consumeItemStackFromTop(List<ItemStack> stacks, int num) {
       for (ItemStack stack : stacks) {
-         if (stack.m_41613_() > num) {
-            stack.m_41764_(stack.m_41613_() - num);
+         if (stack.getCount() > num) {
+            stack.setCount(stack.getCount() - num);
             return;
          }
 
-         num -= stack.m_41613_();
-         stack.m_41764_(0);
+         num -= stack.getCount();
+         stack.setCount(0);
       }
    }
 
    public static void doCircleAoeDamageAndKnockback(Level level, Entity owner, Vec3 center, double radius, float damage, double knockbackStrength, double lift) {
       AABB box = new AABB(
-         center.f_82479_ - radius, center.f_82480_ - 2.0, center.f_82481_ - radius, center.f_82479_ + radius, center.f_82480_ + 2.0, center.f_82481_ + radius
+         center.x - radius, center.y - 2.0, center.z - radius, center.x + radius, center.y + 2.0, center.z + radius
       );
 
-      for (LivingEntity target : level.m_6443_(LivingEntity.class, box, e -> e != owner && !(e instanceof BossHitBoxEntity) && e.m_6084_())) {
-         double dx = target.m_20185_() - center.f_82479_;
-         double dz = target.m_20189_() - center.f_82481_;
+      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != owner && !(e instanceof BossHitBoxEntity) && e.isAlive())) {
+         double dx = target.getX() - center.x;
+         double dz = target.getZ() - center.z;
          if (!(dx * dx + dz * dz > radius * radius)) {
-            target.m_6469_(owner.m_269291_().m_269264_(), damage);
+            target.hurt(owner.damageSources().generic(), damage);
             Vec3 kb = computeRadialKnockback(center, target, radius, knockbackStrength, lift);
-            target.m_20256_(target.m_20184_().m_82549_(kb));
-            target.f_19812_ = true;
+            target.setDeltaMovement(target.getDeltaMovement().add(kb));
+            target.hasImpulse = true;
          }
       }
    }
 
    public static Vec3 computeRadialKnockback(Vec3 impactCenter, LivingEntity target, double radius, double strength, double lift) {
-      Vec3 dir = target.m_20182_().m_82546_(impactCenter);
-      Vec3 horizontal = new Vec3(dir.f_82479_, 0.0, dir.f_82481_);
-      double dist = horizontal.m_82553_();
+      Vec3 dir = target.position().subtract(impactCenter);
+      Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
+      double dist = horizontal.length();
       if (dist < 1.0E-4) {
-         return Vec3.f_82478_;
+         return Vec3.ZERO;
       }
 
-      Vec3 norm = horizontal.m_82490_(1.0 / dist);
-      double falloff = Mth.m_14008_(1.0 - dist / radius, 0.0, 1.0);
-      return new Vec3(norm.f_82479_ * strength * falloff, lift * falloff, norm.f_82481_ * strength * falloff);
+      Vec3 norm = horizontal.scale(1.0 / dist);
+      double falloff = Mth.clamp(1.0 - dist / radius, 0.0, 1.0);
+      return new Vec3(norm.x * strength * falloff, lift * falloff, norm.z * strength * falloff);
    }
 
    public static void spawnAoeDustParticles(Level level, Vec3 center, double radius, int countPerTick) {
-      RandomSource rand = level.f_46441_;
+      RandomSource rand = level.random;
 
       for (int i = 0; i < countPerTick; i++) {
          Vec3 pos = randomPointInCircle(rand, center, radius);
-         level.m_7106_(
-            new BlockParticleOption(ParticleTypes.f_123794_, Blocks.f_50493_.m_49966_()),
-            pos.f_82479_,
-            pos.f_82480_ + 0.2,
-            pos.f_82481_,
-            rand.m_188583_() * 0.03,
+         level.addParticle(
+            new BlockParticleOption(ParticleTypes.BLOCK, Blocks.DIRT.defaultBlockState()),
+            pos.x,
+            pos.y + 0.2,
+            pos.z,
+            rand.nextGaussian() * 0.03,
             2.0,
-            rand.m_188583_() * 0.03
+            rand.nextGaussian() * 0.03
          );
       }
    }
 
    public static void spawnAoeDustParticles2(Level level, Vec3 center, double radius, int countPerTick) {
-      RandomSource rand = level.f_46441_;
+      RandomSource rand = level.random;
 
       for (int i = 0; i < countPerTick; i++) {
          Vec3 pos = randomPointInCircle(rand, center, radius);
-         level.m_7107_(
-            new BlockParticleOption(ParticleTypes.f_123794_, Blocks.f_50493_.m_49966_()),
-            pos.f_82479_,
-            pos.f_82480_ + 0.2,
-            pos.f_82481_,
-            rand.m_188583_() * 0.03,
+         level.addAlwaysVisibleParticle(
+            new BlockParticleOption(ParticleTypes.BLOCK, Blocks.DIRT.defaultBlockState()),
+            pos.x,
+            pos.y + 0.2,
+            pos.z,
+            rand.nextGaussian() * 0.03,
             2.0,
-            rand.m_188583_() * 0.03
+            rand.nextGaussian() * 0.03
          );
       }
    }
 
    private static Vec3 randomPointInCircle(RandomSource rand, Vec3 center, double radius) {
-      double r = radius * Math.sqrt(rand.m_188500_());
-      double theta = rand.m_188500_() * Math.PI * 2.0;
-      double x = center.f_82479_ + r * Math.cos(theta);
-      double z = center.f_82481_ + r * Math.sin(theta);
-      double y = center.f_82480_;
+      double r = radius * Math.sqrt(rand.nextDouble());
+      double theta = rand.nextDouble() * Math.PI * 2.0;
+      double x = center.x + r * Math.cos(theta);
+      double z = center.z + r * Math.sin(theta);
+      double y = center.y;
       return new Vec3(x, y, z);
    }
 
    public static Vec3 computeAoeCenter(Entity owner, Vec3 offsetLocal) {
-      Vec3 offset = owner.m_20182_();
-      offsetLocal = offsetLocal.m_82524_((float)Math.toRadians(-1.0 * owner.m_146908_()));
-      return offset.m_82549_(offsetLocal);
+      Vec3 offset = owner.position();
+      offsetLocal = offsetLocal.yRot((float)Math.toRadians(-1.0 * owner.getYRot()));
+      return offset.add(offsetLocal);
    }
 
    public static boolean isRidingPomkotsMechs(Player p) {
-      return p == null ? false : p.m_20202_() instanceof PomkotsVehicle;
+      return p == null ? false : p.getVehicle() instanceof PomkotsVehicle;
    }
 
    public static void explode(Entity entity, double x, double y, double z, float power, ExplosionInteraction explosionInteraction, Level level) {
@@ -590,18 +590,18 @@ public class Utils {
       }
 
       Explosion explosion = new ExplosionNoDrop(level, entity, x, y, z, power, fire, blockInteraction);
-      explosion.m_46061_();
-      explosion.m_46075_(true);
+      explosion.explode();
+      explosion.finalizeExplosion(true);
    }
 
    public static boolean completeAdvancement(ResourceLocation advancementId, Player player) {
       if (player instanceof ServerPlayer serverPlayer) {
-         Advancement adv = player.m_20194_().m_129889_().m_136041_(advancementId);
+         Advancement adv = player.getServer().getAdvancements().getAdvancement(advancementId);
          if (adv == null) {
             return false;
          }
 
-         serverPlayer.m_8960_().m_135988_(adv, "complete");
+         serverPlayer.getAdvancements().award(adv, "complete");
          return true;
       } else {
          return false;
@@ -610,23 +610,23 @@ public class Utils {
 
    public static Component string2Component(String input) {
       if (input == null || input.isEmpty()) {
-         return Component.m_237119_();
+         return Component.empty();
       } else if (input.startsWith("{") && input.endsWith("}")) {
          String key = input.substring(1, input.length() - 1);
-         return Component.m_237115_(key);
+         return Component.translatable(key);
       } else {
-         return Component.m_237113_(input);
+         return Component.literal(input);
       }
    }
 
    public static Item getPartsClassFromBluePrint(ItemStack bluePrint) {
-      Item bluePrintItem = bluePrint.m_41720_();
+      Item bluePrintItem = bluePrint.getItem();
       if (!(bluePrintItem instanceof BluePrintItem)) {
          return null;
       }
 
-      ResourceLocation id = BuiltInRegistries.f_257033_.m_7981_(bluePrintItem);
-      String partsName = id.m_135815_().replaceAll("blue_print_", "");
+      ResourceLocation id = BuiltInRegistries.ITEM.getKey(bluePrintItem);
+      String partsName = id.getPath().replaceAll("blue_print_", "");
       if (partsName.equals("hover_unit")) {
          return (Item)PomkotsMechs.HOVER_UNIT.get();
       }
@@ -671,8 +671,8 @@ public class Utils {
          return (Item)PomkotsMechs.MUKNVALI_BODY.get();
       }
 
-      Item item = (Item)BuiltInRegistries.f_257033_.m_7745_(PomkotsMechs.id(partsName));
-      return item.equals(Items.f_41852_) ? null : item;
+      Item item = (Item)BuiltInRegistries.ITEM.get(PomkotsMechs.id(partsName));
+      return item.equals(Items.AIR) ? null : item;
    }
 
    public static MechAutoController createMechAutoController(LivingEntity pilot, Pmvc01Entity mech) {
@@ -680,16 +680,16 @@ public class Utils {
    }
 
    public static void saveBlockPos(CompoundTag tag, String namePrefix, BlockPos blockPos) {
-      tag.m_128405_(PomkotsMechs.nbtName(namePrefix + "X"), blockPos.m_123341_());
-      tag.m_128405_(PomkotsMechs.nbtName(namePrefix + "Y"), blockPos.m_123342_());
-      tag.m_128405_(PomkotsMechs.nbtName(namePrefix + "Z"), blockPos.m_123343_());
+      tag.putInt(PomkotsMechs.nbtName(namePrefix + "X"), blockPos.getX());
+      tag.putInt(PomkotsMechs.nbtName(namePrefix + "Y"), blockPos.getY());
+      tag.putInt(PomkotsMechs.nbtName(namePrefix + "Z"), blockPos.getZ());
    }
 
    public static BlockPos loadBlockPos(String namePrefix, CompoundTag tag) {
       return new BlockPos(
-         tag.m_128451_(PomkotsMechs.nbtName(namePrefix + "X")),
-         tag.m_128451_(PomkotsMechs.nbtName(namePrefix + "Y")),
-         tag.m_128451_(PomkotsMechs.nbtName(namePrefix + "Z"))
+         tag.getInt(PomkotsMechs.nbtName(namePrefix + "X")),
+         tag.getInt(PomkotsMechs.nbtName(namePrefix + "Y")),
+         tag.getInt(PomkotsMechs.nbtName(namePrefix + "Z"))
       );
    }
 

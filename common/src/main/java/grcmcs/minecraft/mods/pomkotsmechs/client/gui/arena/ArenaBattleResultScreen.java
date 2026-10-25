@@ -39,14 +39,14 @@ public class ArenaBattleResultScreen extends AbstractContainerScreen<ArenaBattle
 
    public ArenaBattleResultScreen(ArenaBattleResultMenu menu, Inventory inventory, Component title) {
       super(menu, inventory, title);
-      this.f_97726_ = 480;
-      this.f_97727_ = 270;
+      this.imageWidth = 480;
+      this.imageHeight = 270;
       this.challenger = menu.getChallengerResult();
       this.opponent = menu.getOpponentResult();
    }
 
-   protected void m_7856_() {
-      super.m_7856_();
+   protected void init() {
+      super.init();
       int offsetX = 20;
       int offsetY = 10;
       this.leftCardOffsetX = offsetX + 28;
@@ -55,24 +55,24 @@ public class ArenaBattleResultScreen extends AbstractContainerScreen<ArenaBattle
       this.rightCardOffsetY = offsetY;
    }
 
-   public void m_88315_(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-      this.m_280273_(guiGraphics);
+   public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+      this.renderBackground(guiGraphics);
       this.renderFighterCard(guiGraphics, this.challenger, this.leftCardOffsetX, this.leftCardOffsetY, true);
       this.renderFighterCard(guiGraphics, this.opponent, this.rightCardOffsetX, this.leftCardOffsetY, false);
-      this.m_280072_(guiGraphics, mouseX, mouseY);
-      super.m_88315_(guiGraphics, mouseX, mouseY, partialTick);
+      this.renderTooltip(guiGraphics, mouseX, mouseY);
+      super.render(guiGraphics, mouseX, mouseY, partialTick);
    }
 
-   protected void m_7286_(GuiGraphics guiGraphics, float f, int i, int j) {
+   protected void renderBg(GuiGraphics guiGraphics, float f, int i, int j) {
       this.renderBgTexture(TEXTURE_PANEL_INV_REWARDS, this.leftCardOffsetX, this.leftCardOffsetY + 10 + 130, 164, 94, guiGraphics);
-      guiGraphics.m_280488_(this.f_96547_, "Rewards", this.leftCardOffsetX + 18, this.leftCardOffsetY + 10 + 130 + 4, -1);
+      guiGraphics.drawString(this.font, "Rewards", this.leftCardOffsetX + 18, this.leftCardOffsetY + 10 + 130 + 4, -1);
       int offsetX = this.leftCardOffsetX + 25 + 26;
       int offsetY = this.leftCardOffsetY + 10 + 130 + 26;
-      guiGraphics.m_280488_(this.f_96547_, "Match Reward", offsetX, offsetY, -1);
-      guiGraphics.m_280488_(this.f_96547_, "Rank Reward", offsetX, offsetY + 18, -1);
-      guiGraphics.m_280488_(this.f_96547_, "Special Reward", offsetX, offsetY + 36, -1);
+      guiGraphics.drawString(this.font, "Match Reward", offsetX, offsetY, -1);
+      guiGraphics.drawString(this.font, "Rank Reward", offsetX, offsetY + 18, -1);
+      guiGraphics.drawString(this.font, "Special Reward", offsetX, offsetY + 36, -1);
       this.renderBgTexture(TEXTURE_PANEL_INV_PLAYER, this.rightCardOffsetX, this.leftCardOffsetY + 10 + 130, 164, 94, guiGraphics);
-      guiGraphics.m_280488_(this.f_96547_, "Player Inventory", this.rightCardOffsetX + 18, this.leftCardOffsetY + 10 + 130 + 4, -1);
+      guiGraphics.drawString(this.font, "Player Inventory", this.rightCardOffsetX + 18, this.leftCardOffsetY + 10 + 130 + 4, -1);
    }
 
    private void renderHeader(GuiGraphics gg) {
@@ -87,13 +87,13 @@ public class ArenaBattleResultScreen extends AbstractContainerScreen<ArenaBattle
          case 2 -> 16733525;
          default -> 16777045;
       };
-      gg.m_280137_(this.f_96547_, title, this.f_97735_ + this.f_97726_ / 2, this.f_97736_ + 10, color);
+      gg.drawCenteredString(this.font, title, this.leftPos + this.imageWidth / 2, this.topPos + 10, color);
    }
 
    private void renderFighterCard(GuiGraphics gg, ArenaMatchResultData.FighterResult result, int x, int y, boolean challenger) {
-      gg.m_280509_(x, y, x + 164, y + 130, 1711276032);
+      gg.fill(x, y, x + 164, y + 130, 1711276032);
       int line = y + 8;
-      gg.m_280137_(this.f_96547_, result.getDisplayName(), x + 82, line, 16777215);
+      gg.drawCenteredString(this.font, result.getDisplayName(), x + 82, line, 16777215);
       line += 16;
       this.renderResultBadge(gg, result, x + 8, line);
       line += 18;
@@ -105,8 +105,8 @@ public class ArenaBattleResultScreen extends AbstractContainerScreen<ArenaBattle
       line += 14;
       this.drawChangeLine(gg, "Draws", result.getDrawsBefore(), result.getDrawsAfter(), x, line);
       line += 18;
-      gg.m_280488_(this.f_96547_, "Rank", x + 8, line, 11184810);
-      gg.m_280488_(this.f_96547_, result.getRankBefore() + " -> " + result.getRankAfter(), x + 60, line, this.getRankColor(result.getRankAfter()));
+      gg.drawString(this.font, "Rank", x + 8, line, 11184810);
+      gg.drawString(this.font, result.getRankBefore() + " -> " + result.getRankAfter(), x + 60, line, this.getRankColor(result.getRankAfter()));
    }
 
    private void renderResultBadge(GuiGraphics gg, ArenaMatchResultData.FighterResult result, int x, int y) {
@@ -126,11 +126,11 @@ public class ArenaBattleResultScreen extends AbstractContainerScreen<ArenaBattle
             color = 16777045;
       }
 
-      gg.m_280488_(this.f_96547_, text, x, y, color);
+      gg.drawString(this.font, text, x, y, color);
    }
 
    private void drawChangeLine(GuiGraphics gg, String label, int before, int after, int x, int y) {
-      gg.m_280488_(this.f_96547_, label, x + 8, y, 11184810);
+      gg.drawString(this.font, label, x + 8, y, 11184810);
       int color;
       if (after > before) {
          color = 5635925;
@@ -140,7 +140,7 @@ public class ArenaBattleResultScreen extends AbstractContainerScreen<ArenaBattle
          color = 16777215;
       }
 
-      gg.m_280488_(this.f_96547_, before + " -> " + after, x + 60, y, color);
+      gg.drawString(this.font, before + " -> " + after, x + 60, y, color);
    }
 
    private int getRankColor(String rank) {
@@ -148,7 +148,7 @@ public class ArenaBattleResultScreen extends AbstractContainerScreen<ArenaBattle
       return r.getColor();
    }
 
-   protected void m_280003_(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+   protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
    }
 
    private void renderBgTexture(ResourceLocation texture, int x, int y, int width, int height, GuiGraphics guiGraphics) {
@@ -159,7 +159,7 @@ public class ArenaBattleResultScreen extends AbstractContainerScreen<ArenaBattle
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
       RenderSystem.enableBlend();
       RenderSystem.setShaderTexture(0, texture);
-      guiGraphics.m_280163_(texture, x, y, 0.0F, 0.0F, width, height, width, height);
+      guiGraphics.blit(texture, x, y, 0.0F, 0.0F, width, height, width, height);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 }

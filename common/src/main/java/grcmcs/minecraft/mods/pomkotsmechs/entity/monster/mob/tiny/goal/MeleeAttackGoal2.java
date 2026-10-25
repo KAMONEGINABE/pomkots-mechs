@@ -10,17 +10,17 @@ public class MeleeAttackGoal2 extends MeleeAttackGoal {
       super(pathfinderMob, d, bl);
    }
 
-   protected void m_6739_(LivingEntity livingEntity, double d) {
-      if (this.f_25540_ instanceof BaseSmallMonsterEntity small) {
-         if (d <= this.m_6639_(livingEntity)) {
+   protected void checkAndPerformAttack(LivingEntity livingEntity, double d) {
+      if (this.mob instanceof BaseSmallMonsterEntity small) {
+         if (d <= this.getAttackReachSqr(livingEntity)) {
             small.tryAttack();
          }
       } else {
-         super.m_6739_(livingEntity, d);
+         super.checkAndPerformAttack(livingEntity, d);
       }
    }
 
-   protected double m_6639_(LivingEntity livingEntity) {
-      return this.f_25540_.m_20205_() * 3.0F * this.f_25540_.m_20205_() * 3.0F + livingEntity.m_20205_();
+   protected double getAttackReachSqr(LivingEntity livingEntity) {
+      return this.mob.getBbWidth() * 3.0F * this.mob.getBbWidth() * 3.0F + livingEntity.getBbWidth();
    }
 }

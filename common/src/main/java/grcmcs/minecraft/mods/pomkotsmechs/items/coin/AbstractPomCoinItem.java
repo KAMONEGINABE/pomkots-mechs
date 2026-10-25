@@ -29,28 +29,28 @@ public abstract class AbstractPomCoinItem extends Item {
    protected abstract Item getHigherCoin();
 
    @NotNull
-   public InteractionResultHolder<ItemStack> m_7203_(Level level, Player player, @NotNull InteractionHand hand) {
-      ItemStack stack = player.m_21120_(hand);
-      if (!level.m_5776_()) {
-         if (player.m_6144_()) {
+   public InteractionResultHolder<ItemStack> use(Level level, Player player, @NotNull InteractionHand hand) {
+      ItemStack stack = player.getItemInHand(hand);
+      if (!level.isClientSide()) {
+         if (player.isShiftKeyDown()) {
             this.exchangeUp((ServerPlayer)player, stack);
          } else {
             this.exchangeDown((ServerPlayer)player, stack);
          }
       }
 
-      return InteractionResultHolder.m_19092_(stack, level.m_5776_());
+      return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
    }
 
    private void exchangeUp(ServerPlayer player, ItemStack stack) {
       Item higherCoin = this.getHigherCoin();
       if (higherCoin != null) {
-         if (stack.m_41613_() >= 64) {
+         if (stack.getCount() >= 64) {
             ItemStack result = new ItemStack(higherCoin, 1);
-            if (!player.m_150109_().m_36054_(result.m_41777_())) {
-               player.m_5661_(Component.m_237115_("text.pomkotsmechs.messages.inventory_full"), true);
+            if (!player.getInventory().add(result.copy())) {
+               player.displayClientMessage(Component.translatable("text.pomkotsmechs.messages.inventory_full"), true);
             } else {
-               stack.m_41774_(64);
+               stack.shrink(64);
                this.playExchangeSound(player);
             }
          }
@@ -61,21 +61,21 @@ public abstract class AbstractPomCoinItem extends Item {
       Item lowerCoin = this.getLowerCoin();
       if (lowerCoin != null) {
          ItemStack result = new ItemStack(lowerCoin, 64);
-         if (!player.m_150109_().m_36054_(result.m_41777_())) {
-            player.m_5661_(Component.m_237115_("text.pomkotsmechs.messages.inventory_full"), true);
+         if (!player.getInventory().add(result.copy())) {
+            player.displayClientMessage(Component.translatable("text.pomkotsmechs.messages.inventory_full"), true);
          } else {
-            stack.m_41774_(1);
+            stack.shrink(1);
             this.playExchangeSound(player);
          }
       }
    }
 
    protected void playExchangeSound(ServerPlayer player) {
-      player.m_9236_().m_5594_(null, player.m_20183_(), (SoundEvent)PomkotsMechs.SE_COIN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+      player.level().playSound(null, player.blockPosition(), (SoundEvent)PomkotsMechs.SE_COIN.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
    }
 
-   public void m_7373_(@NotNull ItemStack stack, @Nullable Level level, List<Component> tooltip, @NotNull TooltipFlag flag) {
-      tooltip.add(Component.m_237115_("tooltip.pomkotsmechs.pom_coin_1"));
-      tooltip.add(Component.m_237115_("tooltip.pomkotsmechs.pom_coin_2"));
+   public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, List<Component> tooltip, @NotNull TooltipFlag flag) {
+      tooltip.add(Component.translatable("tooltip.pomkotsmechs.pom_coin_1"));
+      tooltip.add(Component.translatable("tooltip.pomkotsmechs.pom_coin_2"));
    }
 }

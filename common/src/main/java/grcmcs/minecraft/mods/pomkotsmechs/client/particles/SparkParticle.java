@@ -21,22 +21,22 @@ public class SparkParticle extends TextureSheetParticle {
    protected SparkParticle(ClientLevel level, double x, double y, double z, double vx, double vy, double vz, SpriteSet spriteSet) {
       super(level, x, y, z, vx, vy, vz);
       this.spriteSet = spriteSet;
-      this.f_107225_ = 20;
-      this.f_107226_ = 0.9F;
-      this.f_107663_ *= 2.0F;
-      this.m_108339_(spriteSet);
-      this.f_107219_ = false;
+      this.lifetime = 20;
+      this.gravity = 0.9F;
+      this.quadSize *= 2.0F;
+      this.setSpriteFromAge(spriteSet);
+      this.hasPhysics = false;
    }
 
-   public ParticleRenderType m_7556_() {
-      return ParticleRenderType.f_107430_;
+   public ParticleRenderType getRenderType() {
+      return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
    }
 
-   public void m_5989_() {
-      super.m_5989_();
+   public void tick() {
+      super.tick();
    }
 
-   public int m_6355_(float f) {
+   public int getLightColor(float f) {
       return 15728880;
    }
 
@@ -50,14 +50,14 @@ public class SparkParticle extends TextureSheetParticle {
       public Particle createParticle(SimpleParticleType typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
          Particle p = new SparkParticle(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, this.spriteSet);
          if (typeIn == PomkotsMechs.SPARK_RED.get()) {
-            p.m_107253_(1.0F, 0.1F, 0.0F);
+            p.setColor(1.0F, 0.1F, 0.0F);
          } else if (typeIn == PomkotsMechs.SPARK_ORANGE.get()) {
-            p.m_107253_(1.0F, 0.5F, 0.0F);
+            p.setColor(1.0F, 0.5F, 0.0F);
          } else {
-            p.m_107253_(1.0F, 1.0F, 0.0F);
+            p.setColor(1.0F, 1.0F, 0.0F);
          }
 
-         p.m_107257_(20);
+         p.setLifetime(20);
          return p;
       }
    }

@@ -28,12 +28,12 @@ public class PomkotsRadarItem extends Item {
       super(properties);
    }
 
-   public InteractionResultHolder<ItemStack> m_7203_(Level level, Player player, InteractionHand hand) {
-      if (!level.m_5776_()) {
-         player.m_5893_(new SimpleMenuProvider(RadarTargetSelectMenu::new, Component.m_237113_("Pomkots Radar")));
+   public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+      if (!level.isClientSide()) {
+         player.openMenu(new SimpleMenuProvider(RadarTargetSelectMenu::new, Component.literal("Pomkots Radar")));
       }
 
-      return InteractionResultHolder.m_19090_(player.m_21120_(hand));
+      return InteractionResultHolder.success(player.getItemInHand(hand));
    }
 
    public static void addTarget(ItemStack stack, RadarTarget target) {
@@ -53,7 +53,7 @@ public class PomkotsRadarItem extends Item {
    }
 
    public static List<RadarTarget> getTargets(ItemStack stack) {
-      ListTag list = stack.m_41784_().m_128437_("RadarTargets", 10);
+      ListTag list = stack.getOrCreateTag().getList("RadarTargets", 10);
       List<RadarTarget> result = new ArrayList<>();
 
       for (Tag tag : list) {
@@ -70,15 +70,15 @@ public class PomkotsRadarItem extends Item {
          list.add(RadarTarget.toNbt(t));
       }
 
-      stack.m_41784_().m_128365_("RadarTargets", list);
+      stack.getOrCreateTag().put("RadarTargets", list);
    }
 
    public static int getSelectedIndex(ItemStack stack) {
-      return stack.m_41784_().m_128451_("RadarSelectedIndex");
+      return stack.getOrCreateTag().getInt("RadarSelectedIndex");
    }
 
    public static void setSelectedIndex(ItemStack stack, int index) {
-      stack.m_41784_().m_128405_("RadarSelectedIndex", index);
+      stack.getOrCreateTag().putInt("RadarSelectedIndex", index);
    }
 
    public static Optional<RadarTarget> getActiveTarget(ItemStack stack) {
@@ -87,17 +87,17 @@ public class PomkotsRadarItem extends Item {
          return Optional.empty();
       }
 
-      int idx = Mth.m_14045_(getSelectedIndex(stack), 0, targets.size() - 1);
+      int idx = Mth.clamp(getSelectedIndex(stack), 0, targets.size() - 1);
       return Optional.of(targets.get(idx));
    }
 
    public static void onServerTick(ServerPlayer player) {
       for (InteractionHand hand : InteractionHand.values()) {
-         ItemStack stack = player.m_21120_(hand);
-         if (stack.m_41720_() instanceof PomkotsRadarItem) {
+         ItemStack stack = player.getItemInHand(hand);
+         if (stack.getItem() instanceof PomkotsRadarItem) {
             RadarTarget active = getActiveTarget(stack).orElse(null);
-            if (active instanceof RadarTarget.EntityTarget et && et.uuid() == null && player.m_9236_().m_46467_() % 400L == 0L) {
-               ResourceLocation playerDim = player.m_9236_().m_46472_().m_135782_();
+            if (active instanceof RadarTarget.EntityTarget et && et.uuid() == null && player.level().getGameTime() % 400L == 0L) {
+               ResourceLocation playerDim = player.level().dimension().location();
                if (playerDim.equals(et.dimension())) {
                   resolveSelector(player, stack, et);
                }

@@ -80,37 +80,37 @@ public class RaidControllerEntityBack extends LivingEntity {
    private int prevRemaining = 0;
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_()
-         .m_22266_(Attributes.f_22282_)
-         .m_22268_(Attributes.f_22278_, 1.0)
-         .m_22268_(Attributes.f_22276_, 1000.0)
-         .m_22268_(Attributes.f_22284_, 20.0)
-         .m_22268_(Attributes.f_22285_, 1.0);
+      return LivingEntity.createLivingAttributes()
+         .add(Attributes.ATTACK_KNOCKBACK)
+         .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
+         .add(Attributes.MAX_HEALTH, 1000.0)
+         .add(Attributes.ARMOR, 20.0)
+         .add(Attributes.ARMOR_TOUGHNESS, 1.0);
    }
 
    @NotNull
    public static CompoundTag buildCompoundTag(String startTargetRaidName, UUID raidOwnerUUID, String raidFinalizeCommandSuccess, String raidFinalizeCommandFail) {
       CompoundTag tag = new CompoundTag();
-      tag.m_128359_(PomkotsMechs.nbtName("StartTargetRaidName"), startTargetRaidName);
+      tag.putString(PomkotsMechs.nbtName("StartTargetRaidName"), startTargetRaidName);
       if (raidOwnerUUID != null) {
-         tag.m_128362_(PomkotsMechs.nbtName("RaidOwnerUUID"), raidOwnerUUID);
+         tag.putUUID(PomkotsMechs.nbtName("RaidOwnerUUID"), raidOwnerUUID);
       }
 
       if (raidFinalizeCommandSuccess != null) {
-         tag.m_128359_(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"), raidFinalizeCommandSuccess);
+         tag.putString(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"), raidFinalizeCommandSuccess);
       }
 
       if (raidFinalizeCommandFail != null) {
-         tag.m_128359_(PomkotsMechs.nbtName("RaidFinalizeCommandFail"), raidFinalizeCommandFail);
+         tag.putString(PomkotsMechs.nbtName("RaidFinalizeCommandFail"), raidFinalizeCommandFail);
       }
 
       return tag;
    }
 
    public static List<BaseBossEntity> getInactiveBossesAroundPos(Level level, BlockPos bPos) {
-      return level.m_45976_(
+      return level.getEntitiesOfClass(
             BaseBossEntity.class,
-            new AABB(bPos.m_123341_(), bPos.m_123342_(), bPos.m_123343_(), bPos.m_123341_() + 1, bPos.m_123342_() + 1, bPos.m_123343_() + 1).m_82400_(40.0)
+            new AABB(bPos.getX(), bPos.getY(), bPos.getZ(), bPos.getX() + 1, bPos.getY() + 1, bPos.getZ() + 1).inflate(40.0)
          )
          .stream()
          .filter(b -> b.getAiMode() == -2)
@@ -118,9 +118,9 @@ public class RaidControllerEntityBack extends LivingEntity {
    }
 
    public static List<Player> getPlayersAroundPos(Level level, BlockPos bPos) {
-      return level.m_45976_(
+      return level.getEntitiesOfClass(
          Player.class,
-         new AABB(bPos.m_123341_(), bPos.m_123342_(), bPos.m_123343_(), bPos.m_123341_() + 1, bPos.m_123342_() + 1, bPos.m_123343_() + 1).m_82400_(100.0)
+         new AABB(bPos.getX(), bPos.getY(), bPos.getZ(), bPos.getX() + 1, bPos.getY() + 1, bPos.getZ() + 1).inflate(100.0)
       );
    }
 
@@ -130,138 +130,138 @@ public class RaidControllerEntityBack extends LivingEntity {
 
    public RaidControllerEntityBack(EntityType<? extends LivingEntity> entityType, Level world, BaseBossEntity parent) {
       super(entityType, world);
-      this.f_19794_ = true;
-      this.m_20242_(true);
+      this.noPhysics = true;
+      this.setNoGravity(true);
       this.raidDefinition = null;
       this.raidTargetEntity = null;
-      this.timeBar = new ServerBossEvent(Component.m_237113_("Raid Time"), BossBarColor.BLUE, BossBarOverlay.PROGRESS);
-      this.baseHpBar = new ServerBossEvent(Component.m_237113_("Target HP"), BossBarColor.GREEN, BossBarOverlay.PROGRESS);
+      this.timeBar = new ServerBossEvent(Component.literal("Raid Time"), BossBarColor.BLUE, BossBarOverlay.PROGRESS);
+      this.baseHpBar = new ServerBossEvent(Component.literal("Target HP"), BossBarColor.GREEN, BossBarOverlay.PROGRESS);
       this.initBossBars();
    }
 
    private void initBossBars() {
-      this.timeBar.m_142711_(1.0F);
-      this.baseHpBar.m_142711_(1.0F);
+      this.timeBar.setProgress(1.0F);
+      this.baseHpBar.setProgress(1.0F);
       this.setBossBarVisibility(false);
    }
 
    private void setBossBarVisibility(boolean bl) {
-      this.baseHpBar.m_8321_(bl);
-      this.timeBar.m_8321_(bl);
+      this.baseHpBar.setVisible(bl);
+      this.timeBar.setVisible(bl);
    }
 
-   public void m_7378_(CompoundTag tag) {
-      super.m_7378_(tag);
-      if (tag.m_128441_(PomkotsMechs.nbtName("StartTargetRaidName"))) {
-         this.startTargetRaidName = tag.m_128461_(PomkotsMechs.nbtName("StartTargetRaidName"));
+   public void readAdditionalSaveData(CompoundTag tag) {
+      super.readAdditionalSaveData(tag);
+      if (tag.contains(PomkotsMechs.nbtName("StartTargetRaidName"))) {
+         this.startTargetRaidName = tag.getString(PomkotsMechs.nbtName("StartTargetRaidName"));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("RaidOwnerUUID"))) {
-         this.raidOwnerUUID = tag.m_128342_(PomkotsMechs.nbtName("RaidOwnerUUID"));
+      if (tag.contains(PomkotsMechs.nbtName("RaidOwnerUUID"))) {
+         this.raidOwnerUUID = tag.getUUID(PomkotsMechs.nbtName("RaidOwnerUUID"));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"))) {
-         this.raidFinalizeCommandSuccess = tag.m_128461_(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"));
+      if (tag.contains(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"))) {
+         this.raidFinalizeCommandSuccess = tag.getString(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("RaidFinalizeCommandFail"))) {
-         this.raidFinalizeCommandFail = tag.m_128461_(PomkotsMechs.nbtName("RaidFinalizeCommandFail"));
+      if (tag.contains(PomkotsMechs.nbtName("RaidFinalizeCommandFail"))) {
+         this.raidFinalizeCommandFail = tag.getString(PomkotsMechs.nbtName("RaidFinalizeCommandFail"));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("CurrentRaidName"))) {
-         this.currentRaidName = tag.m_128461_(PomkotsMechs.nbtName("CurrentRaidName"));
+      if (tag.contains(PomkotsMechs.nbtName("CurrentRaidName"))) {
+         this.currentRaidName = tag.getString(PomkotsMechs.nbtName("CurrentRaidName"));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("RaidTargetEntityUUID"))) {
-         this.raidTargetEntityUUID = tag.m_128342_(PomkotsMechs.nbtName("RaidTargetEntityUUID"));
+      if (tag.contains(PomkotsMechs.nbtName("RaidTargetEntityUUID"))) {
+         this.raidTargetEntityUUID = tag.getUUID(PomkotsMechs.nbtName("RaidTargetEntityUUID"));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("CurrentWaveIndex"))) {
-         this.currentWaveIndex = tag.m_128451_(PomkotsMechs.nbtName("CurrentWaveIndex"));
+      if (tag.contains(PomkotsMechs.nbtName("CurrentWaveIndex"))) {
+         this.currentWaveIndex = tag.getInt(PomkotsMechs.nbtName("CurrentWaveIndex"));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("TickCounter"))) {
-         this.tickCounter = tag.m_128451_(PomkotsMechs.nbtName("TickCounter"));
+      if (tag.contains(PomkotsMechs.nbtName("TickCounter"))) {
+         this.tickCounter = tag.getInt(PomkotsMechs.nbtName("TickCounter"));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("EndEventWhenKilledAllMobs"))) {
-         this.endEventWhenKilledAllMobs = tag.m_128471_(PomkotsMechs.nbtName("EndEventWhenKilledAllMobs"));
+      if (tag.contains(PomkotsMechs.nbtName("EndEventWhenKilledAllMobs"))) {
+         this.endEventWhenKilledAllMobs = tag.getBoolean(PomkotsMechs.nbtName("EndEventWhenKilledAllMobs"));
       }
 
-      if (tag.m_128441_(PomkotsMechs.nbtName("SpawnedMobsNum"))) {
-         this.spawnedMobsNum = tag.m_128451_(PomkotsMechs.nbtName("SpawnedMobsNum"));
+      if (tag.contains(PomkotsMechs.nbtName("SpawnedMobsNum"))) {
+         this.spawnedMobsNum = tag.getInt(PomkotsMechs.nbtName("SpawnedMobsNum"));
       }
 
-      this.spawnedMobsTag = (ListTag)tag.m_128423_(PomkotsMechs.nbtName("SpawnedMobs"));
+      this.spawnedMobsTag = (ListTag)tag.get(PomkotsMechs.nbtName("SpawnedMobs"));
    }
 
-   public void m_7380_(CompoundTag tag) {
-      super.m_7380_(tag);
+   public void addAdditionalSaveData(CompoundTag tag) {
+      super.addAdditionalSaveData(tag);
       if (this.startTargetRaidName != null) {
-         tag.m_128359_(PomkotsMechs.nbtName("StartTargetRaidName"), this.startTargetRaidName);
+         tag.putString(PomkotsMechs.nbtName("StartTargetRaidName"), this.startTargetRaidName);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("StartTargetRaidName"));
+         tag.remove(PomkotsMechs.nbtName("StartTargetRaidName"));
       }
 
       if (this.raidOwnerUUID != null) {
-         tag.m_128362_(PomkotsMechs.nbtName("RaidOwnerUUID"), this.raidOwnerUUID);
+         tag.putUUID(PomkotsMechs.nbtName("RaidOwnerUUID"), this.raidOwnerUUID);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("RaidOwnerUUID"));
+         tag.remove(PomkotsMechs.nbtName("RaidOwnerUUID"));
       }
 
       if (this.raidFinalizeCommandSuccess != null) {
-         tag.m_128359_(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"), this.raidFinalizeCommandSuccess);
+         tag.putString(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"), this.raidFinalizeCommandSuccess);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"));
+         tag.remove(PomkotsMechs.nbtName("RaidFinalizeCommandSuccess"));
       }
 
       if (this.raidFinalizeCommandFail != null) {
-         tag.m_128359_(PomkotsMechs.nbtName("RaidFinalizeCommandFail"), this.raidFinalizeCommandFail);
+         tag.putString(PomkotsMechs.nbtName("RaidFinalizeCommandFail"), this.raidFinalizeCommandFail);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("RaidFinalizeCommandFail"));
+         tag.remove(PomkotsMechs.nbtName("RaidFinalizeCommandFail"));
       }
 
       if (this.currentRaidName != null) {
-         tag.m_128359_(PomkotsMechs.nbtName("CurrentRaidName"), this.currentRaidName);
+         tag.putString(PomkotsMechs.nbtName("CurrentRaidName"), this.currentRaidName);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("CurrentRaidName"));
+         tag.remove(PomkotsMechs.nbtName("CurrentRaidName"));
       }
 
       if (this.raidTargetEntityUUID != null) {
-         tag.m_128362_(PomkotsMechs.nbtName("RaidTargetEntityUUID"), this.raidTargetEntityUUID);
+         tag.putUUID(PomkotsMechs.nbtName("RaidTargetEntityUUID"), this.raidTargetEntityUUID);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("RaidTargetEntityUUID"));
+         tag.remove(PomkotsMechs.nbtName("RaidTargetEntityUUID"));
       }
 
       if (this.currentWaveIndex != -1) {
-         tag.m_128405_(PomkotsMechs.nbtName("CurrentWaveIndex"), this.currentWaveIndex);
+         tag.putInt(PomkotsMechs.nbtName("CurrentWaveIndex"), this.currentWaveIndex);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("CurrentWaveIndex"));
+         tag.remove(PomkotsMechs.nbtName("CurrentWaveIndex"));
       }
 
       if (this.tickCounter != -1) {
-         tag.m_128405_(PomkotsMechs.nbtName("TickCounter"), this.tickCounter);
+         tag.putInt(PomkotsMechs.nbtName("TickCounter"), this.tickCounter);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("TickCounter"));
+         tag.remove(PomkotsMechs.nbtName("TickCounter"));
       }
 
       if (this.endEventWhenKilledAllMobs) {
-         tag.m_128379_(PomkotsMechs.nbtName("EndEventWhenKilledAllMobs"), this.endEventWhenKilledAllMobs);
+         tag.putBoolean(PomkotsMechs.nbtName("EndEventWhenKilledAllMobs"), this.endEventWhenKilledAllMobs);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("EndEventWhenKilledAllMobs"));
+         tag.remove(PomkotsMechs.nbtName("EndEventWhenKilledAllMobs"));
       }
 
       ListTag list = new ListTag();
 
       for (Entity ent : this.spawnedMobs) {
-         list.add(NbtUtils.m_129226_(ent.m_20148_()));
+         list.add(NbtUtils.createUUID(ent.getUUID()));
       }
 
-      tag.m_128365_(PomkotsMechs.nbtName("SpawnedMobs"), list);
+      tag.put(PomkotsMechs.nbtName("SpawnedMobs"), list);
       if (this.spawnedMobsNum != -1) {
-         tag.m_128405_(PomkotsMechs.nbtName("SpawnedMobsNum"), this.spawnedMobsNum);
+         tag.putInt(PomkotsMechs.nbtName("SpawnedMobsNum"), this.spawnedMobsNum);
       } else {
-         tag.m_128473_(PomkotsMechs.nbtName("SpawnedMobsNum"));
+         tag.remove(PomkotsMechs.nbtName("SpawnedMobsNum"));
       }
    }
 
@@ -270,8 +270,8 @@ public class RaidControllerEntityBack extends LivingEntity {
          this.spawnedMobs.clear();
          if (this.spawnedMobsTag != null) {
             for (Tag t : this.spawnedMobsTag) {
-               UUID uuid = NbtUtils.m_129233_(t);
-               Entity ent = ((ServerLevel)this.m_9236_()).m_8791_(uuid);
+               UUID uuid = NbtUtils.loadUUID(t);
+               Entity ent = ((ServerLevel)this.level()).getEntity(uuid);
                if (ent != null) {
                   this.spawnedMobs.add(ent);
                }
@@ -280,60 +280,60 @@ public class RaidControllerEntityBack extends LivingEntity {
       }
    }
 
-   public void m_8119_() {
-      if (this.f_19803_ && !this.m_9236_().f_46443_) {
+   public void tick() {
+      if (this.firstTick && !this.level().isClientSide) {
          this.loadSpawnedMobs();
       }
 
-      super.m_8119_();
-      if (!this.m_9236_().f_46443_) {
-         if (this.f_19797_ > 120000) {
+      super.tick();
+      if (!this.level().isClientSide) {
+         if (this.tickCount > 120000) {
             PomkotsMechs.LOGGER.info("MAX Tick Count exceeded:" + this);
-            this.m_146870_();
+            this.discard();
          }
 
-         ServerLevel serverLevel = (ServerLevel)this.m_9236_();
+         ServerLevel serverLevel = (ServerLevel)this.level();
          if (!this.spawnedMobs.isEmpty()) {
-            this.spawnedMobs.removeIf(e -> e == null || !e.m_6084_());
+            this.spawnedMobs.removeIf(e -> e == null || !e.isAlive());
          }
 
          if (this.startTargetRaidName != null) {
             this.raidDefinition = PomkotsDataPackManager.getInstance().getDataPack().getRaidData(this.startTargetRaidName);
             if (this.raidDefinition == null) {
                PomkotsMechs.LOGGER.error("Raid def not found:" + this.startTargetRaidName);
-               this.m_146870_();
+               this.discard();
                return;
             }
 
             this.currentRaidName = this.startTargetRaidName;
             this.tickCounter = 0;
             this.currentWaveIndex = 0;
-            if (!this.baseHpBar.m_8324_().isEmpty()) {
-               for (ServerPlayer player : this.baseHpBar.m_8324_()) {
+            if (!this.baseHpBar.getPlayers().isEmpty()) {
+               for (ServerPlayer player : this.baseHpBar.getPlayers()) {
                   this.startBGMforPlayer(player, this.raidDefinition);
                }
             }
 
             if ("defense".equals(this.raidDefinition.type)) {
-               RaidObjectiveEntity roe = (RaidObjectiveEntity)((EntityType)PomkotsMechs.RAID_OBJECTIVE.get()).m_20615_(serverLevel);
+               RaidObjectiveEntity roe = (RaidObjectiveEntity)((EntityType)PomkotsMechs.RAID_OBJECTIVE.get()).create(serverLevel);
                if (roe != null) {
-                  BlockPos pos = this.m_20183_();
-                  roe.m_6034_(pos.m_123341_(), pos.m_123342_(), pos.m_123343_());
-                  this.m_9236_().m_7967_(roe);
+                  BlockPos pos = this.blockPosition();
+                  roe.setPos(pos.getX(), pos.getY(), pos.getZ());
+                  this.level().addFreshEntity(roe);
                   this.raidTargetEntity = roe;
-                  this.raidTargetEntityUUID = this.raidTargetEntity.m_20148_();
+                  this.raidTargetEntityUUID = this.raidTargetEntity.getUUID();
                }
             } else if ("survive".equals(this.raidDefinition.type)) {
-               this.raidTargetEntity = (LivingEntity)serverLevel.m_8791_(this.raidOwnerUUID);
+               this.raidTargetEntity = (LivingEntity)serverLevel.getEntity(this.raidOwnerUUID);
                this.raidTargetEntityUUID = this.raidOwnerUUID;
             } else if ("sweep".equals(this.raidDefinition.type)) {
                this.raidTargetEntity = this;
-               this.raidTargetEntityUUID = this.m_20148_();
+               this.raidTargetEntityUUID = this.getUUID();
             } else if ("activate".equals(this.raidDefinition.type)) {
                this.raidTargetEntity = this;
-               this.raidTargetEntityUUID = this.m_20148_();
-               List<BaseBossEntity> bosses = getInactiveBossesAroundPos(this.m_9236_(), this.m_20183_());
-               List<Player> players = getPlayersAroundPos(this.m_9236_(), this.m_20183_());
+               this.raidTargetEntityUUID = this.getUUID();
+               List<BaseBossEntity> bosses = getInactiveBossesAroundPos(this.level(), this.blockPosition());
+               List<Player> players = getPlayersAroundPos(this.level(), this.blockPosition());
 
                for (BaseBossEntity boss : bosses) {
                   boss.boot();
@@ -352,23 +352,23 @@ public class RaidControllerEntityBack extends LivingEntity {
          if (this.raidOwnerUUID == null) {
             this.raidOwner = null;
          } else {
-            this.raidOwner = serverLevel.m_8791_(this.raidOwnerUUID);
+            this.raidOwner = serverLevel.getEntity(this.raidOwnerUUID);
          }
 
          if (this.currentRaidName != null) {
             if (this.raidTargetEntity == null) {
-               this.raidTargetEntity = (LivingEntity)serverLevel.m_8791_(this.raidTargetEntityUUID);
+               this.raidTargetEntity = (LivingEntity)serverLevel.getEntity(this.raidTargetEntityUUID);
                this.raidDefinition = PomkotsDataPackManager.getInstance().getDataPack().getRaidData(this.currentRaidName);
             }
 
             if (this.raidDefinition != null && this.raidTargetEntity != null) {
                WaveDefinition wave = this.raidDefinition.waves.get(this.currentWaveIndex);
                if (this.tickCounter == 5) {
-                  this.showTitlesForPlayers(wave.title, wave.sub_title, this.baseHpBar.m_8324_());
+                  this.showTitlesForPlayers(wave.title, wave.sub_title, this.baseHpBar.getPlayers());
                }
 
                this.tickCounter++;
-               if (!this.baseHpBar.m_8323_()) {
+               if (!this.baseHpBar.isVisible()) {
                   this.setBossBarVisibility(true);
                }
 
@@ -378,7 +378,7 @@ public class RaidControllerEntityBack extends LivingEntity {
                }
 
                this.updateBossBars(wave, remainMaxMobs);
-               if (this.raidOwner != null && this.raidOwner.m_6084_()) {
+               if (this.raidOwner != null && this.raidOwner.isAlive()) {
                   if (!"defense".equals(this.raidDefinition.type) && !"survive".equals(this.raidDefinition.type)) {
                      if ("sweep".equals(this.raidDefinition.type)) {
                         if (remainMaxMobs == null) {
@@ -396,13 +396,13 @@ public class RaidControllerEntityBack extends LivingEntity {
                      } else if ("activate".equals(this.raidDefinition.type) && this.spawnedMobs.isEmpty()) {
                         this.endRaid(true);
                      }
-                  } else if (this.raidTargetEntity == null || !this.raidTargetEntity.m_6084_()) {
+                  } else if (this.raidTargetEntity == null || !this.raidTargetEntity.isAlive()) {
                      this.endRaid(false);
                      return;
                   }
 
                   if (this.raidDefinition != null && "survive".equals(this.raidDefinition.type)) {
-                     this.m_146884_(this.raidTargetEntity.m_20182_());
+                     this.setPos(this.raidTargetEntity.position());
                   }
 
                   if (this.endEventWhenKilledAllMobs) {
@@ -479,24 +479,24 @@ public class RaidControllerEntityBack extends LivingEntity {
       }
    }
 
-   public void m_142687_(RemovalReason removalReason) {
-      if (!this.m_9236_().f_46443_ && (removalReason == RemovalReason.DISCARDED || removalReason == RemovalReason.KILLED)) {
+   public void remove(RemovalReason removalReason) {
+      if (!this.level().isClientSide && (removalReason == RemovalReason.DISCARDED || removalReason == RemovalReason.KILLED)) {
          this.setBossBarVisibility(false);
-         if (this.raidTargetEntity != null && this.raidTargetEntity.m_6084_() && this.raidTargetEntity instanceof RaidObjectiveEntity) {
-            this.raidTargetEntity.m_146870_();
+         if (this.raidTargetEntity != null && this.raidTargetEntity.isAlive() && this.raidTargetEntity instanceof RaidObjectiveEntity) {
+            this.raidTargetEntity.discard();
          }
 
          this.killAllMobs();
       }
 
-      super.m_142687_(removalReason);
+      super.remove(removalReason);
    }
 
    private void killAllMobs() {
-      if (this.m_9236_() instanceof ServerLevel sl) {
+      if (this.level() instanceof ServerLevel sl) {
          for (Entity ent : this.spawnedMobs) {
-            if (ent != null && ent.m_6084_()) {
-               ent.m_6074_();
+            if (ent != null && ent.isAlive()) {
+               ent.kill();
             }
          }
 
@@ -504,10 +504,10 @@ public class RaidControllerEntityBack extends LivingEntity {
       }
    }
 
-   public void m_6457_(ServerPlayer player) {
-      this.baseHpBar.m_6543_(player);
-      this.timeBar.m_6543_(player);
-      if (!this.f_19803_) {
+   public void startSeenByPlayer(ServerPlayer player) {
+      this.baseHpBar.addPlayer(player);
+      this.timeBar.addPlayer(player);
+      if (!this.firstTick) {
          this.startBGMforPlayer(player, this.raidDefinition);
       }
    }
@@ -523,30 +523,30 @@ public class RaidControllerEntityBack extends LivingEntity {
    }
 
    public static Optional<SoundEvent> getSoundEvent(ResourceLocation id) {
-      return BuiltInRegistries.f_256894_.m_6612_(id);
+      return BuiltInRegistries.SOUND_EVENT.getOptional(id);
    }
 
-   public void m_6452_(ServerPlayer player) {
-      this.baseHpBar.m_6539_(player);
-      this.timeBar.m_6539_(player);
+   public void stopSeenByPlayer(ServerPlayer player) {
+      this.baseHpBar.removePlayer(player);
+      this.timeBar.removePlayer(player);
       ServerBGMTracker.forceUnsetBGMState(player);
    }
 
    private void sendMessage(String message, Collection<ServerPlayer> players) {
       for (ServerPlayer player : players) {
-         player.m_213846_(Component.m_237113_(message));
+         player.sendSystemMessage(Component.literal(message));
       }
    }
 
    private void showTitlesForPlayers(String title, String subTitle, Collection<ServerPlayer> players) {
       ClientboundSetTitlesAnimationPacket timesPacket = new ClientboundSetTitlesAnimationPacket(20, 60, 20);
-      ClientboundSetTitleTextPacket titlePacket = new ClientboundSetTitleTextPacket(Component.m_237113_(title));
-      ClientboundSetSubtitleTextPacket subtitlePacket = new ClientboundSetSubtitleTextPacket(Component.m_237113_(subTitle));
+      ClientboundSetTitleTextPacket titlePacket = new ClientboundSetTitleTextPacket(Component.literal(title));
+      ClientboundSetSubtitleTextPacket subtitlePacket = new ClientboundSetSubtitleTextPacket(Component.literal(subTitle));
 
       for (ServerPlayer player : players) {
-         player.f_8906_.m_9829_(timesPacket);
-         player.f_8906_.m_9829_(titlePacket);
-         player.f_8906_.m_9829_(subtitlePacket);
+         player.connection.send(timesPacket);
+         player.connection.send(titlePacket);
+         player.connection.send(subtitlePacket);
       }
    }
 
@@ -555,16 +555,16 @@ public class RaidControllerEntityBack extends LivingEntity {
          int remaining = wave.duration_ticks - this.tickCounter;
          if (remaining != this.prevRemaining) {
             float timeProgress = (float)remaining / wave.duration_ticks;
-            this.timeBar.m_6456_(Component.m_237113_(wave.title + " | Time: " + remaining / 20 + "sec"));
-            this.timeBar.m_142711_(Math.max(0.0F, Math.min(1.0F, timeProgress)));
+            this.timeBar.setName(Component.literal(wave.title + " | Time: " + remaining / 20 + "sec"));
+            this.timeBar.setProgress(Math.max(0.0F, Math.min(1.0F, timeProgress)));
             if ("sweep".equals(this.raidDefinition.type) && remainingMobs != null) {
                float remainProgress = (float)(remainingMobs[0] + this.spawnedMobs.size()) / remainingMobs[1];
-               this.baseHpBar.m_6456_(Component.m_237113_("Target Monsters: " + (remainingMobs[0] + this.spawnedMobs.size()) + "/" + remainingMobs[1]));
-               this.baseHpBar.m_142711_(Math.max(0.0F, Math.min(1.0F, remainProgress)));
+               this.baseHpBar.setName(Component.literal("Target Monsters: " + (remainingMobs[0] + this.spawnedMobs.size()) + "/" + remainingMobs[1]));
+               this.baseHpBar.setProgress(Math.max(0.0F, Math.min(1.0F, remainProgress)));
             } else if (!"activate".equals(this.raidDefinition.type) || this.spawnedMobs == null) {
-               float healthProgress = this.raidTargetEntity.m_21223_() / this.raidTargetEntity.m_21233_();
-               this.baseHpBar.m_6456_(Component.m_237113_("Target HP: " + (int)this.raidTargetEntity.m_21223_() + "/" + (int)this.raidTargetEntity.m_21233_()));
-               this.baseHpBar.m_142711_(Math.max(0.0F, Math.min(1.0F, healthProgress)));
+               float healthProgress = this.raidTargetEntity.getHealth() / this.raidTargetEntity.getMaxHealth();
+               this.baseHpBar.setName(Component.literal("Target HP: " + (int)this.raidTargetEntity.getHealth() + "/" + (int)this.raidTargetEntity.getMaxHealth()));
+               this.baseHpBar.setProgress(Math.max(0.0F, Math.min(1.0F, healthProgress)));
             }
 
             this.prevRemaining = remaining;
@@ -585,7 +585,7 @@ public class RaidControllerEntityBack extends LivingEntity {
             }
 
             if (event.message != null) {
-               this.sendMessage(event.message, this.baseHpBar.m_8324_());
+               this.sendMessage(event.message, this.baseHpBar.getPlayers());
             }
 
             this.endEventWhenKilledAllMobs = event.force_end_wave_when_killed_all;
@@ -599,14 +599,14 @@ public class RaidControllerEntityBack extends LivingEntity {
             RegistrySupplier<EntityType<?>> type = this.getEntityType(st.mob_type);
             if (type != null && st.position != null) {
                BlockPos pos = this.parseBlockPos(st.position);
-               if (pos != null && this.m_9236_() != null) {
-                  Entity entity = ((EntityType)type.get()).m_20615_(this.m_9236_());
+               if (pos != null && this.level() != null) {
+                  Entity entity = ((EntityType)type.get()).create(this.level());
                   if (entity != null) {
-                     BlockPos offset = this.m_20183_();
-                     entity.m_6034_(offset.m_123341_() + pos.m_123341_(), offset.m_123342_() + pos.m_123342_(), offset.m_123343_() + pos.m_123343_());
+                     BlockPos offset = this.blockPosition();
+                     entity.setPos(offset.getX() + pos.getX(), offset.getY() + pos.getY(), offset.getZ() + pos.getZ());
                      if (st.snbt != null && entity instanceof LivingEntity le) {
                         try {
-                           le.m_7378_(TagParser.m_129359_(st.snbt));
+                           le.readAdditionalSaveData(TagParser.parseTag(st.snbt));
                         } catch (Exception e) {
                            PomkotsMechs.LOGGER.error("failed to parse snbt.", e);
                         }
@@ -614,7 +614,7 @@ public class RaidControllerEntityBack extends LivingEntity {
 
                      if ("defense".equals(this.raidDefinition.type)) {
                         if (entity instanceof Mob mons) {
-                           mons.m_6710_(this.raidTargetEntity);
+                           mons.setTarget(this.raidTargetEntity);
                         }
 
                         if (entity instanceof GenericPomkotsMonster pomkots) {
@@ -626,19 +626,19 @@ public class RaidControllerEntityBack extends LivingEntity {
                            pomkots.setInEvent(true);
                         }
 
-                        if (((ServerLevel)this.m_9236_()).m_8791_(this.raidOwnerUUID) instanceof LivingEntity le) {
-                           mons.m_6710_(le);
+                        if (((ServerLevel)this.level()).getEntity(this.raidOwnerUUID) instanceof LivingEntity le) {
+                           mons.setTarget(le);
                         }
                      }
 
                      if (entity instanceof Pmc01Entity pmc01) {
-                        pmc01.raidControllerEntityUUID = this.m_20148_();
+                        pmc01.raidControllerEntityUUID = this.getUUID();
                      } else if (entity instanceof Mob mob) {
-                        mob.m_21530_();
+                        mob.setPersistenceRequired();
                      }
 
                      this.spawnedMobs.add(entity);
-                     this.m_9236_().m_7967_(entity);
+                     this.level().addFreshEntity(entity);
                   }
                }
             }
@@ -649,34 +649,34 @@ public class RaidControllerEntityBack extends LivingEntity {
    private void fireSpawnRandomEvent(EventDefinition event) {
       if (event.spawn_targets != null) {
          Random rand = new Random();
-         Level level = this.m_9236_();
+         Level level = this.level();
          EntityType[] mobTypeList = this.getMobList(event);
          int count = event.amount;
          int rangex = event.range_x;
          int rangez = event.range_z;
-         BlockPos centerPos = this.m_20183_();
+         BlockPos centerPos = this.blockPosition();
          LivingEntity opener = this.getTargetCandidate();
          int spawned = 0;
 
          for (int i = 0; i < 100 && spawned < count; i++) {
-            int x = centerPos.m_123341_() + rand.nextInt(rangex) - rangex / 2;
-            int z = centerPos.m_123343_() + rand.nextInt(rangez) - rangez / 2;
-            int y = this.findSpawnY(level, x, centerPos.m_123342_(), z, new AABB(0.0, 0.0, 0.0, 10.0, 10.0, 10.0));
-            Entity mob = this.getRandomMobType(rand, mobTypeList).m_20615_(level);
+            int x = centerPos.getX() + rand.nextInt(rangex) - rangex / 2;
+            int z = centerPos.getZ() + rand.nextInt(rangez) - rangez / 2;
+            int y = this.findSpawnY(level, x, centerPos.getY(), z, new AABB(0.0, 0.0, 0.0, 10.0, 10.0, 10.0));
+            Entity mob = this.getRandomMobType(rand, mobTypeList).create(level);
             if (mob != null) {
-               mob.m_7678_(x + 0.5, y, z + 0.5, rand.nextFloat() * 360.0F, 0.0F);
+               mob.moveTo(x + 0.5, y, z + 0.5, rand.nextFloat() * 360.0F, 0.0F);
                if (mob instanceof Mob m) {
                   if (opener != null) {
-                     m.m_6710_(opener);
+                     m.setTarget(opener);
                   }
 
                   if (m instanceof BaseSmallMonsterEntity small) {
-                     small.m_21530_();
+                     small.setPersistenceRequired();
                      small.setInEvent(true);
                   }
                }
 
-               level.m_7967_(mob);
+               level.addFreshEntity(mob);
                spawned++;
                this.spawnedMobs.add(mob);
             }
@@ -689,20 +689,20 @@ public class RaidControllerEntityBack extends LivingEntity {
       int res = Integer.MIN_VALUE;
 
       for (int y = startY; y < maxY; y++) {
-         AABB checkBox = spaceSize.m_82386_(x - spaceSize.f_82288_, y - spaceSize.f_82289_, z - spaceSize.f_82290_);
-         if (level.m_45772_(checkBox)) {
+         AABB checkBox = spaceSize.move(x - spaceSize.minX, y - spaceSize.minY, z - spaceSize.minZ);
+         if (level.noCollision(checkBox)) {
             res = y;
          }
       }
 
-      return res == Integer.MIN_VALUE ? level.m_6924_(Types.MOTION_BLOCKING_NO_LEAVES, x, z) : res;
+      return res == Integer.MIN_VALUE ? level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z) : res;
    }
 
    private LivingEntity getTargetCandidate() {
       if (this.raidOwnerUUID == null) {
          return null;
       } else {
-         return ((ServerLevel)this.m_9236_()).m_8791_(this.raidOwnerUUID) instanceof LivingEntity r ? r : null;
+         return ((ServerLevel)this.level()).getEntity(this.raidOwnerUUID) instanceof LivingEntity r ? r : null;
       }
    }
 
@@ -768,34 +768,34 @@ public class RaidControllerEntityBack extends LivingEntity {
    private void endRaid(boolean victory, String subTitle) {
       String finalizeCommand = null;
       if (victory) {
-         this.showTitlesForPlayers("Mission Complete!!", subTitle, this.baseHpBar.m_8324_());
+         this.showTitlesForPlayers("Mission Complete!!", subTitle, this.baseHpBar.getPlayers());
          finalizeCommand = this.raidFinalizeCommandSuccess;
       } else {
-         this.showTitlesForPlayers("Mission Failed...", subTitle, this.baseHpBar.m_8324_());
+         this.showTitlesForPlayers("Mission Failed...", subTitle, this.baseHpBar.getPlayers());
          finalizeCommand = this.raidFinalizeCommandFail;
       }
 
-      if (this.m_9236_() instanceof ServerLevel serverLevel
+      if (this.level() instanceof ServerLevel serverLevel
          && this.raidOwnerUUID != null
          && finalizeCommand != null
-         && serverLevel.m_46003_(this.raidOwnerUUID) instanceof ServerPlayer serverPlayer) {
+         && serverLevel.getPlayerByUUID(this.raidOwnerUUID) instanceof ServerPlayer serverPlayer) {
          this.runCommandAsOwner(finalizeCommand, serverPlayer, serverLevel);
       }
 
       this.resetRaid();
-      this.m_146870_();
+      this.discard();
    }
 
    private void runCommandAsOwner(String command, ServerPlayer serverPlayer, ServerLevel serverLevel) {
-      MinecraftServer server = serverLevel.m_7654_();
-      CommandSourceStack source = serverPlayer.m_20203_();
-      server.m_129892_().m_230957_(source, command);
+      MinecraftServer server = serverLevel.getServer();
+      CommandSourceStack source = serverPlayer.createCommandSourceStack();
+      server.getCommands().performPrefixedCommand(source, command);
    }
 
    private void resetRaid() {
       this.raidDefinition = null;
       if (this.raidTargetEntity != null && this.raidTargetEntity instanceof RaidObjectiveEntity) {
-         this.raidTargetEntity.m_146870_();
+         this.raidTargetEntity.discard();
       }
 
       this.raidTargetEntity = null;
@@ -828,30 +828,30 @@ public class RaidControllerEntityBack extends LivingEntity {
       this.currentWaveIndex = currentWaveIndex;
    }
 
-   public boolean m_6469_(DamageSource source, float amount) {
-      return Utils.isSystemicDamage(source) ? super.m_6469_(source, amount) : false;
+   public boolean hurt(DamageSource source, float amount) {
+      return Utils.isSystemicDamage(source) ? super.hurt(source, amount) : false;
    }
 
-   public boolean m_6051_() {
+   public boolean displayFireAnimation() {
       return false;
    }
 
-   public Iterable<ItemStack> m_6168_() {
-      return NonNullList.m_122780_(4, ItemStack.f_41583_);
+   public Iterable<ItemStack> getArmorSlots() {
+      return NonNullList.withSize(4, ItemStack.EMPTY);
    }
 
-   public ItemStack m_6844_(EquipmentSlot equipmentSlot) {
-      return ItemStack.f_41583_;
+   public ItemStack getItemBySlot(EquipmentSlot equipmentSlot) {
+      return ItemStack.EMPTY;
    }
 
-   public void m_8061_(EquipmentSlot equipmentSlot, ItemStack itemStack) {
+   public void setItemSlot(EquipmentSlot equipmentSlot, ItemStack itemStack) {
    }
 
-   public boolean m_6128_() {
+   public boolean ignoreExplosion() {
       return true;
    }
 
-   public HumanoidArm m_5737_() {
+   public HumanoidArm getMainArm() {
       return null;
    }
 }

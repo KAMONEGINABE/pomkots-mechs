@@ -33,27 +33,27 @@ public class RadarTargetSelectScreen extends AbstractContainerScreen<RadarTarget
 
    public RadarTargetSelectScreen(RadarTargetSelectMenu menu, Inventory inv, Component title) {
       super(menu, inv, title);
-      this.f_97726_ = 480;
-      this.f_97727_ = 270;
+      this.imageWidth = 480;
+      this.imageHeight = 270;
    }
 
-   protected void m_7856_() {
-      super.m_7856_();
+   protected void init() {
+      super.init();
       this.buttonOffsetX = 170;
       this.buttonOffsetY = 50;
-      this.targetList = new RadarTargetList(this, this.f_96541_);
-      this.m_142416_(this.targetList);
+      this.targetList = new RadarTargetList(this, this.minecraft);
+      this.addRenderableWidget(this.targetList);
       this.targetList.addTargets((List<RadarTarget>)this.loadTargets().getSecond());
    }
 
    private Pair<Integer, List<RadarTarget>> loadTargets() {
       List<RadarTarget> targets = null;
       int selectedIdx = 0;
-      ItemStack radarStack = ((RadarTargetSelectMenu)this.f_97732_).getRadarStack();
-      if (radarStack.m_41720_() instanceof PomkotsRadarItem) {
+      ItemStack radarStack = ((RadarTargetSelectMenu)this.menu).getRadarStack();
+      if (radarStack.getItem() instanceof PomkotsRadarItem) {
          targets = PomkotsRadarItem.getTargets(radarStack);
          selectedIdx = PomkotsRadarItem.getSelectedIndex(radarStack);
-      } else if (radarStack.m_41720_() instanceof PomkotsDatapadItem) {
+      } else if (radarStack.getItem() instanceof PomkotsDatapadItem) {
          targets = PomkotsDatapadItem.getTargets(radarStack);
          selectedIdx = PomkotsDatapadItem.getSelectedIndex(radarStack);
       } else {
@@ -69,18 +69,18 @@ public class RadarTargetSelectScreen extends AbstractContainerScreen<RadarTarget
       NetworkManager.sendToServer(PomkotsMechs.id("radar_select_target"), buf);
    }
 
-   public void m_88315_(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-      this.m_280273_(graphics);
-      this.renderBgTexture(TEXTURE_BG_1, this.f_97735_, this.f_97736_, this.f_97735_ + 480, this.f_97736_ + 270, graphics);
-      graphics.m_280137_(this.f_96547_, "Select Radar Target", this.f_97735_ + this.f_97726_ / 2, this.buttonOffsetY - 10, 16777215);
-      super.m_88315_(graphics, mouseX, mouseY, partialTick);
-      this.m_280072_(graphics, mouseX, mouseY);
+   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+      this.renderBackground(graphics);
+      this.renderBgTexture(TEXTURE_BG_1, this.leftPos, this.topPos, this.leftPos + 480, this.topPos + 270, graphics);
+      graphics.drawCenteredString(this.font, "Select Radar Target", this.leftPos + this.imageWidth / 2, this.buttonOffsetY - 10, 16777215);
+      super.render(graphics, mouseX, mouseY, partialTick);
+      this.renderTooltip(graphics, mouseX, mouseY);
    }
 
-   protected void m_7286_(GuiGraphics gui, float partialTick, int mouseX, int mouseY) {
+   protected void renderBg(GuiGraphics gui, float partialTick, int mouseX, int mouseY) {
    }
 
-   protected void m_280003_(GuiGraphics gui, int mouseX, int mouseY) {
+   protected void renderLabels(GuiGraphics gui, int mouseX, int mouseY) {
    }
 
    private ImageButton buildButton(String text, int x, int y, OnPress onPress) {
@@ -88,8 +88,8 @@ public class RadarTargetSelectScreen extends AbstractContainerScreen<RadarTarget
    }
 
    private ImageButton buildButton(String text, int x, int y, OnPress onPress, boolean active) {
-      ImageButton b = new ImageButton(x, y, 140, 28, TEXTURE_BUTTON, 0, 0, 140, 112, Component.m_237113_(text), onPress);
-      b.f_93623_ = active;
+      ImageButton b = new ImageButton(x, y, 140, 28, TEXTURE_BUTTON, 0, 0, 140, 112, Component.literal(text), onPress);
+      b.active = active;
       return b;
    }
 
@@ -101,7 +101,7 @@ public class RadarTargetSelectScreen extends AbstractContainerScreen<RadarTarget
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
       RenderSystem.enableBlend();
       RenderSystem.setShaderTexture(0, texture);
-      guiGraphics.m_280163_(texture, x, y, 0.0F, 0.0F, width, height, width, height);
+      guiGraphics.blit(texture, x, y, 0.0F, 0.0F, width, height, width, height);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 }

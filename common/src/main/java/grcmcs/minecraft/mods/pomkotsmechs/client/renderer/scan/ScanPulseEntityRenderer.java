@@ -20,7 +20,7 @@ public class ScanPulseEntityRenderer extends EntityRenderer<ScanPulseEntity> {
    }
 
    public void render(ScanPulseEntity pulse, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-      Player localPlayer = Minecraft.m_91087_().f_91074_;
+      Player localPlayer = Minecraft.getInstance().player;
       if (localPlayer != null && pulse.isVisibleTo(localPlayer)) {
          float radius = pulse.getRadius(partialTick);
          float maxRadius = pulse.getMaxRadius();
@@ -29,11 +29,11 @@ public class ScanPulseEntityRenderer extends EntityRenderer<ScanPulseEntity> {
          if (radius <= fadeStartRadius) {
             alphaMultiplier = 1.0F;
          } else {
-            alphaMultiplier = 1.0F - Mth.m_14036_((radius - fadeStartRadius) / (maxRadius - fadeStartRadius), 0.0F, 1.0F);
+            alphaMultiplier = 1.0F - Mth.clamp((radius - fadeStartRadius) / (maxRadius - fadeStartRadius), 0.0F, 1.0F);
          }
 
          ScanDomeRenderer.render(poseStack, bufferSource, radius, alphaMultiplier);
-         super.m_7392_(pulse, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+         super.render(pulse, entityYaw, partialTick, poseStack, bufferSource, packedLight);
       }
    }
 
@@ -42,18 +42,18 @@ public class ScanPulseEntityRenderer extends EntityRenderer<ScanPulseEntity> {
    }
 
    public boolean shouldRender(ScanPulseEntity pulse, Frustum frustum, double cameraX, double cameraY, double cameraZ) {
-      Player localPlayer = Minecraft.m_91087_().f_91074_;
+      Player localPlayer = Minecraft.getInstance().player;
       if (localPlayer != null && pulse.isVisibleTo(localPlayer)) {
          double radius = pulse.getMaxRadius();
          AABB domeBox = new AABB(
-            pulse.m_20185_() - radius,
-            pulse.m_20186_() - radius,
-            pulse.m_20189_() - radius,
-            pulse.m_20185_() + radius,
-            pulse.m_20186_() + radius,
-            pulse.m_20189_() + radius
+            pulse.getX() - radius,
+            pulse.getY() - radius,
+            pulse.getZ() - radius,
+            pulse.getX() + radius,
+            pulse.getY() + radius,
+            pulse.getZ() + radius
          );
-         return frustum.m_113029_(domeBox);
+         return frustum.isVisible(domeBox);
       } else {
          return false;
       }

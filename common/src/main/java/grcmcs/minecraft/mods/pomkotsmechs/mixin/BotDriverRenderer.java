@@ -24,22 +24,22 @@ public abstract class BotDriverRenderer<T extends LivingEntity, M extends Entity
 
    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
    public void onRender(T entity, float yaw, float tickDelta, PoseStack poseStack, MultiBufferSource vertexConsumers, int light, CallbackInfo ci) {
-      if (entity.m_20202_() instanceof PomkotsVehicle robot) {
+      if (entity.getVehicle() instanceof PomkotsVehicle robot) {
          Vec3 seatPos = robot.getClientSeatPos(entity);
-         if (robot instanceof Pmvc01Entity pmvc && pmvc.m_20202_() instanceof Pmb99Entity pmb99) {
-            poseStack.m_85837_(
-               seatPos.m_7096_() + pmb99.seatPos.f_82479_, seatPos.m_7098_() + pmb99.seatPos.f_82480_, seatPos.m_7094_() + pmb99.seatPos.m_7094_()
+         if (robot instanceof Pmvc01Entity pmvc && pmvc.getVehicle() instanceof Pmb99Entity pmb99) {
+            poseStack.translate(
+               seatPos.x() + pmb99.seatPos.x, seatPos.y() + pmb99.seatPos.y, seatPos.z() + pmb99.seatPos.z()
             );
          }
 
-         if (robot instanceof Pmvc01Entity pmvc && pmvc.getHeadParts().m_41720_() instanceof BasePartsItem.Head h && h.isFullCovered()) {
-            poseStack.m_85837_(seatPos.m_7096_(), seatPos.m_7098_() - 1.0, seatPos.m_7094_());
+         if (robot instanceof Pmvc01Entity pmvc && pmvc.getHeadParts().getItem() instanceof BasePartsItem.Head h && h.isFullCovered()) {
+            poseStack.translate(seatPos.x(), seatPos.y() - 1.0, seatPos.z());
          } else {
-            poseStack.m_85837_(seatPos.m_7096_(), seatPos.m_7098_(), seatPos.m_7094_());
+            poseStack.translate(seatPos.x(), seatPos.y(), seatPos.z());
          }
-      } else if (entity.m_20202_() instanceof Pmb01Entity robot) {
+      } else if (entity.getVehicle() instanceof Pmb01Entity robot) {
          Vec3 seatPos = robot.getClientSeatPos();
-         poseStack.m_85837_(seatPos.m_7096_(), seatPos.m_7098_(), seatPos.m_7094_());
+         poseStack.translate(seatPos.x(), seatPos.y(), seatPos.z());
       }
    }
 }

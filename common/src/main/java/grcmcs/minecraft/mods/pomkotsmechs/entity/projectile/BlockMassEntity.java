@@ -28,33 +28,33 @@ public class BlockMassEntity extends LivingEntity {
    private static final int SIZE = 4;
    private BlockState[][][] blockStates = new BlockState[4][4][4];
    private boolean isInitialized = false;
-   private static final EntityDataAccessor<String> BLOCK_REGISTRY_NAME = SynchedEntityData.m_135353_(BlockMassEntity.class, EntityDataSerializers.f_135030_);
+   private static final EntityDataAccessor<String> BLOCK_REGISTRY_NAME = SynchedEntityData.defineId(BlockMassEntity.class, EntityDataSerializers.STRING);
    private BlockState cachedBlockState;
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_().m_22266_(Attributes.f_22282_).m_22268_(Attributes.f_22276_, 50.0);
+      return LivingEntity.createLivingAttributes().add(Attributes.ATTACK_KNOCKBACK).add(Attributes.MAX_HEALTH, 50.0);
    }
 
    public BlockMassEntity(EntityType<? extends BlockMassEntity> type, Level level) {
       super(type, level);
-      this.m_20242_(false);
+      this.setNoGravity(false);
    }
 
-   public void m_8119_() {
-      super.m_8119_();
-      if (!this.m_20068_()) {
-         this.m_246865_(new Vec3(0.0, -0.08, 0.0));
-         this.m_6478_(MoverType.SELF, this.m_20184_());
-         this.m_20256_(this.m_20184_().m_82542_(0.98, 0.98, 0.98));
+   public void tick() {
+      super.tick();
+      if (!this.isNoGravity()) {
+         this.addDeltaMovement(new Vec3(0.0, -0.08, 0.0));
+         this.move(MoverType.SELF, this.getDeltaMovement());
+         this.setDeltaMovement(this.getDeltaMovement().multiply(0.98, 0.98, 0.98));
       }
 
-      if (this.m_20096_()) {
-         if (!this.m_9236_().f_46443_) {
+      if (this.onGround()) {
+         if (!this.level().isClientSide) {
             this.placeBlocks();
-            this.m_146870_();
+            this.discard();
          } else {
-            this.m_9236_()
-               .m_7785_(this.m_20185_(), this.m_20186_(), this.m_20189_(), (SoundEvent)PomkotsMechs.SE_PLACE.get(), SoundSource.BLOCKS, 1.0F, 1.0F, false);
+            this.level()
+               .playLocalSound(this.getX(), this.getY(), this.getZ(), (SoundEvent)PomkotsMechs.SE_PLACE.get(), SoundSource.BLOCKS, 1.0F, 1.0F, false);
          }
       }
    }
@@ -68,16 +68,16 @@ public class BlockMassEntity extends LivingEntity {
    }
 
    private void placeBlocks() {
-      Level serverLevel = this.m_9236_();
-      BlockPos basePos = this.m_20183_();
+      Level serverLevel = this.level();
+      BlockPos basePos = this.blockPosition();
 
       for (int x = 0; x < 4; x++) {
          for (int y = 0; y < 4; y++) {
             for (int z = 0; z < 4; z++) {
                BlockState state = this.blockStates[x][y][z];
                if (state != null) {
-                  BlockPos pos = basePos.m_7918_(x - 2, y, z - 2);
-                  serverLevel.m_7731_(pos, state, 3);
+                  BlockPos pos = basePos.offset(x - 2, y, z - 2);
+                  serverLevel.setBlock(pos, state, 3);
                }
             }
          }
@@ -86,7 +86,7 @@ public class BlockMassEntity extends LivingEntity {
 
    public void initializeBlocksServer(BlockState blockState) {
       this.initializeBlocks(blockState);
-      this.setBlock(blockState.m_60734_());
+      this.setBlock(blockState.getBlock());
    }
 
    public void initializeBlocks(BlockState blockState) {
@@ -101,38 +101,38 @@ public class BlockMassEntity extends LivingEntity {
       this.isInitialized = true;
    }
 
-   protected void m_8097_() {
-      super.m_8097_();
-      this.f_19804_.m_135372_(BLOCK_REGISTRY_NAME, "minecraft:air");
+   protected void defineSynchedData() {
+      super.defineSynchedData();
+      this.entityData.define(BLOCK_REGISTRY_NAME, "minecraft:air");
    }
 
    public void setBlock(Block block) {
-      this.f_19804_.m_135381_(BLOCK_REGISTRY_NAME, BuiltInRegistries.f_256975_.m_7981_(block).toString());
-      this.cachedBlockState = block.m_49966_();
+      this.entityData.set(BLOCK_REGISTRY_NAME, BuiltInRegistries.BLOCK.getKey(block).toString());
+      this.cachedBlockState = block.defaultBlockState();
    }
 
    public BlockState getBlockState() {
       if (this.cachedBlockState == null) {
-         String registryName = (String)this.f_19804_.m_135370_(BLOCK_REGISTRY_NAME);
-         Block block = (Block)BuiltInRegistries.f_256975_.m_7745_(new ResourceLocation(registryName));
-         this.cachedBlockState = block != null ? block.m_49966_() : Blocks.f_50016_.m_49966_();
+         String registryName = (String)this.entityData.get(BLOCK_REGISTRY_NAME);
+         Block block = (Block)BuiltInRegistries.BLOCK.get(new ResourceLocation(registryName));
+         this.cachedBlockState = block != null ? block.defaultBlockState() : Blocks.AIR.defaultBlockState();
       }
 
       return this.cachedBlockState;
    }
 
-   public Iterable<ItemStack> m_6168_() {
-      return NonNullList.m_122780_(4, ItemStack.f_41583_);
+   public Iterable<ItemStack> getArmorSlots() {
+      return NonNullList.withSize(4, ItemStack.EMPTY);
    }
 
-   public ItemStack m_6844_(EquipmentSlot equipmentSlot) {
-      return ItemStack.f_41583_;
+   public ItemStack getItemBySlot(EquipmentSlot equipmentSlot) {
+      return ItemStack.EMPTY;
    }
 
-   public void m_8061_(EquipmentSlot equipmentSlot, ItemStack itemStack) {
+   public void setItemSlot(EquipmentSlot equipmentSlot, ItemStack itemStack) {
    }
 
-   public HumanoidArm m_5737_() {
+   public HumanoidArm getMainArm() {
       return null;
    }
 }

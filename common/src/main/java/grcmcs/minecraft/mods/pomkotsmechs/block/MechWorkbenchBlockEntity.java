@@ -30,16 +30,16 @@ public class MechWorkbenchBlockEntity extends BlockEntity {
    }
 
    public void tick() {
-      if (this.f_58857_ instanceof ServerLevel sLevel && !this.repairingMechList.isEmpty() && this.currentTick++ % 20L == 0L) {
-         BlockPos pos = this.m_58899_();
+      if (this.level instanceof ServerLevel sLevel && !this.repairingMechList.isEmpty() && this.currentTick++ % 20L == 0L) {
+         BlockPos pos = this.getBlockPos();
          this.repairingMechList
             .removeIf(
                uuid -> {
-                  Pmvc01Entity mech = (Pmvc01Entity)sLevel.m_8791_(uuid);
+                  Pmvc01Entity mech = (Pmvc01Entity)sLevel.getEntity(uuid);
                   boolean flag = mech == null
-                     || !mech.m_6084_()
-                     || mech.m_21233_() == mech.m_21223_()
-                     || mech.m_20275_(pos.m_123341_(), pos.m_123342_(), pos.m_123343_()) > 50.0;
+                     || !mech.isAlive()
+                     || mech.getMaxHealth() == mech.getHealth()
+                     || mech.distanceToSqr(pos.getX(), pos.getY(), pos.getZ()) > 50.0;
                   if (!flag) {
                      mech.healWithEffect(sLevel, 10.0F);
                   }
@@ -51,29 +51,29 @@ public class MechWorkbenchBlockEntity extends BlockEntity {
    }
 
    public void startMechRepair(Pmvc01Entity mech) {
-      if (this.f_58857_ instanceof ServerLevel sLevel) {
-         this.repairingMechList.add(mech.m_20148_());
+      if (this.level instanceof ServerLevel sLevel) {
+         this.repairingMechList.add(mech.getUUID());
       }
    }
 
-   public void m_183515_(@NotNull CompoundTag tag) {
-      super.m_183515_(tag);
+   public void saveAdditional(@NotNull CompoundTag tag) {
+      super.saveAdditional(tag);
       ListTag list = new ListTag();
 
       for (UUID uuid : this.repairingMechList) {
-         list.add(NbtUtils.m_129226_(uuid));
+         list.add(NbtUtils.createUUID(uuid));
       }
 
-      tag.m_128365_(PomkotsMechs.nbtName("RepairingMechList"), list);
+      tag.put(PomkotsMechs.nbtName("RepairingMechList"), list);
    }
 
-   public void m_142466_(@NotNull CompoundTag tag) {
-      super.m_142466_(tag);
+   public void load(@NotNull CompoundTag tag) {
+      super.load(tag);
       this.repairingMechList.clear();
-      ListTag list = (ListTag)tag.m_128423_(PomkotsMechs.nbtName("RepairingMechList"));
+      ListTag list = (ListTag)tag.get(PomkotsMechs.nbtName("RepairingMechList"));
       if (list != null) {
          for (Tag t : list) {
-            this.repairingMechList.add(NbtUtils.m_129233_(t));
+            this.repairingMechList.add(NbtUtils.loadUUID(t));
          }
       }
    }

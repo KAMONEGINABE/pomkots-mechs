@@ -20,25 +20,25 @@ public class CoreStonePMVC01Item extends Item {
       super(properties);
    }
 
-   public InteractionResultHolder<ItemStack> m_7203_(Level world, Player player, InteractionHand hand) {
-      ItemStack stack = player.m_21120_(hand);
-      CompoundTag nbt = stack.m_41784_();
-      if (!nbt.m_128471_("pomkotsmechs:corestone:used")) {
-         if (!world.f_46443_) {
+   public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+      ItemStack stack = player.getItemInHand(hand);
+      CompoundTag nbt = stack.getOrCreateTag();
+      if (!nbt.getBoolean("pomkotsmechs:corestone:used")) {
+         if (!world.isClientSide) {
             this.summonRobot(world, player);
          }
 
-         nbt.m_128379_("pomkotsmechs:corestone:used", true);
-         return InteractionResultHolder.m_19092_(stack, world.m_5776_());
+         nbt.putBoolean("pomkotsmechs:corestone:used", true);
+         return InteractionResultHolder.sidedSuccess(stack, world.isClientSide());
       } else {
-         return InteractionResultHolder.m_19100_(stack);
+         return InteractionResultHolder.fail(stack);
       }
    }
 
    private void summonRobot(Level world, Player player) {
       Pmvc01Entity robot = this.createInstance(world);
-      robot.m_7678_(player.m_20185_(), player.m_20186_(), player.m_20189_(), player.m_146908_(), player.m_146909_());
-      world.m_7967_(robot);
+      robot.moveTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
+      world.addFreshEntity(robot);
    }
 
    protected Pmvc01Entity createInstance(Level world) {

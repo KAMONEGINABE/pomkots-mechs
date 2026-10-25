@@ -45,7 +45,7 @@ public class Pmv03pEntityRenderer extends GeoEntityRenderer<Pmv03pEntity> {
       float blue,
       float alpha
    ) {
-      float xrot = this.interpolateAngle(partialTick, animatable.f_19860_, animatable.m_146909_());
+      float xrot = this.interpolateAngle(partialTick, animatable.xRotO, animatable.getXRot());
       ((GeoBone)model.getBone("body").get()).setRotX((float)Math.toRadians(-xrot));
       super.actuallyRender(
          poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha
@@ -58,12 +58,12 @@ public class Pmv03pEntityRenderer extends GeoEntityRenderer<Pmv03pEntity> {
          animatable.setClientSeatPos2(p2);
       }
 
-      RenderUtils.renderAdditionalHud(poseStack, animatable, this.f_114476_.m_253208_(), bufferSource);
+      RenderUtils.renderAdditionalHud(poseStack, animatable, this.entityRenderDispatcher.cameraOrientation(), bufferSource);
    }
 
    private float interpolateAngle(float partialTicks, float prevAngle, float currentAngle) {
-      float wrappedPrev = Mth.m_14177_(prevAngle);
-      float wrappedCurrent = Mth.m_14177_(currentAngle);
+      float wrappedPrev = Mth.wrapDegrees(prevAngle);
+      float wrappedCurrent = Mth.wrapDegrees(currentAngle);
       float delta = wrappedCurrent - wrappedPrev;
       if (delta < -180.0F) {
          delta += 360.0F;
@@ -73,7 +73,7 @@ public class Pmv03pEntityRenderer extends GeoEntityRenderer<Pmv03pEntity> {
          delta -= 360.0F;
       }
 
-      return Mth.m_14177_(wrappedPrev + partialTicks * delta);
+      return Mth.wrapDegrees(wrappedPrev + partialTicks * delta);
    }
 
    private Vec3 getSeatPosition(BakedGeoModel model, int num) {
@@ -84,7 +84,7 @@ public class Pmv03pEntityRenderer extends GeoEntityRenderer<Pmv03pEntity> {
          Vector3d rootPos = vcRoot.getLocalPosition();
          return new Vec3(seatPos.x * 1.0 - rootPos.x * 1.0, seatPos.y * 1.0 - rootPos.y * 1.0 - 2.8F, seatPos.z * 1.0 - rootPos.z * 1.0);
       } else {
-         return Vec3.f_82478_;
+         return Vec3.ZERO;
       }
    }
 

@@ -40,22 +40,22 @@ public abstract class PomkotsCustomThrowableProjectile extends PomkotsThrowableP
       this.damage = damage;
       this.stun = stun;
       if (shooter instanceof Pmvc01Entity pmvc01 && pmvc01.getDrivingPassenger() != null) {
-         this.m_5602_(pmvc01.getDrivingPassenger());
+         this.setOwner(pmvc01.getDrivingPassenger());
       }
    }
 
    @Override
-   public void m_8119_() {
+   public void tick() {
       if (this.toDiscard) {
-         this.m_146870_();
+         this.discard();
       }
 
-      this.m_146867_();
-      if (!this.m_9236_().f_46443_) {
+      this.setOldPosAndRot();
+      if (!this.level().isClientSide) {
          if (this.lifeTicks++ >= this.maxLifeTicks) {
-            this.m_146870_();
+            this.discard();
          } else {
-            this.m_20101_();
+            this.checkInsideBlocks();
             if (this.performSubStepMovement()) {
                ;
             }
@@ -64,35 +64,35 @@ public abstract class PomkotsCustomThrowableProjectile extends PomkotsThrowableP
    }
 
    protected boolean performSubStepMovement() {
-      if (this.f_19803_) {
-         this.initialSpeed = this.m_20184_().m_82554_(Vec3.f_82478_);
+      if (this.firstTick) {
+         this.initialSpeed = this.getDeltaMovement().distanceTo(Vec3.ZERO);
       }
 
-      Vec3 totalMovement = this.m_20184_();
+      Vec3 totalMovement = this.getDeltaMovement();
       Vec3 subStepMovement = totalMovement;
 
       for (int step = 0; step < 1; step++) {
-         Vec3 start = this.m_20182_();
-         Vec3 end = start.m_82549_(subStepMovement);
-         BlockHitResult blockHit = this.m_9236_().m_45547_(new ClipContext(start, end, Block.COLLIDER, Fluid.NONE, this));
-         AABB searchBox = new AABB(start, end).m_82400_(0.5);
+         Vec3 start = this.position();
+         Vec3 end = start.add(subStepMovement);
+         BlockHitResult blockHit = this.level().clip(new ClipContext(start, end, Block.COLLIDER, Fluid.NONE, this));
+         AABB searchBox = new AABB(start, end).inflate(0.5);
          EntityHitResult entityHit = this.getEntityHitResult(
-            this.m_9236_(),
+            this.level(),
             this,
             start,
             end,
             searchBox,
             entity -> entity != this.getShooter()
                && entity != this
-               && entity.m_6084_()
-               && entity.m_6087_()
-               && !entity.m_5833_()
+               && entity.isAlive()
+               && entity.isPickable()
+               && !entity.isSpectator()
                && !(entity instanceof BossHitBoxEntity hb && hb.isRelatedShooter(this))
          );
          HitResult hit = this.selectCloserHit(start, blockHit, entityHit);
-         if (hit != null && hit.m_6662_() != Type.MISS) {
-            this.setPosInSubStep(hit.m_82450_());
-            this.m_6532_(hit);
+         if (hit != null && hit.getType() != Type.MISS) {
+            this.setPosInSubStep(hit.getLocation());
+            this.onHit(hit);
             return false;
          }
 
@@ -103,7 +103,7 @@ public abstract class PomkotsCustomThrowableProjectile extends PomkotsThrowableP
    }
 
    protected void setPosInSubStep(Vec3 pos) {
-      this.m_146884_(pos);
+      this.setPos(pos);
    }
 
    protected EntityHitResult getEntityHitResult(Level level, Entity projectile, Vec3 start, Vec3 end, AABB searchBox, Predicate<Entity> filter) {
@@ -111,11 +111,11 @@ public abstract class PomkotsCustomThrowableProjectile extends PomkotsThrowableP
       Vec3 closestHitPos = null;
       double closestDist = Double.MAX_VALUE;
 
-      for (Entity candidate : level.m_6249_(projectile, searchBox, filter)) {
-         AABB candidateBox = candidate.m_20191_().m_82400_(candidate.m_6143_());
-         Optional<Vec3> hitPos = candidateBox.m_82371_(start, end);
+      for (Entity candidate : level.getEntities(projectile, searchBox, filter)) {
+         AABB candidateBox = candidate.getBoundingBox().inflate(candidate.getPickRadius());
+         Optional<Vec3> hitPos = candidateBox.clip(start, end);
          if (hitPos.isPresent()) {
-            double dist = start.m_82557_(hitPos.get());
+            double dist = start.distanceToSqr(hitPos.get());
             if (dist < closestDist) {
                closestDist = dist;
                closestEntity = candidate;
@@ -128,7 +128,7 @@ public abstract class PomkotsCustomThrowableProjectile extends PomkotsThrowableP
    }
 
    protected HitResult selectCloserHit(Vec3 origin, BlockHitResult blockHit, EntityHitResult entityHit) {
-      boolean blockMiss = blockHit.m_6662_() == Type.MISS;
+      boolean blockMiss = blockHit.getType() == Type.MISS;
       if (entityHit == null && blockMiss) {
          return null;
       }
@@ -141,13 +141,13 @@ public abstract class PomkotsCustomThrowableProjectile extends PomkotsThrowableP
          return entityHit;
       }
 
-      double blockDist = origin.m_82557_(blockHit.m_82450_());
-      double entityDist = origin.m_82557_(entityHit.m_82450_());
+      double blockDist = origin.distanceToSqr(blockHit.getLocation());
+      double entityDist = origin.distanceToSqr(entityHit.getLocation());
       return (HitResult)(entityDist <= blockDist ? entityHit : blockHit);
    }
 
-   protected void m_5790_(EntityHitResult entityHitResult) {
-      Entity entity = entityHitResult.m_82443_();
+   protected void onHitEntity(EntityHitResult entityHitResult) {
+      Entity entity = entityHitResult.getEntity();
       if (!(entity instanceof BossHitBoxEntity hb && hb.isRelatedShooter(this))) {
          float finalDamage = this.calcFinalDamage(this.damage);
          if (entity instanceof BaseBossEntity boss) {
@@ -156,8 +156,8 @@ public abstract class PomkotsCustomThrowableProjectile extends PomkotsThrowableP
             hitbox.addStunPoint(this.stun);
          }
 
-         ProjectileUtil.hurt(entity, this, this.m_19749_(), finalDamage);
-         entity.f_19802_ = 0;
+         ProjectileUtil.hurt(entity, this, this.getOwner(), finalDamage);
+         entity.invulnerableTime = 0;
          this.toDiscard = true;
       }
    }
@@ -174,17 +174,17 @@ public abstract class PomkotsCustomThrowableProjectile extends PomkotsThrowableP
       this.stun = stunPoint;
    }
 
-   protected void m_8060_(BlockHitResult blockHitResult) {
+   protected void onHitBlock(BlockHitResult blockHitResult) {
       this.toDiscard = true;
    }
 
-   public void m_142036_() {
-      if (this.m_9236_().f_46443_) {
-         ParticleUtil.addSparkParticles(this.m_20182_(), this.m_9236_());
+   public void onClientRemoval() {
+      if (this.level().isClientSide) {
+         ParticleUtil.addSparkParticles(this.position(), this.level());
       }
    }
 
-   protected float m_7139_() {
+   protected float getGravity() {
       return 0.0F;
    }
 

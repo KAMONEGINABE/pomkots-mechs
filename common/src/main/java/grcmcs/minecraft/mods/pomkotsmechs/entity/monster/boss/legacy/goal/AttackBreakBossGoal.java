@@ -10,7 +10,7 @@ public class AttackBreakBossGoal extends AttackBossGoal {
    }
 
    @Override
-   public boolean m_8036_() {
+   public boolean canUse() {
       boolean flag = ((Pmb01Entity)this.mob).consumeBreakFlag();
       return this.action.canAction() && flag;
    }

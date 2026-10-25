@@ -22,7 +22,7 @@ public class AssetAnchorBlockEntity extends BlockEntity {
    }
 
    public static void tick(Level level, BlockPos pos, BlockState state, AssetAnchorBlockEntity be) {
-      if (!level.f_46443_) {
+      if (!level.isClientSide) {
          if (!be.migrationChecked && !Utils.isMapEditingMode(level)) {
             be.migrationChecked = true;
             AssetMigrationManager.queueCheck(be);
@@ -36,7 +36,7 @@ public class AssetAnchorBlockEntity extends BlockEntity {
 
    public void setAssetId(String assetId) {
       this.assetId = assetId;
-      this.m_6596_();
+      this.setChanged();
    }
 
    public int getAssetVersion() {
@@ -45,18 +45,18 @@ public class AssetAnchorBlockEntity extends BlockEntity {
 
    public void setAssetVersion(int assetVersion) {
       this.assetVersion = assetVersion;
-      this.m_6596_();
+      this.setChanged();
    }
 
-   protected void m_183515_(CompoundTag tag) {
-      super.m_183515_(tag);
-      tag.m_128359_(NBT_ID, this.assetId);
-      tag.m_128405_(NBT_VERSION, this.assetVersion);
+   protected void saveAdditional(CompoundTag tag) {
+      super.saveAdditional(tag);
+      tag.putString(NBT_ID, this.assetId);
+      tag.putInt(NBT_VERSION, this.assetVersion);
    }
 
-   public void m_142466_(CompoundTag tag) {
-      super.m_142466_(tag);
-      this.assetId = tag.m_128461_(NBT_ID);
-      this.assetVersion = tag.m_128451_(NBT_VERSION);
+   public void load(CompoundTag tag) {
+      super.load(tag);
+      this.assetId = tag.getString(NBT_ID);
+      this.assetVersion = tag.getInt(NBT_VERSION);
    }
 }

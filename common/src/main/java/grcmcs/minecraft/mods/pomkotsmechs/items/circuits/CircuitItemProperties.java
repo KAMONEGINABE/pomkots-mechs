@@ -33,14 +33,14 @@ public final class CircuitItemProperties {
    }
 
    private static String readPrefix(ItemStack stack) {
-      if (stack.m_41782_() && stack.m_41783_() != null) {
-         CompoundTag root = stack.m_41783_();
-         if (!root.m_128425_("Circuit", 10)) {
+      if (stack.hasTag() && stack.getTag() != null) {
+         CompoundTag root = stack.getTag();
+         if (!root.contains("Circuit", 10)) {
             return "";
          }
 
-         CompoundTag circuitTag = root.m_128469_("Circuit");
-         return !circuitTag.m_128425_("Prefix", 8) ? "" : circuitTag.m_128461_("Prefix");
+         CompoundTag circuitTag = root.getCompound("Circuit");
+         return !circuitTag.contains("Prefix", 8) ? "" : circuitTag.getString("Prefix");
       } else {
          return "";
       }

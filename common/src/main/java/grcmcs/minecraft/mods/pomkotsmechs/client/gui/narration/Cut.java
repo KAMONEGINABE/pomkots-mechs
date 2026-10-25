@@ -30,7 +30,7 @@ public abstract class Cut {
 
       @Override
       public void render(GuiGraphics gfx, IntroNarrationScreen screen, Font font, float partialTicks) {
-         gfx.m_280509_(0, 0, screen.f_96543_, screen.f_96544_, -16777216);
+         gfx.fill(0, 0, screen.width, screen.height, -16777216);
       }
 
       @Override
@@ -99,27 +99,27 @@ public abstract class Cut {
 
       @Override
       public void render(GuiGraphics gfx, IntroNarrationScreen screen, Font font, float partialTicks) {
-         Minecraft mc = Minecraft.m_91087_();
-         int screenWidth = mc.m_91268_().m_85445_();
-         int screenHeight = mc.m_91268_().m_85446_();
+         Minecraft mc = Minecraft.getInstance();
+         int screenWidth = mc.getWindow().getGuiScaledWidth();
+         int screenHeight = mc.getWindow().getGuiScaledHeight();
          if (this.background != null) {
             if (this.shouldFadeImage()) {
                RenderSystem.enableBlend();
                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
             }
 
-            gfx.m_280163_(this.background, 0, 0, 0.0F, 0.0F, screenWidth, screenHeight, screenWidth, screenHeight);
+            gfx.blit(this.background, 0, 0, 0.0F, 0.0F, screenWidth, screenHeight, screenWidth, screenHeight);
             if (this.shouldFadeImage()) {
                RenderSystem.disableBlend();
             }
 
             if (this.lineIndex < this.lines.size() && this.alpha != 0.0F) {
                int color = (int)(this.alpha * 255.0F) << 24 | 16777215;
-               gfx.m_280137_(font, this.getLocalizedString(this.lines.get(this.lineIndex)), screen.f_96543_ / 2, screen.f_96544_ / 2, color);
+               gfx.drawCenteredString(font, this.getLocalizedString(this.lines.get(this.lineIndex)), screen.width / 2, screen.height / 2, color);
             }
          } else if (this.lineIndex < this.lines.size() && this.alpha != 0.0F) {
             int color = (int)(this.alpha * 255.0F) << 24 | 16777215;
-            gfx.m_280137_(font, this.getLocalizedString(this.lines.get(this.lineIndex)), screen.f_96543_ / 2, screen.f_96544_ / 2, color);
+            gfx.drawCenteredString(font, this.getLocalizedString(this.lines.get(this.lineIndex)), screen.width / 2, screen.height / 2, color);
          }
       }
 

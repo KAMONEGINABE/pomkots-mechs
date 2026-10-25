@@ -16,17 +16,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Camera.class)
 public abstract class CameraMixin {
    @Shadow
-   protected abstract void m_90581_(Vec3 var1);
+   protected abstract void setPosition(Vec3 var1);
 
    @Inject(method = "setup", at = @At("TAIL"), cancellable = true)
    private void adjustCameraPosition(BlockGetter blockGetter, Entity viewEntity, boolean thirdPerson, boolean inverse, float partialTick, CallbackInfo ci) {
       if (viewEntity instanceof Player player) {
-         if (player.m_20202_() instanceof Pmvc01Entity pmg && !thirdPerson) {
+         if (player.getVehicle() instanceof Pmvc01Entity pmg && !thirdPerson) {
             Vec3 bonePos = pmg.getMainCameraPosition();
-            this.m_90581_(pmg.m_20318_(partialTick).m_82549_(bonePos));
-         } else if (player.m_20202_() instanceof Pmv03Entity pmg && !thirdPerson) {
+            this.setPosition(pmg.getPosition(partialTick).add(bonePos));
+         } else if (player.getVehicle() instanceof Pmv03Entity pmg && !thirdPerson) {
             Vec3 bonePos = pmg.getMainCameraPosition();
-            this.m_90581_(pmg.m_20318_(partialTick).m_82549_(bonePos));
+            this.setPosition(pmg.getPosition(partialTick).add(bonePos));
          }
       }
    }

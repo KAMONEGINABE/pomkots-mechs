@@ -37,7 +37,7 @@ public class BossAerialDiveGoal2 extends BaseBossGoal {
       this.diveSpeed = diveSpeed;
       this.targetHeight = targetHeight;
       this.maxDuration = maxDuration;
-      this.m_7021_(EnumSet.of(Flag.MOVE, Flag.JUMP));
+      this.setFlags(EnumSet.of(Flag.MOVE, Flag.JUMP));
    }
 
    @Override
@@ -45,8 +45,8 @@ public class BossAerialDiveGoal2 extends BaseBossGoal {
       if (this.currentPhase != BossAerialDiveGoal2.Phase.FINISHED) {
          return false;
       } else {
-         this.target = this.mob.m_5448_();
-         if (this.target == null || !this.target.m_6084_()) {
+         this.target = this.mob.getTarget();
+         if (this.target == null || !this.target.isAlive()) {
             return false;
          } else if (this.checkHeightDifference()) {
             this.destination = this.calculateTargetDestination();
@@ -61,32 +61,32 @@ public class BossAerialDiveGoal2 extends BaseBossGoal {
    }
 
    private boolean isStandingInFluid() {
-      BlockState feetState = this.mob.m_9236_().m_8055_(this.mob.m_20183_().m_7494_());
-      return !feetState.m_60819_().m_76178_();
+      BlockState feetState = this.mob.level().getBlockState(this.mob.blockPosition().above());
+      return !feetState.getFluidState().isEmpty();
    }
 
-   public boolean m_8045_() {
+   public boolean canContinueToUse() {
       return this.currentPhase != BossAerialDiveGoal2.Phase.FINISHED && this.tickCounter < this.maxDuration && this.destination != null;
    }
 
-   public void m_8056_() {
+   public void start() {
       this.currentPhase = BossAerialDiveGoal2.Phase.CHARGE;
       this.tickCounter = 0;
-      this.mob.m_20242_(true);
+      this.mob.setNoGravity(true);
    }
 
-   public void m_8041_() {
+   public void stop() {
       this.currentPhase = BossAerialDiveGoal2.Phase.FINISHED;
       this.tickCounter = 0;
       this.destination = null;
       this.target = null;
-      this.mob.m_20242_(false);
-      if (this.mob.m_20096_()) {
+      this.mob.setNoGravity(false);
+      if (this.mob.onGround()) {
          this.mob.getActionController().getAction("onground").tryAction();
       }
    }
 
-   public void m_8037_() {
+   public void tick() {
       this.tickCounter++;
       if (this.tickCounter >= this.maxDuration) {
          this.currentPhase = BossAerialDiveGoal2.Phase.FINISHED;
@@ -118,70 +118,70 @@ public class BossAerialDiveGoal2 extends BaseBossGoal {
    }
 
    private void handleRisePhase() {
-      double currentY = this.mob.m_20186_();
-      double goalY = this.destination.f_82480_ + this.targetHeight;
+      double currentY = this.mob.getY();
+      double goalY = this.destination.y + this.targetHeight;
       if (currentY >= goalY) {
          this.currentPhase = BossAerialDiveGoal2.Phase.FLY;
       } else {
-         Vec3 toDestination = this.destination.m_82546_(this.mob.m_20182_());
-         Vec3 horizontalDir = new Vec3(toDestination.f_82479_, 0.0, toDestination.f_82481_).m_82541_();
-         Vec3 movement = horizontalDir.m_82490_(this.flySpeed * 0.3).m_82520_(0.0, this.riseSpeed, 0.0);
-         this.mob.m_20256_(movement);
+         Vec3 toDestination = this.destination.subtract(this.mob.position());
+         Vec3 horizontalDir = new Vec3(toDestination.x, 0.0, toDestination.z).normalize();
+         Vec3 movement = horizontalDir.scale(this.flySpeed * 0.3).add(0.0, this.riseSpeed, 0.0);
+         this.mob.setDeltaMovement(movement);
       }
    }
 
    private void handleFlyPhase() {
-      Vec3 currentPos = this.mob.m_20182_();
-      Vec3 toDestination = this.destination.m_82546_(currentPos);
-      double horizontalDistance = Math.sqrt(toDestination.f_82479_ * toDestination.f_82479_ + toDestination.f_82481_ * toDestination.f_82481_);
+      Vec3 currentPos = this.mob.position();
+      Vec3 toDestination = this.destination.subtract(currentPos);
+      double horizontalDistance = Math.sqrt(toDestination.x * toDestination.x + toDestination.z * toDestination.z);
       if (horizontalDistance < 5.0) {
          this.currentPhase = BossAerialDiveGoal2.Phase.DIVE;
-         this.mob.m_20242_(false);
+         this.mob.setNoGravity(false);
       } else {
-         Vec3 horizontalDir = new Vec3(toDestination.f_82479_, 0.0, toDestination.f_82481_).m_82541_();
-         double goalY = this.destination.f_82480_ + this.targetHeight;
-         double yAdjustment = (goalY - currentPos.f_82480_) * 0.2;
-         Vec3 movement = horizontalDir.m_82490_(this.flySpeed).m_82520_(0.0, yAdjustment, 0.0);
-         this.mob.m_20256_(movement);
+         Vec3 horizontalDir = new Vec3(toDestination.x, 0.0, toDestination.z).normalize();
+         double goalY = this.destination.y + this.targetHeight;
+         double yAdjustment = (goalY - currentPos.y) * 0.2;
+         Vec3 movement = horizontalDir.scale(this.flySpeed).add(0.0, yAdjustment, 0.0);
+         this.mob.setDeltaMovement(movement);
       }
    }
 
    private void handleDivePhase() {
-      Vec3 currentVel = this.mob.m_20184_();
-      Vec3 toDestination = this.destination.m_82546_(this.mob.m_20182_());
-      Vec3 horizontalDir = new Vec3(toDestination.f_82479_, 0.0, toDestination.f_82481_).m_82541_();
+      Vec3 currentVel = this.mob.getDeltaMovement();
+      Vec3 toDestination = this.destination.subtract(this.mob.position());
+      Vec3 horizontalDir = new Vec3(toDestination.x, 0.0, toDestination.z).normalize();
       Vec3 movement = new Vec3(
-         horizontalDir.f_82479_ * this.flySpeed * 0.3, Math.max(currentVel.f_82480_ - 0.1, -this.diveSpeed), horizontalDir.f_82481_ * this.flySpeed * 0.3
+         horizontalDir.x * this.flySpeed * 0.3, Math.max(currentVel.y - 0.1, -this.diveSpeed), horizontalDir.z * this.flySpeed * 0.3
       );
-      this.mob.m_20256_(movement);
-      if (this.mob.m_20096_() || this.isNearGround()) {
+      this.mob.setDeltaMovement(movement);
+      if (this.mob.onGround() || this.isNearGround()) {
          this.currentPhase = BossAerialDiveGoal2.Phase.FINISHED;
       }
    }
 
    private void updateRotation() {
       if (this.destination != null) {
-         Vec3 toDestination = this.destination.m_82546_(this.mob.m_20182_());
-         float targetYaw = (float)(Mth.m_14136_(toDestination.f_82481_, toDestination.f_82479_) * (180.0 / Math.PI)) - 90.0F;
-         this.mob.m_146922_(this.lerpRotation(this.mob.m_146908_(), targetYaw, 5.0F));
-         this.mob.f_20883_ = this.mob.m_146908_();
+         Vec3 toDestination = this.destination.subtract(this.mob.position());
+         float targetYaw = (float)(Mth.atan2(toDestination.z, toDestination.x) * (180.0 / Math.PI)) - 90.0F;
+         this.mob.setYRot(this.lerpRotation(this.mob.getYRot(), targetYaw, 5.0F));
+         this.mob.yBodyRot = this.mob.getYRot();
          if (this.currentPhase == BossAerialDiveGoal2.Phase.FLY || this.currentPhase == BossAerialDiveGoal2.Phase.RISE) {
-            double horizontalDist = Math.sqrt(toDestination.f_82479_ * toDestination.f_82479_ + toDestination.f_82481_ * toDestination.f_82481_);
-            float targetPitch = (float)(Math.atan2(-toDestination.f_82480_, horizontalDist) * (180.0 / Math.PI));
-            this.mob.m_146926_(this.lerpRotation(this.mob.m_146909_(), targetPitch, 3.0F));
+            double horizontalDist = Math.sqrt(toDestination.x * toDestination.x + toDestination.z * toDestination.z);
+            float targetPitch = (float)(Math.atan2(-toDestination.y, horizontalDist) * (180.0 / Math.PI));
+            this.mob.setXRot(this.lerpRotation(this.mob.getXRot(), targetPitch, 3.0F));
          }
       }
    }
 
    private float lerpRotation(float current, float target, float maxDelta) {
-      float delta = Mth.m_14177_(target - current);
-      delta = Mth.m_14036_(delta, -maxDelta, maxDelta);
+      float delta = Mth.wrapDegrees(target - current);
+      delta = Mth.clamp(delta, -maxDelta, maxDelta);
       return current + delta;
    }
 
    private boolean isNearGround() {
-      BlockPos belowPos = this.mob.m_20183_().m_6625_(2);
-      return this.mob.m_9236_().m_8055_(belowPos).m_280296_();
+      BlockPos belowPos = this.mob.blockPosition().below(2);
+      return this.mob.level().getBlockState(belowPos).isSolid();
    }
 
    private boolean checkHeightDifference() {
@@ -189,13 +189,13 @@ public class BossAerialDiveGoal2 extends BaseBossGoal {
          return false;
       }
 
-      double heightDiff = Math.abs(this.target.m_20186_() - this.mob.m_20186_());
+      double heightDiff = Math.abs(this.target.getY() - this.mob.getY());
       if (heightDiff < this.heightDifferenceThreshold) {
          return false;
       }
 
-      Entity vehicle = this.target.m_20202_();
-      return vehicle != null ? vehicle.m_20096_() && !vehicle.m_20069_() : this.target.m_20096_() && !this.target.m_20069_();
+      Entity vehicle = this.target.getVehicle();
+      return vehicle != null ? vehicle.onGround() && !vehicle.isInWater() : this.target.onGround() && !this.target.isInWater();
    }
 
    private Vec3 calculateTargetDestination() {
@@ -203,26 +203,26 @@ public class BossAerialDiveGoal2 extends BaseBossGoal {
          return null;
       }
 
-      Vec3 targetPos = this.target.m_20182_();
-      double groundY = this.findGroundY(targetPos.f_82479_, targetPos.f_82480_, targetPos.f_82481_);
-      return groundY != Double.MIN_VALUE ? new Vec3(targetPos.f_82479_, groundY, targetPos.f_82481_) : targetPos;
+      Vec3 targetPos = this.target.position();
+      double groundY = this.findGroundY(targetPos.x, targetPos.y, targetPos.z);
+      return groundY != Double.MIN_VALUE ? new Vec3(targetPos.x, groundY, targetPos.z) : targetPos;
    }
 
    private Vec3 findNearestLand() {
-      Level level = this.mob.m_9236_();
-      Vec3 currentPos = this.mob.m_20182_();
-      BlockPos startPos = this.mob.m_20183_();
+      Level level = this.mob.level();
+      Vec3 currentPos = this.mob.position();
+      BlockPos startPos = this.mob.blockPosition();
 
       for (int radius = 1; radius <= 50; radius += 5) {
          for (int angle = 0; angle < 360; angle += 30) {
             double rad = Math.toRadians(angle);
-            int x = (int)(currentPos.f_82479_ + Math.cos(rad) * radius);
-            int z = (int)(currentPos.f_82481_ + Math.sin(rad) * radius);
-            BlockPos pos = this.findSurfaceBlockPos(x, currentPos.f_82480_, z);
+            int x = (int)(currentPos.x + Math.cos(rad) * radius);
+            int z = (int)(currentPos.z + Math.sin(rad) * radius);
+            BlockPos pos = this.findSurfaceBlockPos(x, currentPos.y, z);
             if (pos != null) {
-               BlockState state = level.m_8055_(pos);
-               if (state.m_280296_() && state.m_60819_().m_76178_()) {
-                  return new Vec3(pos.m_123341_() + 0.5, pos.m_123342_() + 1, pos.m_123343_() + 0.5);
+               BlockState state = level.getBlockState(pos);
+               if (state.isSolid() && state.getFluidState().isEmpty()) {
+                  return new Vec3(pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5);
                }
             }
          }
@@ -232,24 +232,24 @@ public class BossAerialDiveGoal2 extends BaseBossGoal {
    }
 
    private double findGroundY(double x, double startY, double z) {
-      Level level = this.mob.m_9236_();
+      Level level = this.mob.level();
       int searchUp = 10;
       int searchDown = 50;
-      int startYInt = Mth.m_14107_(startY);
+      int startYInt = Mth.floor(startY);
 
       for (int y = startYInt + searchUp; y >= startYInt - searchDown; y--) {
-         BlockPos pos = new BlockPos(Mth.m_14107_(x), y, Mth.m_14107_(z));
-         BlockState state = level.m_8055_(pos);
-         if (state.m_280296_() && !state.m_60795_()) {
+         BlockPos pos = new BlockPos(Mth.floor(x), y, Mth.floor(z));
+         BlockState state = level.getBlockState(pos);
+         if (state.isSolid() && !state.isAir()) {
             try {
-               VoxelShape shape = state.m_60812_(level, pos);
-               if (!shape.m_83281_()) {
-                  return pos.m_123342_() + shape.m_83297_(Axis.Y);
+               VoxelShape shape = state.getCollisionShape(level, pos);
+               if (!shape.isEmpty()) {
+                  return pos.getY() + shape.max(Axis.Y);
                }
             } catch (Exception var15) {
             }
 
-            return pos.m_123342_() + 1.0;
+            return pos.getY() + 1.0;
          }
       }
 
@@ -257,19 +257,19 @@ public class BossAerialDiveGoal2 extends BaseBossGoal {
    }
 
    private BlockPos findSurfaceBlockPos(double x, double startY, double z) {
-      Level level = this.mob.m_9236_();
+      Level level = this.mob.level();
       int searchUp = 20;
       int searchDown = 20;
-      int startYInt = Mth.m_14107_(startY);
+      int startYInt = Mth.floor(startY);
 
       for (int y = startYInt + searchUp; y >= startYInt - searchDown; y--) {
-         BlockPos pos = new BlockPos(Mth.m_14107_(x), y, Mth.m_14107_(z));
-         BlockState state = level.m_8055_(pos);
-         if (!state.m_60819_().m_76178_()) {
+         BlockPos pos = new BlockPos(Mth.floor(x), y, Mth.floor(z));
+         BlockState state = level.getBlockState(pos);
+         if (!state.getFluidState().isEmpty()) {
             return null;
          }
 
-         if (state.m_280296_() && !state.m_60795_()) {
+         if (state.isSolid() && !state.isAir()) {
             return pos;
          }
       }

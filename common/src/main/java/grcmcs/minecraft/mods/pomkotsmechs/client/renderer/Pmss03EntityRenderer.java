@@ -14,8 +14,8 @@ public class Pmss03EntityRenderer extends GeoEntityRenderer<Pmss03Entity> {
    }
 
    public void render(Pmss03Entity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-      super.m_7392_(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
-      RenderUtils.renderMobBars(entity, poseStack, bufferSource, this.f_114476_, 1.0F);
+      super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+      RenderUtils.renderMobBars(entity, poseStack, bufferSource, this.entityRenderDispatcher, 1.0F);
    }
 
    public int getPackedOverlay(Pmss03Entity entity, float packedLight, float partialTick) {
@@ -24,6 +24,6 @@ public class Pmss03EntityRenderer extends GeoEntityRenderer<Pmss03Entity> {
       }
 
       float fuse = entity.getFuse() - partialTick;
-      return (int)(fuse / 5.0F) % 2 == 0 ? OverlayTexture.m_118093_(OverlayTexture.m_118088_(1.0F), 10) : OverlayTexture.f_118083_;
+      return (int)(fuse / 5.0F) % 2 == 0 ? OverlayTexture.pack(OverlayTexture.u(1.0F), 10) : OverlayTexture.NO_OVERLAY;
    }
 }

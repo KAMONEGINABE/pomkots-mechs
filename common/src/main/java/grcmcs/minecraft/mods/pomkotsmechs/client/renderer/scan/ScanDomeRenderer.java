@@ -14,8 +14,8 @@ public final class ScanDomeRenderer {
 
    public static void render(PoseStack poseStack, MultiBufferSource bufferSource, float radius, float alphaMultiplier) {
       if (!(radius <= 0.01F) && !(alphaMultiplier <= 0.001F)) {
-         VertexConsumer consumer = bufferSource.m_6299_(ScanRenderTypes.SCAN_DOME);
-         Matrix4f matrix = poseStack.m_85850_().m_252922_();
+         VertexConsumer consumer = bufferSource.getBuffer(ScanRenderTypes.SCAN_DOME);
+         Matrix4f matrix = poseStack.last().pose();
          float red = 0.1F;
          float green = 1.0F;
          float blue = 0.3F;
@@ -45,6 +45,6 @@ public final class ScanDomeRenderer {
       float x = (float)(radius * cosLatitude * Math.cos(longitude));
       float y = (float)(radius * Math.sin(latitude));
       float z = (float)(radius * cosLatitude * Math.sin(longitude));
-      consumer.m_252986_(matrix, x, y, z).m_85950_(red, green, blue, alpha).m_5752_();
+      consumer.vertex(matrix, x, y, z).color(red, green, blue, alpha).endVertex();
    }
 }

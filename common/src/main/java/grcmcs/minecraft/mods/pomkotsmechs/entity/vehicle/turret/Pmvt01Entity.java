@@ -27,7 +27,7 @@ public class Pmvt01Entity extends PomkotsVehicleBase {
 
    public Pmvt01Entity(EntityType<? extends LivingEntity> entityType, Level level) {
       super(entityType, level);
-      this.m_21051_(Attributes.f_22278_).m_22100_(1.0);
+      this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
    }
 
    @Override
@@ -36,8 +36,8 @@ public class Pmvt01Entity extends PomkotsVehicleBase {
    }
 
    @Override
-   public void m_8119_() {
-      super.m_8119_();
+   public void tick() {
+      super.tick();
    }
 
    @Override
@@ -50,7 +50,7 @@ public class Pmvt01Entity extends PomkotsVehicleBase {
 
    @Override
    protected void fireWeapons() {
-      Level world = this.m_9236_();
+      Level world = this.level();
       if (this.actionController.getAction(0).isOnStart() && this.isServerSide()) {
          this.muzzleSide = -1;
       }
@@ -59,15 +59,15 @@ public class Pmvt01Entity extends PomkotsVehicleBase {
          BulletGrenadeEntity be = new BulletGrenadeEntity(
             (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_MACHINE_LARGE.get(), world, this, 40.0F
          );
-         be.m_20242_(true);
+         be.setNoGravity(true);
          be.setExplosionScale(2);
-         Vec3 offset = this.m_20182_();
+         Vec3 offset = this.position();
          Vec3 muzzlPos = new Vec3(0.5 * this.muzzleSide, 1.0, 2.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         be.m_146884_(offset.m_82549_(muzzlPos));
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         be.setPos(offset.add(muzzlPos));
          float[] angle = this.getShootingAngle(be, false);
-         be.m_37251_(be, angle[0], angle[1], this.m_21256_(), BattleBalance.MECH_BULLET_GRENADE_SPEED, 2.0F);
-         world.m_7967_(be);
+         be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), BattleBalance.MECH_BULLET_GRENADE_SPEED, 2.0F);
+         world.addFreshEntity(be);
          this.muzzleSide *= -1;
       }
    }
@@ -78,38 +78,38 @@ public class Pmvt01Entity extends PomkotsVehicleBase {
       double yRot = 0.0;
       Entity lockTarget = this.lockTargets.getLockTargetHard() != null ? this.lockTargets.getLockTargetHard() : this.lockTargets.getLockTargetSoft();
       if (useLockTarget && lockTarget != null) {
-         Vec3 positionA = bullet.m_20182_();
-         Vec3 positionB = lockTarget.m_20191_().m_82399_();
-         double deltaX = positionB.f_82479_ - positionA.f_82479_;
-         double deltaY = positionB.f_82480_ - positionA.f_82480_;
-         double deltaZ = positionB.f_82481_ - positionA.f_82481_;
+         Vec3 positionA = bullet.position();
+         Vec3 positionB = lockTarget.getBoundingBox().getCenter();
+         double deltaX = positionB.x - positionA.x;
+         double deltaY = positionB.y - positionA.y;
+         double deltaZ = positionB.z - positionA.z;
          yRot = Math.toDegrees(Math.atan2(deltaZ, deltaX)) - 90.0;
          double distanceXZ = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
          xRot = -Math.toDegrees(Math.atan2(deltaY, distanceXZ));
       } else {
          LivingEntity driver = this.getDrivingPassenger();
-         Vec3 lookAngle = driver.m_20154_();
-         xRot = -Math.toDegrees(Math.asin(lookAngle.f_82480_)) - 3.5;
-         yRot = Math.toDegrees(Math.atan2(lookAngle.f_82481_, lookAngle.f_82479_)) - 90.0;
+         Vec3 lookAngle = driver.getLookAngle();
+         xRot = -Math.toDegrees(Math.asin(lookAngle.y)) - 3.5;
+         yRot = Math.toDegrees(Math.atan2(lookAngle.z, lookAngle.x)) - 90.0;
       }
 
       return new float[]{(float)xRot, (float)yRot};
    }
 
    @Override
-   public void m_7023_(Vec3 pos) {
-      if (this.m_6084_() && this.m_20160_() && this.canWork()) {
+   public void travel(Vec3 pos) {
+      if (this.isAlive() && this.isVehicle() && this.canWork()) {
          LivingEntity pilot = this.getDrivingPassenger();
-         this.m_146922_(pilot.m_146908_());
-         this.f_19859_ = this.m_146908_();
-         this.m_146926_(pilot.m_146909_() * 0.5F);
-         this.m_19915_(this.m_146908_(), this.m_146909_());
-         this.m_5618_(this.m_146908_());
-         this.m_5616_(this.m_146908_());
+         this.setYRot(pilot.getYRot());
+         this.yRotO = this.getYRot();
+         this.setXRot(pilot.getXRot() * 0.5F);
+         this.setRot(this.getYRot(), this.getXRot());
+         this.setYBodyRot(this.getYRot());
+         this.setYHeadRot(this.getYRot());
          super.travelBypass(pos);
-         this.f_19812_ = true;
+         this.hasImpulse = true;
       } else {
-         super.m_7023_(pos);
+         super.travel(pos);
       }
    }
 
@@ -136,16 +136,16 @@ public class Pmvt01Entity extends PomkotsVehicleBase {
    }
 
    @Override
-   public double m_6048_() {
+   public double getPassengersRidingOffset() {
       return 0.5;
    }
 
-   public boolean m_6128_() {
+   public boolean ignoreExplosion() {
       return true;
    }
 
    @Override
-   public boolean m_142535_(float f1, float f2, DamageSource damageSource) {
+   public boolean causeFallDamage(float f1, float f2, DamageSource damageSource) {
       return false;
    }
 

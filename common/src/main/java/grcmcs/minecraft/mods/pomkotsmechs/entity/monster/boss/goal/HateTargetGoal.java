@@ -39,46 +39,46 @@ public class HateTargetGoal extends Goal {
       this.maxHateRange = maxHateRange;
       this.proximityRange = proximityRange;
       this.hateMap = new ConcurrentHashMap<>();
-      this.m_7021_(EnumSet.of(Flag.TARGET));
+      this.setFlags(EnumSet.of(Flag.TARGET));
    }
 
-   public boolean m_8036_() {
+   public boolean canUse() {
       this.updateHateValues();
       LivingEntity newTarget = this.selectHighestHateTarget();
       if (newTarget != this.currentTarget) {
          this.currentTarget = newTarget;
-         this.mob.m_6710_(this.currentTarget);
+         this.mob.setTarget(this.currentTarget);
       }
 
       return this.currentTarget != null;
    }
 
-   public boolean m_8045_() {
+   public boolean canContinueToUse() {
       if (--this.recheckDelay <= 0) {
          this.recheckDelay = 20;
          this.updateHateValues();
          LivingEntity newTarget = this.selectHighestHateTarget();
          if (newTarget != this.currentTarget) {
             this.currentTarget = newTarget;
-            this.mob.m_6710_(this.currentTarget);
+            this.mob.setTarget(this.currentTarget);
          }
       }
 
-      return this.currentTarget != null && this.currentTarget.m_6084_() && this.mob.m_20280_(this.currentTarget) <= this.maxHateRange * this.maxHateRange;
+      return this.currentTarget != null && this.currentTarget.isAlive() && this.mob.distanceToSqr(this.currentTarget) <= this.maxHateRange * this.maxHateRange;
    }
 
-   public void m_8056_() {
+   public void start() {
       this.recheckDelay = 20;
    }
 
-   public void m_8041_() {
+   public void stop() {
       this.currentTarget = null;
-      this.mob.m_6710_(null);
+      this.mob.setTarget(null);
    }
 
    public void addDamageHate(LivingEntity entity, float damage) {
       if (entity != null && this.isValidTarget(entity)) {
-         UUID entityId = entity.m_20148_();
+         UUID entityId = entity.getUUID();
          HateTargetGoal.HateData hateData = this.hateMap.computeIfAbsent(entityId, k -> new HateTargetGoal.HateData());
          hateData.addHate(damage * 2.0F);
       }
@@ -86,7 +86,7 @@ public class HateTargetGoal extends Goal {
 
    public void addCustomHate(LivingEntity entity, float hate) {
       if (entity != null && this.isValidTarget(entity)) {
-         UUID entityId = entity.m_20148_();
+         UUID entityId = entity.getUUID();
          HateTargetGoal.HateData hateData = this.hateMap.computeIfAbsent(entityId, k -> new HateTargetGoal.HateData());
          hateData.addHate(hate);
       }
@@ -94,7 +94,7 @@ public class HateTargetGoal extends Goal {
 
    public void setHate(LivingEntity entity, float hate) {
       if (entity != null && this.isValidTarget(entity)) {
-         UUID entityId = entity.m_20148_();
+         UUID entityId = entity.getUUID();
          HateTargetGoal.HateData hateData = this.hateMap.computeIfAbsent(entityId, k -> new HateTargetGoal.HateData());
          hateData.setHate(hate);
       }
@@ -105,12 +105,12 @@ public class HateTargetGoal extends Goal {
          return 0.0F;
       }
 
-      HateTargetGoal.HateData hateData = this.hateMap.get(entity.m_20148_());
+      HateTargetGoal.HateData hateData = this.hateMap.get(entity.getUUID());
       return hateData != null ? hateData.getHate() : 0.0F;
    }
 
    private boolean isValidTarget(LivingEntity entity) {
-      if (entity == null || !entity.m_6084_()) {
+      if (entity == null || !entity.isAlive()) {
          return false;
       }
 
@@ -122,14 +122,14 @@ public class HateTargetGoal extends Goal {
          return false;
       }
 
-      Team mobTeam = this.mob.m_5647_();
-      Team entityTeam = entity.m_5647_();
+      Team mobTeam = this.mob.getTeam();
+      Team entityTeam = entity.getTeam();
       if (mobTeam != null && entityTeam != null) {
          if (mobTeam.equals(entityTeam)) {
             return false;
          }
 
-         if (mobTeam.m_83536_(entityTeam)) {
+         if (mobTeam.isAlliedTo(entityTeam)) {
             return false;
          }
       }
@@ -146,8 +146,8 @@ public class HateTargetGoal extends Goal {
          HateTargetGoal.HateData hateData = entry.getValue();
          Entity entity = this.findEntityById(entityId);
          if (entity instanceof LivingEntity le) {
-            double distance = this.mob.m_20280_(entity);
-            if (!le.m_6084_()) {
+            double distance = this.mob.distanceToSqr(entity);
+            if (!le.isAlive()) {
                iterator.remove();
             } else if (distance > this.maxHateRange * this.maxHateRange) {
                hateData.decay(20.0F);
@@ -182,9 +182,9 @@ public class HateTargetGoal extends Goal {
       for (Entry<UUID, HateTargetGoal.HateData> entry : this.hateMap.entrySet()) {
          if (entry.getValue().getHate() > highestHate
             && this.findEntityById(entry.getKey()) instanceof LivingEntity le
-            && le.m_6084_()
+            && le.isAlive()
             && this.isValidTarget(le)
-            && this.mob.m_20280_(le) <= this.maxHateRange * this.maxHateRange) {
+            && this.mob.distanceToSqr(le) <= this.maxHateRange * this.maxHateRange) {
             bestTarget = le;
             highestHate = entry.getValue().getHate();
          }
@@ -204,18 +204,18 @@ public class HateTargetGoal extends Goal {
    }
 
    private RaidObjectiveEntity findRaidTarget() {
-      double targetRange = this.mob.m_21051_(Attributes.f_22277_).m_22115_();
-      if (this.mob.m_9236_() instanceof ServerLevel level) {
-         Vec3 var7 = this.mob.m_20182_();
+      double targetRange = this.mob.getAttribute(Attributes.FOLLOW_RANGE).getBaseValue();
+      if (this.mob.level() instanceof ServerLevel level) {
+         Vec3 var7 = this.mob.position();
          AABB area = new AABB(
-            var7.f_82479_ - targetRange,
-            var7.f_82480_ - 100.0,
-            var7.f_82481_ - targetRange,
-            var7.f_82479_ + targetRange,
-            var7.f_82480_ + 100.0,
-            var7.f_82481_ + targetRange
+            var7.x - targetRange,
+            var7.y - 100.0,
+            var7.z - targetRange,
+            var7.x + targetRange,
+            var7.y + 100.0,
+            var7.z + targetRange
          );
-         List<RaidObjectiveEntity> list = level.m_6443_(RaidObjectiveEntity.class, area, e -> e.m_6084_() && !e.m_213877_());
+         List<RaidObjectiveEntity> list = level.getEntitiesOfClass(RaidObjectiveEntity.class, area, e -> e.isAlive() && !e.isRemoved());
          return list.isEmpty() ? null : list.get(0);
       } else {
          return null;
@@ -224,18 +224,18 @@ public class HateTargetGoal extends Goal {
 
    private List<LivingEntity> getNearbyEntities() {
       AABB searchBox = new AABB(
-         this.mob.m_20185_() - this.maxHateRange,
-         this.mob.m_20186_() - this.maxHateRange,
-         this.mob.m_20189_() - this.maxHateRange,
-         this.mob.m_20185_() + this.maxHateRange,
-         this.mob.m_20186_() + this.maxHateRange,
-         this.mob.m_20189_() + this.maxHateRange
+         this.mob.getX() - this.maxHateRange,
+         this.mob.getY() - this.maxHateRange,
+         this.mob.getZ() - this.maxHateRange,
+         this.mob.getX() + this.maxHateRange,
+         this.mob.getY() + this.maxHateRange,
+         this.mob.getZ() + this.maxHateRange
       );
-      return this.mob.m_9236_().m_6443_(LivingEntity.class, searchBox, this::isValidTarget);
+      return this.mob.level().getEntitiesOfClass(LivingEntity.class, searchBox, this::isValidTarget);
    }
 
    private Entity findEntityById(UUID entityId) {
-      return ((ServerLevel)this.mob.m_9236_()).m_8791_(entityId);
+      return ((ServerLevel)this.mob.level()).getEntity(entityId);
    }
 
    public Map<UUID, Float> getHateMap() {
@@ -251,15 +251,15 @@ public class HateTargetGoal extends Goal {
    public void clearHate() {
       this.hateMap.clear();
       this.currentTarget = null;
-      this.mob.m_6710_(null);
+      this.mob.setTarget(null);
    }
 
    public void clearHate(LivingEntity entity) {
       if (entity != null) {
-         this.hateMap.remove(entity.m_20148_());
+         this.hateMap.remove(entity.getUUID());
          if (this.currentTarget == entity) {
             this.currentTarget = null;
-            this.mob.m_6710_(null);
+            this.mob.setTarget(null);
          }
       }
    }

@@ -22,40 +22,40 @@ public final class CircuitSkillJsonParser {
    }
 
    public static CircuitSkill parse(JsonObject json) {
-      ResourceLocation id = ResourceLocation.m_135820_(GsonHelper.m_13906_(json, "id"));
+      ResourceLocation id = ResourceLocation.tryParse(GsonHelper.getAsString(json, "id"));
       if (id == null) {
          throw new IllegalArgumentException("Invalid or missing circuit skill id.");
       }
 
-      String defaultTranslationKey = "circuit_skill." + id.m_135827_() + "." + id.m_135815_().replace('/', '.');
-      String translationKey = GsonHelper.m_13851_(json, "translation_key", defaultTranslationKey);
-      String fallbackName = GsonHelper.m_13851_(json, "display_name", id.m_135815_());
+      String defaultTranslationKey = "circuit_skill." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+      String translationKey = GsonHelper.getAsString(json, "translation_key", defaultTranslationKey);
+      String fallbackName = GsonHelper.getAsString(json, "display_name", id.getPath());
       Component displayName = parseDisplayName(json, translationKey, fallbackName);
-      CircuitCategory category = CircuitCategory.byName(GsonHelper.m_13851_(json, "category", "utility"), CircuitCategory.UTILITY);
-      int tier = GsonHelper.m_13824_(json, "tier", 1);
-      CircuitRarity minimumRarity = CircuitRarity.byName(GsonHelper.m_13851_(json, "minimum_rarity", "common"), CircuitRarity.COMMON);
-      int weight = GsonHelper.m_13824_(json, "weight", 10);
+      CircuitCategory category = CircuitCategory.byName(GsonHelper.getAsString(json, "category", "utility"), CircuitCategory.UTILITY);
+      int tier = GsonHelper.getAsInt(json, "tier", 1);
+      CircuitRarity minimumRarity = CircuitRarity.byName(GsonHelper.getAsString(json, "minimum_rarity", "common"), CircuitRarity.COMMON);
+      int weight = GsonHelper.getAsInt(json, "weight", 10);
       List<SkillEffect> effects = parseEffects(id, json);
       return new CircuitSkill(id, displayName, translationKey, fallbackName, category, tier, minimumRarity, weight, effects);
    }
 
    private static Component parseDisplayName(JsonObject json, String translationKey, String fallbackName) {
       if (json.has("name")) {
-         Component component = Serializer.m_130691_(json.get("name"));
+         Component component = Serializer.fromJson(json.get("name"));
          if (component != null) {
             return component;
          }
       }
 
       if (json.has("translation_key")) {
-         return Component.m_237115_(translationKey);
+         return Component.translatable(translationKey);
       } else {
-         return json.has("display_name") ? Component.m_237113_(fallbackName) : Component.m_237115_(translationKey);
+         return json.has("display_name") ? Component.literal(fallbackName) : Component.translatable(translationKey);
       }
    }
 
    private static List<SkillEffect> parseEffects(ResourceLocation skillId, JsonObject json) {
-      JsonArray array = GsonHelper.m_13933_(json, "effects");
+      JsonArray array = GsonHelper.getAsJsonArray(json, "effects");
       List<SkillEffect> effects = new ArrayList<>();
 
       for (JsonElement element : array) {
@@ -83,23 +83,23 @@ public final class CircuitSkillJsonParser {
    }
 
    private static SkillEffect parseStatEffect(ResourceLocation skillId, JsonObject effectJson) {
-      MechStatType stat = MechStatType.byName(GsonHelper.m_13906_(effectJson, "stat"), null);
+      MechStatType stat = MechStatType.byName(GsonHelper.getAsString(effectJson, "stat"), null);
       if (stat == null) {
          throw new IllegalArgumentException("Unknown or missing stat in skill: " + skillId);
       }
 
-      CircuitOperation operation = CircuitOperation.byName(GsonHelper.m_13851_(effectJson, "operation", "add"), CircuitOperation.ADD);
-      double value = GsonHelper.m_144784_(effectJson, "value");
+      CircuitOperation operation = CircuitOperation.byName(GsonHelper.getAsString(effectJson, "operation", "add"), CircuitOperation.ADD);
+      double value = GsonHelper.getAsDouble(effectJson, "value");
       return SkillEffect.stat(stat, operation, value);
    }
 
    private static SkillEffect parseFeatureEffect(ResourceLocation skillId, JsonObject effectJson) {
-      MechFeatureType feature = MechFeatureType.byName(GsonHelper.m_13906_(effectJson, "feature"), null);
+      MechFeatureType feature = MechFeatureType.byName(GsonHelper.getAsString(effectJson, "feature"), null);
       if (feature == null) {
          throw new IllegalArgumentException("Unknown or missing feature in skill: " + skillId);
       }
 
-      boolean enabled = GsonHelper.m_13855_(effectJson, "enabled", true);
+      boolean enabled = GsonHelper.getAsBoolean(effectJson, "enabled", true);
       return SkillEffect.feature(feature, enabled);
    }
 }

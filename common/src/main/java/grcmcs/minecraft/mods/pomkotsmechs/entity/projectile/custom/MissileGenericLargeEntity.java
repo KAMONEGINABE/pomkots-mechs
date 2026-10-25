@@ -45,17 +45,17 @@ public class MissileGenericLargeEntity extends MissileGenericEntity {
 
    @Override
    protected void createExplosion(Vec3 pos) {
-      Level world = this.m_9236_();
-      if (!world.f_46443_) {
+      Level world = this.level();
+      if (!world.isClientSide) {
          if (Utils.isBlockDestructionAllowed(this.shooter)) {
-            Utils.explode(this, pos.f_82479_, pos.f_82480_, pos.f_82481_, 12.0F, false, ExplosionInteraction.BLOCK, this.m_9236_());
+            Utils.explode(this, pos.x, pos.y, pos.z, 12.0F, false, ExplosionInteraction.BLOCK, this.level());
          } else {
-            Utils.explode(this, pos.f_82479_, pos.f_82480_, pos.f_82481_, 12.0F, false, ExplosionInteraction.NONE, this.m_9236_());
+            Utils.explode(this, pos.x, pos.y, pos.z, 12.0F, false, ExplosionInteraction.NONE, this.level());
          }
 
          ExplosionEntity e = new ExplosionEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.EXPLOSION.get(), world);
-         e.m_146884_(this.m_20182_());
-         world.m_7967_(e);
+         e.setPos(this.position());
+         world.addFreshEntity(e);
       }
    }
 }

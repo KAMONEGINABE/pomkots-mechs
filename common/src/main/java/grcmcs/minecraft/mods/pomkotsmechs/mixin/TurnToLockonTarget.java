@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 public class TurnToLockonTarget {
    @Shadow
    @Final
-   private Minecraft f_91503_;
+   private Minecraft minecraft;
 
    @Inject(
       method = "turnPlayer",
@@ -24,7 +24,7 @@ public class TurnToLockonTarget {
       locals = LocalCapture.CAPTURE_FAILHARD
    )
    private void lockon$onTurn(CallbackInfo ci, double d0, double d1, double d4, double d5, double d6, double d2, double d3, int i) {
-      if (TargetLocker.getInstance().turn(this.f_91503_.f_91074_)) {
+      if (TargetLocker.getInstance().turn(this.minecraft.player)) {
          ci.cancel();
       }
    }

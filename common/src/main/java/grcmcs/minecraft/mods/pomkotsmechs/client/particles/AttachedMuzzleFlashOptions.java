@@ -46,28 +46,28 @@ public record AttachedMuzzleFlashOptions(int parentEntityId, int weaponPoint, fl
       }
 
       public AttachedMuzzleFlashOptions fromNetwork(ParticleType<AttachedMuzzleFlashOptions> type, FriendlyByteBuf buf) {
-         return new AttachedMuzzleFlashOptions(buf.m_130242_(), buf.m_130242_(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat());
+         return new AttachedMuzzleFlashOptions(buf.readVarInt(), buf.readVarInt(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat());
       }
    };
 
-   public ParticleType<?> m_6012_() {
+   public ParticleType<?> getType() {
       return (ParticleType<?>)PomkotsMechs.MUZZLE_FLASH.get();
    }
 
-   public void m_7711_(FriendlyByteBuf buf) {
-      buf.m_130130_(this.parentEntityId);
-      buf.m_130130_(this.weaponPoint);
+   public void writeToNetwork(FriendlyByteBuf buf) {
+      buf.writeVarInt(this.parentEntityId);
+      buf.writeVarInt(this.weaponPoint);
       buf.writeFloat(this.size);
       buf.writeFloat(this.localX);
       buf.writeFloat(this.localY);
       buf.writeFloat(this.localZ);
    }
 
-   public String m_5942_() {
+   public String writeToString() {
       return String.format(
          Locale.ROOT,
          "%s %d %d %.5f %.5f %.5f %.5f",
-         BuiltInRegistries.f_257034_.m_7981_(this.m_6012_()),
+         BuiltInRegistries.PARTICLE_TYPE.getKey(this.getType()),
          this.parentEntityId,
          this.weaponPoint,
          this.size,

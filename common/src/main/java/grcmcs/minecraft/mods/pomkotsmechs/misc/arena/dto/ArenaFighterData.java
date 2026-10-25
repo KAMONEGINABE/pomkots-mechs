@@ -135,46 +135,46 @@ public class ArenaFighterData {
 
    public CompoundTag save() {
       CompoundTag tag = new CompoundTag();
-      tag.m_128362_("FighterId", this.fighterId);
-      tag.m_128359_("Name", this.displayName);
-      tag.m_128359_("Comment", this.comment);
-      tag.m_128405_("Rating", this.rating);
+      tag.putUUID("FighterId", this.fighterId);
+      tag.putString("Name", this.displayName);
+      tag.putString("Comment", this.comment);
+      tag.putInt("Rating", this.rating);
       if (this.type == ArenaFighterData.FighterType.PLAYER) {
-         tag.m_128405_("Type", 0);
+         tag.putInt("Type", 0);
       } else {
-         tag.m_128405_("Type", 1);
+         tag.putInt("Type", 1);
       }
 
-      tag.m_128405_("Wins", this.wins);
-      tag.m_128405_("Losses", this.losses);
-      tag.m_128405_("Draws", this.draws);
-      tag.m_128359_("AiLevel", this.aiLevel);
-      tag.m_128359_("Texture", this.texture.toString());
-      tag.m_128359_("Model", this.model.toString());
-      tag.m_128365_("Mech", this.mechData.save());
+      tag.putInt("Wins", this.wins);
+      tag.putInt("Losses", this.losses);
+      tag.putInt("Draws", this.draws);
+      tag.putString("AiLevel", this.aiLevel);
+      tag.putString("Texture", this.texture.toString());
+      tag.putString("Model", this.model.toString());
+      tag.put("Mech", this.mechData.save());
       return tag;
    }
 
    public static ArenaFighterData load(CompoundTag tag) {
       ArenaFighterData data = new ArenaFighterData();
-      data.fighterId = tag.m_128342_("FighterId");
-      data.displayName = tag.m_128461_("Name");
-      data.comment = tag.m_128461_("Comment");
-      data.rating = tag.m_128451_("Rating");
-      data.wins = tag.m_128451_("Wins");
-      data.losses = tag.m_128451_("Losses");
-      data.draws = tag.m_128451_("Draws");
-      int type = tag.m_128451_("Type");
+      data.fighterId = tag.getUUID("FighterId");
+      data.displayName = tag.getString("Name");
+      data.comment = tag.getString("Comment");
+      data.rating = tag.getInt("Rating");
+      data.wins = tag.getInt("Wins");
+      data.losses = tag.getInt("Losses");
+      data.draws = tag.getInt("Draws");
+      int type = tag.getInt("Type");
       if (type == 0) {
          data.type = ArenaFighterData.FighterType.PLAYER;
       } else {
          data.type = ArenaFighterData.FighterType.NPC;
       }
 
-      data.aiLevel = tag.m_128461_("AiLevel");
-      data.texture = new ResourceLocation(tag.m_128461_("Texture"));
-      data.model = new ResourceLocation(tag.m_128461_("Model"));
-      data.mechData = ArenaMechData.load(tag.m_128469_("Mech"));
+      data.aiLevel = tag.getString("AiLevel");
+      data.texture = new ResourceLocation(tag.getString("Texture"));
+      data.model = new ResourceLocation(tag.getString("Model"));
+      data.mechData = ArenaMechData.load(tag.getCompound("Mech"));
       return data;
    }
 

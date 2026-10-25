@@ -27,29 +27,29 @@ public class Turret01Item extends Item {
       super(properties);
    }
 
-   public InteractionResultHolder<ItemStack> m_7203_(Level world, Player player, InteractionHand hand) {
-      ItemStack stack = player.m_21120_(hand);
-      if (!world.f_46443_) {
+   public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+      ItemStack stack = player.getItemInHand(hand);
+      if (!world.isClientSide) {
          this.summonRobot(stack, world, player);
       }
 
-      return InteractionResultHolder.m_19092_(stack, world.m_5776_());
+      return InteractionResultHolder.sidedSuccess(stack, world.isClientSide());
    }
 
    private void summonRobot(ItemStack stack, Level world, Player player) {
       double distance = 20.0;
-      HitResult result = player.m_19907_(distance, 0.0F, false);
-      if (result.m_6662_() == Type.BLOCK) {
+      HitResult result = player.pick(distance, 0.0F, false);
+      if (result.getType() == Type.BLOCK) {
          BlockHitResult blockHit = (BlockHitResult)result;
-         BlockPos hitPos = blockHit.m_82425_();
-         BlockState state = player.m_9236_().m_8055_(hitPos);
-         Block block = state.m_60734_();
-         if (block == Blocks.f_50721_) {
+         BlockPos hitPos = blockHit.getBlockPos();
+         BlockState state = player.level().getBlockState(hitPos);
+         Block block = state.getBlock();
+         if (block == Blocks.NETHERITE_BLOCK) {
             Pmt01Entity robot = this.createInstance(world);
-            robot.m_7678_(hitPos.m_123341_() + 0.5, hitPos.m_123342_() + 1, hitPos.m_123343_() + 0.5, player.m_146908_(), player.m_146909_());
-            world.m_7967_(robot);
+            robot.moveTo(hitPos.getX() + 0.5, hitPos.getY() + 1, hitPos.getZ() + 0.5, player.getYRot(), player.getXRot());
+            world.addFreshEntity(robot);
             robot.setTargetEntityType(BaseTurretEntity.TargetEntityType.POMKOTS_MONSTERS);
-            stack.m_41774_(1);
+            stack.shrink(1);
          }
       }
    }

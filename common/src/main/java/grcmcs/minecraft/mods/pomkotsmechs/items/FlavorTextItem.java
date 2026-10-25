@@ -12,12 +12,12 @@ public class FlavorTextItem extends Item {
       super(properties);
    }
 
-   public Component m_7626_(ItemStack stack) {
-      Component base = super.m_7626_(stack);
-      CompoundTag tag = stack.m_41783_();
-      if (tag != null && tag.m_128441_(PomkotsMechs.nbtName("FlavorTextNo"))) {
-         String no = tag.m_128461_(PomkotsMechs.nbtName("FlavorTextNo"));
-         return base.m_6881_().m_130946_(": " + no);
+   public Component getName(ItemStack stack) {
+      Component base = super.getName(stack);
+      CompoundTag tag = stack.getTag();
+      if (tag != null && tag.contains(PomkotsMechs.nbtName("FlavorTextNo"))) {
+         String no = tag.getString(PomkotsMechs.nbtName("FlavorTextNo"));
+         return base.copy().append(": " + no);
       } else {
          return base;
       }

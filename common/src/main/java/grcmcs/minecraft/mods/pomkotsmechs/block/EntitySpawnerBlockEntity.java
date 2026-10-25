@@ -39,7 +39,7 @@ public class EntitySpawnerBlockEntity extends BlockEntity {
    }
 
    public static void tick(Level level, BlockPos pos, BlockState state, EntitySpawnerBlockEntity be) {
-      if (!level.f_46443_) {
+      if (!level.isClientSide) {
          if (!Utils.isMapEditingMode(level)) {
             if (!be.targetEntityTypeID.isEmpty()) {
                ServerLevel serverLevel = (ServerLevel)level;
@@ -51,7 +51,7 @@ public class EntitySpawnerBlockEntity extends BlockEntity {
                   }
                }
 
-               if (level.m_46467_() % 200L == 0L) {
+               if (level.getGameTime() % 200L == 0L) {
                   be.trySpawn(serverLevel);
                }
             }
@@ -68,7 +68,7 @@ public class EntitySpawnerBlockEntity extends BlockEntity {
          }
       }
 
-      long currentDay = level.m_46468_() / 24000L;
+      long currentDay = level.getDayTime() / 24000L;
       if (this.lastSpawnDay < 0L || currentDay >= this.lastSpawnDay + this.spawnIntervalDays) {
          if (!this.isSpawnedEntityValid(level)) {
             this.spawnEntity(level, currentDay);
@@ -82,20 +82,20 @@ public class EntitySpawnerBlockEntity extends BlockEntity {
          return false;
       }
 
-      if (this.cachedEntity == null || this.cachedEntity.m_213877_()) {
-         this.cachedEntity = level.m_8791_(this.spawnedEntityUUID);
+      if (this.cachedEntity == null || this.cachedEntity.isRemoved()) {
+         this.cachedEntity = level.getEntity(this.spawnedEntityUUID);
       }
 
       if (this.cachedEntity == null) {
          this.spawnedEntityUUID = null;
          this.cachedEntity = null;
          return false;
-      } else if (!this.cachedEntity.m_6084_()) {
+      } else if (!this.cachedEntity.isAlive()) {
          this.spawnedEntityUUID = null;
          this.cachedEntity = null;
          return false;
       } else {
-         double distSqr = this.cachedEntity.m_20275_(this.f_58858_.m_123341_() + 0.5, this.f_58858_.m_123342_() + 0.5, this.f_58858_.m_123343_() + 0.5);
+         double distSqr = this.cachedEntity.distanceToSqr(this.worldPosition.getX() + 0.5, this.worldPosition.getY() + 0.5, this.worldPosition.getZ() + 0.5);
          if (distSqr > this.maxDistance * this.maxDistance) {
             this.spawnedEntityUUID = null;
             this.cachedEntity = null;
@@ -107,19 +107,19 @@ public class EntitySpawnerBlockEntity extends BlockEntity {
    }
 
    private void spawnEntity(ServerLevel level, long currentDay) {
-      Entity entity = ((EntityType)this.cachedEntityType.get()).m_20615_(level);
+      Entity entity = ((EntityType)this.cachedEntityType.get()).create(level);
       if (entity == null) {
          PomkotsMechs.LOGGER.error("Failed to create entity: {}", this.targetEntityTypeID);
       } else {
-         entity.m_7678_(
-            this.f_58858_.m_123341_() + 0.5, this.f_58858_.m_123342_() + 1.0, this.f_58858_.m_123343_() + 0.5, level.f_46441_.m_188501_() * 360.0F, 0.0F
+         entity.moveTo(
+            this.worldPosition.getX() + 0.5, this.worldPosition.getY() + 1.0, this.worldPosition.getZ() + 0.5, level.random.nextFloat() * 360.0F, 0.0F
          );
-         level.m_7967_(entity);
+         level.addFreshEntity(entity);
          if (entity instanceof GenericPomkotsMonster monster) {
             if (this.nbt != null && !this.nbt.isEmpty()) {
                try {
-                  CompoundTag nbtTag = TagParser.m_129359_(this.nbt);
-                  monster.m_7378_(nbtTag);
+                  CompoundTag nbtTag = TagParser.parseTag(this.nbt);
+                  monster.readAdditionalSaveData(nbtTag);
                } catch (CommandSyntaxException e) {
                   PomkotsMechs.LOGGER.error("Failed to parse NBT: {}", this.nbt, e);
                }
@@ -132,15 +132,15 @@ public class EntitySpawnerBlockEntity extends BlockEntity {
                   boss.setAiMode(-2);
                }
             } else if (entity instanceof BaseSmallMonsterEntity small) {
-               small.m_21530_();
+               small.setPersistenceRequired();
             }
          }
 
-         this.spawnedEntityUUID = entity.m_20148_();
+         this.spawnedEntityUUID = entity.getUUID();
          this.cachedEntity = entity;
          this.lastSpawnDay = currentDay;
-         this.m_6596_();
-         PomkotsMechs.LOGGER.info("Spawned entity {} at {} (day: {})", new Object[]{this.targetEntityTypeID, this.f_58858_, currentDay});
+         this.setChanged();
+         PomkotsMechs.LOGGER.info("Spawned entity {} at {} (day: {})", new Object[]{this.targetEntityTypeID, this.worldPosition, currentDay});
       }
    }
 
@@ -160,23 +160,23 @@ public class EntitySpawnerBlockEntity extends BlockEntity {
       return null;
    }
 
-   public void m_142466_(CompoundTag tag) {
-      super.m_142466_(tag);
-      this.targetEntityTypeID = tag.m_128461_(PomkotsMechs.nbtName("TargetEntityTypeID"));
-      this.nbt = tag.m_128461_(PomkotsMechs.nbtName("EntityTag"));
-      this.healthModifier = tag.m_128457_(PomkotsMechs.nbtName("HealthModifier"));
-      this.attackModifier = tag.m_128457_(PomkotsMechs.nbtName("AttackModifier"));
-      this.spawnIntervalDays = tag.m_128451_(PomkotsMechs.nbtName("SpawnIntervalDays"));
-      this.maxDistance = tag.m_128451_(PomkotsMechs.nbtName("MaxDistance"));
-      this.lastSpawnDay = tag.m_128454_(PomkotsMechs.nbtName("LastSpawnDay"));
-      if (tag.m_128441_(PomkotsMechs.nbtName("ActivateBoss"))) {
-         this.activateBoss = tag.m_128471_(PomkotsMechs.nbtName("ActivateBoss"));
+   public void load(CompoundTag tag) {
+      super.load(tag);
+      this.targetEntityTypeID = tag.getString(PomkotsMechs.nbtName("TargetEntityTypeID"));
+      this.nbt = tag.getString(PomkotsMechs.nbtName("EntityTag"));
+      this.healthModifier = tag.getFloat(PomkotsMechs.nbtName("HealthModifier"));
+      this.attackModifier = tag.getFloat(PomkotsMechs.nbtName("AttackModifier"));
+      this.spawnIntervalDays = tag.getInt(PomkotsMechs.nbtName("SpawnIntervalDays"));
+      this.maxDistance = tag.getInt(PomkotsMechs.nbtName("MaxDistance"));
+      this.lastSpawnDay = tag.getLong(PomkotsMechs.nbtName("LastSpawnDay"));
+      if (tag.contains(PomkotsMechs.nbtName("ActivateBoss"))) {
+         this.activateBoss = tag.getBoolean(PomkotsMechs.nbtName("ActivateBoss"));
       } else {
          this.activateBoss = false;
       }
 
-      if (tag.m_128403_(PomkotsMechs.nbtName("SpawnedEntityUUID"))) {
-         this.spawnedEntityUUID = tag.m_128342_(PomkotsMechs.nbtName("SpawnedEntityUUID"));
+      if (tag.hasUUID(PomkotsMechs.nbtName("SpawnedEntityUUID"))) {
+         this.spawnedEntityUUID = tag.getUUID(PomkotsMechs.nbtName("SpawnedEntityUUID"));
       }
 
       if (this.spawnIntervalDays <= 0) {
@@ -200,50 +200,50 @@ public class EntitySpawnerBlockEntity extends BlockEntity {
       this.hasCheckedInitialSpawn = false;
    }
 
-   protected void m_183515_(CompoundTag tag) {
-      super.m_183515_(tag);
-      tag.m_128359_(PomkotsMechs.nbtName("TargetEntityTypeID"), this.targetEntityTypeID);
-      tag.m_128359_(PomkotsMechs.nbtName("EntityTag"), this.nbt);
-      tag.m_128350_(PomkotsMechs.nbtName("HealthModifier"), this.healthModifier);
-      tag.m_128350_(PomkotsMechs.nbtName("AttackModifier"), this.attackModifier);
-      tag.m_128405_(PomkotsMechs.nbtName("SpawnIntervalDays"), this.spawnIntervalDays);
-      tag.m_128405_(PomkotsMechs.nbtName("MaxDistance"), this.maxDistance);
-      tag.m_128356_(PomkotsMechs.nbtName("LastSpawnDay"), this.lastSpawnDay);
-      tag.m_128379_(PomkotsMechs.nbtName("ActivateBoss"), this.activateBoss);
+   protected void saveAdditional(CompoundTag tag) {
+      super.saveAdditional(tag);
+      tag.putString(PomkotsMechs.nbtName("TargetEntityTypeID"), this.targetEntityTypeID);
+      tag.putString(PomkotsMechs.nbtName("EntityTag"), this.nbt);
+      tag.putFloat(PomkotsMechs.nbtName("HealthModifier"), this.healthModifier);
+      tag.putFloat(PomkotsMechs.nbtName("AttackModifier"), this.attackModifier);
+      tag.putInt(PomkotsMechs.nbtName("SpawnIntervalDays"), this.spawnIntervalDays);
+      tag.putInt(PomkotsMechs.nbtName("MaxDistance"), this.maxDistance);
+      tag.putLong(PomkotsMechs.nbtName("LastSpawnDay"), this.lastSpawnDay);
+      tag.putBoolean(PomkotsMechs.nbtName("ActivateBoss"), this.activateBoss);
       if (this.spawnedEntityUUID != null) {
-         tag.m_128362_(PomkotsMechs.nbtName("SpawnedEntityUUID"), this.spawnedEntityUUID);
+         tag.putUUID(PomkotsMechs.nbtName("SpawnedEntityUUID"), this.spawnedEntityUUID);
       }
    }
 
    public void setTargetEntityTypeID(String targetEntityTypeID) {
       this.targetEntityTypeID = targetEntityTypeID;
       this.cachedEntityType = null;
-      this.m_6596_();
+      this.setChanged();
    }
 
    public void setNbt(String nbt) {
       this.nbt = nbt;
-      this.m_6596_();
+      this.setChanged();
    }
 
    public void setHealthModifier(float healthModifier) {
       this.healthModifier = healthModifier;
-      this.m_6596_();
+      this.setChanged();
    }
 
    public void setAttackModifier(float attackModifier) {
       this.attackModifier = attackModifier;
-      this.m_6596_();
+      this.setChanged();
    }
 
    public void setSpawnIntervalDays(int spawnIntervalDays) {
       this.spawnIntervalDays = Math.max(1, spawnIntervalDays);
-      this.m_6596_();
+      this.setChanged();
    }
 
    public void setMaxDistance(int maxDistance) {
       this.maxDistance = Math.max(1, maxDistance);
-      this.m_6596_();
+      this.setChanged();
    }
 
    public void resetSpawnState() {
@@ -251,7 +251,7 @@ public class EntitySpawnerBlockEntity extends BlockEntity {
       this.spawnedEntityUUID = null;
       this.cachedEntity = null;
       this.hasCheckedInitialSpawn = false;
-      this.m_6596_();
+      this.setChanged();
    }
 
    public String getTargetEntityTypeID() {

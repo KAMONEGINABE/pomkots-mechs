@@ -97,45 +97,45 @@ public class RaidControllerEntity extends LivingEntity {
    private int prevRemaining = 0;
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_()
-         .m_22266_(Attributes.f_22282_)
-         .m_22268_(Attributes.f_22278_, 1.0)
-         .m_22268_(Attributes.f_22276_, 1000.0)
-         .m_22268_(Attributes.f_22284_, 20.0)
-         .m_22268_(Attributes.f_22285_, 1.0);
+      return LivingEntity.createLivingAttributes()
+         .add(Attributes.ATTACK_KNOCKBACK)
+         .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
+         .add(Attributes.MAX_HEALTH, 1000.0)
+         .add(Attributes.ARMOR, 20.0)
+         .add(Attributes.ARMOR_TOUGHNESS, 1.0);
    }
 
    @NotNull
    public static CompoundTag buildCompoundTag(String startTargetRaidName, UUID raidOwnerUUID, String raidFinalizeCommandSuccess, String raidFinalizeCommandFail) {
       CompoundTag tag = new CompoundTag();
-      tag.m_128359_(nbt("StartTargetRaidName"), startTargetRaidName);
+      tag.putString(nbt("StartTargetRaidName"), startTargetRaidName);
       if (raidOwnerUUID != null) {
-         tag.m_128362_(nbt("RaidOwnerUUID"), raidOwnerUUID);
+         tag.putUUID(nbt("RaidOwnerUUID"), raidOwnerUUID);
       }
 
       if (raidFinalizeCommandSuccess != null) {
-         tag.m_128359_(nbt("RaidFinalizeCommandSuccess"), raidFinalizeCommandSuccess);
+         tag.putString(nbt("RaidFinalizeCommandSuccess"), raidFinalizeCommandSuccess);
       }
 
       if (raidFinalizeCommandFail != null) {
-         tag.m_128359_(nbt("RaidFinalizeCommandFail"), raidFinalizeCommandFail);
+         tag.putString(nbt("RaidFinalizeCommandFail"), raidFinalizeCommandFail);
       }
 
       return tag;
    }
 
    public static List<BaseBossEntity> getInactiveBossesAroundPos(Level level, BlockPos pos) {
-      AABB area = AABB.m_82333_(pos.m_252807_()).m_82400_(40.0);
-      return level.m_45976_(BaseBossEntity.class, area).stream().filter(b -> b.getAiMode() == -2).toList();
+      AABB area = AABB.unitCubeFromLowerCorner(pos.getCenter()).inflate(40.0);
+      return level.getEntitiesOfClass(BaseBossEntity.class, area).stream().filter(b -> b.getAiMode() == -2).toList();
    }
 
    public static List<Player> getPlayersAroundPos(Level level, BlockPos pos) {
-      AABB area = AABB.m_82333_(pos.m_252807_()).m_82400_(100.0);
-      return level.m_45976_(Player.class, area);
+      AABB area = AABB.unitCubeFromLowerCorner(pos.getCenter()).inflate(100.0);
+      return level.getEntitiesOfClass(Player.class, area);
    }
 
    public static Optional<SoundEvent> getSoundEvent(ResourceLocation id) {
-      return BuiltInRegistries.f_256894_.m_6612_(id);
+      return BuiltInRegistries.SOUND_EVENT.getOptional(id);
    }
 
    public RaidControllerEntity(EntityType<? extends LivingEntity> entityType, Level world) {
@@ -144,12 +144,12 @@ public class RaidControllerEntity extends LivingEntity {
 
    public RaidControllerEntity(EntityType<? extends LivingEntity> entityType, Level world, BaseBossEntity parent) {
       super(entityType, world);
-      this.f_19794_ = true;
-      this.m_20242_(true);
-      this.timeBar = new ServerBossEvent(Component.m_237113_("Raid Time"), BossBarColor.BLUE, BossBarOverlay.PROGRESS);
-      this.baseHpBar = new ServerBossEvent(Component.m_237113_("Target HP"), BossBarColor.GREEN, BossBarOverlay.PROGRESS);
-      this.timeBar.m_142711_(1.0F);
-      this.baseHpBar.m_142711_(1.0F);
+      this.noPhysics = true;
+      this.setNoGravity(true);
+      this.timeBar = new ServerBossEvent(Component.literal("Raid Time"), BossBarColor.BLUE, BossBarOverlay.PROGRESS);
+      this.baseHpBar = new ServerBossEvent(Component.literal("Target HP"), BossBarColor.GREEN, BossBarOverlay.PROGRESS);
+      this.timeBar.setProgress(1.0F);
+      this.baseHpBar.setProgress(1.0F);
       this.setBossBarVisibility(false);
    }
 
@@ -157,23 +157,23 @@ public class RaidControllerEntity extends LivingEntity {
       return PomkotsMechs.nbtName(key);
    }
 
-   public void m_7378_(CompoundTag tag) {
-      super.m_7378_(tag);
+   public void readAdditionalSaveData(CompoundTag tag) {
+      super.readAdditionalSaveData(tag);
       this.startTargetRaidName = readString(tag, "StartTargetRaidName");
       this.raidOwnerUUID = readUUID(tag, "RaidOwnerUUID");
       this.raidFinalizeCommandSuccess = readString(tag, "RaidFinalizeCommandSuccess");
       this.raidFinalizeCommandFail = readString(tag, "RaidFinalizeCommandFail");
       this.currentRaidName = readString(tag, "CurrentRaidName");
       this.raidTargetEntityUUID = readUUID(tag, "RaidTargetEntityUUID");
-      this.currentWaveIndex = tag.m_128441_(nbt("CurrentWaveIndex")) ? tag.m_128451_(nbt("CurrentWaveIndex")) : -1;
-      this.tickCounter = tag.m_128441_(nbt("TickCounter")) ? tag.m_128451_(nbt("TickCounter")) : -1;
-      this.spawnedMobsNum = tag.m_128441_(nbt("SpawnedMobsNum")) ? tag.m_128451_(nbt("SpawnedMobsNum")) : -1;
-      this.endEventWhenKilledAllMobs = tag.m_128441_(nbt("EndEventWhenKilledAllMobs")) && tag.m_128471_(nbt("EndEventWhenKilledAllMobs"));
-      this.spawnedMobsTag = (ListTag)tag.m_128423_(nbt("SpawnedMobs"));
+      this.currentWaveIndex = tag.contains(nbt("CurrentWaveIndex")) ? tag.getInt(nbt("CurrentWaveIndex")) : -1;
+      this.tickCounter = tag.contains(nbt("TickCounter")) ? tag.getInt(nbt("TickCounter")) : -1;
+      this.spawnedMobsNum = tag.contains(nbt("SpawnedMobsNum")) ? tag.getInt(nbt("SpawnedMobsNum")) : -1;
+      this.endEventWhenKilledAllMobs = tag.contains(nbt("EndEventWhenKilledAllMobs")) && tag.getBoolean(nbt("EndEventWhenKilledAllMobs"));
+      this.spawnedMobsTag = (ListTag)tag.get(nbt("SpawnedMobs"));
    }
 
-   public void m_7380_(CompoundTag tag) {
-      super.m_7380_(tag);
+   public void addAdditionalSaveData(CompoundTag tag) {
+      super.addAdditionalSaveData(tag);
       writeString(tag, "StartTargetRaidName", this.startTargetRaidName);
       writeUUID(tag, "RaidOwnerUUID", this.raidOwnerUUID);
       writeString(tag, "RaidFinalizeCommandSuccess", this.raidFinalizeCommandSuccess);
@@ -184,70 +184,70 @@ public class RaidControllerEntity extends LivingEntity {
       writeIntIfSet(tag, "TickCounter", this.tickCounter);
       writeIntIfSet(tag, "SpawnedMobsNum", this.spawnedMobsNum);
       if (this.endEventWhenKilledAllMobs) {
-         tag.m_128379_(nbt("EndEventWhenKilledAllMobs"), true);
+         tag.putBoolean(nbt("EndEventWhenKilledAllMobs"), true);
       } else {
-         tag.m_128473_(nbt("EndEventWhenKilledAllMobs"));
+         tag.remove(nbt("EndEventWhenKilledAllMobs"));
       }
 
       ListTag list = new ListTag();
 
       for (Entity ent : this.spawnedMobs) {
-         list.add(NbtUtils.m_129226_(ent.m_20148_()));
+         list.add(NbtUtils.createUUID(ent.getUUID()));
       }
 
-      tag.m_128365_(nbt("SpawnedMobs"), list);
+      tag.put(nbt("SpawnedMobs"), list);
    }
 
    private static String readString(CompoundTag tag, String key) {
-      return tag.m_128441_(nbt(key)) ? tag.m_128461_(nbt(key)) : null;
+      return tag.contains(nbt(key)) ? tag.getString(nbt(key)) : null;
    }
 
    private static UUID readUUID(CompoundTag tag, String key) {
-      return tag.m_128441_(nbt(key)) ? tag.m_128342_(nbt(key)) : null;
+      return tag.contains(nbt(key)) ? tag.getUUID(nbt(key)) : null;
    }
 
    private static void writeString(CompoundTag tag, String key, String value) {
       if (value != null) {
-         tag.m_128359_(nbt(key), value);
+         tag.putString(nbt(key), value);
       } else {
-         tag.m_128473_(nbt(key));
+         tag.remove(nbt(key));
       }
    }
 
    private static void writeUUID(CompoundTag tag, String key, UUID value) {
       if (value != null) {
-         tag.m_128362_(nbt(key), value);
+         tag.putUUID(nbt(key), value);
       } else {
-         tag.m_128473_(nbt(key));
+         tag.remove(nbt(key));
       }
    }
 
    private static void writeIntIfSet(CompoundTag tag, String key, int value) {
       if (value != -1) {
-         tag.m_128405_(nbt(key), value);
+         tag.putInt(nbt(key), value);
       } else {
-         tag.m_128473_(nbt(key));
+         tag.remove(nbt(key));
       }
    }
 
-   public void m_8119_() {
-      if (this.f_19803_ && !this.m_9236_().f_46443_) {
+   public void tick() {
+      if (this.firstTick && !this.level().isClientSide) {
          this.loadSpawnedMobs();
       }
 
-      super.m_8119_();
-      if (!this.m_9236_().f_46443_) {
-         if (this.f_19797_ > 120000) {
+      super.tick();
+      if (!this.level().isClientSide) {
+         if (this.tickCount > 120000) {
             PomkotsMechs.LOGGER.info("MAX Tick Count exceeded: {}", this);
-            this.m_146870_();
+            this.discard();
          } else {
-            ServerLevel serverLevel = (ServerLevel)this.m_9236_();
-            this.spawnedMobs.removeIf(e -> e == null || !e.m_6084_());
+            ServerLevel serverLevel = (ServerLevel)this.level();
+            this.spawnedMobs.removeIf(e -> e == null || !e.isAlive());
             if (this.startTargetRaidName == null || this.initializeRaid(serverLevel)) {
-               this.raidOwner = this.raidOwnerUUID != null ? serverLevel.m_8791_(this.raidOwnerUUID) : null;
+               this.raidOwner = this.raidOwnerUUID != null ? serverLevel.getEntity(this.raidOwnerUUID) : null;
                if (this.currentRaidName != null) {
                   if (this.raidTargetEntity == null) {
-                     this.raidTargetEntity = (LivingEntity)serverLevel.m_8791_(this.raidTargetEntityUUID);
+                     this.raidTargetEntity = (LivingEntity)serverLevel.getEntity(this.raidTargetEntityUUID);
                      this.raidDefinition = PomkotsDataPackManager.getInstance().getDataPack().getRaidData(this.currentRaidName);
                   }
 
@@ -264,7 +264,7 @@ public class RaidControllerEntity extends LivingEntity {
       this.raidDefinition = PomkotsDataPackManager.getInstance().getDataPack().getRaidData(this.startTargetRaidName);
       if (this.raidDefinition == null) {
          PomkotsMechs.LOGGER.error("Raid def not found: {}", this.startTargetRaidName);
-         this.m_146870_();
+         this.discard();
          return false;
       }
 
@@ -272,7 +272,7 @@ public class RaidControllerEntity extends LivingEntity {
       this.tickCounter = 0;
       this.currentWaveIndex = 0;
 
-      for (ServerPlayer player : this.baseHpBar.m_8324_()) {
+      for (ServerPlayer player : this.baseHpBar.getPlayers()) {
          this.startBGMforPlayer(player, this.raidDefinition);
       }
 
@@ -284,27 +284,27 @@ public class RaidControllerEntity extends LivingEntity {
    private void setupRaidTarget(ServerLevel serverLevel) {
       switch (RaidControllerEntity.RaidType.of(this.raidDefinition.type)) {
          case DEFENSE:
-            RaidObjectiveEntity roe = (RaidObjectiveEntity)((EntityType)PomkotsMechs.RAID_OBJECTIVE.get()).m_20615_(serverLevel);
+            RaidObjectiveEntity roe = (RaidObjectiveEntity)((EntityType)PomkotsMechs.RAID_OBJECTIVE.get()).create(serverLevel);
             if (roe != null) {
-               BlockPos pos = this.m_20183_();
-               roe.m_6034_(pos.m_123341_(), pos.m_123342_(), pos.m_123343_());
-               this.m_9236_().m_7967_(roe);
+               BlockPos pos = this.blockPosition();
+               roe.setPos(pos.getX(), pos.getY(), pos.getZ());
+               this.level().addFreshEntity(roe);
                this.raidTargetEntity = roe;
-               this.raidTargetEntityUUID = roe.m_20148_();
+               this.raidTargetEntityUUID = roe.getUUID();
             }
             break;
          case SURVIVE:
-            this.raidTargetEntity = (LivingEntity)serverLevel.m_8791_(this.raidOwnerUUID);
+            this.raidTargetEntity = (LivingEntity)serverLevel.getEntity(this.raidOwnerUUID);
             this.raidTargetEntityUUID = this.raidOwnerUUID;
             break;
          case SWEEP:
          case SWEEP_BOSS_BOX:
          case ACTIVATE:
             this.raidTargetEntity = this;
-            this.raidTargetEntityUUID = this.m_20148_();
+            this.raidTargetEntityUUID = this.getUUID();
             if (RaidControllerEntity.RaidType.of(this.raidDefinition.type) == RaidControllerEntity.RaidType.ACTIVATE) {
-               List<BaseBossEntity> bosses = getInactiveBossesAroundPos(this.m_9236_(), this.m_20183_());
-               List<Player> players = getPlayersAroundPos(this.m_9236_(), this.m_20183_());
+               List<BaseBossEntity> bosses = getInactiveBossesAroundPos(this.level(), this.blockPosition());
+               List<Player> players = getPlayersAroundPos(this.level(), this.blockPosition());
 
                for (BaseBossEntity boss : bosses) {
                   boss.boot();
@@ -319,26 +319,26 @@ public class RaidControllerEntity extends LivingEntity {
       WaveDefinition wave = this.raidDefinition.waves.get(this.currentWaveIndex);
       RaidControllerEntity.RaidType type = RaidControllerEntity.RaidType.of(this.raidDefinition.type);
       if (this.raidTargetEntity instanceof RaidObjectiveEntity) {
-         BlockPos pos = this.m_20183_();
-         this.raidTargetEntity.m_6034_(pos.m_123341_(), pos.m_123342_(), pos.m_123343_());
+         BlockPos pos = this.blockPosition();
+         this.raidTargetEntity.setPos(pos.getX(), pos.getY(), pos.getZ());
       }
 
       if (this.tickCounter == 5) {
-         this.showTitlesForPlayers(wave.title, wave.sub_title, this.baseHpBar.m_8324_());
+         this.showTitlesForPlayers(wave.title, wave.sub_title, this.baseHpBar.getPlayers());
       }
 
       this.tickCounter++;
-      if (!this.baseHpBar.m_8323_()) {
+      if (!this.baseHpBar.isVisible()) {
          this.setBossBarVisibility(true);
       }
 
       int[] remainMaxMobs = this.remainingSpawnTargets(this.raidDefinition, this.currentWaveIndex, this.tickCounter);
       this.updateBossBars(wave, remainMaxMobs);
-      if (this.raidOwner == null || !this.raidOwner.m_6084_()) {
+      if (this.raidOwner == null || !this.raidOwner.isAlive()) {
          this.endRaid(false, "レイドオーナーが消失");
       } else if (!this.checkDefeat(type, remainMaxMobs)) {
          if (type == RaidControllerEntity.RaidType.SURVIVE) {
-            this.m_146884_(this.raidTargetEntity.m_20182_());
+            this.setPos(this.raidTargetEntity.position());
          }
 
          if (this.endEventWhenKilledAllMobs && this.areAllMobsDefeated(remainMaxMobs)) {
@@ -354,7 +354,7 @@ public class RaidControllerEntity extends LivingEntity {
       switch (type) {
          case DEFENSE:
          case SURVIVE:
-            if (this.raidTargetEntity == null || !this.raidTargetEntity.m_6084_()) {
+            if (this.raidTargetEntity == null || !this.raidTargetEntity.isAlive()) {
                this.endRaid(false);
                return true;
             }
@@ -431,8 +431,8 @@ public class RaidControllerEntity extends LivingEntity {
    }
 
    private void setBossBarVisibility(boolean visible) {
-      this.baseHpBar.m_8321_(visible);
-      this.timeBar.m_8321_(visible);
+      this.baseHpBar.setVisible(visible);
+      this.timeBar.setVisible(visible);
    }
 
    private void updateBossBars(WaveDefinition wave, int[] remainingMobs) {
@@ -440,8 +440,8 @@ public class RaidControllerEntity extends LivingEntity {
          int remaining = wave.duration_ticks - this.tickCounter;
          if (remaining != this.prevRemaining) {
             float timeProgress = (float)remaining / wave.duration_ticks;
-            this.timeBar.m_6456_(Component.m_237113_(Utils.string2Component(wave.title).getString() + " | Time: " + remaining / 20 + "sec"));
-            this.timeBar.m_142711_(Mth.m_14036_(timeProgress, 0.0F, 1.0F));
+            this.timeBar.setName(Component.literal(Utils.string2Component(wave.title).getString() + " | Time: " + remaining / 20 + "sec"));
+            this.timeBar.setProgress(Mth.clamp(timeProgress, 0.0F, 1.0F));
             RaidControllerEntity.RaidType type = RaidControllerEntity.RaidType.of(this.raidDefinition.type);
             if ((
                   type == RaidControllerEntity.RaidType.SWEEP
@@ -451,12 +451,12 @@ public class RaidControllerEntity extends LivingEntity {
                && remainingMobs != null) {
                int total = remainingMobs[0] + this.spawnedMobs.size();
                float prog = (float)total / remainingMobs[1];
-               this.baseHpBar.m_6456_(Component.m_237113_("Target Monsters: " + total + "/" + remainingMobs[1]));
-               this.baseHpBar.m_142711_(Mth.m_14036_(prog, 0.0F, 1.0F));
+               this.baseHpBar.setName(Component.literal("Target Monsters: " + total + "/" + remainingMobs[1]));
+               this.baseHpBar.setProgress(Mth.clamp(prog, 0.0F, 1.0F));
             } else if (type != RaidControllerEntity.RaidType.ACTIVATE) {
-               float hp = this.raidTargetEntity.m_21223_() / this.raidTargetEntity.m_21233_();
-               this.baseHpBar.m_6456_(Component.m_237113_("Target HP: " + (int)this.raidTargetEntity.m_21223_() + "/" + (int)this.raidTargetEntity.m_21233_()));
-               this.baseHpBar.m_142711_(Mth.m_14036_(hp, 0.0F, 1.0F));
+               float hp = this.raidTargetEntity.getHealth() / this.raidTargetEntity.getMaxHealth();
+               this.baseHpBar.setName(Component.literal("Target HP: " + (int)this.raidTargetEntity.getHealth() + "/" + (int)this.raidTargetEntity.getMaxHealth()));
+               this.baseHpBar.setProgress(Mth.clamp(hp, 0.0F, 1.0F));
             }
 
             this.prevRemaining = remaining;
@@ -464,17 +464,17 @@ public class RaidControllerEntity extends LivingEntity {
       }
    }
 
-   public void m_6457_(ServerPlayer player) {
-      this.baseHpBar.m_6543_(player);
-      this.timeBar.m_6543_(player);
-      if (!this.f_19803_) {
+   public void startSeenByPlayer(ServerPlayer player) {
+      this.baseHpBar.addPlayer(player);
+      this.timeBar.addPlayer(player);
+      if (!this.firstTick) {
          this.startBGMforPlayer(player, this.raidDefinition);
       }
    }
 
-   public void m_6452_(ServerPlayer player) {
-      this.baseHpBar.m_6539_(player);
-      this.timeBar.m_6539_(player);
+   public void stopSeenByPlayer(ServerPlayer player) {
+      this.baseHpBar.removePlayer(player);
+      this.timeBar.removePlayer(player);
       ServerBGMTracker.forceUnsetBGMState(player);
    }
 
@@ -498,7 +498,7 @@ public class RaidControllerEntity extends LivingEntity {
             }
 
             if (event.message != null) {
-               this.sendMessage(event.message, this.baseHpBar.m_8324_());
+               this.sendMessage(event.message, this.baseHpBar.getPlayers());
             }
 
             this.endEventWhenKilledAllMobs = event.force_end_wave_when_killed_all;
@@ -513,15 +513,15 @@ public class RaidControllerEntity extends LivingEntity {
                RegistrySupplier<EntityType<?>> type = this.getEntityType(st.mob_type);
                if (type != null) {
                   BlockPos pos = this.parseBlockPos(st.position);
-                  if (pos != null && this.m_9236_() != null) {
-                     Entity entity = ((EntityType)type.get()).m_20615_(this.m_9236_());
+                  if (pos != null && this.level() != null) {
+                     Entity entity = ((EntityType)type.get()).create(this.level());
                      if (entity != null) {
-                        BlockPos offset = this.m_20183_();
-                        entity.m_6034_(offset.m_123341_() + pos.m_123341_(), offset.m_123342_() + pos.m_123342_(), offset.m_123343_() + pos.m_123343_());
+                        BlockPos offset = this.blockPosition();
+                        entity.setPos(offset.getX() + pos.getX(), offset.getY() + pos.getY(), offset.getZ() + pos.getZ());
                         this.applySnbt(entity, st.snbt);
                         this.setupSpawnedMob(entity);
                         this.spawnedMobs.add(entity);
-                        this.m_9236_().m_7967_(entity);
+                        this.level().addFreshEntity(entity);
                      }
                   }
                }
@@ -533,33 +533,33 @@ public class RaidControllerEntity extends LivingEntity {
    private void fireSpawnRandomEvent(EventDefinition event) {
       if (event.spawn_targets != null) {
          Random rand = new Random();
-         Level level = this.m_9236_();
+         Level level = this.level();
          EntityType[] mobTypeList = this.getMobList(event);
          int count = event.amount;
-         BlockPos center = this.m_20183_();
+         BlockPos center = this.blockPosition();
          LivingEntity opener = this.getTargetCandidate();
          AABB spawnSpace = new AABB(0.0, 0.0, 0.0, 2.0, 2.0, 2.0);
          int maxHops = (event.range_x + event.range_z) / 2;
          int spawned = 0;
 
          for (int i = 0; i < 100 && spawned < count; i++) {
-            Optional<BlockPos> pos = this.findSpawnPos(maxHops, spawnSpace, (ServerLevel)level, center, this.f_19796_, event);
+            Optional<BlockPos> pos = this.findSpawnPos(maxHops, spawnSpace, (ServerLevel)level, center, this.random, event);
             if (pos.isPresent()) {
-               Entity mob = this.getRandomMobType(rand, mobTypeList).m_20615_(level);
+               Entity mob = this.getRandomMobType(rand, mobTypeList).create(level);
                if (mob != null) {
-                  mob.m_7678_(pos.get().m_123341_() + 0.5, pos.get().m_123342_(), pos.get().m_123343_() + 0.5, rand.nextFloat() * 360.0F, 0.0F);
+                  mob.moveTo(pos.get().getX() + 0.5, pos.get().getY(), pos.get().getZ() + 0.5, rand.nextFloat() * 360.0F, 0.0F);
                   if (mob instanceof Mob m) {
                      if (opener != null) {
-                        m.m_6710_(opener);
+                        m.setTarget(opener);
                      }
 
                      if (mob instanceof BaseSmallMonsterEntity small) {
-                        small.m_21530_();
+                        small.setPersistenceRequired();
                         small.setInEvent(true);
                      }
                   }
 
-                  level.m_7967_(mob);
+                  level.addFreshEntity(mob);
                   this.spawnedMobs.add(mob);
                   spawned++;
                }
@@ -570,27 +570,27 @@ public class RaidControllerEntity extends LivingEntity {
 
    private Optional<BlockPos> findSpawnPos(int maxHops, AABB spawnSpace, ServerLevel level, BlockPos origin, RandomSource random, EventDefinition event) {
       for (int attempt = 0; attempt < 20; attempt++) {
-         double angle = random.m_188500_() * Math.PI * 2.0;
-         double dist = random.m_188500_() * maxHops;
+         double angle = random.nextDouble() * Math.PI * 2.0;
+         double dist = random.nextDouble() * maxHops;
          double dx = Math.cos(angle) * dist;
          double dz = Math.sin(angle) * dist;
-         double dy = random.m_188500_() * 8.0;
-         BlockPos candidate = origin.m_7918_((int)dx, (int)dy, (int)dz);
+         double dy = random.nextDouble() * 8.0;
+         BlockPos candidate = origin.offset((int)dx, (int)dy, (int)dz);
          if (!event.spawn_mobs_in_closed_area) {
             return Optional.of(candidate);
          }
 
-         if (candidate.m_123342_() >= origin.m_123342_()) {
-            BlockHitResult hit = level.m_151353_(
+         if (candidate.getY() >= origin.getY()) {
+            BlockHitResult hit = level.isBlockInLine(
                new ClipBlockStateContext(
-                  Vec3.m_82512_(candidate), Vec3.m_82512_(origin), blockState -> !blockState.m_60795_() && !blockState.equals(level.m_8055_(origin))
+                  Vec3.atCenterOf(candidate), Vec3.atCenterOf(origin), blockState -> !blockState.isAir() && !blockState.equals(level.getBlockState(origin))
                )
             );
-            if (hit.m_6662_().equals(Type.MISS)) {
-               AABB checkBox = spawnSpace.m_82386_(
-                  candidate.m_123341_() - spawnSpace.f_82288_, candidate.m_123342_() - spawnSpace.f_82289_, candidate.m_123343_() - spawnSpace.f_82290_
+            if (hit.getType().equals(Type.MISS)) {
+               AABB checkBox = spawnSpace.move(
+                  candidate.getX() - spawnSpace.minX, candidate.getY() - spawnSpace.minY, candidate.getZ() - spawnSpace.minZ
                );
-               if (level.m_45772_(checkBox)) {
+               if (level.noCollision(checkBox)) {
                   return Optional.of(candidate);
                }
             }
@@ -605,7 +605,7 @@ public class RaidControllerEntity extends LivingEntity {
       switch (type) {
          case DEFENSE:
             if (entity instanceof Mob mob) {
-               mob.m_6710_(this.raidTargetEntity);
+               mob.setTarget(this.raidTargetEntity);
             }
 
             if (entity instanceof GenericPomkotsMonster p) {
@@ -621,24 +621,24 @@ public class RaidControllerEntity extends LivingEntity {
                   p.setInEvent(true);
                }
 
-               if (((ServerLevel)this.m_9236_()).m_8791_(this.raidOwnerUUID) instanceof LivingEntity le) {
-                  mob.m_6710_(le);
+               if (((ServerLevel)this.level()).getEntity(this.raidOwnerUUID) instanceof LivingEntity le) {
+                  mob.setTarget(le);
                }
             }
       }
 
       if (entity instanceof Pmc01Entity pmc01) {
          pmc01.raidControllerEntity = this;
-         pmc01.raidControllerEntityUUID = this.m_20148_();
+         pmc01.raidControllerEntityUUID = this.getUUID();
       } else if (entity instanceof Mob mob) {
-         mob.m_21530_();
+         mob.setPersistenceRequired();
       }
    }
 
    private void applySnbt(Entity entity, String snbt) {
       if (snbt != null && entity instanceof LivingEntity le) {
          try {
-            le.m_7378_(TagParser.m_129359_(snbt));
+            le.readAdditionalSaveData(TagParser.parseTag(snbt));
          } catch (Exception e) {
             PomkotsMechs.LOGGER.error("failed to parse snbt.", e);
          }
@@ -659,22 +659,22 @@ public class RaidControllerEntity extends LivingEntity {
 
    private void endRaid(boolean victory, String subTitle) {
       String title = victory ? "Mission Complete!!" : "Mission Failed...";
-      this.showTitlesForPlayers(title, subTitle, this.baseHpBar.m_8324_());
+      this.showTitlesForPlayers(title, subTitle, this.baseHpBar.getPlayers());
       String finalizeCommand = victory ? this.raidFinalizeCommandSuccess : this.raidFinalizeCommandFail;
-      if (this.m_9236_() instanceof ServerLevel serverLevel
+      if (this.level() instanceof ServerLevel serverLevel
          && this.raidOwnerUUID != null
          && finalizeCommand != null
-         && serverLevel.m_46003_(this.raidOwnerUUID) instanceof ServerPlayer serverPlayer) {
+         && serverLevel.getPlayerByUUID(this.raidOwnerUUID) instanceof ServerPlayer serverPlayer) {
          this.runCommandAsServer(finalizeCommand, serverPlayer, serverLevel);
       }
 
       this.resetRaid();
-      this.m_146870_();
+      this.discard();
    }
 
    private void resetRaid() {
       if (this.raidTargetEntity instanceof RaidObjectiveEntity) {
-         this.raidTargetEntity.m_146870_();
+         this.raidTargetEntity.discard();
       }
 
       this.raidTargetEntity = null;
@@ -694,8 +694,8 @@ public class RaidControllerEntity extends LivingEntity {
    private void killAllMobs() {
       if (this.raidDefinition == null || !this.raidDefinition.type.equals(RaidControllerEntity.RaidType.ACTIVATE.getId())) {
          for (Entity ent : this.spawnedMobs) {
-            if (ent != null && ent.m_6084_()) {
-               ent.m_6074_();
+            if (ent != null && ent.isAlive()) {
+               ent.kill();
             }
          }
       }
@@ -703,17 +703,17 @@ public class RaidControllerEntity extends LivingEntity {
       this.spawnedMobs.clear();
    }
 
-   public void m_142687_(RemovalReason reason) {
-      if (!this.m_9236_().f_46443_ && (reason == RemovalReason.DISCARDED || reason == RemovalReason.KILLED)) {
+   public void remove(RemovalReason reason) {
+      if (!this.level().isClientSide && (reason == RemovalReason.DISCARDED || reason == RemovalReason.KILLED)) {
          this.setBossBarVisibility(false);
-         if (this.raidTargetEntity instanceof RaidObjectiveEntity && this.raidTargetEntity.m_6084_()) {
-            this.raidTargetEntity.m_146870_();
+         if (this.raidTargetEntity instanceof RaidObjectiveEntity && this.raidTargetEntity.isAlive()) {
+            this.raidTargetEntity.discard();
          }
 
          this.killAllMobs();
       }
 
-      super.m_142687_(reason);
+      super.remove(reason);
    }
 
    private void loadSpawnedMobs() {
@@ -721,8 +721,8 @@ public class RaidControllerEntity extends LivingEntity {
          this.spawnedMobs.clear();
 
          for (Tag t : this.spawnedMobsTag) {
-            UUID uuid = NbtUtils.m_129233_(t);
-            Entity ent = ((ServerLevel)this.m_9236_()).m_8791_(uuid);
+            UUID uuid = NbtUtils.loadUUID(t);
+            Entity ent = ((ServerLevel)this.level()).getEntity(uuid);
             if (ent != null) {
                this.spawnedMobs.add(ent);
             }
@@ -734,7 +734,7 @@ public class RaidControllerEntity extends LivingEntity {
       if (this.raidOwnerUUID == null) {
          return null;
       } else {
-         return ((ServerLevel)this.m_9236_()).m_8791_(this.raidOwnerUUID) instanceof LivingEntity le ? le : null;
+         return ((ServerLevel)this.level()).getEntity(this.raidOwnerUUID) instanceof LivingEntity le ? le : null;
       }
    }
 
@@ -799,36 +799,36 @@ public class RaidControllerEntity extends LivingEntity {
       int found = Integer.MIN_VALUE;
 
       for (int y = startY; y < maxY; y++) {
-         AABB checkBox = spaceSize.m_82386_(x - spaceSize.f_82288_, y - spaceSize.f_82289_, z - spaceSize.f_82290_);
-         if (level.m_45772_(checkBox)) {
+         AABB checkBox = spaceSize.move(x - spaceSize.minX, y - spaceSize.minY, z - spaceSize.minZ);
+         if (level.noCollision(checkBox)) {
             found = y;
             break;
          }
       }
 
-      return found != Integer.MIN_VALUE ? found : level.m_6924_(Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+      return found != Integer.MIN_VALUE ? found : level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, x, z);
    }
 
    private void runCommandAsOwner(String command, ServerPlayer player, ServerLevel serverLevel) {
-      MinecraftServer server = serverLevel.m_7654_();
-      CommandSourceStack source = player.m_20203_().m_81325_(4);
-      server.m_129892_().m_230957_(source, command);
+      MinecraftServer server = serverLevel.getServer();
+      CommandSourceStack source = player.createCommandSourceStack().withPermission(4);
+      server.getCommands().performPrefixedCommand(source, command);
    }
 
    private void runCommandAsServer(String command, ServerPlayer player, ServerLevel serverLevel) {
-      MinecraftServer server = serverLevel.m_7654_();
-      CommandSourceStack source = server.m_129893_().m_81325_(4).m_81324_().m_81329_(player).m_81348_(player.m_20182_()).m_81327_(player.m_284548_());
-      server.m_129892_().m_230957_(source, command);
+      MinecraftServer server = serverLevel.getServer();
+      CommandSourceStack source = server.createCommandSourceStack().withPermission(4).withSuppressedOutput().withEntity(player).withPosition(player.position()).withLevel(player.serverLevel());
+      server.getCommands().performPrefixedCommand(source, command);
    }
 
    private String replaceSelectorWithUUID(String command, ServerPlayer player) {
-      String selector = "@e[uuid=" + player.m_20148_() + "]";
+      String selector = "@e[uuid=" + player.getUUID() + "]";
       return command.replace("@s", selector);
    }
 
    private void sendMessage(String message, Collection<ServerPlayer> players) {
       Component msg = Utils.string2Component(message);
-      players.forEach(p -> p.m_213846_(msg));
+      players.forEach(p -> p.sendSystemMessage(msg));
    }
 
    private void showTitlesForPlayers(String title, String subTitle, Collection<ServerPlayer> players) {
@@ -837,9 +837,9 @@ public class RaidControllerEntity extends LivingEntity {
       ClientboundSetSubtitleTextPacket subtitlePacket = new ClientboundSetSubtitleTextPacket(Utils.string2Component(subTitle));
 
       for (ServerPlayer player : players) {
-         player.f_8906_.m_9829_(timesPacket);
-         player.f_8906_.m_9829_(titlePacket);
-         player.f_8906_.m_9829_(subtitlePacket);
+         player.connection.send(timesPacket);
+         player.connection.send(titlePacket);
+         player.connection.send(subtitlePacket);
       }
    }
 
@@ -876,31 +876,31 @@ public class RaidControllerEntity extends LivingEntity {
       this.currentWaveIndex = v;
    }
 
-   public boolean m_6469_(DamageSource source, float amount) {
-      return Utils.isSystemicDamage(source) && super.m_6469_(source, amount);
+   public boolean hurt(DamageSource source, float amount) {
+      return Utils.isSystemicDamage(source) && super.hurt(source, amount);
    }
 
-   public boolean m_6051_() {
+   public boolean displayFireAnimation() {
       return false;
    }
 
-   public boolean m_6128_() {
+   public boolean ignoreExplosion() {
       return true;
    }
 
-   public HumanoidArm m_5737_() {
+   public HumanoidArm getMainArm() {
       return null;
    }
 
-   public Iterable<ItemStack> m_6168_() {
-      return NonNullList.m_122780_(4, ItemStack.f_41583_);
+   public Iterable<ItemStack> getArmorSlots() {
+      return NonNullList.withSize(4, ItemStack.EMPTY);
    }
 
-   public ItemStack m_6844_(EquipmentSlot slot) {
-      return ItemStack.f_41583_;
+   public ItemStack getItemBySlot(EquipmentSlot slot) {
+      return ItemStack.EMPTY;
    }
 
-   public void m_8061_(EquipmentSlot slot, ItemStack stack) {
+   public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
    }
 
    public enum RaidType {

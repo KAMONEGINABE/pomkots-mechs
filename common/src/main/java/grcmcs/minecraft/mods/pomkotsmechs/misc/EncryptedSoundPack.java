@@ -26,24 +26,24 @@ public class EncryptedSoundPack implements PackResources {
 
    private boolean isTarget(PackType type, ResourceLocation loc) {
       return type == PackType.CLIENT_RESOURCES
-         && loc.m_135827_().equals("pomkotsmechs")
-         && loc.m_135815_().startsWith("sounds/bgm/")
-         && loc.m_135815_().endsWith(".ogg");
+         && loc.getNamespace().equals("pomkotsmechs")
+         && loc.getPath().startsWith("sounds/bgm/")
+         && loc.getPath().endsWith(".ogg");
    }
 
    public IoSupplier<InputStream> getResource2(PackType type, ResourceLocation location) {
-      if (location.m_135827_().startsWith("pomkotsmechs")) {
+      if (location.getNamespace().startsWith("pomkotsmechs")) {
          System.out.println("getResource called: " + location);
       }
 
       if (this.isTarget(type, location)) {
-         ResourceLocation encrypted = new ResourceLocation(location.m_135827_(), location.m_135815_().replace(".ogg", ".dat"));
-         IoSupplier<InputStream> raw = this.delegate.m_214146_(type, encrypted);
+         ResourceLocation encrypted = new ResourceLocation(location.getNamespace(), location.getPath().replace(".ogg", ".dat"));
+         IoSupplier<InputStream> raw = this.delegate.getResource(type, encrypted);
          if (raw != null) {
             return () -> {
                Path p = Path.of("debug.ogg");
                System.out.println(p.toAbsolutePath());
-               InputStream in = CryptoUtil.decrypt((InputStream)raw.m_247737_());
+               InputStream in = CryptoUtil.decrypt((InputStream)raw.get());
                byte[] data = in.readAllBytes();
                Files.write(Path.of("debug.ogg"), data);
                return new ByteArrayInputStream(data);
@@ -51,22 +51,22 @@ public class EncryptedSoundPack implements PackResources {
          }
       }
 
-      return this.delegate.m_214146_(type, location);
+      return this.delegate.getResource(type, location);
    }
 
-   public void m_8031_(PackType type, String namespace, String path, ResourceOutput output) {
-      this.delegate.m_8031_(type, namespace, path, (location, supplier) -> {
-         if (location.m_135827_().startsWith("pomkotsmechs")) {
+   public void listResources(PackType type, String namespace, String path, ResourceOutput output) {
+      this.delegate.listResources(type, namespace, path, (location, supplier) -> {
+         if (location.getNamespace().startsWith("pomkotsmechs")) {
             System.out.println("list s called: " + location);
          }
 
-         if (type == PackType.CLIENT_RESOURCES && location.m_135827_().equals("pomkotsmechs") && location.m_135815_().endsWith(".dat")) {
-            ResourceLocation fake = new ResourceLocation(location.m_135827_(), location.m_135815_().replace(".dat", ".ogg"));
-            if (location.m_135827_().startsWith("pomkotsmechs")) {
+         if (type == PackType.CLIENT_RESOURCES && location.getNamespace().equals("pomkotsmechs") && location.getPath().endsWith(".dat")) {
+            ResourceLocation fake = new ResourceLocation(location.getNamespace(), location.getPath().replace(".dat", ".ogg"));
+            if (location.getNamespace().startsWith("pomkotsmechs")) {
                System.out.println("fake: " + fake.toString());
             }
 
-            output.accept(fake, (IoSupplier)() -> CryptoUtil.decrypt((InputStream)supplier.m_247737_()));
+            output.accept(fake, (IoSupplier)() -> CryptoUtil.decrypt((InputStream)supplier.get()));
          } else {
             output.accept(location, supplier);
          }
@@ -74,28 +74,28 @@ public class EncryptedSoundPack implements PackResources {
    }
 
    @Nullable
-   public IoSupplier<InputStream> m_8017_(String... strings) {
-      return this.delegate.m_8017_(strings);
+   public IoSupplier<InputStream> getRootResource(String... strings) {
+      return this.delegate.getRootResource(strings);
    }
 
-   public IoSupplier<InputStream> m_214146_(PackType type, ResourceLocation location) {
-      return this.delegate.m_214146_(type, location);
+   public IoSupplier<InputStream> getResource(PackType type, ResourceLocation location) {
+      return this.delegate.getResource(type, location);
    }
 
-   public String m_5542_() {
-      return this.delegate.m_5542_();
+   public String packId() {
+      return this.delegate.packId();
    }
 
-   public boolean m_246538_() {
-      return this.delegate.m_246538_();
+   public boolean isBuiltin() {
+      return this.delegate.isBuiltin();
    }
 
-   public Set<String> m_5698_(PackType type) {
-      return this.delegate.m_5698_(type);
+   public Set<String> getNamespaces(PackType type) {
+      return this.delegate.getNamespaces(type);
    }
 
-   public <T> T m_5550_(MetadataSectionSerializer<T> serializer) throws IOException {
-      return (T)this.delegate.m_5550_(serializer);
+   public <T> T getMetadataSection(MetadataSectionSerializer<T> serializer) throws IOException {
+      return (T)this.delegate.getMetadataSection(serializer);
    }
 
    public void close() {

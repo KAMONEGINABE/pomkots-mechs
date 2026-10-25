@@ -67,15 +67,15 @@ public class PomkotsDataPackManager {
    private void loadResources(ResourceLocation path, ResourceManager manager, Consumer<Resource> handler) {
       List<Resource> resources;
       try {
-         resources = manager.m_213829_(path);
+         resources = manager.getResourceStack(path);
       } catch (Exception e) {
          PomkotsMechs.LOGGER.error("Failed to load resource stack: {}", path, e);
          return;
       }
 
       resources.sort((a, b) -> {
-         String idA = a.m_247173_().m_5542_();
-         String idB = b.m_247173_().m_5542_();
+         String idA = a.source().packId();
+         String idB = b.source().packId();
          int prioA = this.getPriority(idA);
          int prioB = this.getPriority(idB);
          return Integer.compare(prioA, prioB);
@@ -101,7 +101,7 @@ public class PomkotsDataPackManager {
    private void loadAllPartsData(ResourceManager manager) {
       ResourceLocation path = new ResourceLocation("pomkotsmechs", "parts.json");
       this.loadResources(path, manager, resource -> {
-         try (InputStream stream = resource.m_215507_()) {
+         try (InputStream stream = resource.open()) {
             JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
             if (json != null) {
                this.loadRootPartsData(json);
@@ -194,7 +194,7 @@ public class PomkotsDataPackManager {
    private void loadAllEnemyData(ResourceManager manager) {
       ResourceLocation path = new ResourceLocation("pomkotsmechs", "enemies.json");
       this.loadResources(path, manager, resource -> {
-         try (InputStream stream = resource.m_215507_()) {
+         try (InputStream stream = resource.open()) {
             JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
             if (json != null) {
                this.loadRootEnemyData(json);
@@ -281,11 +281,11 @@ public class PomkotsDataPackManager {
          path,
          manager,
          resource -> {
-            PomkotsMechs.LOGGER.info("Resource Pack:" + resource.m_215506_() + ":" + resource);
+            PomkotsMechs.LOGGER.info("Resource Pack:" + resource.sourcePackId() + ":" + resource);
 
-            try (InputStream stream = resource.m_215507_()) {
+            try (InputStream stream = resource.open()) {
                Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
-               Map<String, RaidDefinition> allRd = (Map<String, RaidDefinition>)BlockEntitySignTextStrictJsonFix.f_14861_
+               Map<String, RaidDefinition> allRd = (Map<String, RaidDefinition>)BlockEntitySignTextStrictJsonFix.GSON
                   .fromJson(reader, (new TypeToken<Map<String, RaidDefinition>>() {}).getType());
 
                for (Entry<String, RaidDefinition> entry : allRd.entrySet()) {
@@ -323,9 +323,9 @@ public class PomkotsDataPackManager {
          path,
          manager,
          resource -> {
-            try (InputStream stream = resource.m_215507_()) {
+            try (InputStream stream = resource.open()) {
                Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
-               Map<String, PomkotsDataPack.ChestData> allRd = (Map<String, PomkotsDataPack.ChestData>)BlockEntitySignTextStrictJsonFix.f_14861_
+               Map<String, PomkotsDataPack.ChestData> allRd = (Map<String, PomkotsDataPack.ChestData>)BlockEntitySignTextStrictJsonFix.GSON
                   .fromJson(reader, (new TypeToken<Map<String, PomkotsDataPack.ChestData>>() {}).getType());
 
                for (Entry<String, PomkotsDataPack.ChestData> entry : allRd.entrySet()) {
@@ -346,9 +346,9 @@ public class PomkotsDataPackManager {
          path,
          manager,
          resource -> {
-            try (InputStream stream = resource.m_215507_()) {
+            try (InputStream stream = resource.open()) {
                Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
-               Map<String, List<PomkotsDataPack.TraderPoolItem>> allRd = (Map<String, List<PomkotsDataPack.TraderPoolItem>>)BlockEntitySignTextStrictJsonFix.f_14861_
+               Map<String, List<PomkotsDataPack.TraderPoolItem>> allRd = (Map<String, List<PomkotsDataPack.TraderPoolItem>>)BlockEntitySignTextStrictJsonFix.GSON
                   .fromJson(reader, (new TypeToken<Map<String, List<PomkotsDataPack.TraderPoolItem>>>() {}).getType());
 
                for (Entry<String, List<PomkotsDataPack.TraderPoolItem>> entry : allRd.entrySet()) {
@@ -369,9 +369,9 @@ public class PomkotsDataPackManager {
          path,
          manager,
          resource -> {
-            try (InputStream stream = resource.m_215507_()) {
+            try (InputStream stream = resource.open()) {
                Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
-               Map<String, List<PomkotsDataPack.FighterJson>> allRd = (Map<String, List<PomkotsDataPack.FighterJson>>)BlockEntitySignTextStrictJsonFix.f_14861_
+               Map<String, List<PomkotsDataPack.FighterJson>> allRd = (Map<String, List<PomkotsDataPack.FighterJson>>)BlockEntitySignTextStrictJsonFix.GSON
                   .fromJson(reader, (new TypeToken<Map<String, List<PomkotsDataPack.FighterJson>>>() {}).getType());
 
                for (Entry<String, List<PomkotsDataPack.FighterJson>> entry : allRd.entrySet()) {
@@ -392,9 +392,9 @@ public class PomkotsDataPackManager {
          path,
          manager,
          resource -> {
-            try (InputStream stream = resource.m_215507_()) {
+            try (InputStream stream = resource.open()) {
                Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
-               Map<String, List<PomkotsDataPack.AssetDefinition>> all = (Map<String, List<PomkotsDataPack.AssetDefinition>>)BlockEntitySignTextStrictJsonFix.f_14861_
+               Map<String, List<PomkotsDataPack.AssetDefinition>> all = (Map<String, List<PomkotsDataPack.AssetDefinition>>)BlockEntitySignTextStrictJsonFix.GSON
                   .fromJson(reader, (new TypeToken<Map<String, List<PomkotsDataPack.AssetDefinition>>>() {}).getType());
 
                for (Entry<String, List<PomkotsDataPack.AssetDefinition>> entry : all.entrySet()) {
@@ -414,14 +414,14 @@ public class PomkotsDataPackManager {
       this.loadResources(path, manager, resource -> {
          List<CircuitSkill> skills = new ArrayList<>();
 
-         try (InputStream stream = resource.m_215507_()) {
+         try (InputStream stream = resource.open()) {
             Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
-            JsonObject root = (JsonObject)GsonHelper.m_13776_(BlockEntitySignTextStrictJsonFix.f_14861_, reader, JsonObject.class);
+            JsonObject root = (JsonObject)GsonHelper.fromJson(BlockEntitySignTextStrictJsonFix.GSON, reader, JsonObject.class);
             if (root == null) {
                throw new IllegalArgumentException("Root JSON object is null.");
             }
 
-            for (JsonElement element : GsonHelper.m_13933_(root, "skills")) {
+            for (JsonElement element : GsonHelper.getAsJsonArray(root, "skills")) {
                if (!element.isJsonObject()) {
                   throw new IllegalArgumentException("Skill entry must be object in file: circuit_skills.json");
                }

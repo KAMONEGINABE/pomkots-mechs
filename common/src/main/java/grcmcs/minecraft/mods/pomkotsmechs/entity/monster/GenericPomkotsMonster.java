@@ -55,12 +55,12 @@ public abstract class GenericPomkotsMonster extends Monster {
    private boolean attributeInitialized = false;
    protected float healthModifier = 1.0F;
    protected float attackModifier = 1.0F;
-   private static final EntityDataAccessor<Boolean> IS_IN_EVENT = SynchedEntityData.m_135353_(GenericPomkotsMonster.class, EntityDataSerializers.f_135035_);
+   private static final EntityDataAccessor<Boolean> IS_IN_EVENT = SynchedEntityData.defineId(GenericPomkotsMonster.class, EntityDataSerializers.BOOLEAN);
    private int breakCooldown = 0;
    private boolean breakingMode = false;
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_().m_22266_(Attributes.f_22282_).m_22268_(Attributes.f_22278_, 1.0).m_22268_(Attributes.f_22277_, 200.0);
+      return LivingEntity.createLivingAttributes().add(Attributes.ATTACK_KNOCKBACK).add(Attributes.KNOCKBACK_RESISTANCE, 1.0).add(Attributes.FOLLOW_RANGE, 200.0);
    }
 
    public PomkotsDataPack.EnemyData getMechData() {
@@ -72,19 +72,19 @@ public abstract class GenericPomkotsMonster extends Monster {
    protected GenericPomkotsMonster(EntityType<? extends Monster> entityType, Level level) {
       super(entityType, level);
       this.mechData = this.loadMechData();
-      this.m_21051_(Attributes.f_22278_).m_22100_(this.mechData.knockBackResistance);
-      this.m_21051_(Attributes.f_22277_).m_22100_(this.mechData.followRange);
-      this.m_21051_(Attributes.f_22276_).m_22100_(this.mechData.health);
-      this.m_21153_(this.mechData.health);
-      this.m_21051_(Attributes.f_22284_).m_22100_(this.mechData.armor);
-      this.m_21051_(Attributes.f_22285_).m_22100_(this.mechData.armorToughness);
+      this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(this.mechData.knockBackResistance);
+      this.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(this.mechData.followRange);
+      this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.mechData.health);
+      this.setHealth(this.mechData.health);
+      this.getAttribute(Attributes.ARMOR).setBaseValue(this.mechData.armor);
+      this.getAttribute(Attributes.ARMOR_TOUGHNESS).setBaseValue(this.mechData.armorToughness);
    }
 
-   protected void m_8099_() {
-      super.m_8099_();
+   protected void registerGoals() {
+      super.registerGoals();
       if (this.mechData == null) {
          this.mechData = this.loadMechData();
-         this.m_21051_(Attributes.f_22277_).m_22100_(this.mechData.followRange);
+         this.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(this.mechData.followRange);
       }
    }
 
@@ -106,8 +106,8 @@ public abstract class GenericPomkotsMonster extends Monster {
       return this.attackCooltime > 0;
    }
 
-   public LivingEntity m_6688_() {
-      List<Entity> passes = this.m_20197_();
+   public LivingEntity getControllingPassenger() {
+      List<Entity> passes = this.getPassengers();
       if (passes.isEmpty()) {
          return null;
       }
@@ -121,31 +121,31 @@ public abstract class GenericPomkotsMonster extends Monster {
       return null;
    }
 
-   public void m_8119_() {
+   public void tick() {
       this.soundEffectVolume = -1.0F;
-      if (!this.m_9236_().f_46443_ && !this.attributeInitialized) {
+      if (!this.level().isClientSide && !this.attributeInitialized) {
          this.initializeHealthAttribute();
          this.attributeInitialized = true;
       }
 
-      if (this.m_6688_() instanceof Player player) {
+      if (this.getControllingPassenger() instanceof Player player) {
          if (this.rideCoolTick > 0) {
             this.rideCoolTick--;
-         } else if (player.f_20911_) {
+         } else if (player.swinging) {
             this.tryAttack();
          }
       } else {
-         this.m_21557_(false);
+         this.setNoAi(false);
       }
 
-      super.m_8119_();
+      super.tick();
       if (this.attackCooltime > 0) {
          this.attackCooltime--;
       }
 
-      LivingEntity target = this.m_5448_();
-      if (!this.m_9236_().f_46443_ && target != null && this.alwaysLookAtTarget) {
-         this.m_21563_().m_24960_(target, 30.0F, 30.0F);
+      LivingEntity target = this.getTarget();
+      if (!this.level().isClientSide && target != null && this.alwaysLookAtTarget) {
+         this.getLookControl().setLookAt(target, 30.0F, 30.0F);
       }
 
       if (this.isServerSide() && this.isInRaid()) {
@@ -153,56 +153,56 @@ public abstract class GenericPomkotsMonster extends Monster {
       }
    }
 
-   public void m_7023_(Vec3 pos) {
-      if (this.m_6084_() && this.m_20160_()) {
-         LivingEntity pilot = this.m_6688_();
+   public void travel(Vec3 pos) {
+      if (this.isAlive() && this.isVehicle()) {
+         LivingEntity pilot = this.getControllingPassenger();
          if (pilot != null) {
-            this.m_146922_(pilot.m_146908_());
-            this.f_19859_ = this.m_146908_();
-            this.m_146926_(pilot.m_146909_() * 0.5F);
-            this.m_19915_(this.m_146908_(), this.m_146909_());
-            this.m_5618_(this.m_146908_());
-            this.m_5616_(this.m_146908_());
-            float f = pilot.f_20900_ * 0.5F;
-            float f1 = pilot.f_20902_ * 0.5F;
-            super.m_7023_(new Vec3(f, pos.f_82480_, f1));
+            this.setYRot(pilot.getYRot());
+            this.yRotO = this.getYRot();
+            this.setXRot(pilot.getXRot() * 0.5F);
+            this.setRot(this.getYRot(), this.getXRot());
+            this.setYBodyRot(this.getYRot());
+            this.setYHeadRot(this.getYRot());
+            float f = pilot.xxa * 0.5F;
+            float f1 = pilot.zza * 0.5F;
+            super.travel(new Vec3(f, pos.y, f1));
          }
       } else {
-         super.m_7023_(pos);
+         super.travel(pos);
       }
    }
 
-   public InteractionResult m_6071_(Player player, InteractionHand hand) {
-      if (!this.m_9236_().f_46443_ && player.m_21205_().m_41720_() instanceof CoreStonePMB01Item) {
-         player.m_146922_(this.m_146908_());
-         player.m_146926_(this.m_146909_());
-         player.m_20329_(this);
-         this.m_21557_(true);
+   public InteractionResult mobInteract(Player player, InteractionHand hand) {
+      if (!this.level().isClientSide && player.getMainHandItem().getItem() instanceof CoreStonePMB01Item) {
+         player.setYRot(this.getYRot());
+         player.setXRot(this.getXRot());
+         player.startRiding(this);
+         this.setNoAi(true);
       }
 
       this.rideCoolTick = 3;
-      return InteractionResult.m_19078_(this.m_9236_().f_46443_);
+      return InteractionResult.sidedSuccess(this.level().isClientSide);
    }
 
-   public boolean m_6094_() {
+   public boolean isPushable() {
       return false;
    }
 
    public void rotateToTarget(LivingEntity target) {
-      if (!this.m_9236_().f_46443_ && target != null) {
-         Vec3 tgtPos = target.m_20182_();
-         Vec3 slfPos = this.m_20182_();
-         Vec3 v = slfPos.m_82505_(tgtPos);
-         this.m_146922_((float)Math.toDegrees(Mth.m_14136_(v.f_82481_, v.f_82479_)) - 90.0F);
-         this.m_5618_(this.m_146908_());
-         this.m_5616_(this.m_146908_());
-         this.f_19859_ = this.m_146908_();
-         this.f_20884_ = this.m_146908_();
-         this.f_20886_ = this.m_146908_();
+      if (!this.level().isClientSide && target != null) {
+         Vec3 tgtPos = target.position();
+         Vec3 slfPos = this.position();
+         Vec3 v = slfPos.vectorTo(tgtPos);
+         this.setYRot((float)Math.toDegrees(Mth.atan2(v.z, v.x)) - 90.0F);
+         this.setYBodyRot(this.getYRot());
+         this.setYHeadRot(this.getYRot());
+         this.yRotO = this.getYRot();
+         this.yBodyRotO = this.getYRot();
+         this.yHeadRotO = this.getYRot();
       }
    }
 
-   public boolean m_6783_(double d) {
+   public boolean shouldRenderAtSqrDistance(double d) {
       return true;
    }
 
@@ -211,38 +211,38 @@ public abstract class GenericPomkotsMonster extends Monster {
    }
 
    protected boolean isClientSide() {
-      return this.m_9236_().m_5776_();
+      return this.level().isClientSide();
    }
 
-   protected void m_6153_() {
-      this.f_20919_++;
-      if (this.f_20919_ == 10) {
-         this.m_142687_(RemovalReason.KILLED);
+   protected void tickDeath() {
+      this.deathTime++;
+      if (this.deathTime == 10) {
+         this.remove(RemovalReason.KILLED);
          this.generateDestroyedExplosionEffect();
       }
    }
 
    protected void generateDestroyedExplosionEffect() {
       if (this.isServerSide()) {
-         Level level = this.m_9236_();
+         Level level = this.level();
          ExplosionEntity e = new ExplosionEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.EXPLOSION.get(), level);
-         e.m_146884_(this.m_20182_());
-         level.m_7967_(e);
+         e.setPos(this.position());
+         level.addFreshEntity(e);
       }
    }
 
-   public boolean m_6469_(DamageSource ds, float dmg) {
+   public boolean hurt(DamageSource ds, float dmg) {
       ParticleUtil.addParticles(ds, this);
-      return super.m_6469_(ds, dmg);
+      return super.hurt(ds, dmg);
    }
 
-   public void m_6677_(DamageSource ds) {
+   public void playHurtSound(DamageSource ds) {
       if (this.isClientSide()) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_HIT_EVENT.get());
       }
    }
 
-   public boolean m_6051_() {
+   public boolean displayFireAnimation() {
       return false;
    }
 
@@ -256,12 +256,12 @@ public abstract class GenericPomkotsMonster extends Monster {
       return true;
    }
 
-   public boolean m_5545_(LevelAccessor level, MobSpawnType spawnType) {
+   public boolean checkSpawnRules(LevelAccessor level, MobSpawnType spawnType) {
       return true;
    }
 
-   public SpawnGroupData m_6518_(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, SpawnGroupData spawnData, CompoundTag tag) {
-      return super.m_6518_(level, difficulty, spawnType, spawnData, tag);
+   public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, SpawnGroupData spawnData, CompoundTag tag) {
+      return super.finalizeSpawn(level, difficulty, spawnType, spawnData, tag);
    }
 
    public void setModifiers(float healthModifier, float attackModifier) {
@@ -270,33 +270,33 @@ public abstract class GenericPomkotsMonster extends Monster {
    }
 
    protected void initializeHealthAttribute() {
-      AttributeInstance healthAttribute = this.m_21051_(Attributes.f_22276_);
+      AttributeInstance healthAttribute = this.getAttribute(Attributes.MAX_HEALTH);
       if (healthAttribute != null && this.healthModifier != 1.0F) {
-         double newHealthValue = healthAttribute.m_22115_() * this.healthModifier;
-         healthAttribute.m_22100_(newHealthValue);
-         if (this.m_21223_() > newHealthValue) {
-            this.m_21153_((float)newHealthValue);
+         double newHealthValue = healthAttribute.getBaseValue() * this.healthModifier;
+         healthAttribute.setBaseValue(newHealthValue);
+         if (this.getHealth() > newHealthValue) {
+            this.setHealth((float)newHealthValue);
          }
       }
    }
 
-   protected void m_8097_() {
-      super.m_8097_();
-      this.f_19804_.m_135372_(IS_IN_EVENT, false);
+   protected void defineSynchedData() {
+      super.defineSynchedData();
+      this.entityData.define(IS_IN_EVENT, false);
    }
 
    public void setInEvent(boolean value) {
-      this.f_19804_.m_135381_(IS_IN_EVENT, value);
+      this.entityData.set(IS_IN_EVENT, value);
    }
 
    public boolean isInEvent() {
-      return (Boolean)this.f_19804_.m_135370_(IS_IN_EVENT);
+      return (Boolean)this.entityData.get(IS_IN_EVENT);
    }
 
-   public void m_7378_(CompoundTag compound) {
-      super.m_7378_(compound);
-      this.healthModifier = compound.m_128457_(PomkotsMechs.nbtName("MonsterHealthModifier"));
-      this.attackModifier = compound.m_128457_(PomkotsMechs.nbtName("MonsterAttackModifier"));
+   public void readAdditionalSaveData(CompoundTag compound) {
+      super.readAdditionalSaveData(compound);
+      this.healthModifier = compound.getFloat(PomkotsMechs.nbtName("MonsterHealthModifier"));
+      this.attackModifier = compound.getFloat(PomkotsMechs.nbtName("MonsterAttackModifier"));
       if (this.healthModifier == 0.0F) {
          this.healthModifier = 1.0F;
       }
@@ -305,21 +305,21 @@ public abstract class GenericPomkotsMonster extends Monster {
          this.attackModifier = 1.0F;
       }
 
-      this.isInRaid = compound.m_128471_(PomkotsMechs.nbtName("IsInRaid"));
-      if (compound.m_128441_(PomkotsMechs.nbtName("IsInEvent"))) {
-         this.setInEvent(compound.m_128471_(PomkotsMechs.nbtName("IsInEvent")));
+      this.isInRaid = compound.getBoolean(PomkotsMechs.nbtName("IsInRaid"));
+      if (compound.contains(PomkotsMechs.nbtName("IsInEvent"))) {
+         this.setInEvent(compound.getBoolean(PomkotsMechs.nbtName("IsInEvent")));
       }
 
-      this.attributeInitialized = compound.m_128471_(PomkotsMechs.nbtName("AttributeInitialized"));
+      this.attributeInitialized = compound.getBoolean(PomkotsMechs.nbtName("AttributeInitialized"));
    }
 
-   public void m_7380_(CompoundTag compound) {
-      super.m_7380_(compound);
-      compound.m_128350_(PomkotsMechs.nbtName("MonsterHealthModifier"), this.healthModifier);
-      compound.m_128350_(PomkotsMechs.nbtName("MonsterAttackModifier"), this.attackModifier);
-      compound.m_128379_(PomkotsMechs.nbtName("IsInRaid"), this.isInRaid);
-      compound.m_128379_(PomkotsMechs.nbtName("IsInEvent"), this.isInEvent());
-      compound.m_128379_(PomkotsMechs.nbtName("AttributeInitialized"), this.attributeInitialized);
+   public void addAdditionalSaveData(CompoundTag compound) {
+      super.addAdditionalSaveData(compound);
+      compound.putFloat(PomkotsMechs.nbtName("MonsterHealthModifier"), this.healthModifier);
+      compound.putFloat(PomkotsMechs.nbtName("MonsterAttackModifier"), this.attackModifier);
+      compound.putBoolean(PomkotsMechs.nbtName("IsInRaid"), this.isInRaid);
+      compound.putBoolean(PomkotsMechs.nbtName("IsInEvent"), this.isInEvent());
+      compound.putBoolean(PomkotsMechs.nbtName("AttributeInitialized"), this.attributeInitialized);
    }
 
    public boolean isInRaid() {
@@ -335,22 +335,22 @@ public abstract class GenericPomkotsMonster extends Monster {
    }
 
    protected void addHitParticles(Entity target) {
-      Vec3 offset = new Vec3(target.m_20182_().f_82479_, target.m_20191_().m_82399_().f_82480_, target.m_20182_().f_82481_);
+      Vec3 offset = new Vec3(target.position().x, target.getBoundingBox().getCenter().y, target.position().z);
 
       for (int i = 0; i < 40; i++) {
-         double velocityX = this.f_19796_.m_188500_() * 4.3 - 1.0;
-         double velocityY = this.f_19796_.m_188500_() * 4.3 - 1.0;
-         double velocityZ = this.f_19796_.m_188500_() * 4.3 - 1.0;
-         this.m_9236_()
-            .m_6485_((ParticleOptions)PomkotsMechs.SPARK.get(), true, offset.m_7096_(), offset.m_7098_(), offset.m_7094_(), velocityX, velocityY, velocityZ);
+         double velocityX = this.random.nextDouble() * 4.3 - 1.0;
+         double velocityY = this.random.nextDouble() * 4.3 - 1.0;
+         double velocityZ = this.random.nextDouble() * 4.3 - 1.0;
+         this.level()
+            .addAlwaysVisibleParticle((ParticleOptions)PomkotsMechs.SPARK.get(), true, offset.x(), offset.y(), offset.z(), velocityX, velocityY, velocityZ);
       }
    }
 
-   public boolean m_6129_() {
+   public boolean isAffectedByFluids() {
       return false;
    }
 
-   public int m_7302_(int air) {
+   public int decreaseAirSupply(int air) {
       return 0;
    }
 
@@ -358,28 +358,28 @@ public abstract class GenericPomkotsMonster extends Monster {
       if (this.breakCooldown > 0) {
          this.breakCooldown--;
       } else {
-         Vec3 forward = this.m_20154_().m_82541_();
+         Vec3 forward = this.getLookAngle().normalize();
          double reach = 2.5;
-         double width = this.m_20205_() * 0.8;
-         double height = this.m_20206_();
-         AABB forwardBox = this.m_20191_().m_82400_(0.1).m_82369_(forward.m_82490_(reach)).m_82377_(width * 0.2, height * 0.1, width * 0.2);
+         double width = this.getBbWidth() * 0.8;
+         double height = this.getBbHeight();
+         AABB forwardBox = this.getBoundingBox().inflate(0.1).expandTowards(forward.scale(reach)).inflate(width * 0.2, height * 0.1, width * 0.2);
          double filledCount = 0.0;
          double totalCount = 0.0;
-         double maxStep = this.m_274421_();
+         double maxStep = this.maxUpStep();
          double highestSolid = Double.NEGATIVE_INFINITY;
 
-         for (BlockPos pos : BlockPos.m_121940_(
-            BlockPos.m_274561_(forwardBox.f_82288_, forwardBox.f_82289_, forwardBox.f_82290_),
-            BlockPos.m_274561_(forwardBox.f_82291_, forwardBox.f_82292_, forwardBox.f_82293_)
+         for (BlockPos pos : BlockPos.betweenClosed(
+            BlockPos.containing(forwardBox.minX, forwardBox.minY, forwardBox.minZ),
+            BlockPos.containing(forwardBox.maxX, forwardBox.maxY, forwardBox.maxZ)
          )) {
-            BlockState state = this.m_9236_().m_8055_(pos);
-            if (!state.m_60795_()) {
-               VoxelShape shape = state.m_60812_(this.m_9236_(), pos);
-               if (!shape.m_83281_()) {
+            BlockState state = this.level().getBlockState(pos);
+            if (!state.isAir()) {
+               VoxelShape shape = state.getCollisionShape(this.level(), pos);
+               if (!shape.isEmpty()) {
                   totalCount++;
                   filledCount++;
-                  AABB blockBox = shape.m_83215_();
-                  double topY = pos.m_123342_() + blockBox.f_82292_;
+                  AABB blockBox = shape.bounds();
+                  double topY = pos.getY() + blockBox.maxY;
                   if (topY > highestSolid) {
                      highestSolid = topY;
                   }
@@ -388,7 +388,7 @@ public abstract class GenericPomkotsMonster extends Monster {
          }
 
          double fillRatio = totalCount == 0.0 ? 0.0 : filledCount / totalCount;
-         double feetY = this.m_20186_();
+         double feetY = this.getY();
          double stepHeight = highestSolid - feetY;
          boolean tooHigh = stepHeight > maxStep + 0.2;
          boolean tooDense = fillRatio > 0.7;
@@ -403,9 +403,9 @@ public abstract class GenericPomkotsMonster extends Monster {
    }
 
    private void triggerExplosion(AABB area) {
-      Vec3 center = area.m_82399_();
-      float strength = (this.m_20205_() + this.m_20206_()) * 0.9F;
-      Utils.explode(this, center.f_82479_, center.f_82480_, center.f_82481_, strength, ExplosionInteraction.BLOCK, this.m_9236_());
+      Vec3 center = area.getCenter();
+      float strength = (this.getBbWidth() + this.getBbHeight()) * 0.9F;
+      Utils.explode(this, center.x, center.y, center.z, strength, ExplosionInteraction.BLOCK, this.level());
    }
 
    protected void playSoundEffect(SoundEvent event) {
@@ -422,23 +422,23 @@ public abstract class GenericPomkotsMonster extends Monster {
       }
 
       if (this.soundEffectVolume > 0.0F) {
-         this.m_9236_().m_7785_(this.m_20185_(), this.m_20186_(), this.m_20189_(), event, SoundSource.PLAYERS, volume * this.soundEffectVolume, 1.0F, false);
+         this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), event, SoundSource.PLAYERS, volume * this.soundEffectVolume, 1.0F, false);
       }
    }
 
    private float computeVolume(double maxDistance) {
-      Minecraft mc = Minecraft.m_91087_();
-      LocalPlayer player = mc.f_91074_;
+      Minecraft mc = Minecraft.getInstance();
+      LocalPlayer player = mc.player;
       if (player == null) {
          return 0.0F;
       }
 
-      double distance = player.m_20270_(this);
+      double distance = player.distanceTo(this);
       if (distance > maxDistance) {
          return 0.0F;
       }
 
       float volume = 1.0F - (float)(distance / maxDistance);
-      return Mth.m_14036_(volume, 0.0F, 1.0F);
+      return Mth.clamp(volume, 0.0F, 1.0F);
    }
 }

@@ -28,18 +28,18 @@ public final class ClientScanManager {
    }
 
    public static void clientTick() {
-      Minecraft minecraft = Minecraft.m_91087_();
-      ClientLevel level = minecraft.f_91073_;
-      Player localPlayer = minecraft.f_91074_;
+      Minecraft minecraft = Minecraft.getInstance();
+      ClientLevel level = minecraft.level;
+      Player localPlayer = minecraft.player;
       if (level != null && localPlayer != null) {
-         long gameTime = level.m_46467_();
+         long gameTime = level.getGameTime();
          ENTITY_HIGHLIGHT_END.entrySet().removeIf(entry -> entry.getValue() <= gameTime);
          BLOCK_ENTITY_HIGHLIGHT_END.entrySet().removeIf(entry -> entry.getValue() <= gameTime);
          Map<Integer, ScanPulseEntity> currentPulses = new HashMap<>();
 
-         for (Entity entity : level.m_104735_()) {
+         for (Entity entity : level.entitiesForRendering()) {
             if (entity instanceof ScanPulseEntity pulse && pulse.isVisibleTo(localPlayer)) {
-               currentPulses.put(pulse.m_19879_(), pulse);
+               currentPulses.put(pulse.getId(), pulse);
                tickPulse(level, pulse);
             }
          }
@@ -51,7 +51,7 @@ public final class ClientScanManager {
    }
 
    private static void tickPulse(ClientLevel level, ScanPulseEntity pulse) {
-      ClientScanPulseState state = ACTIVE_PULSES.computeIfAbsent(pulse.m_19879_(), ignored -> new ClientScanPulseState());
+      ClientScanPulseState state = ACTIVE_PULSES.computeIfAbsent(pulse.getId(), ignored -> new ClientScanPulseState());
       float currentRadius = pulse.getRadius(0.0F);
       float previousRadius = state.getLastRadius();
       if (state.getAge() % 10 == 0) {
@@ -66,22 +66,22 @@ public final class ClientScanManager {
 
    private static void scanEntities(ClientLevel level, ScanPulseEntity pulse, ClientScanPulseState state, float previousRadius, float currentRadius) {
       if (!(currentRadius <= 0.0F)) {
-         Vec3 center = pulse.m_20182_();
+         Vec3 center = pulse.position();
          AABB searchBox = new AABB(
-            center.f_82479_ - currentRadius,
-            center.f_82480_ - currentRadius,
-            center.f_82481_ - currentRadius,
-            center.f_82479_ + currentRadius,
-            center.f_82480_ + currentRadius,
-            center.f_82481_ + currentRadius
+            center.x - currentRadius,
+            center.y - currentRadius,
+            center.z - currentRadius,
+            center.x + currentRadius,
+            center.y + currentRadius,
+            center.z + currentRadius
          );
 
-         for (Entity entity : level.m_6249_(pulse, searchBox, ClientScanManager::isEntityScanTarget)) {
-            if (!state.getDetectedEntityIds().contains(entity.m_19879_())) {
-               double distance = distanceToAabb(center, entity.m_20191_());
+         for (Entity entity : level.getEntities(pulse, searchBox, ClientScanManager::isEntityScanTarget)) {
+            if (!state.getDetectedEntityIds().contains(entity.getId())) {
+               double distance = distanceToAabb(center, entity.getBoundingBox());
                if (didWaveReachTarget(previousRadius, currentRadius, distance)) {
-                  state.getDetectedEntityIds().add(entity.m_19879_());
-                  ENTITY_HIGHLIGHT_END.put(entity.m_19879_(), level.m_46467_() + pulse.getHighlightTicks());
+                  state.getDetectedEntityIds().add(entity.getId());
+                  ENTITY_HIGHLIGHT_END.put(entity.getId(), level.getGameTime() + pulse.getHighlightTicks());
                }
             }
          }
@@ -89,33 +89,33 @@ public final class ClientScanManager {
    }
 
    private static boolean isEntityScanTarget(Entity entity) {
-      return !entity.m_6084_() ? false : entity instanceof Pmvc01Entity || entity.m_6095_().m_204039_(ModEntityTags.SCAN_TARGETS);
+      return !entity.isAlive() ? false : entity instanceof Pmvc01Entity || entity.getType().is(ModEntityTags.SCAN_TARGETS);
    }
 
    private static double distanceToAabb(Vec3 center, AABB box) {
-      double nearestX = Mth.m_14008_(center.f_82479_, box.f_82288_, box.f_82291_);
-      double nearestY = Mth.m_14008_(center.f_82480_, box.f_82289_, box.f_82292_);
-      double nearestZ = Mth.m_14008_(center.f_82481_, box.f_82290_, box.f_82293_);
-      return center.m_82554_(new Vec3(nearestX, nearestY, nearestZ));
+      double nearestX = Mth.clamp(center.x, box.minX, box.maxX);
+      double nearestY = Mth.clamp(center.y, box.minY, box.maxY);
+      double nearestZ = Mth.clamp(center.z, box.minZ, box.maxZ);
+      return center.distanceTo(new Vec3(nearestX, nearestY, nearestZ));
    }
 
    private static void collectBlockEntityCandidates(ClientLevel level, ScanPulseEntity pulse, ClientScanPulseState state, float currentRadius) {
-      Vec3 center = pulse.m_20182_();
+      Vec3 center = pulse.position();
       float maxRadius = pulse.getMaxRadius();
-      int minChunkX = SectionPos.m_123171_(Mth.m_14107_(center.f_82479_ - maxRadius));
-      int maxChunkX = SectionPos.m_123171_(Mth.m_14107_(center.f_82479_ + maxRadius));
-      int minChunkZ = SectionPos.m_123171_(Mth.m_14107_(center.f_82481_ - maxRadius));
-      int maxChunkZ = SectionPos.m_123171_(Mth.m_14107_(center.f_82481_ + maxRadius));
+      int minChunkX = SectionPos.blockToSectionCoord(Mth.floor(center.x - maxRadius));
+      int maxChunkX = SectionPos.blockToSectionCoord(Mth.floor(center.x + maxRadius));
+      int minChunkZ = SectionPos.blockToSectionCoord(Mth.floor(center.z - maxRadius));
+      int maxChunkZ = SectionPos.blockToSectionCoord(Mth.floor(center.z + maxRadius));
       double maxRadiusSqr = maxRadius * maxRadius;
 
       for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
          for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-            LevelChunk chunk = level.m_7726_().m_7131_(chunkX, chunkZ);
+            LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
             if (chunk != null) {
-               for (BlockEntity blockEntity : chunk.m_62954_().values()) {
+               for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
                   if (blockEntity instanceof ScanTargetBlockEntity) {
-                     BlockPos pos = blockEntity.m_58899_().m_7949_();
-                     double distanceSqr = Vec3.m_82512_(pos).m_82557_(center);
+                     BlockPos pos = blockEntity.getBlockPos().immutable();
+                     double distanceSqr = Vec3.atCenterOf(pos).distanceToSqr(center);
                      if (!(distanceSqr > maxRadiusSqr)) {
                         boolean newlyAdded = state.getBlockEntityCandidates().add(pos);
                         if (newlyAdded) {
@@ -131,29 +131,29 @@ public final class ClientScanManager {
 
    private static void detectLateLoadedBlockEntity(ClientLevel level, ScanPulseEntity pulse, ClientScanPulseState state, BlockPos pos, float currentRadius) {
       if (!state.getDetectedBlockEntities().contains(pos)) {
-         double distance = pulse.m_20182_().m_82554_(Vec3.m_82512_(pos));
+         double distance = pulse.position().distanceTo(Vec3.atCenterOf(pos));
          if (!(distance > currentRadius)) {
             state.getDetectedBlockEntities().add(pos);
-            BLOCK_ENTITY_HIGHLIGHT_END.put(pos, level.m_46467_() + pulse.getHighlightTicks());
+            BLOCK_ENTITY_HIGHLIGHT_END.put(pos, level.getGameTime() + pulse.getHighlightTicks());
          }
       }
    }
 
    private static void scanBlockEntities(ClientLevel level, ScanPulseEntity pulse, ClientScanPulseState state, float previousRadius, float currentRadius) {
-      Vec3 center = pulse.m_20182_();
+      Vec3 center = pulse.position();
       Iterator<BlockPos> iterator = state.getBlockEntityCandidates().iterator();
 
       while (iterator.hasNext()) {
          BlockPos pos = iterator.next();
-         BlockEntity blockEntity = level.m_7702_(pos);
+         BlockEntity blockEntity = level.getBlockEntity(pos);
          if (!(blockEntity instanceof ScanTargetBlockEntity)) {
             iterator.remove();
             state.getDetectedBlockEntities().remove(pos);
          } else if (!state.getDetectedBlockEntities().contains(pos)) {
-            double distance = center.m_82554_(Vec3.m_82512_(pos));
+            double distance = center.distanceTo(Vec3.atCenterOf(pos));
             if (didWaveReachTarget(previousRadius, currentRadius, distance)) {
                state.getDetectedBlockEntities().add(pos);
-               BLOCK_ENTITY_HIGHLIGHT_END.put(pos, level.m_46467_() + pulse.getHighlightTicks());
+               BLOCK_ENTITY_HIGHLIGHT_END.put(pos, level.getGameTime() + pulse.getHighlightTicks());
             }
          }
       }
@@ -164,23 +164,23 @@ public final class ClientScanManager {
    }
 
    public static boolean isEntityHighlighted(int entityId) {
-      Minecraft minecraft = Minecraft.m_91087_();
-      if (minecraft.f_91073_ == null) {
+      Minecraft minecraft = Minecraft.getInstance();
+      if (minecraft.level == null) {
          return false;
       }
 
       Long endTime = ENTITY_HIGHLIGHT_END.get(entityId);
-      return endTime != null && endTime > minecraft.f_91073_.m_46467_();
+      return endTime != null && endTime > minecraft.level.getGameTime();
    }
 
    public static boolean isBlockEntityHighlighted(BlockPos pos) {
-      Minecraft minecraft = Minecraft.m_91087_();
-      if (minecraft.f_91073_ == null) {
+      Minecraft minecraft = Minecraft.getInstance();
+      if (minecraft.level == null) {
          return false;
       }
 
       Long endTime = BLOCK_ENTITY_HIGHLIGHT_END.get(pos);
-      return endTime != null && endTime > minecraft.f_91073_.m_46467_();
+      return endTime != null && endTime > minecraft.level.getGameTime();
    }
 
    public static Iterable<BlockPos> getHighlightedBlockEntities() {

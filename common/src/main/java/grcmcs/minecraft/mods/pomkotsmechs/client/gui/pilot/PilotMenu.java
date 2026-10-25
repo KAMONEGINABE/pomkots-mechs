@@ -35,18 +35,18 @@ public class PilotMenu extends AbstractContainerMenu {
 
       int offsetY = 50;
       int height = 18;
-      this.m_38897_(new Slot(equipment, 0, 70, offsetY + height * 2));
-      this.m_38897_(new Slot(equipment, 1, 70, offsetY + height * 3));
-      this.m_38897_(new Slot(equipment, 2, 70, offsetY + height * 4));
-      this.m_38897_(new Slot(equipment, 3, 70, offsetY + height * 5));
-      this.m_38897_(new Slot(equipment, 4, 70, offsetY) {
-         public boolean m_5857_(ItemStack stack) {
-            return stack.m_41720_() instanceof PilotLicenseItem;
+      this.addSlot(new Slot(equipment, 0, 70, offsetY + height * 2));
+      this.addSlot(new Slot(equipment, 1, 70, offsetY + height * 3));
+      this.addSlot(new Slot(equipment, 2, 70, offsetY + height * 4));
+      this.addSlot(new Slot(equipment, 3, 70, offsetY + height * 5));
+      this.addSlot(new Slot(equipment, 4, 70, offsetY) {
+         public boolean mayPlace(ItemStack stack) {
+            return stack.getItem() instanceof PilotLicenseItem;
          }
       });
-      this.m_38897_(new Slot(equipment, 5, 70, offsetY + height) {
-         public boolean m_5857_(ItemStack stack) {
-            return stack.m_41720_() instanceof PilotRoleItem;
+      this.addSlot(new Slot(equipment, 5, 70, offsetY + height) {
+         public boolean mayPlace(ItemStack stack) {
+            return stack.getItem() instanceof PilotRoleItem;
          }
       });
       this.addPlayerInventory(playerInventory);
@@ -58,28 +58,28 @@ public class PilotMenu extends AbstractContainerMenu {
 
       for (int row = 0; row < 3; row++) {
          for (int col = 0; col < 9; col++) {
-            this.m_38897_(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18));
+            this.addSlot(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18));
          }
       }
 
       for (int i = 0; i < 9; i++) {
-         this.m_38897_(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4));
+         this.addSlot(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4));
       }
    }
 
-   public ItemStack m_7648_(Player player, int i) {
-      return ItemStack.f_41583_;
+   public ItemStack quickMoveStack(Player player, int i) {
+      return ItemStack.EMPTY;
    }
 
-   public boolean m_6875_(Player player) {
-      return this.mob != null && this.mob.m_6084_();
+   public boolean stillValid(Player player) {
+      return this.mob != null && this.mob.isAlive();
    }
 
-   public boolean m_6366_(Player player, int id) {
+   public boolean clickMenuButton(Player player, int id) {
       if (player instanceof ServerPlayer sp && this.mob != null) {
          Pmvc01Entity mech = findNearestMech(this.mob);
          if (mech != null && !mech.isBroken()) {
-            this.mob.m_20329_(mech);
+            this.mob.startRiding(mech);
          }
       }
 
@@ -87,13 +87,13 @@ public class PilotMenu extends AbstractContainerMenu {
    }
 
    private static Pmvc01Entity findNearestMech(Mob mob) {
-      List<Pmvc01Entity> mechs = mob.m_9236_().m_45976_(Pmvc01Entity.class, mob.m_20191_().m_82400_(32.0));
+      List<Pmvc01Entity> mechs = mob.level().getEntitiesOfClass(Pmvc01Entity.class, mob.getBoundingBox().inflate(32.0));
       double nearest = Double.MAX_VALUE;
       Pmvc01Entity result = null;
 
       for (Pmvc01Entity mech : mechs) {
          if (mech.getDrivingPassenger() == null) {
-            double dist = mob.m_20280_(mech);
+            double dist = mob.distanceToSqr(mech);
             if (dist < nearest) {
                nearest = dist;
                result = mech;

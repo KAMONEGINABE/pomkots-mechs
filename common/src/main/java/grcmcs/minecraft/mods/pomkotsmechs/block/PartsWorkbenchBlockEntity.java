@@ -19,64 +19,64 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public class PartsWorkbenchBlockEntity extends BlockEntity implements MenuProvider, Container {
-   private final NonNullList<ItemStack> items = NonNullList.m_122780_(2, ItemStack.f_41583_);
+   private final NonNullList<ItemStack> items = NonNullList.withSize(2, ItemStack.EMPTY);
 
    public PartsWorkbenchBlockEntity(BlockPos pos, BlockState state) {
       super((BlockEntityType)PomkotsMechs.PARTS_WORKBENCH_BLOCK_ENTITY.get(), pos, state);
    }
 
-   public Component m_5446_() {
-      return Component.m_237113_("Parts Workbench");
+   public Component getDisplayName() {
+      return Component.literal("Parts Workbench");
    }
 
-   public AbstractContainerMenu m_7208_(int id, Inventory playerInv, Player player) {
+   public AbstractContainerMenu createMenu(int id, Inventory playerInv, Player player) {
       return new PartsWorkbenchMenu(id, playerInv, this);
    }
 
-   protected void m_183515_(CompoundTag tag) {
-      super.m_183515_(tag);
-      ContainerHelper.m_18973_(tag, this.items);
+   protected void saveAdditional(CompoundTag tag) {
+      super.saveAdditional(tag);
+      ContainerHelper.saveAllItems(tag, this.items);
    }
 
-   public void m_142466_(CompoundTag tag) {
-      super.m_142466_(tag);
-      ContainerHelper.m_18980_(tag, this.items);
+   public void load(CompoundTag tag) {
+      super.load(tag);
+      ContainerHelper.loadAllItems(tag, this.items);
    }
 
-   public int m_6643_() {
+   public int getContainerSize() {
       return this.items.size();
    }
 
-   public boolean m_7983_() {
-      return this.items.stream().allMatch(ItemStack::m_41619_);
+   public boolean isEmpty() {
+      return this.items.stream().allMatch(ItemStack::isEmpty);
    }
 
-   public ItemStack m_8020_(int index) {
+   public ItemStack getItem(int index) {
       return (ItemStack)this.items.get(index);
    }
 
-   public ItemStack m_7407_(int index, int count) {
-      return ContainerHelper.m_18969_(this.items, index, count);
+   public ItemStack removeItem(int index, int count) {
+      return ContainerHelper.removeItem(this.items, index, count);
    }
 
-   public ItemStack m_8016_(int index) {
-      return ContainerHelper.m_18966_(this.items, index);
+   public ItemStack removeItemNoUpdate(int index) {
+      return ContainerHelper.takeItem(this.items, index);
    }
 
-   public void m_6836_(int index, ItemStack stack) {
+   public void setItem(int index, ItemStack stack) {
       this.items.set(index, stack);
-      if (stack.m_41613_() > this.m_6893_()) {
-         stack.m_41764_(this.m_6893_());
+      if (stack.getCount() > this.getMaxStackSize()) {
+         stack.setCount(this.getMaxStackSize());
       }
 
-      this.m_6596_();
+      this.setChanged();
    }
 
-   public boolean m_6542_(Player player) {
-      return player.m_20238_(Vec3.m_82512_(this.f_58858_)) <= 64.0;
+   public boolean stillValid(Player player) {
+      return player.distanceToSqr(Vec3.atCenterOf(this.worldPosition)) <= 64.0;
    }
 
-   public void m_6211_() {
+   public void clearContent() {
       this.items.clear();
    }
 }

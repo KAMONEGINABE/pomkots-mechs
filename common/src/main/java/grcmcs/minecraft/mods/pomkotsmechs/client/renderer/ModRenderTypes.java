@@ -9,18 +9,18 @@ import net.minecraft.client.renderer.RenderStateShard.ShaderStateShard;
 import net.minecraft.client.renderer.RenderType.CompositeState;
 
 public class ModRenderTypes {
-   public static final RenderType ENTITY_CULL = RenderType.m_173215_(
+   public static final RenderType ENTITY_CULL = RenderType.create(
       "entity_cull",
-      DefaultVertexFormat.f_85812_,
+      DefaultVertexFormat.NEW_ENTITY,
       Mode.QUADS,
       256,
       true,
       false,
-      CompositeState.m_110628_()
-         .m_173292_(new ShaderStateShard(GameRenderer::m_172667_))
-         .m_110661_(RenderStateShard.f_110158_)
-         .m_110671_(RenderStateShard.f_110152_)
-         .m_110677_(RenderStateShard.f_110154_)
-         .m_110691_(true)
+      CompositeState.builder()
+         .setShaderState(new ShaderStateShard(GameRenderer::getRendertypeEntityCutoutNoCullShader))
+         .setCullState(RenderStateShard.CULL)
+         .setLightmapState(RenderStateShard.LIGHTMAP)
+         .setOverlayState(RenderStateShard.OVERLAY)
+         .createCompositeState(true)
    );
 }

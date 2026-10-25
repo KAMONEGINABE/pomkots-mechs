@@ -9,7 +9,7 @@ public class AttackMeleeBossGoal extends AttackBossGoal {
    }
 
    @Override
-   public boolean m_8036_() {
-      return this.action.canAction() && this.mob.m_217043_().m_188501_() < 0.7F && this.isInShortAttackRange();
+   public boolean canUse() {
+      return this.action.canAction() && this.mob.getRandom().nextFloat() < 0.7F && this.isInShortAttackRange();
    }
 }

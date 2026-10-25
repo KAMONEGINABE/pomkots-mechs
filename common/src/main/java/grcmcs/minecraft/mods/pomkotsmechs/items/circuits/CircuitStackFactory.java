@@ -29,7 +29,7 @@ public final class CircuitStackFactory {
    }
 
    public static ItemStack createCreativeIdentifiedSample(CircuitPrefix prefix, CircuitRarity rarity, long seed) {
-      RandomSource random = RandomSource.m_216335_(seed);
+      RandomSource random = RandomSource.create(seed);
       return createIdentified(random, prefix, rarity);
    }
 
@@ -45,7 +45,7 @@ public final class CircuitStackFactory {
       for (CircuitPrefix prefix : CircuitPrefix.creativeOrder()) {
          for (CircuitRarity rarity : CircuitRarity.creativeOrder()) {
             ItemStack stack = createCreativeUnidentifiedSample(prefix, rarity);
-            output.m_246342_(stack);
+            output.accept(stack);
          }
       }
    }

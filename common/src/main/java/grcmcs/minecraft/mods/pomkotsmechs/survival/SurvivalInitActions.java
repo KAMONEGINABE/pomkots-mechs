@@ -15,33 +15,33 @@ import net.minecraft.world.scores.criteria.ObjectiveCriteria.RenderType;
 public class SurvivalInitActions {
    public static void onServerStarted(MinecraftServer server) {
       if (PomkotsMechs.CONFIG.survivalModeEnabled) {
-         Scoreboard board = server.m_129896_();
-         Objective obj = board.m_83477_("pomkots.mp");
+         Scoreboard board = server.getScoreboard();
+         Objective obj = board.getObjective("pomkots.mp");
          if (obj == null) {
             PomkotsMechs.LOGGER.info("Creating Score Board Objective for Progress Management: pomkots.mp");
-            board.m_83436_("pomkots.mp", ObjectiveCriteria.f_83588_, Component.m_237113_("Main Progress"), RenderType.INTEGER);
+            board.addObjective("pomkots.mp", ObjectiveCriteria.DUMMY, Component.literal("Main Progress"), RenderType.INTEGER);
          }
       }
    }
 
    public static void onPlayerJoin(ServerPlayer player) {
       if (PomkotsMechs.CONFIG.survivalModeEnabled) {
-         MinecraftServer server = player.m_20194_();
+         MinecraftServer server = player.getServer();
          if (server == null) {
             return;
          }
 
-         Scoreboard board = server.m_129896_();
-         Objective obj = board.m_83477_("pomkots.mp");
+         Scoreboard board = server.getScoreboard();
+         Objective obj = board.getObjective("pomkots.mp");
          if (obj == null) {
             PomkotsMechs.LOGGER.info("No Score Board Objective for Progress Management:pomkots.mp");
             return;
          }
 
-         if (!board.m_83461_(player.m_6302_(), obj)) {
-            board.m_83471_(player.m_6302_(), obj).m_83402_(0);
-            PomkotsMechs.LOGGER.info("Initialized score for " + player.m_7755_().getString());
-         } else if (board.m_83471_(player.m_6302_(), obj).m_83400_() == 0) {
+         if (!board.hasPlayerScore(player.getScoreboardName(), obj)) {
+            board.getOrCreatePlayerScore(player.getScoreboardName(), obj).setScore(0);
+            PomkotsMechs.LOGGER.info("Initialized score for " + player.getName().getString());
+         } else if (board.getOrCreatePlayerScore(player.getScoreboardName(), obj).getScore() == 0) {
             sendStartOpening(player);
          }
       }

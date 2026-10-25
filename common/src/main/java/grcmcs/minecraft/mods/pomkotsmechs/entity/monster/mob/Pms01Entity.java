@@ -41,15 +41,15 @@ public class Pms01Entity extends BaseSmallMonsterEntity implements GeoEntity, Ge
    }
 
    @Override
-   public void m_8119_() {
-      super.m_8119_();
+   public void tick() {
+      super.tick();
       if (this.attackingTime > 0) {
          this.attackingTime--;
       }
 
       if (this.isServerSide()) {
          if (this.attackingTime == 15) {
-            this.rotateToTarget(this.m_5448_());
+            this.rotateToTarget(this.getTarget());
             this.updateHomingMovement();
          } else if (this.attackingTime > 0 && this.attackingTime < 15) {
             this.attack();
@@ -58,14 +58,14 @@ public class Pms01Entity extends BaseSmallMonsterEntity implements GeoEntity, Ge
    }
 
    private void attack() {
-      Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+      Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).yRot((float)Math.toRadians(-1.0 * this.getYRot()));
 
-      for (Entity ent : this.m_9236_().m_45933_(null, this.m_20191_().m_82400_(2.0))) {
+      for (Entity ent : this.level().getEntities(null, this.getBoundingBox().inflate(2.0))) {
          if (ent instanceof Player || ent instanceof PomkotsVehicleBase) {
             LivingEntity le = (LivingEntity)ent;
             if (this.isServerSide()) {
-               le.m_147240_(2.0, kbVel.f_82479_, kbVel.f_82481_);
-               le.m_6469_(this.m_269291_().m_269264_(), this.getMechData().meleeDamage);
+               le.knockback(2.0, kbVel.x, kbVel.z);
+               le.hurt(this.damageSources().generic(), this.getMechData().meleeDamage);
             } else {
                this.addHitParticles(le);
             }
@@ -74,21 +74,21 @@ public class Pms01Entity extends BaseSmallMonsterEntity implements GeoEntity, Ge
    }
 
    protected void updateHomingMovement() {
-      Vec3 currentPosition = this.m_20182_();
-      LivingEntity target = this.m_5448_();
+      Vec3 currentPosition = this.position();
+      LivingEntity target = this.getTarget();
       if (target != null) {
-         Vec3 targetPosition = target.m_20182_();
-         Vec3 directionToTarget = targetPosition.m_82546_(currentPosition).m_82541_();
-         this.m_20256_(directionToTarget.m_82490_(10.0));
+         Vec3 targetPosition = target.position();
+         Vec3 directionToTarget = targetPosition.subtract(currentPosition).normalize();
+         this.setDeltaMovement(directionToTarget.scale(10.0));
       }
    }
 
    @Override
    public void doAttack() {
-      this.rotateToTarget(this.m_5448_());
+      this.rotateToTarget(this.getTarget());
       this.attackingTime = 20;
       if (this.isServerSide()) {
-         this.m_20256_(new Vec3(0.0, 2.0, 0.0));
+         this.setDeltaMovement(new Vec3(0.0, 2.0, 0.0));
          this.triggerAnim("shoot_controller", "shoot");
       }
    }
@@ -99,9 +99,9 @@ public class Pms01Entity extends BaseSmallMonsterEntity implements GeoEntity, Ge
    }
 
    @Override
-   protected void m_8099_() {
-      super.m_8099_();
-      this.f_21345_.m_25352_(1, new ChargingMobGoal(this, this.getMechData().speed));
+   protected void registerGoals() {
+      super.registerGoals();
+      this.goalSelector.addGoal(1, new ChargingMobGoal(this, this.getMechData().speed));
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

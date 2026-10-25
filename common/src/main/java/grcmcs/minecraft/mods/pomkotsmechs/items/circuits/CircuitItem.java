@@ -19,24 +19,24 @@ public class CircuitItem extends Item {
       super(properties);
    }
 
-   public void m_6883_(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-      super.m_6883_(stack, level, entity, slotId, isSelected);
-      if (!level.f_46443_) {
-         CircuitItemStackHelper.ensureGenerated(stack, level.m_213780_());
+   public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+      super.inventoryTick(stack, level, entity, slotId, isSelected);
+      if (!level.isClientSide) {
+         CircuitItemStackHelper.ensureGenerated(stack, level.getRandom());
       }
    }
 
-   public void m_7373_(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+   public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
       boolean identified = CircuitItemStackHelper.isIdentified(stack);
       if (!identified) {
-         tooltip.add(Component.m_237115_("tooltip.pomkotsmechs.circuit.unidentified").m_130940_(ChatFormatting.GRAY));
+         tooltip.add(Component.translatable("tooltip.pomkotsmechs.circuit.unidentified").withStyle(ChatFormatting.GRAY));
       }
 
       CircuitPrefix prefix = CircuitItemStackHelper.getPrefixOrDefault(stack);
       CircuitRarity rarity = CircuitItemStackHelper.getRarityOrDefault(stack);
       appendCircuitHeader(tooltip, prefix, rarity);
       if (identified) {
-         tooltip.add(Component.m_237119_());
+         tooltip.add(Component.empty());
 
          for (CircuitSkillSnapshot snapshot : CircuitItemStackHelper.getSkillSnapshots(stack)) {
             CircuitTooltipBuilder.appendSkillSnapshot(tooltip, snapshot);
@@ -45,7 +45,7 @@ public class CircuitItem extends Item {
    }
 
    private static void appendCircuitHeader(List<Component> tooltip, CircuitPrefix prefix, CircuitRarity rarity) {
-      tooltip.add(Component.m_237110_("tooltip.pomkotsmechs.circuit.type", new Object[]{prefix.name()}).m_130940_(ChatFormatting.AQUA));
-      tooltip.add(Component.m_237110_("tooltip.pomkotsmechs.circuit.rarity", new Object[]{rarity.displayName()}).m_130940_(rarity.chatFormatting()));
+      tooltip.add(Component.translatable("tooltip.pomkotsmechs.circuit.type", new Object[]{prefix.name()}).withStyle(ChatFormatting.AQUA));
+      tooltip.add(Component.translatable("tooltip.pomkotsmechs.circuit.rarity", new Object[]{rarity.displayName()}).withStyle(rarity.chatFormatting()));
    }
 }

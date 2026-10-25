@@ -14,16 +14,16 @@ import net.fabricmc.api.Environment;
 public class MissileSmokeParticle extends TextureSheetParticle {
    protected MissileSmokeParticle(ClientLevel world, double x, double y, double z, double vx, double vy, double vz, SpriteSet spriteSet) {
       super(world, x, y, z);
-      this.f_107226_ = -0.0F;
-      this.f_172258_ = 0.9F;
-      this.f_107215_ = vx + (Math.random() * 2.0 - 1.0) * 0.01000000074505806;
-      this.f_107216_ = vy + (Math.random() * 2.0 - 1.0) * 0.01000000074505806;
-      this.f_107217_ = vz + (Math.random() * 2.0 - 1.0) * 0.01000000074505806;
-      this.m_108335_(spriteSet);
+      this.gravity = -0.0F;
+      this.friction = 0.9F;
+      this.xd = vx + (Math.random() * 2.0 - 1.0) * 0.01000000074505806;
+      this.yd = vy + (Math.random() * 2.0 - 1.0) * 0.01000000074505806;
+      this.zd = vz + (Math.random() * 2.0 - 1.0) * 0.01000000074505806;
+      this.pickSprite(spriteSet);
    }
 
-   public ParticleRenderType m_7556_() {
-      return ParticleRenderType.f_107430_;
+   public ParticleRenderType getRenderType() {
+      return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
    }
 
    public static class Provider implements ParticleProvider<SimpleParticleType> {
@@ -35,8 +35,8 @@ public class MissileSmokeParticle extends TextureSheetParticle {
 
       public Particle createParticle(SimpleParticleType typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
          Particle p = new MissileSmokeParticle(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, this.spriteSet);
-         p.m_6569_(1.0F);
-         p.m_107257_((int)(40.0 * Math.random()) + 20);
+         p.scale(1.0F);
+         p.setLifetime((int)(40.0 * Math.random()) + 20);
          return p;
       }
    }

@@ -18,66 +18,66 @@ public final class MuzzleFlashParticle extends TextureSheetParticle {
    private final int parentEntityId;
    private final int weaponAttachPoint;
    private final Vec3 localOffset;
-   private Vec3 previousPos = Vec3.f_82478_;
+   private Vec3 previousPos = Vec3.ZERO;
 
    private MuzzleFlashParticle(ClientLevel level, int parentEntityId, int weaponAttachPoint, float size, Vec3 localOffset, SpriteSet sprites) {
       super(level, 0.0, 0.0, 0.0);
       this.sprites = sprites;
       this.initialSize = size;
-      this.f_107663_ = size;
+      this.quadSize = size;
       this.parentEntityId = parentEntityId;
       this.weaponAttachPoint = weaponAttachPoint;
       Vec3 randomOffset = new Vec3(
-         (level.f_46441_.m_188500_() - 0.5) * 2.0 * 0.025, (level.f_46441_.m_188500_() - 0.5) * 2.0 * 0.025, (level.f_46441_.m_188500_() - 0.5) * 2.0 * 0.025
+         (level.random.nextDouble() - 0.5) * 2.0 * 0.025, (level.random.nextDouble() - 0.5) * 2.0 * 0.025, (level.random.nextDouble() - 0.5) * 2.0 * 0.025
       );
-      this.localOffset = localOffset.m_82549_(randomOffset);
-      this.f_107219_ = false;
-      this.f_107226_ = 0.0F;
-      this.f_107225_ = 6;
-      this.m_108335_(sprites);
-      Entity parent = level.m_6815_(parentEntityId);
+      this.localOffset = localOffset.add(randomOffset);
+      this.hasPhysics = false;
+      this.gravity = 0.0F;
+      this.lifetime = 6;
+      this.pickSprite(sprites);
+      Entity parent = level.getEntity(parentEntityId);
       if (parent == null) {
-         this.m_107274_();
+         this.remove();
       } else {
          Vec3 initialPos = this.calculatePosition(parent, localOffset, false);
-         this.m_107264_(initialPos.f_82479_, initialPos.f_82480_, initialPos.f_82481_);
-         this.f_107209_ = initialPos.f_82479_;
-         this.f_107210_ = initialPos.f_82480_;
-         this.f_107211_ = initialPos.f_82481_;
-         this.f_107227_ = 1.0F;
-         this.f_107228_ = 1.0F;
-         this.f_107229_ = 1.0F;
-         this.f_107230_ = 1.0F;
-         this.f_107231_ = level.f_46441_.m_188501_() * (float) (Math.PI * 2);
-         this.f_107204_ = this.f_107231_;
+         this.setPos(initialPos.x, initialPos.y, initialPos.z);
+         this.xo = initialPos.x;
+         this.yo = initialPos.y;
+         this.zo = initialPos.z;
+         this.rCol = 1.0F;
+         this.gCol = 1.0F;
+         this.bCol = 1.0F;
+         this.alpha = 1.0F;
+         this.roll = level.random.nextFloat() * (float) (Math.PI * 2);
+         this.oRoll = this.roll;
       }
    }
 
-   public void m_5989_() {
-      if (this.f_107224_++ >= this.f_107225_) {
-         this.m_107274_();
+   public void tick() {
+      if (this.age++ >= this.lifetime) {
+         this.remove();
       } else {
-         Entity parent = this.f_107208_.m_6815_(this.parentEntityId);
-         if (parent != null && !parent.m_213877_()) {
+         Entity parent = this.level.getEntity(this.parentEntityId);
+         if (parent != null && !parent.isRemoved()) {
             Vec3 previousPos = this.calculatePosition(parent, this.localOffset, true);
             Vec3 currentPos = this.calculatePosition(parent, this.localOffset, false);
-            this.f_107209_ = previousPos.f_82479_;
-            this.f_107210_ = previousPos.f_82480_;
-            this.f_107211_ = previousPos.f_82481_;
-            this.f_107212_ = currentPos.f_82479_;
-            this.f_107213_ = currentPos.f_82480_;
-            this.f_107214_ = currentPos.f_82481_;
-            float progress = (float)this.f_107224_ / this.f_107225_;
+            this.xo = previousPos.x;
+            this.yo = previousPos.y;
+            this.zo = previousPos.z;
+            this.x = currentPos.x;
+            this.y = currentPos.y;
+            this.z = currentPos.z;
+            float progress = (float)this.age / this.lifetime;
             float scale = 1.0F - progress;
             if (progress > 0.6F) {
-               this.f_107230_ = 1.0F - (progress - 0.6F) / 0.4F;
+               this.alpha = 1.0F - (progress - 0.6F) / 0.4F;
             } else {
-               this.f_107230_ = 1.0F;
+               this.alpha = 1.0F;
             }
 
             this.previousPos = currentPos;
          } else {
-            this.m_107274_();
+            this.remove();
          }
       }
    }
@@ -87,33 +87,33 @@ public final class MuzzleFlashParticle extends TextureSheetParticle {
       float yaw;
       float pitch;
       if (previousTick) {
-         parentPos = new Vec3(parent.f_19854_, parent.f_19855_, parent.f_19856_);
-         yaw = parent.f_19859_;
-         pitch = parent.f_19860_;
+         parentPos = new Vec3(parent.xo, parent.yo, parent.zo);
+         yaw = parent.yRotO;
+         pitch = parent.xRotO;
       } else {
-         parentPos = parent.m_20182_();
-         yaw = parent.m_146908_();
-         pitch = parent.m_146909_();
+         parentPos = parent.position();
+         yaw = parent.getYRot();
+         pitch = parent.getXRot();
       }
 
-      Vec3 rotatedOffset = localOffset.m_82496_((float)Math.toRadians(-pitch)).m_82524_((float)Math.toRadians(-yaw));
-      return parentPos.m_82549_(rotatedOffset);
+      Vec3 rotatedOffset = localOffset.xRot((float)Math.toRadians(-pitch)).yRot((float)Math.toRadians(-yaw));
+      return parentPos.add(rotatedOffset);
    }
 
-   public float m_5902_(float partialTick) {
-      float progress = (this.f_107224_ + partialTick) / this.f_107225_;
-      progress = Mth.m_14036_(progress, 0.0F, 1.0F);
+   public float getQuadSize(float partialTick) {
+      float progress = (this.age + partialTick) / this.lifetime;
+      progress = Mth.clamp(progress, 0.0F, 1.0F);
       float scale = 1.0F - progress;
       scale *= scale;
       return this.initialSize * scale;
    }
 
-   protected int m_6355_(float partialTick) {
+   protected int getLightColor(float partialTick) {
       return 15728880;
    }
 
-   public ParticleRenderType m_7556_() {
-      return ParticleRenderType.f_107431_;
+   public ParticleRenderType getRenderType() {
+      return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
    }
 
    public static final class Provider implements ParticleProvider<AttachedMuzzleFlashOptions> {

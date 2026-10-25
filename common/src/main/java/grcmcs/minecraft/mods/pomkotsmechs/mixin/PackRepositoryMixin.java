@@ -28,14 +28,14 @@ public abstract class PackRepositoryMixin {
                return (Pack)pack;
             }
 
-            Pack wrapped = Pack.m_245429_(
-               pack.m_10446_(),
-               pack.m_10429_(),
+            Pack wrapped = Pack.readMetaAndCreate(
+               pack.getId(),
+               pack.getTitle(),
                true,
                path -> new EncryptedPackResources(new PathPackResources("pomkotsmechs", PomkotsMechs.getModRootPath(), true)),
                PackType.CLIENT_RESOURCES,
                Position.TOP,
-               PackSource.f_10528_
+               PackSource.BUILT_IN
             );
             return wrapped != null ? wrapped : pack;
          }

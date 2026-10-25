@@ -18,24 +18,24 @@ public class MagazineParticle extends TextureSheetParticle {
    protected MagazineParticle(ClientLevel level, double x, double y, double z, double vx, double vy, double vz, SpriteSet spriteSet, float rollSpeed) {
       super(level, x, y, z, vx, vy, vz);
       this.spriteSet = spriteSet;
-      this.f_107225_ = 20;
-      this.f_107226_ = 0.9F;
-      this.m_108339_(spriteSet);
+      this.lifetime = 20;
+      this.gravity = 0.9F;
+      this.setSpriteFromAge(spriteSet);
       this.rollSpeed = rollSpeed;
-      this.f_107219_ = false;
+      this.hasPhysics = false;
    }
 
-   public void m_5989_() {
+   public void tick() {
       if (this.rollSpeed != 0.0F) {
-         this.f_107204_ = this.f_107231_;
-         this.f_107231_ = this.f_107231_ + this.rollSpeed;
+         this.oRoll = this.roll;
+         this.roll = this.roll + this.rollSpeed;
       }
 
-      super.m_5989_();
+      super.tick();
    }
 
-   public ParticleRenderType m_7556_() {
-      return ParticleRenderType.f_107430_;
+   public ParticleRenderType getRenderType() {
+      return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
    }
 
    public static class Provider implements ParticleProvider<SimpleParticleType> {
@@ -47,8 +47,8 @@ public class MagazineParticle extends TextureSheetParticle {
 
       public Particle createParticle(SimpleParticleType typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
          Particle p = new MagazineParticle(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, this.spriteSet, 0.0F);
-         p.m_6569_(2.5F);
-         p.m_107257_(20);
+         p.scale(2.5F);
+         p.setLifetime(20);
          return p;
       }
    }
@@ -62,8 +62,8 @@ public class MagazineParticle extends TextureSheetParticle {
 
       public Particle createParticle(SimpleParticleType typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
          Particle p = new MagazineParticle(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, this.spriteSet, 0.1F);
-         p.m_6569_(2.5F);
-         p.m_107257_(20);
+         p.scale(2.5F);
+         p.setLifetime(20);
          return p;
       }
    }
@@ -77,8 +77,8 @@ public class MagazineParticle extends TextureSheetParticle {
 
       public Particle createParticle(SimpleParticleType typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
          Particle p = new MagazineParticle(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, this.spriteSet, -0.1F);
-         p.m_6569_(2.5F);
-         p.m_107257_(20);
+         p.scale(2.5F);
+         p.setLifetime(20);
          return p;
       }
    }

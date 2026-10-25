@@ -209,32 +209,32 @@ public class ActionWeapon extends Action {
          if (isOnFire) {
             Entity driver = mechInterface.getDrivingPassenger();
             Vec3 pilePos1 = new Vec3(4.5 * mechInterface.isRight(), 4.0, 10.0)
-               .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-               .m_82549_(mechInterface.position());
+               .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+               .add(mechInterface.position());
             Vec3 pilePos2 = new Vec3(-2 * mechInterface.isRight(), -4.0, -4.0)
-               .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-               .m_82549_(mechInterface.position());
-            Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+               .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+               .add(mechInterface.position());
+            Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
 
-            for (Entity ent : world.m_45933_(null, new AABB(pilePos1, pilePos2))) {
+            for (Entity ent : world.getEntities(null, new AABB(pilePos1, pilePos2))) {
                if (!mechInterface.isSelf(ent) && ent instanceof LivingEntity le) {
-                  if (!world.m_5776_()) {
-                     le.m_147240_(2.0, kbVel.f_82479_, kbVel.f_82481_);
+                  if (!world.isClientSide()) {
+                     le.knockback(2.0, kbVel.x, kbVel.z);
                      DamageSource ds;
                      if (driver instanceof Player p) {
-                        ds = mechInterface.damageSources().m_269075_(p);
+                        ds = mechInterface.damageSources().playerAttack(p);
                      } else {
-                        ds = mechInterface.damageSources().m_269264_();
+                        ds = mechInterface.damageSources().generic();
                      }
 
-                     le.m_6469_(ds, 20.0F);
+                     le.hurt(ds, 20.0F);
                   } else {
                      mechInterface.addHitParticles(le);
                   }
                }
             }
 
-            if (world.f_46443_) {
+            if (world.isClientSide) {
                mechInterface.playSoundEffect((SoundEvent)PomkotsMechs.SE_PILEBUNKER_EVENT.get());
             }
          }
@@ -276,7 +276,7 @@ public class ActionWeapon extends Action {
       }
 
       public Level getWorld() {
-         return this.owner.m_9236_();
+         return this.owner.level();
       }
 
       public Vec3 getOffset() {
@@ -284,7 +284,7 @@ public class ActionWeapon extends Action {
       }
 
       public float getYRot() {
-         return this.owner.m_146908_();
+         return this.owner.getYRot();
       }
 
       public Player getPlayer() {
@@ -342,7 +342,7 @@ public class ActionWeapon extends Action {
       }
 
       public float getFallFlyingTicks() {
-         return this.owner.m_21256_();
+         return this.owner.getFallFlyingTicks();
       }
 
       public List<Entity> getMultiLockTargets() {
@@ -366,11 +366,11 @@ public class ActionWeapon extends Action {
       }
 
       public Vec3 position() {
-         return this.owner.m_20182_();
+         return this.owner.position();
       }
 
       public DamageSources damageSources() {
-         return this.owner.m_269291_();
+         return this.owner.damageSources();
       }
 
       public LivingEntity getDrivingPassenger() {
@@ -382,7 +382,7 @@ public class ActionWeapon extends Action {
       }
 
       public boolean onGround() {
-         return this.owner.m_20096_();
+         return this.owner.onGround();
       }
 
       public float applySkillDamageModifier(float baseDamage, BasePartsItem.WeaponCategory category) {
@@ -402,28 +402,28 @@ public class ActionWeapon extends Action {
       }
 
       public void knockBack(float strength) {
-         Vec3 knockBackvel = new Vec3(0.0, 0.0, -strength).m_82524_((float)Math.toRadians(-1.0 * this.owner.m_146908_()));
-         this.owner.m_246865_(knockBackvel);
+         Vec3 knockBackvel = new Vec3(0.0, 0.0, -strength).yRot((float)Math.toRadians(-1.0 * this.owner.getYRot()));
+         this.owner.addDeltaMovement(knockBackvel);
       }
 
       public void addVelocity(float pitch, float yaw, float strength) {
-         float x = -Mth.m_14031_(yaw * (float) (Math.PI / 180.0)) * Mth.m_14089_(pitch * (float) (Math.PI / 180.0));
-         float y = -Mth.m_14031_(pitch * (float) (Math.PI / 180.0));
-         float z = Mth.m_14089_(yaw * (float) (Math.PI / 180.0)) * Mth.m_14089_(pitch * (float) (Math.PI / 180.0));
-         if (!this.owner.m_20096_()) {
+         float x = -Mth.sin(yaw * (float) (Math.PI / 180.0)) * Mth.cos(pitch * (float) (Math.PI / 180.0));
+         float y = -Mth.sin(pitch * (float) (Math.PI / 180.0));
+         float z = Mth.cos(yaw * (float) (Math.PI / 180.0)) * Mth.cos(pitch * (float) (Math.PI / 180.0));
+         if (!this.owner.onGround()) {
             strength *= 0.5F;
          }
 
-         Vec3 acceleration = new Vec3(x, y, z).m_82490_(strength);
-         this.owner.m_20256_(acceleration);
+         Vec3 acceleration = new Vec3(x, y, z).scale(strength);
+         this.owner.setDeltaMovement(acceleration);
       }
 
       public Vec3 getOffsetByLookingDirection(int distance) {
          LivingEntity entity = this.owner.getDrivingPassenger();
          if (entity != null) {
-            Vec3 lookDirection = entity.m_20154_();
+            Vec3 lookDirection = entity.getLookAngle();
             Vec3 playerPosition = new Vec3(0.0, 6.0, 0.0);
-            return playerPosition.m_82520_(0.0, lookDirection.f_82480_ * distance, (1.0 - Math.abs(lookDirection.f_82480_)) * distance);
+            return playerPosition.add(0.0, lookDirection.y * distance, (1.0 - Math.abs(lookDirection.y)) * distance);
          } else {
             return null;
          }
@@ -434,18 +434,18 @@ public class ActionWeapon extends Action {
       }
 
       public void breakBlocksCube(int radius, int height, Vec3 offset) {
-         BlockPos curBP = this.owner.m_20183_();
+         BlockPos curBP = this.owner.blockPosition();
          Vec3 vec = offset;
-         vec = vec.m_82524_((float)Math.toRadians(-1.0 * this.getYRot()));
-         BlockPos pos = new BlockPos(curBP.m_123341_() + (int)vec.f_82479_, curBP.m_123342_() + (int)vec.f_82480_, curBP.m_123343_() + (int)vec.f_82481_);
+         vec = vec.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         BlockPos pos = new BlockPos(curBP.getX() + (int)vec.x, curBP.getY() + (int)vec.y, curBP.getZ() + (int)vec.z);
 
          for (int y = 0; y < height; y++) {
             for (int x = -radius; x <= radius; x++) {
                for (int z = -radius; z <= radius; z++) {
-                  BlockPos blockPos = pos.m_7918_(x, y, z);
-                  BlockState state = this.owner.m_9236_().m_8055_(blockPos);
-                  if (!state.m_60795_() && x * x + z * z <= radius * radius) {
-                     Utils.destroyBlock(this.owner.m_9236_(), blockPos, PomkotsMechs.CONFIG.dropItemsWhenDestroyBlock);
+                  BlockPos blockPos = pos.offset(x, y, z);
+                  BlockState state = this.owner.level().getBlockState(blockPos);
+                  if (!state.isAir() && x * x + z * z <= radius * radius) {
+                     Utils.destroyBlock(this.owner.level(), blockPos, PomkotsMechs.CONFIG.dropItemsWhenDestroyBlock);
                   }
                }
             }
@@ -454,19 +454,19 @@ public class ActionWeapon extends Action {
 
       public void breakBlockSphere(int radius, Vec3 offset) {
          int radiusSquared = radius * radius;
-         BlockPos curBP = this.owner.m_20183_();
+         BlockPos curBP = this.owner.blockPosition();
          Vec3 vec = offset;
-         vec = vec.m_82524_((float)Math.toRadians(-1.0 * this.getYRot()));
-         BlockPos pos = new BlockPos(curBP.m_123341_() + (int)vec.f_82479_, curBP.m_123342_() + (int)vec.f_82480_, curBP.m_123343_() + (int)vec.f_82481_);
+         vec = vec.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         BlockPos pos = new BlockPos(curBP.getX() + (int)vec.x, curBP.getY() + (int)vec.y, curBP.getZ() + (int)vec.z);
 
          for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
                for (int z = -radius; z <= radius; z++) {
                   if (x * x + y * y + z * z <= radiusSquared) {
-                     BlockPos targetPos = pos.m_7918_(x, y, z);
-                     BlockState state = this.owner.m_9236_().m_8055_(targetPos);
-                     if (!state.m_60795_()) {
-                        Utils.destroyBlock(this.owner.m_9236_(), targetPos, PomkotsMechs.CONFIG.dropItemsWhenDestroyBlock);
+                     BlockPos targetPos = pos.offset(x, y, z);
+                     BlockState state = this.owner.level().getBlockState(targetPos);
+                     if (!state.isAir()) {
+                        Utils.destroyBlock(this.owner.level(), targetPos, PomkotsMechs.CONFIG.dropItemsWhenDestroyBlock);
                      }
                   }
                }

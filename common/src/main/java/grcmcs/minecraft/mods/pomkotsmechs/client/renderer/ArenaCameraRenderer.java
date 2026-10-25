@@ -14,7 +14,7 @@ public class ArenaCameraRenderer extends EntityRenderer<ArenaCameraEntity> {
    }
 
    public ResourceLocation getTextureLocation(ArenaCameraEntity entity) {
-      return TextureAtlas.f_118259_;
+      return TextureAtlas.LOCATION_BLOCKS;
    }
 
    public void render(ArenaCameraEntity entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {

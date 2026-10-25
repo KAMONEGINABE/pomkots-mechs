@@ -188,49 +188,49 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    private ResourceLocation lootTable;
    private long lootTableSeed;
    private final List<Pmvc01Entity.AmmoManager> ammoManagers;
-   protected static final EntityDataAccessor<ItemStack> P_HEAD = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135033_);
-   protected static final EntityDataAccessor<ItemStack> P_ARMS = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135033_);
-   protected static final EntityDataAccessor<ItemStack> P_BODY = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135033_);
-   protected static final EntityDataAccessor<ItemStack> P_LEGS = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135033_);
-   protected static final EntityDataAccessor<ItemStack> P_GENERATOR = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135033_);
-   protected static final EntityDataAccessor<ItemStack> P_BOOSTER = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135033_);
-   protected static final EntityDataAccessor<ItemStack> W_RIGHT_ARM = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135033_);
-   protected static final EntityDataAccessor<ItemStack> W_LEFT_ARM = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135033_);
-   protected static final EntityDataAccessor<ItemStack> W_RIGHT_SHOULDER = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135033_);
-   protected static final EntityDataAccessor<ItemStack> W_LEFT_SHOULDER = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135033_);
-   protected static final EntityDataAccessor<ItemStack> W_EXTENSION1 = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135033_);
-   protected static final EntityDataAccessor<ItemStack> W_EXTENSION2 = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135033_);
-   protected static final EntityDataAccessor<Integer> DURABILITY = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Integer> WEIGHT = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Integer> MAX_WEIGHT = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Float> SPEED = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135029_);
-   protected static final EntityDataAccessor<Float> JUMP = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135029_);
-   protected static final EntityDataAccessor<Integer> MAX_ENERGY = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Float> ENERGY_CHARGE_PER_TICK = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135029_);
-   protected static final EntityDataAccessor<Integer> WORK_SEC_PER_FUEL = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Float> SPEED_MODIFIER_EVASION = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135029_);
-   protected static final EntityDataAccessor<Float> SPEED_MODIFIER_VERTICAL = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135029_);
-   protected static final EntityDataAccessor<Integer> ENERGY_CONSUME_EVASION = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Integer> ENERGY_CONSUME_VERTICAL = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Boolean> HAS_LOCK_SOFT = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135035_);
-   protected static final EntityDataAccessor<Boolean> HAS_LOCK_HARD = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135035_);
-   protected static final EntityDataAccessor<Integer> RELOAD_RA = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Integer> RELOAD_LA = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Integer> RELOAD_RS = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Integer> RELOAD_LS = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Integer> FUEL_MAX = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Integer> FUEL_NOW = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Integer> REPAIR_KIT_NUM = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Boolean> IS_BOUND_TO_RAIL = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135035_);
-   protected static final EntityDataAccessor<Integer> TEXTURE_COLOR = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135028_);
-   protected static final EntityDataAccessor<Boolean> IS_BROKEN = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135035_);
-   protected static final EntityDataAccessor<Boolean> IS_LOCKED = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135035_);
-   protected static final EntityDataAccessor<Boolean> IS_OVER_HEAT = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135035_);
-   protected static final EntityDataAccessor<Boolean> IS_SUPER_BOOST = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135035_);
-   protected static final EntityDataAccessor<Boolean> SHOW_PLAYER_INV_SLOT = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135035_);
-   protected static final EntityDataAccessor<Boolean> BUILD_MODE = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135035_);
-   protected static final EntityDataAccessor<Optional<UUID>> HAVING_ENTITY = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135041_);
-   protected static final EntityDataAccessor<Boolean> IS_GLIDING = SynchedEntityData.m_135353_(Pmvc01Entity.class, EntityDataSerializers.f_135035_);
+   protected static final EntityDataAccessor<ItemStack> P_HEAD = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.ITEM_STACK);
+   protected static final EntityDataAccessor<ItemStack> P_ARMS = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.ITEM_STACK);
+   protected static final EntityDataAccessor<ItemStack> P_BODY = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.ITEM_STACK);
+   protected static final EntityDataAccessor<ItemStack> P_LEGS = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.ITEM_STACK);
+   protected static final EntityDataAccessor<ItemStack> P_GENERATOR = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.ITEM_STACK);
+   protected static final EntityDataAccessor<ItemStack> P_BOOSTER = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.ITEM_STACK);
+   protected static final EntityDataAccessor<ItemStack> W_RIGHT_ARM = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.ITEM_STACK);
+   protected static final EntityDataAccessor<ItemStack> W_LEFT_ARM = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.ITEM_STACK);
+   protected static final EntityDataAccessor<ItemStack> W_RIGHT_SHOULDER = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.ITEM_STACK);
+   protected static final EntityDataAccessor<ItemStack> W_LEFT_SHOULDER = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.ITEM_STACK);
+   protected static final EntityDataAccessor<ItemStack> W_EXTENSION1 = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.ITEM_STACK);
+   protected static final EntityDataAccessor<ItemStack> W_EXTENSION2 = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.ITEM_STACK);
+   protected static final EntityDataAccessor<Integer> DURABILITY = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Integer> WEIGHT = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Integer> MAX_WEIGHT = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Float> SPEED = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
+   protected static final EntityDataAccessor<Float> JUMP = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
+   protected static final EntityDataAccessor<Integer> MAX_ENERGY = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Float> ENERGY_CHARGE_PER_TICK = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
+   protected static final EntityDataAccessor<Integer> WORK_SEC_PER_FUEL = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Float> SPEED_MODIFIER_EVASION = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
+   protected static final EntityDataAccessor<Float> SPEED_MODIFIER_VERTICAL = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.FLOAT);
+   protected static final EntityDataAccessor<Integer> ENERGY_CONSUME_EVASION = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Integer> ENERGY_CONSUME_VERTICAL = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Boolean> HAS_LOCK_SOFT = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+   protected static final EntityDataAccessor<Boolean> HAS_LOCK_HARD = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+   protected static final EntityDataAccessor<Integer> RELOAD_RA = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Integer> RELOAD_LA = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Integer> RELOAD_RS = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Integer> RELOAD_LS = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Integer> FUEL_MAX = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Integer> FUEL_NOW = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Integer> REPAIR_KIT_NUM = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Boolean> IS_BOUND_TO_RAIL = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+   protected static final EntityDataAccessor<Integer> TEXTURE_COLOR = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.INT);
+   protected static final EntityDataAccessor<Boolean> IS_BROKEN = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+   protected static final EntityDataAccessor<Boolean> IS_LOCKED = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+   protected static final EntityDataAccessor<Boolean> IS_OVER_HEAT = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+   protected static final EntityDataAccessor<Boolean> IS_SUPER_BOOST = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+   protected static final EntityDataAccessor<Boolean> SHOW_PLAYER_INV_SLOT = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+   protected static final EntityDataAccessor<Boolean> BUILD_MODE = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
+   protected static final EntityDataAccessor<Optional<UUID>> HAVING_ENTITY = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.OPTIONAL_UUID);
+   protected static final EntityDataAccessor<Boolean> IS_GLIDING = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
    private Vec3 muzzlePosRA;
    private Vec3 muzzlePosLA;
    private Vec3 muzzlePosRS;
@@ -246,11 +246,11 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_()
-         .m_22266_(Attributes.f_22282_)
-         .m_22268_(Attributes.f_22278_, 0.8)
-         .m_22268_(Attributes.f_22276_, BattleBalance.MECH_HEALTH)
-         .m_22268_(Attributes.f_22284_, 18.0);
+      return LivingEntity.createLivingAttributes()
+         .add(Attributes.ATTACK_KNOCKBACK)
+         .add(Attributes.KNOCKBACK_RESISTANCE, 0.8)
+         .add(Attributes.MAX_HEALTH, BattleBalance.MECH_HEALTH)
+         .add(Attributes.ARMOR, 18.0);
    }
 
    public Pmvc01Entity(EntityType<? extends LivingEntity> entityType, Level world) {
@@ -265,16 +265,16 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             this::getAmmoLSFromInventory, this::getLeftShoulderWeaponFromInventory, RELOAD_LS, this, this.actionController.getAction(15)
          )
       );
-      this.muzzlePosRA = Vec3.f_82478_;
-      this.muzzlePosLA = Vec3.f_82478_;
-      this.muzzlePosRS = Vec3.f_82478_;
-      this.muzzlePosLS = Vec3.f_82478_;
+      this.muzzlePosRA = Vec3.ZERO;
+      this.muzzlePosLA = Vec3.ZERO;
+      this.muzzlePosRS = Vec3.ZERO;
+      this.muzzlePosLS = Vec3.ZERO;
       this.mainCameraPosition = null;
       this.wasHurtClient = false;
       this.hasLoopSound = false;
       this.showCustomHealthBar = true;
-      this.f_19811_ = false;
-      this.itemStacks = NonNullList.m_122780_(82, ItemStack.f_41583_);
+      this.noCulling = false;
+      this.itemStacks = NonNullList.withSize(82, ItemStack.EMPTY);
    }
 
    public CachedBoneFinder getBoneFinder() {
@@ -290,12 +290,12 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    @Override
-   public void m_8119_() {
-      if (this.f_19803_) {
+   public void tick() {
+      if (this.firstTick) {
          this.firstTickEvent();
       }
 
-      if (this.m_20202_() instanceof ElevatorEntity tgt) {
+      if (this.getVehicle() instanceof ElevatorEntity tgt) {
          ;
       }
 
@@ -303,7 +303,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
          LivingEntity driver = this.getDrivingPassenger();
          if (driver instanceof Mob mob && this.mechAutoController == null) {
             this.mechAutoController = Utils.createMechAutoController(driver, this);
-            mob.m_21557_(true);
+            mob.setNoAi(true);
          }
 
          if (this.mechAutoController != null) {
@@ -321,7 +321,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             this.damageSoundCooldown--;
          }
 
-         float current = this.m_21223_();
+         float current = this.getHealth();
          this.clientDamageThisTick = this.prevHealth - current;
          if (this.clientDamageThisTick > 0.0F && this.consumeWasHurtClient()) {
             this.onClientDamage(this.clientDamageThisTick);
@@ -345,21 +345,21 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
          }
 
          if (this.isServerSide()) {
-            if (this.m_6084_() && this.m_20160_() && this.f_19797_ % 20 == 0) {
+            if (this.isAlive() && this.isVehicle() && this.tickCount % 20 == 0) {
                this.syncFuels();
             }
 
             if (this.isHovering() && this.isServerSide()) {
-               this.m_20242_(true);
+               this.setNoGravity(true);
             }
          }
 
          this.tickAmmos();
          this.resetAllActionsWhenNotActive();
-         super.m_8119_();
+         super.tick();
          if (this.isServerSide()) {
             if (this.isBoundToRail()) {
-               Vec3 currentVelocity = this.m_20184_();
+               Vec3 currentVelocity = this.getDeltaMovement();
                this.railBindComponent.moveRobotOnRail(this, currentVelocity);
             }
 
@@ -372,21 +372,21 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             }
 
             if (this.havingEntity().isPresent()) {
-               Entity tgt = ((ServerLevel)this.m_9236_()).m_8791_(this.havingEntity().get());
-               if (tgt != null && tgt.m_6084_()) {
-                  tgt.m_20256_(Vec3.f_82478_);
-                  Vec3 pos = this.m_20182_();
-                  tgt.m_6027_(pos.f_82479_, pos.f_82480_ + 7.5, pos.f_82481_);
-                  float rot = this.m_146908_();
-                  tgt.m_146922_(rot);
-                  tgt.m_5618_(rot);
-                  tgt.m_5616_(rot);
-                  tgt.f_19859_ = rot;
+               Entity tgt = ((ServerLevel)this.level()).getEntity(this.havingEntity().get());
+               if (tgt != null && tgt.isAlive()) {
+                  tgt.setDeltaMovement(Vec3.ZERO);
+                  Vec3 pos = this.position();
+                  tgt.moveTo(pos.x, pos.y + 7.5, pos.z);
+                  float rot = this.getYRot();
+                  tgt.setYRot(rot);
+                  tgt.setYBodyRot(rot);
+                  tgt.setYHeadRot(rot);
+                  tgt.yRotO = rot;
                } else {
                   this.setHavingEntity(Optional.empty());
                }
             }
-         } else if (this.m_20096_()) {
+         } else if (this.onGround()) {
             if (this.actionController.getAction(0).isInAction()) {
                this.spawnMovingParticles(6, 3.0F, true);
             } else if (this.actionController.isBoost() || this.isSuperBoost()) {
@@ -409,13 +409,13 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    private void onClientDamage(float damage) {
       if (damage > 50.0F) {
          this.playDamageSound((SoundEvent)PomkotsMechs.SE_HIT_HEAVY_EVENT.get());
-         ParticleUtil.addSparkParticles(this.m_20191_().m_82399_(), this.m_9236_(), 15, (ParticleOptions)PomkotsMechs.SPARK.get());
+         ParticleUtil.addSparkParticles(this.getBoundingBox().getCenter(), this.level(), 15, (ParticleOptions)PomkotsMechs.SPARK.get());
       } else if (damage > 15.0F) {
          this.playDamageSound((SoundEvent)PomkotsMechs.SE_HIT_MIDDLE_EVENT.get());
-         ParticleUtil.addSparkParticles(this.m_20191_().m_82399_(), this.m_9236_(), 10, (ParticleOptions)PomkotsMechs.SPARK.get());
+         ParticleUtil.addSparkParticles(this.getBoundingBox().getCenter(), this.level(), 10, (ParticleOptions)PomkotsMechs.SPARK.get());
       } else {
          this.playDamageSound((SoundEvent)PomkotsMechs.SE_HIT_EVENT.get());
-         ParticleUtil.addSparkParticles(this.m_20191_().m_82399_(), this.m_9236_(), 5, (ParticleOptions)PomkotsMechs.SPARK.get());
+         ParticleUtil.addSparkParticles(this.getBoundingBox().getCenter(), this.level(), 5, (ParticleOptions)PomkotsMechs.SPARK.get());
       }
 
       if (this.getDrivingPassenger() instanceof LocalPlayer) {
@@ -430,82 +430,82 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       }
    }
 
-   protected void m_6677_(DamageSource damageSource) {
+   protected void playHurtSound(DamageSource damageSource) {
    }
 
    private void handleGattaiMode() {
-      this.m_20242_(true);
-      super.m_8119_();
+      this.setNoGravity(true);
+      super.tick();
       Action act = this.actionController.getAction(99);
       if (this.isServerSide()) {
          if (act.currentFireTime < 15) {
-            this.m_20334_(0.0, 0.0, 0.0);
+            this.setDeltaMovement(0.0, 0.0, 0.0);
          } else {
-            this.m_20334_(0.0, -2.0, 0.0);
-            if (this.m_20096_()) {
+            this.setDeltaMovement(0.0, -2.0, 0.0);
+            if (this.onGround()) {
                act.reset();
-               this.m_20242_(false);
+               this.setNoGravity(false);
             }
 
-            List<Pmb99Entity> ents = this.m_9236_().m_45976_(Pmb99Entity.class, this.m_20191_());
+            List<Pmb99Entity> ents = this.level().getEntitiesOfClass(Pmb99Entity.class, this.getBoundingBox());
             if (!ents.isEmpty()) {
                Pmb99Entity tgt = ents.get(0);
-               this.m_20329_(tgt);
+               this.startRiding(tgt);
                act.reset();
             }
          }
       } else if (act.currentFireTime >= 15) {
-         if (this.m_20096_()) {
+         if (this.onGround()) {
             act.reset();
-            this.m_20242_(false);
+            this.setNoGravity(false);
          }
 
-         List<Pmb99Entity> ents = this.m_9236_().m_45976_(Pmb99Entity.class, this.m_20191_());
-         if (!ents.isEmpty() || this.m_20202_() instanceof Pmb99Entity) {
+         List<Pmb99Entity> ents = this.level().getEntitiesOfClass(Pmb99Entity.class, this.getBoundingBox());
+         if (!ents.isEmpty() || this.getVehicle() instanceof Pmb99Entity) {
             this.playSoundEffect((SoundEvent)PomkotsMechs.SE_GASHAN.get());
-            Vec3 p1 = new Vec3(-1.0, 7.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())).m_82549_(this.m_20182_());
-            Vec3 p2 = new Vec3(1.0, 7.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())).m_82549_(this.m_20182_());
-            Vec3 p3 = new Vec3(-1.0, 7.0, 1.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())).m_82549_(this.m_20182_());
-            Vec3 p4 = new Vec3(1.0, 7.0, 1.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())).m_82549_(this.m_20182_());
-            ParticleUtil.addSparkParticles(p1, this.m_9236_());
-            ParticleUtil.addSparkParticles(p2, this.m_9236_());
-            ParticleUtil.addSparkParticles(p3, this.m_9236_());
-            ParticleUtil.addSparkParticles(p4, this.m_9236_());
+            Vec3 p1 = new Vec3(-1.0, 7.0, -1.0).yRot((float)Math.toRadians(-1.0 * this.getYRot())).add(this.position());
+            Vec3 p2 = new Vec3(1.0, 7.0, -1.0).yRot((float)Math.toRadians(-1.0 * this.getYRot())).add(this.position());
+            Vec3 p3 = new Vec3(-1.0, 7.0, 1.0).yRot((float)Math.toRadians(-1.0 * this.getYRot())).add(this.position());
+            Vec3 p4 = new Vec3(1.0, 7.0, 1.0).yRot((float)Math.toRadians(-1.0 * this.getYRot())).add(this.position());
+            ParticleUtil.addSparkParticles(p1, this.level());
+            ParticleUtil.addSparkParticles(p2, this.level());
+            ParticleUtil.addSparkParticles(p3, this.level());
+            ParticleUtil.addSparkParticles(p4, this.level());
             act.reset();
          }
       }
    }
 
    private void spawnMovingParticles(int amount, float height, boolean smoke) {
-      Vec3 offset = this.m_20182_();
+      Vec3 offset = this.position();
       Vec3 pos1 = new Vec3(1.0, 0.0, 0.0);
-      pos1 = pos1.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-      pos1 = offset.m_82549_(pos1);
+      pos1 = pos1.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+      pos1 = offset.add(pos1);
       Vec3 pos2 = new Vec3(-1.0, 0.0, 0.0);
-      pos2 = pos2.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-      pos2 = offset.m_82549_(pos2);
+      pos2 = pos2.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+      pos2 = offset.add(pos2);
 
       for (int i = 0; i < amount; i++) {
-         double dx = this.f_19796_.m_188500_() - 0.5;
-         double dz = this.f_19796_.m_188500_() - 0.5;
-         double vy = this.f_19796_.m_188500_() * height + 1.0;
+         double dx = this.random.nextDouble() - 0.5;
+         double dz = this.random.nextDouble() - 0.5;
+         double vy = this.random.nextDouble() * height + 1.0;
          if (i < 3) {
-            this.m_9236_()
-               .m_6485_((ParticleOptions)PomkotsMechs.MECH_DUST_HEAVY.get(), true, pos1.f_82479_ + dx, pos1.f_82480_, pos1.f_82481_ + dz, 0.0, vy, 0.0);
-            this.m_9236_()
-               .m_6485_((ParticleOptions)PomkotsMechs.MECH_DUST_HEAVY.get(), true, pos2.f_82479_ + dx, pos2.f_82480_, pos2.f_82481_ + dz, 0.0, vy, 0.0);
+            this.level()
+               .addAlwaysVisibleParticle((ParticleOptions)PomkotsMechs.MECH_DUST_HEAVY.get(), true, pos1.x + dx, pos1.y, pos1.z + dz, 0.0, vy, 0.0);
+            this.level()
+               .addAlwaysVisibleParticle((ParticleOptions)PomkotsMechs.MECH_DUST_HEAVY.get(), true, pos2.x + dx, pos2.y, pos2.z + dz, 0.0, vy, 0.0);
          }
 
          if (smoke) {
-            double sy = this.f_19796_.m_188500_() * 0.2 + 0.1;
-            this.m_9236_().m_6485_((ParticleOptions)PomkotsMechs.MECH_DUST.get(), true, pos1.m_7096_() + dz, pos1.m_7098_(), pos1.m_7094_() + dx, 0.0, sy, 0.0);
-            this.m_9236_().m_6485_((ParticleOptions)PomkotsMechs.MECH_DUST.get(), true, pos2.m_7096_() + dz, pos2.m_7098_(), pos2.m_7094_() + dx, 0.0, sy, 0.0);
+            double sy = this.random.nextDouble() * 0.2 + 0.1;
+            this.level().addAlwaysVisibleParticle((ParticleOptions)PomkotsMechs.MECH_DUST.get(), true, pos1.x() + dz, pos1.y(), pos1.z() + dx, 0.0, sy, 0.0);
+            this.level().addAlwaysVisibleParticle((ParticleOptions)PomkotsMechs.MECH_DUST.get(), true, pos2.x() + dz, pos2.y(), pos2.z() + dx, 0.0, sy, 0.0);
          }
       }
    }
 
    private void resetAllActionsWhenNotActive() {
-      if (this.isBroken() || !this.canWork(false) || !this.m_20160_()) {
+      if (this.isBroken() || !this.canWork(false) || !this.isVehicle()) {
          for (Action a : this.actionController.getAllActions()) {
             if (a.isInAction()) {
                a.reset();
@@ -515,20 +515,20 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    private void updateBuildModePreview(Player player) {
-      HitResult hitResult = player.m_19907_(20.0, 0.0F, true);
+      HitResult hitResult = player.pick(20.0, 0.0F, true);
       Vec3 newPos;
-      if (hitResult.m_6662_() == Type.BLOCK) {
+      if (hitResult.getType() == Type.BLOCK) {
          BlockHitResult blockHitResult = (BlockHitResult)hitResult;
-         BlockPos blockPos = blockHitResult.m_82425_().m_121945_(blockHitResult.m_82434_());
-         newPos = new Vec3(blockPos.m_123341_(), blockPos.m_123342_(), blockPos.m_123343_());
+         BlockPos blockPos = blockHitResult.getBlockPos().relative(blockHitResult.getDirection());
+         newPos = new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ());
       } else {
-         Vec3 look = player.m_20154_();
-         Vec3 eyePos = player.m_20299_(1.0F);
-         newPos = eyePos.m_82549_(look.m_82490_(20.0));
+         Vec3 look = player.getLookAngle();
+         Vec3 eyePos = player.getEyePosition(1.0F);
+         newPos = eyePos.add(look.scale(20.0));
       }
 
       if (this.blockPreviewEntity != null) {
-         this.blockPreviewEntity.m_20219_(newPos);
+         this.blockPreviewEntity.moveTo(newPos);
       }
    }
 
@@ -543,14 +543,14 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
    protected void tickAllParts() {
       for (ItemStack parts : this.itemStacks) {
-         if (parts.m_41720_() instanceof BasePartsItem) {
-            parts.m_41666_(this.m_9236_(), this, 0, false);
+         if (parts.getItem() instanceof BasePartsItem) {
+            parts.inventoryTick(this.level(), this, 0, false);
          }
       }
    }
 
    private void handleMechActivationAction() {
-      if (this.f_19803_) {
+      if (this.firstTick) {
          this.prevLocked = this.isLocked();
          this.prevBroken = this.isBroken();
          this.prevCanwork = this.canWork(false);
@@ -562,7 +562,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             if (this.isClientSide()) {
                this.playSoundEffect((SoundEvent)PomkotsMechs.SE_EXPLOSION_EVENT.get());
             }
-         } else if (this.m_21233_() == this.m_21223_()) {
+         } else if (this.getMaxHealth() == this.getHealth()) {
             this.setBroken(false);
             this.actionController.getAction(8).startAction();
          }
@@ -588,22 +588,22 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    public boolean isBoundToRail() {
-      return (Boolean)this.f_19804_.m_135370_(IS_BOUND_TO_RAIL);
+      return (Boolean)this.entityData.get(IS_BOUND_TO_RAIL);
    }
 
    public boolean tryBindToRail() {
-      BlockPos bp = this.railBindComponent.findRailBlockBelow(this.m_9236_(), this.m_20183_());
-      this.f_19804_.m_135381_(IS_BOUND_TO_RAIL, bp != null);
+      BlockPos bp = this.railBindComponent.findRailBlockBelow(this.level(), this.blockPosition());
+      this.entityData.set(IS_BOUND_TO_RAIL, bp != null);
       return bp != null;
    }
 
    public void unbindFromRail() {
-      this.f_19804_.m_135381_(IS_BOUND_TO_RAIL, false);
+      this.entityData.set(IS_BOUND_TO_RAIL, false);
    }
 
-   public void m_20256_(Vec3 movement) {
-      if (!Double.isNaN(movement.f_82479_) && !Double.isNaN(movement.f_82480_) && !Double.isNaN(movement.f_82481_)) {
-         super.m_20256_(movement);
+   public void setDeltaMovement(Vec3 movement) {
+      if (!Double.isNaN(movement.x) && !Double.isNaN(movement.y) && !Double.isNaN(movement.z)) {
+         super.setDeltaMovement(movement);
       } else {
          PomkotsMechs.LOGGER.info(movement + "");
       }
@@ -615,11 +615,11 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    public boolean canWork(boolean consumeFuel) {
-      boolean res = !this.getHeadParts().m_41619_()
-         && !this.getBodyParts().m_41619_()
-         && !this.getArmParts().m_41619_()
-         && !this.getLegsParts().m_41619_()
-         && !this.getGenerator().m_41619_();
+      boolean res = !this.getHeadParts().isEmpty()
+         && !this.getBodyParts().isEmpty()
+         && !this.getArmParts().isEmpty()
+         && !this.getLegsParts().isEmpty()
+         && !this.getGenerator().isEmpty();
       if (consumeFuel && this.isServerSide()) {
          res = res && this.consumeFuel();
       } else {
@@ -641,20 +641,20 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       this.setGliding(false);
    }
 
-   public boolean m_6052_() {
+   public boolean shouldShowName() {
       return false;
    }
 
-   public boolean m_20151_() {
+   public boolean isCustomNameVisible() {
       return false;
    }
 
    private boolean areWeaponsChanged() {
       boolean b = false;
-      b = this.checkWeaponChanged(6, this.getRightArmWeapon().m_41720_());
-      b = b || this.checkWeaponChanged(7, this.getLeftArmWeapon().m_41720_());
-      b = b || this.checkWeaponChanged(8, this.getRightShoulderWeapon().m_41720_());
-      return b || this.checkWeaponChanged(9, this.getLeftShoulderWeapon().m_41720_());
+      b = this.checkWeaponChanged(6, this.getRightArmWeapon().getItem());
+      b = b || this.checkWeaponChanged(7, this.getLeftArmWeapon().getItem());
+      b = b || this.checkWeaponChanged(8, this.getRightShoulderWeapon().getItem());
+      return b || this.checkWeaponChanged(9, this.getLeftShoulderWeapon().getItem());
    }
 
    private boolean checkWeaponChanged(int num, Item latest) {
@@ -699,7 +699,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
    protected void registerWeapon(ActionWeapon act, ItemStack itemStack) {
       BasePartsItem.WeaponInterface wpn = null;
-      if (itemStack.m_41720_() instanceof BasePartsItem.Weapon bw) {
+      if (itemStack.getItem() instanceof BasePartsItem.Weapon bw) {
          wpn = bw;
       } else {
          wpn = new ActionWeapon.DefaultDummyWeapon();
@@ -720,7 +720,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             && !this.actionController.getAction(16).isInCooltime()) {
             this.actionController.getAction(16).startAction();
             if (this.isServerSide() && this.getDrivingPassenger() instanceof ServerPlayer serverPlayer) {
-               ScanUtils.spawnPersonalScan((ServerLevel)this.m_9236_(), serverPlayer, this.m_20182_());
+               ScanUtils.spawnPersonalScan((ServerLevel)this.level(), serverPlayer, this.position());
             }
          }
 
@@ -738,14 +738,14 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
          if (this.isServerSide() && this.blockPreviewEntity != null) {
             if (!this.actionController.getAction(11).isInAction()) {
                if (driverInput.isWeaponRightShoulderReleased()) {
-                  this.blockPreviewEntity.m_146922_(this.blockPreviewEntity.m_146908_() + 90.0F);
+                  this.blockPreviewEntity.setYRot(this.blockPreviewEntity.getYRot() + 90.0F);
                } else if (driverInput.isWeaponLeftShoulderReleased()) {
                   this.blockPreviewEntity.incrementPatternIndex();
                }
             }
 
             if (this.actionController.getAction(11).isOnFire()
-               && this.m_9236_() instanceof ServerLevel l
+               && this.level() instanceof ServerLevel l
                && this.getDrivingPassenger() instanceof ServerPlayer p) {
                this.blockPreviewEntity.placeBlocks(l, p);
             }
@@ -807,7 +807,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    protected void applyPlayerInputWeapon(
       ActionWeapon act, ActionWeapon actLinked, DriverInput driverInput, boolean isPressed, boolean isReleased, Pmvc01Entity.AmmoManager ammoManager
    ) {
-      if (this.m_20202_() == null) {
+      if (this.getVehicle() == null) {
          if (ammoManager.isReloading()) {
             if (act.isInAction()) {
                act.reset();
@@ -857,8 +857,8 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    public boolean shouldLinkWeapon(int srcInvSlot, int dstInvSlot) {
       ItemStack srcW = this.getPart(srcInvSlot);
       ItemStack dstW = this.getPart(dstInvSlot);
-      return srcW.m_150930_(dstW.m_41720_())
-         && srcW.m_41720_() instanceof BasePartsItem.Weapon w
+      return srcW.is(dstW.getItem())
+         && srcW.getItem() instanceof BasePartsItem.Weapon w
          && w.getWeaponCategory() == BasePartsItem.WeaponCategory.MISSILE;
    }
 
@@ -868,7 +868,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
          case 7 -> this.getLeftArmWeapon();
          case 8 -> this.getRightShoulderWeapon();
          case 9 -> this.getLeftShoulderWeapon();
-         default -> ItemStack.f_41583_;
+         default -> ItemStack.EMPTY;
       };
    }
 
@@ -884,8 +884,8 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    protected void applyPlayerInputExtension(ItemStack extensionStack) {
-      if (!extensionStack.m_41619_()) {
-         Item extensionItem = extensionStack.m_41720_();
+      if (!extensionStack.isEmpty()) {
+         Item extensionItem = extensionStack.getItem();
          if (extensionItem instanceof HoverUnitItem) {
             this.isHovering = !this.isHovering;
          } else if (extensionItem instanceof RailSliderItem) {
@@ -912,21 +912,21 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             if (this.isServerSide()) {
                if (this.isGliding()) {
                   this.setGliding(false);
-                  glider.endUsing(this.m_9236_(), extensionStack, this);
-               } else if (!this.m_20096_()) {
+                  glider.endUsing(this.level(), extensionStack, this);
+               } else if (!this.onGround()) {
                   this.setSuperBoost(false);
                   this.isHovering = false;
                   this.unbindFromRail();
                   this.setGliding(true);
-                  glider.startUsing(this.m_9236_(), extensionStack, this);
+                  glider.startUsing(this.level(), extensionStack, this);
                }
             }
          } else if (extensionItem instanceof BuilderUnitItem && this.isServerSide()) {
             this.setBuildMode(!this.isBuildMode());
          } else if (extensionItem instanceof CoreDrillItem && !this.actionController.getAction(99).isInAction()) {
-            if (this.m_20202_() != null) {
-               this.m_8127_();
-               this.m_20242_(false);
+            if (this.getVehicle() != null) {
+               this.stopRiding();
+               this.setNoGravity(false);
             } else {
                this.actionController.getAction(99).startAction();
             }
@@ -944,7 +944,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
    public Vec3 getPosHistory(int index) {
       if (this.posHistory.isEmpty()) {
-         return this.m_20182_();
+         return this.position();
       }
 
       if (index >= this.posHistory.size()) {
@@ -956,11 +956,11 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
    public float[] getShootingAngle(Entity bullet, boolean useTarget, boolean useDeviation) {
       Vec3 targetPos = this.getTargetPos(useDeviation);
-      Vec3 bulletPos = bullet.m_20182_();
-      Vec3 bulletDir = targetPos.m_82546_(bulletPos).m_82541_();
-      float horizontalDist = (float)Math.sqrt(bulletDir.f_82479_ * bulletDir.f_82479_ + bulletDir.f_82481_ * bulletDir.f_82481_);
-      float pitch = (float)Math.toDegrees(Math.atan2(bulletDir.f_82480_, horizontalDist)) * -1.0F;
-      float yaw = (float)Math.toDegrees(Math.atan2(-bulletDir.f_82479_, bulletDir.f_82481_));
+      Vec3 bulletPos = bullet.position();
+      Vec3 bulletDir = targetPos.subtract(bulletPos).normalize();
+      float horizontalDist = (float)Math.sqrt(bulletDir.x * bulletDir.x + bulletDir.z * bulletDir.z);
+      float pitch = (float)Math.toDegrees(Math.atan2(bulletDir.y, horizontalDist)) * -1.0F;
+      float yaw = (float)Math.toDegrees(Math.atan2(-bulletDir.x, bulletDir.z));
       return new float[]{pitch, yaw};
    }
 
@@ -974,18 +974,18 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       Vec3 targetPos;
       if (lockTarget != null) {
          if (useDeviation) {
-            targetPos = lockTarget.m_20191_()
-               .m_82399_()
-               .m_82549_(lockTarget.m_20184_())
-               .m_82549_(lockTarget.m_20184_())
-               .m_82549_(lockTarget.m_20184_())
-               .m_82549_(lockTarget.m_20184_());
+            targetPos = lockTarget.getBoundingBox()
+               .getCenter()
+               .add(lockTarget.getDeltaMovement())
+               .add(lockTarget.getDeltaMovement())
+               .add(lockTarget.getDeltaMovement())
+               .add(lockTarget.getDeltaMovement());
          } else {
-            targetPos = lockTarget.m_20191_().m_82399_();
+            targetPos = lockTarget.getBoundingBox().getCenter();
          }
       } else {
          targetPos = this.getCameraTargetPosition(this.getDrivingPassenger());
-         targetPos = new Vec3(targetPos.f_82479_, targetPos.f_82480_, targetPos.f_82481_);
+         targetPos = new Vec3(targetPos.x, targetPos.y, targetPos.z);
       }
 
       return targetPos;
@@ -995,35 +995,35 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       if (cameraEntity == null) {
          cameraEntity = this;
       } else if (cameraEntity instanceof ServerPlayer sp) {
-         cameraEntity = sp.m_8954_();
+         cameraEntity = sp.getCamera();
       }
 
-      HitResult hitResult = cameraEntity.m_19907_(200.0, 0.0F, true);
-      if (hitResult.m_6662_() == Type.MISS) {
-         Vec3 cameraPos = cameraEntity.m_146892_();
-         Vec3 cameraDirection = cameraEntity.m_20154_().m_82541_();
-         return cameraPos.m_82549_(cameraDirection.m_82490_(300.0));
+      HitResult hitResult = cameraEntity.pick(200.0, 0.0F, true);
+      if (hitResult.getType() == Type.MISS) {
+         Vec3 cameraPos = cameraEntity.getEyePosition();
+         Vec3 cameraDirection = cameraEntity.getLookAngle().normalize();
+         return cameraPos.add(cameraDirection.scale(300.0));
       } else {
-         return hitResult.m_82450_();
+         return hitResult.getLocation();
       }
    }
 
    public BlockHitResult performBlockRaycast(LivingEntity player, double maxDistance) {
-      Vec3 start = player.m_146892_();
-      Vec3 lookVec = player.m_20154_();
-      Vec3 end = start.m_82549_(lookVec.m_82490_(maxDistance));
-      return player.m_9236_().m_45547_(new ClipContext(start, end, Block.OUTLINE, Fluid.NONE, player));
+      Vec3 start = player.getEyePosition();
+      Vec3 lookVec = player.getLookAngle();
+      Vec3 end = start.add(lookVec.scale(maxDistance));
+      return player.level().clip(new ClipContext(start, end, Block.OUTLINE, Fluid.NONE, player));
    }
 
    public void addHitParticles(Entity target) {
-      Vec3 offset = new Vec3(target.m_20182_().f_82479_, target.m_20191_().m_82399_().f_82480_, target.m_20182_().f_82481_);
+      Vec3 offset = new Vec3(target.position().x, target.getBoundingBox().getCenter().y, target.position().z);
 
       for (int i = 0; i < 40; i++) {
-         double velocityX = this.f_19796_.m_188500_() * 4.3 - 1.0;
-         double velocityY = this.f_19796_.m_188500_() * 4.3 - 1.0;
-         double velocityZ = this.f_19796_.m_188500_() * 4.3 - 1.0;
-         this.m_9236_()
-            .m_6485_((ParticleOptions)PomkotsMechs.SPARK.get(), true, offset.m_7096_(), offset.m_7098_(), offset.m_7094_(), velocityX, velocityY, velocityZ);
+         double velocityX = this.random.nextDouble() * 4.3 - 1.0;
+         double velocityY = this.random.nextDouble() * 4.3 - 1.0;
+         double velocityZ = this.random.nextDouble() * 4.3 - 1.0;
+         this.level()
+            .addAlwaysVisibleParticle((ParticleOptions)PomkotsMechs.SPARK.get(), true, offset.x(), offset.y(), offset.z(), velocityX, velocityY, velocityZ);
       }
    }
 
@@ -1038,7 +1038,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    @Override
-   protected float m_274460_() {
+   protected float getFlyingSpeed() {
       return this.actionController.isBoost() ? 0.4F * this.getSpeedModifier() : 0.2F * this.getSpeedModifier();
    }
 
@@ -1051,7 +1051,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    protected float getHorizontalBoostAcceleration() {
       if (this.noHorizontalBoost()) {
          return 5.7F * this.getSpeedModifier() * 1.0F;
-      } else if (this.m_20096_()) {
+      } else if (this.onGround()) {
          return 5.7F * this.getSpeedModifier() * this.getSpeedModifierEvasion();
       } else {
          return this.isHovering()
@@ -1061,7 +1061,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    public boolean noHorizontalBoost() {
-      return this.getBooster().m_41619_();
+      return this.getBooster().isEmpty();
    }
 
    @Override
@@ -1075,7 +1075,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    @Override
-   public double m_6048_() {
+   public double getPassengersRidingOffset() {
       return 3.75;
    }
 
@@ -1087,7 +1087,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
          && !this.actionController.getAction(9).isInAction()
          && !this.isGliding()) {
          if (this.noHorizontalBoost()) {
-            if (this.m_20096_()) {
+            if (this.onGround()) {
                this.actionController.getAction(0).startAction();
                this.startEvasion();
             }
@@ -1109,13 +1109,13 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
          if (this.forwardIntention == 0.0F && this.sidewayIntention == 0.0F) {
             vel = new Vec3(0.0, 0.0, 1.0);
          } else {
-            vel = new Vec3(this.sidewayIntention, 0.0, this.forwardIntention).m_82541_();
+            vel = new Vec3(this.sidewayIntention, 0.0, this.forwardIntention).normalize();
          }
 
-         vel = vel.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+         vel = vel.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
          float distance = this.getHorizontalBoostAcceleration() * modifier;
-         vel = vel.m_82490_(distance);
-         this.m_5997_(vel.f_82479_, vel.f_82480_, vel.f_82481_);
+         vel = vel.scale(distance);
+         this.push(vel.x, vel.y, vel.z);
       }
    }
 
@@ -1124,14 +1124,14 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       if (this.actionController.getAction(10).isInAction()) {
          if (this.actionController.getAction(10).isOnStart() && this.isClientSide()) {
             Vec3 muzzlPos = new Vec3(0.0, 3.4, -4.0);
-            muzzlPos = this.m_20182_().m_82549_(muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())));
-            int targetId = this.m_19879_();
+            muzzlPos = this.position().add(muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot())));
+            int targetId = this.getId();
 
             for (int i = 0; i < 20; i++) {
-               double px = muzzlPos.f_82479_ + (this.m_9236_().f_46441_.m_188500_() - 0.5) * 3.0;
-               double py = muzzlPos.f_82480_ + this.m_9236_().f_46441_.m_188500_() * 3.0;
-               double pz = muzzlPos.f_82481_ + (this.m_9236_().f_46441_.m_188500_() - 0.5) * 3.0;
-               this.m_9236_().m_7106_((ParticleOptions)PomkotsMechs.SPIRAL.get(), px, py, pz, targetId, 0.0, 0.0);
+               double px = muzzlPos.x + (this.level().random.nextDouble() - 0.5) * 3.0;
+               double py = muzzlPos.y + this.level().random.nextDouble() * 3.0;
+               double pz = muzzlPos.z + (this.level().random.nextDouble() - 0.5) * 3.0;
+               this.level().addParticle((ParticleOptions)PomkotsMechs.SPIRAL.get(), px, py, pz, targetId, 0.0, 0.0);
             }
          }
 
@@ -1139,21 +1139,21 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             this.setSuperBoost(true);
          }
       } else {
-         if (!this.m_20096_()) {
+         if (!this.onGround()) {
             if (this.actionController.getAction(9).isCharging()) {
-               Vec3 delta = this.m_20184_();
+               Vec3 delta = this.getDeltaMovement();
                if (this.isServerSide()) {
-                  this.m_20334_(delta.f_82479_, 0.0, delta.f_82481_);
+                  this.setDeltaMovement(delta.x, 0.0, delta.z);
                }
             } else if (this.actionController.getAction(9).isOnFire()) {
                if (driverInput.isEvasionPressed()) {
                   this.actionController.getAction(0).startAction();
                   this.startEvasion(2.0F);
                   if (this.isServerSide()) {
-                     this.m_5997_(0.0, 1.5, 0.0);
+                     this.push(0.0, 1.5, 0.0);
                   }
                } else if (this.isServerSide()) {
-                  this.m_5997_(0.0, 2.0, 0.0);
+                  this.push(0.0, 2.0, 0.0);
                }
 
                if (this.isClientSide()) {
@@ -1165,24 +1165,24 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                && this.isTouchingWallSimple()
                && !this.actionController.isInActionAll()) {
                this.actionController.getAction(9).startAction();
-            } else if (driverInput.isJumpPressed() && !this.getBooster().m_41619_()) {
+            } else if (driverInput.isJumpPressed() && !this.getBooster().isEmpty()) {
                if (!this.tryVerticalBoost() && this.isServerSide()) {
-                  Vec3 delta = this.m_20184_();
-                  if (this.isGliding() && delta.f_82480_ < 0.0) {
-                     this.m_20334_(delta.f_82479_, -0.2, delta.f_82481_);
+                  Vec3 delta = this.getDeltaMovement();
+                  if (this.isGliding() && delta.y < 0.0) {
+                     this.setDeltaMovement(delta.x, -0.2, delta.z);
                   } else {
-                     this.m_5997_(0.0, -0.17640000343322754, 0.0);
+                     this.push(0.0, -0.17640000343322754, 0.0);
                   }
                }
             } else if (this.isServerSide()) {
                if (this.isHovering()) {
                   this.handleHovering();
                } else if (!this.isBoundToRail()) {
-                  Vec3 delta = this.m_20184_();
-                  if (this.isGliding() && delta.f_82480_ < 0.0) {
-                     this.m_20334_(delta.f_82479_, -0.2, delta.f_82481_);
+                  Vec3 delta = this.getDeltaMovement();
+                  if (this.isGliding() && delta.y < 0.0) {
+                     this.setDeltaMovement(delta.x, -0.2, delta.z);
                   } else {
-                     this.m_5997_(0.0, -0.17640000343322754, 0.0);
+                     this.push(0.0, -0.17640000343322754, 0.0);
                   }
                }
             }
@@ -1192,12 +1192,12 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             }
 
             if (this.isServerSide()) {
-               this.m_20242_(false);
+               this.setNoGravity(false);
                if (this.isGliding()) {
-                  if (this.getExtension1Weapon().m_41720_() instanceof GliderUnitItem glider1) {
-                     glider1.endUsing(this.m_9236_(), this.getExtension1Weapon(), this);
-                  } else if (this.getExtension2Weapon().m_41720_() instanceof GliderUnitItem glider2) {
-                     glider2.endUsing(this.m_9236_(), this.getExtension2Weapon(), this);
+                  if (this.getExtension1Weapon().getItem() instanceof GliderUnitItem glider1) {
+                     glider1.endUsing(this.level(), this.getExtension1Weapon(), this);
+                  } else if (this.getExtension2Weapon().getItem() instanceof GliderUnitItem glider2) {
+                     glider2.endUsing(this.level(), this.getExtension2Weapon(), this);
                   }
 
                   this.setGliding(false);
@@ -1208,45 +1208,45 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    public void spawnJumpParticles() {
-      Vec3 pos = this.m_20182_();
-      RandomSource random = this.m_217043_();
-      double baseY = this.m_20186_() - 0.1;
+      Vec3 pos = this.position();
+      RandomSource random = this.getRandom();
+      double baseY = this.getY() - 0.1;
 
       for (int i = 0; i < 10; i++) {
-         double dx = random.m_188500_() - 0.5;
-         double dz = random.m_188500_() - 0.5;
-         double vy = random.m_188500_() * 0.2 + 0.1;
-         this.m_9236_().m_7107_((ParticleOptions)PomkotsMechs.SPARK.get(), pos.f_82479_ + dx, baseY, pos.f_82481_ + dz, 0.0, vy, 0.0);
+         double dx = random.nextDouble() - 0.5;
+         double dz = random.nextDouble() - 0.5;
+         double vy = random.nextDouble() * 0.2 + 0.1;
+         this.level().addAlwaysVisibleParticle((ParticleOptions)PomkotsMechs.SPARK.get(), pos.x + dx, baseY, pos.z + dz, 0.0, vy, 0.0);
       }
 
-      BlockState dirt = Blocks.f_50493_.m_49966_();
+      BlockState dirt = Blocks.DIRT.defaultBlockState();
 
       for (int i = 0; i < 30; i++) {
-         double dx = random.m_188500_() - 0.5;
-         double dz = random.m_188500_() - 0.5;
-         double vy = random.m_188500_() * 0.2 + 0.1;
-         this.m_9236_().m_7106_(new BlockParticleOption(ParticleTypes.f_123794_, dirt), pos.f_82479_ + dx, baseY, pos.f_82481_ + dz, 0.0, vy, 0.0);
+         double dx = random.nextDouble() - 0.5;
+         double dz = random.nextDouble() - 0.5;
+         double vy = random.nextDouble() * 0.2 + 0.1;
+         this.level().addParticle(new BlockParticleOption(ParticleTypes.BLOCK, dirt), pos.x + dx, baseY, pos.z + dz, 0.0, vy, 0.0);
       }
    }
 
    private boolean isTouchingWallSimple() {
-      Level level = this.m_9236_();
-      AABB box = this.m_20191_().m_82400_(0.3);
-      return !level.m_45756_(this, box);
+      Level level = this.level();
+      AABB box = this.getBoundingBox().inflate(0.3);
+      return !level.noCollision(this, box);
    }
 
    public Pmvc01Entity.WallSide getTouchingWallSide(double checkDistance) {
-      Level level = this.m_9236_();
-      AABB box = this.m_20191_();
-      float yawRad = (float)Math.toRadians(this.m_146908_());
+      Level level = this.level();
+      AABB box = this.getBoundingBox();
+      float yawRad = (float)Math.toRadians(this.getYRot());
       double forwardX = -Math.sin(yawRad);
       double forwardZ = Math.cos(yawRad);
       double rightX = Math.cos(yawRad);
       double rightZ = Math.sin(yawRad);
-      boolean front = !level.m_45756_(this, box.m_82386_(forwardX * checkDistance, 0.0, forwardZ * checkDistance));
-      boolean back = !level.m_45756_(this, box.m_82386_(-forwardX * checkDistance, 0.0, -forwardZ * checkDistance));
-      boolean right = !level.m_45756_(this, box.m_82386_(rightX * checkDistance, 0.0, rightZ * checkDistance));
-      boolean left = !level.m_45756_(this, box.m_82386_(-rightX * checkDistance, 0.0, -rightZ * checkDistance));
+      boolean front = !level.noCollision(this, box.move(forwardX * checkDistance, 0.0, forwardZ * checkDistance));
+      boolean back = !level.noCollision(this, box.move(-forwardX * checkDistance, 0.0, -forwardZ * checkDistance));
+      boolean right = !level.noCollision(this, box.move(rightX * checkDistance, 0.0, rightZ * checkDistance));
+      boolean left = !level.noCollision(this, box.move(-rightX * checkDistance, 0.0, -rightZ * checkDistance));
       if (front) {
          return Pmvc01Entity.WallSide.FRONT;
       } else if (right) {
@@ -1264,11 +1264,11 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
          return false;
       }
 
-      if (this.useEnergy(this.getEnergyConsumeVertical()) && this.isServerSide() && this.m_20184_().m_7098_() < this.getVerticalBoostMaxSpeed()) {
+      if (this.useEnergy(this.getEnergyConsumeVertical()) && this.isServerSide() && this.getDeltaMovement().y() < this.getVerticalBoostMaxSpeed()) {
          if (this.isHovering) {
-            this.m_5997_(0.0, this.getVerticalBoostAcceleration() * 2.0F, 0.0);
+            this.push(0.0, this.getVerticalBoostAcceleration() * 2.0F, 0.0);
          } else {
-            this.m_5997_(0.0, this.getVerticalBoostAcceleration(), 0.0);
+            this.push(0.0, this.getVerticalBoostAcceleration(), 0.0);
          }
 
          return true;
@@ -1284,26 +1284,26 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    private void handleHovering() {
       float distanceToGround = this.getDistanceToGround();
       if (distanceToGround <= 3.0F) {
-         Vec3 velocity = this.m_20184_();
+         Vec3 velocity = this.getDeltaMovement();
          double upwardForce = (3.0F - distanceToGround) * 0.1;
          if (this.isServerSide()) {
-            this.m_20334_(velocity.f_82479_, velocity.f_82480_ + upwardForce, velocity.f_82481_);
+            this.setDeltaMovement(velocity.x, velocity.y + upwardForce, velocity.z);
          }
       } else if (distanceToGround > 8.0F && this.isServerSide()) {
-         this.m_5997_(0.0, -0.17640000343322754, 0.0);
+         this.push(0.0, -0.17640000343322754, 0.0);
       }
    }
 
    private float getDistanceToGround() {
-      Level world = this.m_9236_();
-      double entityY = this.m_20186_();
+      Level world = this.level();
+      double entityY = this.getY();
 
       for (int i = 0; i < 10; i++) {
-         BlockPos checkPos = new BlockPos((int)this.m_20185_(), (int)Math.floor(entityY - i), (int)this.m_20189_());
-         BlockState blockState = world.m_8055_(checkPos);
-         if (!blockState.m_60795_()
-            && (blockState.m_280296_() || blockState.m_60819_().m_205070_(FluidTags.f_13131_) || blockState.m_60819_().m_205070_(FluidTags.f_13132_))) {
-            double groundY = checkPos.m_123342_() + 1.0;
+         BlockPos checkPos = new BlockPos((int)this.getX(), (int)Math.floor(entityY - i), (int)this.getZ());
+         BlockState blockState = world.getBlockState(checkPos);
+         if (!blockState.isAir()
+            && (blockState.isSolid() || blockState.getFluidState().is(FluidTags.WATER) || blockState.getFluidState().is(FluidTags.LAVA))) {
+            double groundY = checkPos.getY() + 1.0;
             return (float)(entityY - groundY);
          }
       }
@@ -1356,11 +1356,11 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
    @Override
    public int getMaxEnergy() {
-      return (Integer)this.f_19804_.m_135370_(MAX_ENERGY);
+      return (Integer)this.entityData.get(MAX_ENERGY);
    }
 
    protected boolean isDriverCreativeMode() {
-      return this.getDrivingPassenger() instanceof Player p && p.m_150110_().f_35937_;
+      return this.getDrivingPassenger() instanceof Player p && p.getAbilities().instabuild;
    }
 
    protected boolean consumeFuel() {
@@ -1375,10 +1375,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
          }
 
          ItemStack fuels = this.getFuelFromInventory();
-         if (fuels.m_41613_() > 0) {
-            if (this.getGeneratorFromInventory().m_41720_() instanceof BasePartsItem.Generator gen) {
+         if (fuels.getCount() > 0) {
+            if (this.getGeneratorFromInventory().getItem() instanceof BasePartsItem.Generator gen) {
                this.fuel = (int)this.getWorkSecPerFuel() * 20 * 2;
-               fuels.m_41774_(1);
+               fuels.shrink(1);
                return true;
             } else {
                return false;
@@ -1394,14 +1394,14 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    private void syncFuels() {
       int maxFuel = 0;
       int nowFuel = 0;
-      if (this.getGeneratorFromInventory().m_41720_() instanceof BasePartsItem.Generator gen) {
+      if (this.getGeneratorFromInventory().getItem() instanceof BasePartsItem.Generator gen) {
          int tpf = (int)this.getWorkSecPerFuel() * 20 * 2;
-         maxFuel = tpf * this.getFuelFromInventory().m_41741_();
-         nowFuel = tpf * this.getFuelFromInventory().m_41613_() + this.fuel;
+         maxFuel = tpf * this.getFuelFromInventory().getMaxStackSize();
+         nowFuel = tpf * this.getFuelFromInventory().getCount() + this.fuel;
       }
 
-      this.f_19804_.m_135381_(FUEL_MAX, maxFuel);
-      this.f_19804_.m_135381_(FUEL_NOW, nowFuel);
+      this.entityData.set(FUEL_MAX, maxFuel);
+      this.entityData.set(FUEL_NOW, nowFuel);
    }
 
    @Override
@@ -1410,7 +1410,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
          return false;
       }
 
-      if (this.isGattai() && this.m_20202_() instanceof Pmb99Entity pmb99) {
+      if (this.isGattai() && this.getVehicle() instanceof Pmb99Entity pmb99) {
          return pmb99.shouldLockMulti(driverInput);
       }
 
@@ -1435,18 +1435,18 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    public static boolean isMultiLockEnabledWeapon(ItemStack stack) {
-      if (stack.m_41619_()) {
+      if (stack.isEmpty()) {
          return false;
       } else {
-         return stack.m_41720_() instanceof BasePartsItem.Weapon w ? w.maxMultiLockNum() > 0 : false;
+         return stack.getItem() instanceof BasePartsItem.Weapon w ? w.maxMultiLockNum() > 0 : false;
       }
    }
 
    public static int getMultiLockTargetNum(ItemStack stack) {
-      if (stack.m_41619_()) {
+      if (stack.isEmpty()) {
          return 0;
       } else {
-         return stack.m_41720_() instanceof BasePartsItem.Weapon w ? w.maxMultiLockNum() : 0;
+         return stack.getItem() instanceof BasePartsItem.Weapon w ? w.maxMultiLockNum() : 0;
       }
    }
 
@@ -1461,8 +1461,8 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    private boolean hasSoftLockCircuit() {
-      Item i1 = this.getExtension1Weapon().m_41720_();
-      Item i2 = this.getExtension2Weapon().m_41720_();
+      Item i1 = this.getExtension1Weapon().getItem();
+      Item i2 = this.getExtension2Weapon().getItem();
       return i1 instanceof CircuitSoftLockItem || i2 instanceof CircuitSoftLockItem;
    }
 
@@ -1472,8 +1472,8 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    private boolean hasHardLockCircuit() {
-      Item i1 = this.getExtension1Weapon().m_41720_();
-      Item i2 = this.getExtension2Weapon().m_41720_();
+      Item i1 = this.getExtension1Weapon().getItem();
+      Item i2 = this.getExtension2Weapon().getItem();
       return i1 instanceof CircuitHardLockItem || i2 instanceof CircuitHardLockItem;
    }
 
@@ -1497,7 +1497,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                               .thenLoop("animation." + this.getMechName() + ".z_gattai_02")
                         );
                      } else {
-                        if (this.m_20202_() instanceof Pmb99Entity) {
+                        if (this.getVehicle() instanceof Pmb99Entity) {
                            event.getController().forceAnimationReset();
                            return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".z_gattai_03"));
                         }
@@ -1578,7 +1578,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                            return PlayState.CONTINUE;
                         }
                      } else {
-                        if (driverInput != null && driverInput.isJumpPressed() && this.isInAirInternal() && !this.getBooster().m_41619_()) {
+                        if (driverInput != null && driverInput.isJumpPressed() && this.isInAirInternal() && !this.getBooster().isEmpty()) {
                            this.playSoundEffectWithFade("boost", (SoundEvent)PomkotsMechs.SE_BOOST.get(), 0.6F, 40, 10);
                            return event.setAndContinue(RawAnimation.begin().thenPlay("animation." + this.getMechName() + ".booster_vertical"));
                         }
@@ -1588,7 +1588,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                            return PlayState.STOP;
                         }
 
-                        if (!this.m_20096_() && this.inAirTicks >= 10) {
+                        if (!this.onGround() && this.inAirTicks >= 10) {
                            this.stopSoundEffectWithFade("dash");
                         } else {
                            this.playSoundEffectWithFade("dash", (SoundEvent)PomkotsMechs.SE_DASH.get(), 0.6F, 20, 10);
@@ -1623,7 +1623,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
                   if (this.actionController.getAction(0).isInAction()) {
                      if (this.actionController.getAction(0).isOnStart()) {
-                        if (this.getBooster() != null && !this.getBooster().m_41619_()) {
+                        if (this.getBooster() != null && !this.getBooster().isEmpty()) {
                            event.getController().forceAnimationReset();
                            if (this.forwardIntention > 0.0F) {
                               return event.setAndContinue(RawAnimation.begin().thenPlay("animation." + this.getMechName() + ".booster_quick"));
@@ -1651,7 +1651,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    public boolean isGattai() {
-      return this.m_20202_() instanceof Pmb99Entity;
+      return this.getVehicle() instanceof Pmb99Entity;
    }
 
    @Override
@@ -1682,11 +1682,11 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
          return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".bindrail"));
       } else if (event.isMoving()) {
-         if (this.isBoundToRail() && this.m_20184_().m_82553_() > 2.0) {
-            Vec3 legPos1 = new Vec3(-1.0, 0.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())).m_82549_(this.m_20182_());
-            Vec3 legPos2 = new Vec3(1.0, 0.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())).m_82549_(this.m_20182_());
-            ParticleUtil.addSparkParticlesSmall(legPos1, this.m_9236_());
-            ParticleUtil.addSparkParticlesSmall(legPos2, this.m_9236_());
+         if (this.isBoundToRail() && this.getDeltaMovement().length() > 2.0) {
+            Vec3 legPos1 = new Vec3(-1.0, 0.0, -1.0).yRot((float)Math.toRadians(-1.0 * this.getYRot())).add(this.position());
+            Vec3 legPos2 = new Vec3(1.0, 0.0, -1.0).yRot((float)Math.toRadians(-1.0 * this.getYRot())).add(this.position());
+            ParticleUtil.addSparkParticlesSmall(legPos1, this.level());
+            ParticleUtil.addSparkParticlesSmall(legPos2, this.level());
          }
 
          if (this.actionController.getAction(0).isInAction()) {
@@ -1730,10 +1730,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       } else if (this.justLanded((Entity)event.getAnimatable())) {
          event.getController().forceAnimationReset();
          return event.setAndContinue(RawAnimation.begin().thenPlay("animation." + this.getMechName() + ".onground"));
-      } else if (((PomkotsVehicleBase)event.getAnimatable()).m_20096_() || this.isBoundToRail() || this.actionController.getAction(9).isInAction()) {
+      } else if (((PomkotsVehicleBase)event.getAnimatable()).onGround() || this.isBoundToRail() || this.actionController.getAction(9).isInAction()) {
          return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".nop"));
       } else {
-         return event.isMoving() && !((PomkotsVehicleBase)event.getAnimatable()).isBoost() && this.inAirTicks < 5 && this.m_20184_().f_82480_ <= 0.0
+         return event.isMoving() && !((PomkotsVehicleBase)event.getAnimatable()).isBoost() && this.inAirTicks < 5 && this.getDeltaMovement().y <= 0.0
             ? event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".nop"))
             : event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + this.getMechName() + ".flylegs"));
       }
@@ -1741,11 +1741,11 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
    @Override
    protected boolean justLanded(Entity ent) {
-      return this.m_20096_() && !this.onGroundPrev && this.inAirTicks > 5;
+      return this.onGround() && !this.onGroundPrev && this.inAirTicks > 5;
    }
 
    private boolean isInAirInternal() {
-      return this.m_20068_() || !this.m_20096_() && this.inAirTicks > 5;
+      return this.isNoGravity() || !this.onGround() && this.inAirTicks > 5;
    }
 
    @Override
@@ -1936,47 +1936,47 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    public void spawnReloadParticles(Vec3 spawnLocalPos, boolean isRightArm) {
-      Vec3 lookVec = this.m_20154_();
-      Vec3 origin = spawnLocalPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-      origin = this.m_20182_().m_82549_(origin);
-      Vec3 right = lookVec.m_82537_(new Vec3(0.0, 1.0, 0.0)).m_82541_().m_82490_(1.5);
+      Vec3 lookVec = this.getLookAngle();
+      Vec3 origin = spawnLocalPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+      origin = this.position().add(origin);
+      Vec3 right = lookVec.cross(new Vec3(0.0, 1.0, 0.0)).normalize().scale(1.5);
       if (!isRightArm) {
-         right = right.m_82490_(-1.0);
+         right = right.scale(-1.0);
       }
 
-      RandomSource rand = this.m_217043_();
+      RandomSource rand = this.getRandom();
 
       for (int i = 0; i < 6; i++) {
-         double vx = (rand.m_188500_() - 0.5) * 0.05;
-         double vy = 0.1 + rand.m_188500_() * 0.1;
-         double vz = (rand.m_188500_() - 0.5) * 0.05;
-         this.m_9236_().m_6485_(ParticleTypes.f_123762_, true, origin.m_7096_(), origin.m_7098_(), origin.m_7094_(), vx, vy, vz);
+         double vx = (rand.nextDouble() - 0.5) * 0.05;
+         double vy = 0.1 + rand.nextDouble() * 0.1;
+         double vz = (rand.nextDouble() - 0.5) * 0.05;
+         this.level().addAlwaysVisibleParticle(ParticleTypes.SMOKE, true, origin.x(), origin.y(), origin.z(), vx, vy, vz);
       }
 
       for (int i = 0; i < 4; i++) {
-         Vec3 dir = right.m_82490_(0.3 + rand.m_188500_() * 0.2);
-         this.m_9236_()
-            .m_6485_(
+         Vec3 dir = right.scale(0.3 + rand.nextDouble() * 0.2);
+         this.level()
+            .addAlwaysVisibleParticle(
                (ParticleOptions)PomkotsMechs.SPARK.get(),
                true,
-               origin.m_7096_(),
-               origin.m_7098_(),
-               origin.m_7094_(),
-               dir.f_82479_,
-               0.1 + rand.m_188500_() * 0.1,
-               dir.f_82481_
+               origin.x(),
+               origin.y(),
+               origin.z(),
+               dir.x,
+               0.1 + rand.nextDouble() * 0.1,
+               dir.z
             );
       }
 
       for (int i = 0; i < 1; i++) {
-         Vec3 dir = right.m_82490_(0.3 + rand.m_188500_() * 0.2);
+         Vec3 dir = right.scale(0.3 + rand.nextDouble() * 0.2);
          SimpleParticleType partType = (SimpleParticleType)PomkotsMechs.MAGAZINE_LEFT.get();
          if (isRightArm) {
             partType = (SimpleParticleType)PomkotsMechs.MAGAZINE_RIGHT.get();
          }
 
-         this.m_9236_()
-            .m_6485_(partType, true, origin.m_7096_(), origin.m_7098_(), origin.m_7094_(), dir.f_82479_ * 3.0, 0.1 + rand.m_188500_() * 0.2, dir.f_82481_ * 3.0);
+         this.level()
+            .addAlwaysVisibleParticle(partType, true, origin.x(), origin.y(), origin.z(), dir.x * 3.0, 0.1 + rand.nextDouble() * 0.2, dir.z * 3.0);
       }
    }
 
@@ -1991,10 +1991,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_JUMP_EVENT.get());
       } else if ("se_gashan".equals(sound)) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_GASHAN.get());
-         Vec3 legPos1 = new Vec3(-1.0, 0.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())).m_82549_(this.m_20182_());
-         Vec3 legPos2 = new Vec3(1.0, 0.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_())).m_82549_(this.m_20182_());
-         ParticleUtil.addSparkParticles(legPos1, this.m_9236_());
-         ParticleUtil.addSparkParticles(legPos2, this.m_9236_());
+         Vec3 legPos1 = new Vec3(-1.0, 0.0, -1.0).yRot((float)Math.toRadians(-1.0 * this.getYRot())).add(this.position());
+         Vec3 legPos2 = new Vec3(1.0, 0.0, -1.0).yRot((float)Math.toRadians(-1.0 * this.getYRot())).add(this.position());
+         ParticleUtil.addSparkParticles(legPos1, this.level());
+         ParticleUtil.addSparkParticles(legPos2, this.level());
       } else if ("se_step".equals(sound)) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_STEP.get(), 0.1F);
          this.spawnMovingParticles(5, 0.8F, false);
@@ -2026,71 +2026,71 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    protected ItemStack getHeadPartsFromInventory() {
-      return this.m_8020_(0);
+      return this.getItem(0);
    }
 
    protected ItemStack getBodyPartsFromInventory() {
-      return this.m_8020_(1);
+      return this.getItem(1);
    }
 
    protected ItemStack getArmPartsFromInventory() {
-      return this.m_8020_(2);
+      return this.getItem(2);
    }
 
    protected ItemStack getLegsPartsFromInventory() {
-      return this.m_8020_(3);
+      return this.getItem(3);
    }
 
    protected ItemStack getRightArmWeaponFromInventory() {
-      return this.m_8020_(6);
+      return this.getItem(6);
    }
 
    protected ItemStack getLeftArmWeaponFromInventory() {
-      return this.m_8020_(7);
+      return this.getItem(7);
    }
 
    protected ItemStack getRightShoulderWeaponFromInventory() {
-      return this.m_8020_(8);
+      return this.getItem(8);
    }
 
    protected ItemStack getLeftShoulderWeaponFromInventory() {
-      return this.m_8020_(9);
+      return this.getItem(9);
    }
 
    protected ItemStack getGeneratorFromInventory() {
-      return this.m_8020_(4);
+      return this.getItem(4);
    }
 
    protected ItemStack getBoosterFromInventory() {
-      return this.m_8020_(5);
+      return this.getItem(5);
    }
 
    protected ItemStack getExtension1FromInventory() {
-      return this.m_8020_(10);
+      return this.getItem(10);
    }
 
    protected ItemStack getExtension2FromInventory() {
-      return this.m_8020_(11);
+      return this.getItem(11);
    }
 
    protected ItemStack getAmmoRAFromInventory() {
-      return this.m_8020_(12);
+      return this.getItem(12);
    }
 
    protected ItemStack getAmmoLAFromInventory() {
-      return this.m_8020_(13);
+      return this.getItem(13);
    }
 
    protected ItemStack getAmmoRSFromInventory() {
-      return this.m_8020_(14);
+      return this.getItem(14);
    }
 
    protected ItemStack getAmmoLSFromInventory() {
-      return this.m_8020_(15);
+      return this.getItem(15);
    }
 
    protected ItemStack getFuelFromInventory() {
-      return this.m_8020_(16);
+      return this.getItem(16);
    }
 
    public boolean isShouldSave() {
@@ -2101,82 +2101,82 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       this.shouldSave = shouldSave;
    }
 
-   public boolean m_142391_() {
+   public boolean shouldBeSaved() {
       return this.shouldSave;
    }
 
-   public void m_7380_(CompoundTag compound) {
-      super.m_7380_(compound);
+   public void addAdditionalSaveData(CompoundTag compound) {
+      super.addAdditionalSaveData(compound);
       this.addChestVehicleSaveData(compound);
       this.addAmmoSaveData(compound);
-      compound.m_128405_(PomkotsMechs.nbtName("TextureColor"), this.getTextureColor());
-      compound.m_128405_(PomkotsMechs.nbtName("FuelNow"), this.fuel);
-      compound.m_128379_(PomkotsMechs.nbtName("IsBroken"), this.isBroken());
-      compound.m_128379_(PomkotsMechs.nbtName("IsLocked"), this.isLocked());
+      compound.putInt(PomkotsMechs.nbtName("TextureColor"), this.getTextureColor());
+      compound.putInt(PomkotsMechs.nbtName("FuelNow"), this.fuel);
+      compound.putBoolean(PomkotsMechs.nbtName("IsBroken"), this.isBroken());
+      compound.putBoolean(PomkotsMechs.nbtName("IsLocked"), this.isLocked());
    }
 
    private void addChestVehicleSaveData(CompoundTag compoundTag) {
-      if (this.m_5743_() != null) {
-         compoundTag.m_128359_("LootTable", this.m_5743_().toString());
-         if (this.m_287233_() != 0L) {
-            compoundTag.m_128356_("LootTableSeed", this.m_287233_());
+      if (this.getLootTable() != null) {
+         compoundTag.putString("LootTable", this.getLootTable().toString());
+         if (this.getLootTableSeed() != 0L) {
+            compoundTag.putLong("LootTableSeed", this.getLootTableSeed());
          }
       } else {
-         ContainerHelper.m_18973_(compoundTag, this.getItemStacks());
+         ContainerHelper.saveAllItems(compoundTag, this.getItemStacks());
       }
    }
 
-   public void m_7378_(CompoundTag compound) {
-      super.m_7378_(compound);
+   public void readAdditionalSaveData(CompoundTag compound) {
+      super.readAdditionalSaveData(compound);
       this.readChestVehicleSaveData(compound);
-      this.setTextureColor(compound.m_128451_(PomkotsMechs.nbtName("TextureColor")));
+      this.setTextureColor(compound.getInt(PomkotsMechs.nbtName("TextureColor")));
       this.syncAllParameter2Client(true);
       this.readAmmoSaveData(compound);
-      this.fuel = compound.m_128451_(PomkotsMechs.nbtName("FuelNow"));
-      this.setBroken(compound.m_128471_(PomkotsMechs.nbtName("IsBroken")));
-      this.setLocked(compound.m_128471_(PomkotsMechs.nbtName("IsLocked")));
+      this.fuel = compound.getInt(PomkotsMechs.nbtName("FuelNow"));
+      this.setBroken(compound.getBoolean(PomkotsMechs.nbtName("IsBroken")));
+      this.setLocked(compound.getBoolean(PomkotsMechs.nbtName("IsLocked")));
    }
 
    void readChestVehicleSaveData(CompoundTag compoundTag) {
       this.clearItemStacks();
-      if (compoundTag.m_128425_("LootTable", 8)) {
-         this.setLootTable(new ResourceLocation(compoundTag.m_128461_("LootTable")));
-         this.setLootTableSeed(compoundTag.m_128454_("LootTableSeed"));
+      if (compoundTag.contains("LootTable", 8)) {
+         this.setLootTable(new ResourceLocation(compoundTag.getString("LootTable")));
+         this.setLootTableSeed(compoundTag.getLong("LootTableSeed"));
       } else {
-         ContainerHelper.m_18980_(compoundTag, this.getItemStacks());
+         ContainerHelper.loadAllItems(compoundTag, this.getItemStacks());
       }
    }
 
-   public void m_141960_(EntityInLevelCallback entityInLevelCallback) {
+   public void setLevelCallback(EntityInLevelCallback entityInLevelCallback) {
       Pmvc01Entity.EntityInLevelCallback2 hoge = new Pmvc01Entity.EntityInLevelCallback2(entityInLevelCallback, this);
-      super.m_141960_(hoge);
+      super.setLevelCallback(hoge);
    }
 
-   public void m_142687_(RemovalReason removalReason) {
-      if (!this.m_9236_().f_46443_ && removalReason.m_146965_() && removalReason != RemovalReason.DISCARDED) {
-         Containers.m_18998_(this.m_9236_(), this, this);
+   public void remove(RemovalReason removalReason) {
+      if (!this.level().isClientSide && removalReason.shouldDestroy() && removalReason != RemovalReason.DISCARDED) {
+         Containers.dropContents(this.level(), this, this);
       }
 
       if (this.blockPreviewEntity != null) {
-         this.blockPreviewEntity.m_146870_();
+         this.blockPreviewEntity.discard();
       }
 
       if (this.isServerSide() && this.havingEntity().isPresent()) {
-         Entity tgt = ((ServerLevel)this.m_9236_()).m_8791_(this.havingEntity().get());
-         if (tgt != null && tgt.m_6084_()) {
-            tgt.m_20242_(false);
+         Entity tgt = ((ServerLevel)this.level()).getEntity(this.havingEntity().get());
+         if (tgt != null && tgt.isAlive()) {
+            tgt.setNoGravity(false);
          }
 
          this.setHavingEntity(Optional.empty());
       }
 
-      super.m_142687_(removalReason);
+      super.remove(removalReason);
    }
 
    public boolean isLocked(Player player) {
       if (this.isLocked()) {
          if (this.isServerSide()) {
-            player.m_213846_(Utils.string2Component("{text.pomkotsmechs.messages.pmvc01.locked}"));
+            player.sendSystemMessage(Utils.string2Component("{text.pomkotsmechs.messages.pmvc01.locked}"));
          }
 
          return true;
@@ -2186,13 +2186,13 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    @Override
-   public InteractionResult m_6096_(Player player, InteractionHand interactionHand) {
-      ItemStack stack = player.m_21120_(interactionHand);
-      Level level = this.m_9236_();
-      if ((!stack.m_150930_((Item)PomkotsMechs.REPAIRKIT_ITEM.get()) || !this.canRepair(this))
-         && !stack.m_150930_((Item)PomkotsMechs.KEYCARD_ITEM.get())
-         && !stack.m_150930_((Item)PomkotsMechs.MECH_CAPSULE2_ITEM.get())) {
-         if (!this.m_7310_(player) || player.m_36341_()) {
+   public InteractionResult interact(Player player, InteractionHand interactionHand) {
+      ItemStack stack = player.getItemInHand(interactionHand);
+      Level level = this.level();
+      if ((!stack.is((Item)PomkotsMechs.REPAIRKIT_ITEM.get()) || !this.canRepair(this))
+         && !stack.is((Item)PomkotsMechs.KEYCARD_ITEM.get())
+         && !stack.is((Item)PomkotsMechs.MECH_CAPSULE2_ITEM.get())) {
+         if (!this.canAddPassenger(player) || player.isSecondaryUseActive()) {
             return InteractionResult.FAIL;
          }
 
@@ -2202,13 +2202,13 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
          if (this.isBroken()) {
             if (this.isServerSide()) {
-               player.m_213846_(Utils.string2Component("{text.pomkotsmechs.messages.pmvc01.broken}"));
+               player.sendSystemMessage(Utils.string2Component("{text.pomkotsmechs.messages.pmvc01.broken}"));
             }
 
             return InteractionResult.CONSUME;
          } else {
-            player.m_6858_(false);
-            InteractionResult res = super.m_6096_(player, interactionHand);
+            player.setSprinting(false);
+            InteractionResult res = super.interact(player, interactionHand);
             this.tickAllParts();
             if (this.isServerSide() && InteractionResult.SUCCESS.equals(res) && this.canWork(true)) {
                Utils.completeAdvancement(PomkotsMechs.id("pomkots_mechs/ride_the_mech"), player);
@@ -2222,79 +2222,79 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    public void healWithEffect(ServerLevel level, float amount) {
-      this.m_5634_(amount);
+      this.heal(amount);
       this.healEffect(level);
    }
 
    public void healEffect(ServerLevel level) {
       for (int i = 0; i < 5; i++) {
-         double dx = this.m_20185_() + (level.f_46441_.m_188500_() - 0.5) * this.m_20205_();
-         double dy = this.m_20186_() + level.f_46441_.m_188500_() * this.m_20206_();
-         double dz = this.m_20189_() + (level.f_46441_.m_188500_() - 0.5) * this.m_20205_();
-         level.m_8767_(ParticleTypes.f_123748_, dx, dy, dz, 1, 0.0, 0.1, 0.0, 0.1);
+         double dx = this.getX() + (level.random.nextDouble() - 0.5) * this.getBbWidth();
+         double dy = this.getY() + level.random.nextDouble() * this.getBbHeight();
+         double dz = this.getZ() + (level.random.nextDouble() - 0.5) * this.getBbWidth();
+         level.sendParticles(ParticleTypes.HAPPY_VILLAGER, dx, dy, dz, 1, 0.0, 0.1, 0.0, 0.1);
       }
    }
 
    public void repair() {
-      ItemStack repairKitItemStack = this.m_8020_(17);
-      if (this.m_9236_() instanceof ServerLevel serverLevel
+      ItemStack repairKitItemStack = this.getItem(17);
+      if (this.level() instanceof ServerLevel serverLevel
          && this.canRepair(this)
-         && repairKitItemStack.m_41720_() instanceof RepairKitItem
-         && repairKitItemStack.m_41613_() > 0) {
-         float healed = Math.min(this.m_21233_(), this.m_21223_() + 100.0F);
-         this.m_21153_(healed);
-         repairKitItemStack.m_41774_(1);
-         this.f_19804_.m_135381_(REPAIR_KIT_NUM, this.m_8020_(17).m_41613_());
+         && repairKitItemStack.getItem() instanceof RepairKitItem
+         && repairKitItemStack.getCount() > 0) {
+         float healed = Math.min(this.getMaxHealth(), this.getHealth() + 100.0F);
+         this.setHealth(healed);
+         repairKitItemStack.shrink(1);
+         this.entityData.set(REPAIR_KIT_NUM, this.getItem(17).getCount());
       }
 
       if (this.isClientSide() && this.canRepair(this) && this.getRepairKitNum() > 0) {
-         this.healEffectClient(this.m_9236_(), this);
+         this.healEffectClient(this.level(), this);
       }
    }
 
    protected boolean canRepair(LivingEntity target) {
-      return target.m_21233_() > target.m_21223_() && target instanceof Pmvc01Entity;
+      return target.getMaxHealth() > target.getHealth() && target instanceof Pmvc01Entity;
    }
 
    public void healEffectClient(Level level, LivingEntity target) {
       for (int i = 0; i < 30; i++) {
-         double dx = target.m_20185_() + (level.f_46441_.m_188500_() - 0.5) * target.m_20205_();
-         double dy = target.m_20186_() + level.f_46441_.m_188500_() * target.m_20206_();
-         double dz = target.m_20189_() + (level.f_46441_.m_188500_() - 0.5) * target.m_20205_();
-         level.m_6485_(ParticleTypes.f_123748_, true, dx, dy, dz, 0.0, 0.1, 0.0);
+         double dx = target.getX() + (level.random.nextDouble() - 0.5) * target.getBbWidth();
+         double dy = target.getY() + level.random.nextDouble() * target.getBbHeight();
+         double dz = target.getZ() + (level.random.nextDouble() - 0.5) * target.getBbWidth();
+         level.addAlwaysVisibleParticle(ParticleTypes.HAPPY_VILLAGER, true, dx, dy, dz, 0.0, 0.1, 0.0);
       }
 
-      this.playSoundPublic(SoundEvents.f_12275_);
+      this.playSoundPublic(SoundEvents.PLAYER_LEVELUP);
    }
 
    public void warpEffect(ServerLevel level) {
       for (int i = 0; i < 20; i++) {
-         double dx = this.m_20185_() + (level.f_46441_.m_188500_() - 0.5) * this.m_20205_();
-         double dy = this.m_20186_() + level.f_46441_.m_188500_() * this.m_20206_();
-         double dz = this.m_20189_() + (level.f_46441_.m_188500_() - 0.5) * this.m_20205_();
-         level.m_8767_(ParticleTypes.f_123810_, dx, dy, dz, 1, 0.0, 0.1, 0.0, 0.1);
-         level.m_8767_(ParticleTypes.f_123760_, dx, dy, dz, 1, 0.0, 0.1, 0.0, 0.1);
+         double dx = this.getX() + (level.random.nextDouble() - 0.5) * this.getBbWidth();
+         double dy = this.getY() + level.random.nextDouble() * this.getBbHeight();
+         double dz = this.getZ() + (level.random.nextDouble() - 0.5) * this.getBbWidth();
+         level.sendParticles(ParticleTypes.END_ROD, dx, dy, dz, 1, 0.0, 0.1, 0.0, 0.1);
+         level.sendParticles(ParticleTypes.PORTAL, dx, dy, dz, 1, 0.0, 0.1, 0.0, 0.1);
       }
 
-      level.m_5594_(null, this.m_20183_(), SoundEvents.f_11852_, SoundSource.PLAYERS, 0.5F, 1.2F);
+      level.playSound(null, this.blockPosition(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.5F, 1.2F);
    }
 
    @Override
-   public Vec3 m_7688_(LivingEntity passenger) {
+   public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
       if (passenger instanceof Player) {
          this.resetExtensionUnitStatus();
       }
 
-      return super.m_7688_(passenger);
+      return super.getDismountLocationForPassenger(passenger);
    }
 
    private InteractionResult interactWithContainerVehicle(Player player) {
-      player.m_5893_(this);
-      return !player.m_9236_().f_46443_ ? InteractionResult.CONSUME : InteractionResult.SUCCESS;
+      player.openMenu(this);
+      return !player.level().isClientSide ? InteractionResult.CONSUME : InteractionResult.SUCCESS;
    }
 
-   public void m_213583_(Player player) {
-      player.m_5893_(this);
+   public void openCustomInventoryScreen(Player player) {
+      player.openMenu(this);
    }
 
    public void setConsoleAccessor(MechWorkbenchBlockEntity ac) {
@@ -2302,8 +2302,8 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    @Nullable
-   public AbstractContainerMenu m_7208_(int i, Inventory inventory, Player player) {
-      if (this.lootTable != null && player.m_5833_()) {
+   public AbstractContainerMenu createMenu(int i, Inventory inventory, Player player) {
+      if (this.lootTable != null && player.isSpectator()) {
          return null;
       }
 
@@ -2311,22 +2311,22 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
          return null;
       }
 
-      this.unpackLootTable(inventory.f_35978_);
+      this.unpackLootTable(inventory.player);
       AbstractContainerMenu menu = null;
       ItemStack dataPad = this.getDatapadOfDriver(player);
       if (dataPad != null) {
          menu = new DataPadMenu(i, inventory, player, dataPad);
       } else {
          short mode = MechWorkbenchMenu.MODE_VIEW;
-         if (this.m_20197_().isEmpty()) {
+         if (this.getPassengers().isEmpty()) {
             mode = MechWorkbenchMenu.MODE_ASSEMBLE;
          }
 
          MechWorkbenchMenu mechMenu = new MechWorkbenchMenu(i, inventory, this, this, mode, this.consoleAccessor);
-         mechMenu.setEntityId(this.m_20148_().hashCode());
+         mechMenu.setEntityId(this.getUUID().hashCode());
          mechMenu.setTextureColor(this.getTextureColor());
          mechMenu.setMode(mode);
-         mechMenu.m_150429_();
+         mechMenu.sendAllDataToRemote();
          menu = mechMenu;
       }
 
@@ -2336,8 +2336,8 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
    private ItemStack getDatapadOfDriver(Player player) {
       if (player instanceof ServerPlayer serverPlayer && player.equals(this.getDrivingPassenger())) {
-         for (ItemStack stack : serverPlayer.m_150109_().f_35974_) {
-            if (stack.m_41720_() instanceof PomkotsDatapadItem) {
+         for (ItemStack stack : serverPlayer.getInventory().items) {
+            if (stack.getItem() instanceof PomkotsDatapadItem) {
                return stack;
             }
          }
@@ -2346,20 +2346,20 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       return null;
    }
 
-   public void m_6596_() {
+   public void setChanged() {
       this.syncAllParameter2Client();
       this.initializeAmmoManager(true);
    }
 
-   public boolean m_6542_(Player player) {
+   public boolean stillValid(Player player) {
       return this.isChestVehicleStillValid(player);
    }
 
    boolean isChestVehicleStillValid(Player player) {
-      return !this.m_213877_() && this.m_20182_().m_82509_(player.m_20182_(), 8.0);
+      return !this.isRemoved() && this.position().closerThan(player.position(), 8.0);
    }
 
-   public void m_6211_() {
+   public void clearContent() {
       this.clearChestVehicleContent();
    }
 
@@ -2369,37 +2369,37 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    void unpackChestVehicleLootTable(@Nullable Player player) {
-      MinecraftServer minecraftServer = this.m_9236_().m_7654_();
-      if (this.m_5743_() != null && minecraftServer != null) {
-         LootTable lootTable = minecraftServer.m_278653_().m_278676_(this.m_5743_());
+      MinecraftServer minecraftServer = this.level().getServer();
+      if (this.getLootTable() != null && minecraftServer != null) {
+         LootTable lootTable = minecraftServer.getLootData().getLootTable(this.getLootTable());
          if (player != null) {
-            CriteriaTriggers.f_10563_.m_54597_((ServerPlayer)player, this.m_5743_());
+            CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, this.getLootTable());
          }
 
          this.setLootTable((ResourceLocation)null);
          net.minecraft.world.level.storage.loot.LootParams.Builder builder = new net.minecraft.world.level.storage.loot.LootParams.Builder(
-               (ServerLevel)this.m_9236_()
+               (ServerLevel)this.level()
             )
-            .m_287286_(LootContextParams.f_81460_, this.m_20182_());
+            .withParameter(LootContextParams.ORIGIN, this.position());
          if (player != null) {
-            builder.m_287239_(player.m_36336_()).m_287286_(LootContextParams.f_81455_, player);
+            builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
          }
 
-         lootTable.m_287188_(this, builder.m_287235_(LootContextParamSets.f_81411_), this.m_287233_());
+         lootTable.fill(this, builder.create(LootContextParamSets.CHEST), this.getLootTableSeed());
       }
    }
 
-   public int m_6643_() {
+   public int getContainerSize() {
       return 82;
    }
 
-   public boolean m_7983_() {
+   public boolean isEmpty() {
       return this.isChestVehicleEmpty();
    }
 
    boolean isChestVehicleEmpty() {
       for (ItemStack itemStack : this.getItemStacks()) {
-         if (!itemStack.m_41619_()) {
+         if (!itemStack.isEmpty()) {
             return false;
          }
       }
@@ -2407,7 +2407,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       return true;
    }
 
-   public ItemStack m_8020_(int i) {
+   public ItemStack getItem(int i) {
       return this.getChestVehicleItem(i);
    }
 
@@ -2416,56 +2416,56 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       return (ItemStack)this.getItemStacks().get(i);
    }
 
-   public ItemStack m_7407_(int i, int j) {
+   public ItemStack removeItem(int i, int j) {
       return this.removeChestVehicleItem(i, j);
    }
 
    ItemStack removeChestVehicleItem(int i, int j) {
       this.unpackChestVehicleLootTable((Player)null);
-      return ContainerHelper.m_18969_(this.getItemStacks(), i, j);
+      return ContainerHelper.removeItem(this.getItemStacks(), i, j);
    }
 
-   public ItemStack m_8016_(int i) {
+   public ItemStack removeItemNoUpdate(int i) {
       return this.removeChestVehicleItemNoUpdate(i);
    }
 
    ItemStack removeChestVehicleItemNoUpdate(int i) {
       this.unpackChestVehicleLootTable((Player)null);
       ItemStack itemStack = (ItemStack)this.getItemStacks().get(i);
-      if (itemStack.m_41619_()) {
-         return ItemStack.f_41583_;
+      if (itemStack.isEmpty()) {
+         return ItemStack.EMPTY;
       }
 
-      this.getItemStacks().set(i, ItemStack.f_41583_);
+      this.getItemStacks().set(i, ItemStack.EMPTY);
       return itemStack;
    }
 
-   public void m_6836_(int i, ItemStack itemStack) {
+   public void setItem(int i, ItemStack itemStack) {
       this.setChestVehicleItem(i, itemStack);
    }
 
-   public SlotAccess m_141942_(int i) {
+   public SlotAccess getSlot(int i) {
       return this.getChestVehicleSlot(i);
    }
 
    SlotAccess getChestVehicleSlot(int i) {
-      return i >= 0 && i < this.m_6643_() ? new SlotAccess() {
-         public ItemStack m_142196_() {
+      return i >= 0 && i < this.getContainerSize() ? new SlotAccess() {
+         public ItemStack get() {
             return Pmvc01Entity.this.getChestVehicleItem(i);
          }
 
-         public boolean m_142104_(ItemStack itemStack) {
+         public boolean set(ItemStack itemStack) {
             Pmvc01Entity.this.setChestVehicleItem(i, itemStack);
             return true;
          }
-      } : SlotAccess.f_147290_;
+      } : SlotAccess.NULL;
    }
 
    void setChestVehicleItem(int i, ItemStack itemStack) {
       this.unpackChestVehicleLootTable((Player)null);
       this.getItemStacks().set(i, itemStack);
-      if (!itemStack.m_41619_() && itemStack.m_41613_() > this.m_6893_()) {
-         itemStack.m_41764_(this.m_6893_());
+      if (!itemStack.isEmpty() && itemStack.getCount() > this.getMaxStackSize()) {
+         itemStack.setCount(this.getMaxStackSize());
       }
    }
 
@@ -2473,11 +2473,11 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       this.unpackChestVehicleLootTable(player);
    }
 
-   public ResourceLocation m_5743_() {
+   public ResourceLocation getLootTable() {
       return this.lootTable;
    }
 
-   public long m_287233_() {
+   public long getLootTableSeed() {
       return this.lootTableSeed;
    }
 
@@ -2494,11 +2494,11 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    public void clearItemStacks() {
-      this.itemStacks = NonNullList.m_122780_(this.m_6643_(), ItemStack.f_41583_);
+      this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
    }
 
-   public void m_5785_(Player player) {
-      this.m_9236_().m_214171_(GameEvent.f_157802_, this.m_20182_(), Context.m_223717_(player));
+   public void stopOpen(Player player) {
+      this.level().gameEvent(GameEvent.CONTAINER_CLOSE, this.position(), Context.of(player));
    }
 
    protected void tickAmmos() {
@@ -2508,17 +2508,17 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    protected void addAmmoSaveData(CompoundTag compound) {
-      compound.m_128405_(PomkotsMechs.nbtName("BulletNum1"), this.ammoManagers.get(0).bulletNum);
-      compound.m_128405_(PomkotsMechs.nbtName("BulletNum2"), this.ammoManagers.get(1).bulletNum);
-      compound.m_128405_(PomkotsMechs.nbtName("BulletNum3"), this.ammoManagers.get(2).bulletNum);
-      compound.m_128405_(PomkotsMechs.nbtName("BulletNum4"), this.ammoManagers.get(3).bulletNum);
+      compound.putInt(PomkotsMechs.nbtName("BulletNum1"), this.ammoManagers.get(0).bulletNum);
+      compound.putInt(PomkotsMechs.nbtName("BulletNum2"), this.ammoManagers.get(1).bulletNum);
+      compound.putInt(PomkotsMechs.nbtName("BulletNum3"), this.ammoManagers.get(2).bulletNum);
+      compound.putInt(PomkotsMechs.nbtName("BulletNum4"), this.ammoManagers.get(3).bulletNum);
    }
 
    protected void readAmmoSaveData(CompoundTag compound) {
-      this.ammoManagers.get(0).bulletNum = compound.m_128451_(PomkotsMechs.nbtName("BulletNum1"));
-      this.ammoManagers.get(1).bulletNum = compound.m_128451_(PomkotsMechs.nbtName("BulletNum2"));
-      this.ammoManagers.get(2).bulletNum = compound.m_128451_(PomkotsMechs.nbtName("BulletNum3"));
-      this.ammoManagers.get(3).bulletNum = compound.m_128451_(PomkotsMechs.nbtName("BulletNum4"));
+      this.ammoManagers.get(0).bulletNum = compound.getInt(PomkotsMechs.nbtName("BulletNum1"));
+      this.ammoManagers.get(1).bulletNum = compound.getInt(PomkotsMechs.nbtName("BulletNum2"));
+      this.ammoManagers.get(2).bulletNum = compound.getInt(PomkotsMechs.nbtName("BulletNum3"));
+      this.ammoManagers.get(3).bulletNum = compound.getInt(PomkotsMechs.nbtName("BulletNum4"));
       this.initializeAmmoManager(false);
    }
 
@@ -2545,51 +2545,51 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    @Override
-   protected void m_8097_() {
-      super.m_8097_();
-      this.f_19804_.m_135372_(P_HEAD, ItemStack.f_41583_);
-      this.f_19804_.m_135372_(P_ARMS, ItemStack.f_41583_);
-      this.f_19804_.m_135372_(P_BODY, ItemStack.f_41583_);
-      this.f_19804_.m_135372_(P_LEGS, ItemStack.f_41583_);
-      this.f_19804_.m_135372_(P_GENERATOR, ItemStack.f_41583_);
-      this.f_19804_.m_135372_(P_BOOSTER, ItemStack.f_41583_);
-      this.f_19804_.m_135372_(W_RIGHT_ARM, ItemStack.f_41583_);
-      this.f_19804_.m_135372_(W_LEFT_ARM, ItemStack.f_41583_);
-      this.f_19804_.m_135372_(W_RIGHT_SHOULDER, ItemStack.f_41583_);
-      this.f_19804_.m_135372_(W_LEFT_SHOULDER, ItemStack.f_41583_);
-      this.f_19804_.m_135372_(W_EXTENSION1, ItemStack.f_41583_);
-      this.f_19804_.m_135372_(W_EXTENSION2, ItemStack.f_41583_);
-      this.f_19804_.m_135372_(DURABILITY, 0);
-      this.f_19804_.m_135372_(WEIGHT, 0);
-      this.f_19804_.m_135372_(MAX_WEIGHT, 0);
-      this.f_19804_.m_135372_(SPEED, 0.0F);
-      this.f_19804_.m_135372_(JUMP, 0.0F);
-      this.f_19804_.m_135372_(MAX_ENERGY, 0);
-      this.f_19804_.m_135372_(ENERGY_CHARGE_PER_TICK, 0.0F);
-      this.f_19804_.m_135372_(WORK_SEC_PER_FUEL, 0);
-      this.f_19804_.m_135372_(SPEED_MODIFIER_EVASION, 0.0F);
-      this.f_19804_.m_135372_(SPEED_MODIFIER_VERTICAL, 0.0F);
-      this.f_19804_.m_135372_(ENERGY_CONSUME_EVASION, 0);
-      this.f_19804_.m_135372_(ENERGY_CONSUME_VERTICAL, 0);
-      this.f_19804_.m_135372_(HAS_LOCK_SOFT, false);
-      this.f_19804_.m_135372_(HAS_LOCK_HARD, false);
-      this.f_19804_.m_135372_(RELOAD_RA, 0);
-      this.f_19804_.m_135372_(RELOAD_LA, 0);
-      this.f_19804_.m_135372_(RELOAD_RS, 0);
-      this.f_19804_.m_135372_(RELOAD_LS, 0);
-      this.f_19804_.m_135372_(FUEL_MAX, 0);
-      this.f_19804_.m_135372_(FUEL_NOW, 0);
-      this.f_19804_.m_135372_(REPAIR_KIT_NUM, 0);
-      this.f_19804_.m_135372_(IS_BOUND_TO_RAIL, false);
-      this.f_19804_.m_135372_(TEXTURE_COLOR, 0);
-      this.f_19804_.m_135372_(IS_BROKEN, false);
-      this.f_19804_.m_135372_(IS_LOCKED, false);
-      this.f_19804_.m_135372_(IS_OVER_HEAT, false);
-      this.f_19804_.m_135372_(IS_SUPER_BOOST, false);
-      this.f_19804_.m_135372_(SHOW_PLAYER_INV_SLOT, false);
-      this.f_19804_.m_135372_(BUILD_MODE, false);
-      this.f_19804_.m_135372_(IS_GLIDING, false);
-      this.f_19804_.m_135372_(HAVING_ENTITY, Optional.empty());
+   protected void defineSynchedData() {
+      super.defineSynchedData();
+      this.entityData.define(P_HEAD, ItemStack.EMPTY);
+      this.entityData.define(P_ARMS, ItemStack.EMPTY);
+      this.entityData.define(P_BODY, ItemStack.EMPTY);
+      this.entityData.define(P_LEGS, ItemStack.EMPTY);
+      this.entityData.define(P_GENERATOR, ItemStack.EMPTY);
+      this.entityData.define(P_BOOSTER, ItemStack.EMPTY);
+      this.entityData.define(W_RIGHT_ARM, ItemStack.EMPTY);
+      this.entityData.define(W_LEFT_ARM, ItemStack.EMPTY);
+      this.entityData.define(W_RIGHT_SHOULDER, ItemStack.EMPTY);
+      this.entityData.define(W_LEFT_SHOULDER, ItemStack.EMPTY);
+      this.entityData.define(W_EXTENSION1, ItemStack.EMPTY);
+      this.entityData.define(W_EXTENSION2, ItemStack.EMPTY);
+      this.entityData.define(DURABILITY, 0);
+      this.entityData.define(WEIGHT, 0);
+      this.entityData.define(MAX_WEIGHT, 0);
+      this.entityData.define(SPEED, 0.0F);
+      this.entityData.define(JUMP, 0.0F);
+      this.entityData.define(MAX_ENERGY, 0);
+      this.entityData.define(ENERGY_CHARGE_PER_TICK, 0.0F);
+      this.entityData.define(WORK_SEC_PER_FUEL, 0);
+      this.entityData.define(SPEED_MODIFIER_EVASION, 0.0F);
+      this.entityData.define(SPEED_MODIFIER_VERTICAL, 0.0F);
+      this.entityData.define(ENERGY_CONSUME_EVASION, 0);
+      this.entityData.define(ENERGY_CONSUME_VERTICAL, 0);
+      this.entityData.define(HAS_LOCK_SOFT, false);
+      this.entityData.define(HAS_LOCK_HARD, false);
+      this.entityData.define(RELOAD_RA, 0);
+      this.entityData.define(RELOAD_LA, 0);
+      this.entityData.define(RELOAD_RS, 0);
+      this.entityData.define(RELOAD_LS, 0);
+      this.entityData.define(FUEL_MAX, 0);
+      this.entityData.define(FUEL_NOW, 0);
+      this.entityData.define(REPAIR_KIT_NUM, 0);
+      this.entityData.define(IS_BOUND_TO_RAIL, false);
+      this.entityData.define(TEXTURE_COLOR, 0);
+      this.entityData.define(IS_BROKEN, false);
+      this.entityData.define(IS_LOCKED, false);
+      this.entityData.define(IS_OVER_HEAT, false);
+      this.entityData.define(IS_SUPER_BOOST, false);
+      this.entityData.define(SHOW_PLAYER_INV_SLOT, false);
+      this.entityData.define(BUILD_MODE, false);
+      this.entityData.define(IS_GLIDING, false);
+      this.entityData.define(HAVING_ENTITY, Optional.empty());
    }
 
    protected void syncAllParameter2Client() {
@@ -2597,32 +2597,32 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    protected void syncAllParameter2Client(boolean updateHealth) {
-      this.f_19804_.m_135381_(P_HEAD, this.getHeadPartsFromInventory());
-      this.f_19804_.m_135381_(P_ARMS, this.getArmPartsFromInventory());
-      this.f_19804_.m_135381_(P_BODY, this.getBodyPartsFromInventory());
-      this.f_19804_.m_135381_(P_LEGS, this.getLegsPartsFromInventory());
-      this.f_19804_.m_135381_(P_GENERATOR, this.getGeneratorFromInventory());
-      this.f_19804_.m_135381_(P_BOOSTER, this.getBoosterFromInventory());
-      this.f_19804_.m_135381_(W_RIGHT_ARM, this.getRightArmWeaponFromInventory());
-      this.f_19804_.m_135381_(W_LEFT_ARM, this.getLeftArmWeaponFromInventory());
-      this.f_19804_.m_135381_(W_RIGHT_SHOULDER, this.getRightShoulderWeaponFromInventory());
-      this.f_19804_.m_135381_(W_LEFT_SHOULDER, this.getLeftShoulderWeaponFromInventory());
-      this.f_19804_.m_135381_(W_EXTENSION1, this.getExtension1FromInventory());
-      this.f_19804_.m_135381_(W_EXTENSION2, this.getExtension2FromInventory());
-      this.f_19804_.m_135381_(REPAIR_KIT_NUM, this.m_8020_(17).m_41613_());
+      this.entityData.set(P_HEAD, this.getHeadPartsFromInventory());
+      this.entityData.set(P_ARMS, this.getArmPartsFromInventory());
+      this.entityData.set(P_BODY, this.getBodyPartsFromInventory());
+      this.entityData.set(P_LEGS, this.getLegsPartsFromInventory());
+      this.entityData.set(P_GENERATOR, this.getGeneratorFromInventory());
+      this.entityData.set(P_BOOSTER, this.getBoosterFromInventory());
+      this.entityData.set(W_RIGHT_ARM, this.getRightArmWeaponFromInventory());
+      this.entityData.set(W_LEFT_ARM, this.getLeftArmWeaponFromInventory());
+      this.entityData.set(W_RIGHT_SHOULDER, this.getRightShoulderWeaponFromInventory());
+      this.entityData.set(W_LEFT_SHOULDER, this.getLeftShoulderWeaponFromInventory());
+      this.entityData.set(W_EXTENSION1, this.getExtension1FromInventory());
+      this.entityData.set(W_EXTENSION2, this.getExtension2FromInventory());
+      this.entityData.set(REPAIR_KIT_NUM, this.getItem(17).getCount());
       this.updateShowPlaeyrInv();
       this.updateMechParams(updateHealth);
       this.registerWeapons();
    }
 
    private void updateShowPlaeyrInv() {
-      if (!(this.getRightArmWeaponFromInventory().m_41720_() instanceof AmagiItem)
-         && !(this.getLeftArmWeaponFromInventory().m_41720_() instanceof AmagiItem)
-         && !(this.getRightArmWeaponFromInventory().m_41720_() instanceof ShoutouItem)
-         && !(this.getLeftArmWeaponFromInventory().m_41720_() instanceof ShoutouItem)) {
-         this.f_19804_.m_135381_(SHOW_PLAYER_INV_SLOT, false);
+      if (!(this.getRightArmWeaponFromInventory().getItem() instanceof AmagiItem)
+         && !(this.getLeftArmWeaponFromInventory().getItem() instanceof AmagiItem)
+         && !(this.getRightArmWeaponFromInventory().getItem() instanceof ShoutouItem)
+         && !(this.getLeftArmWeaponFromInventory().getItem() instanceof ShoutouItem)) {
+         this.entityData.set(SHOW_PLAYER_INV_SLOT, false);
       } else {
-         this.f_19804_.m_135381_(SHOW_PLAYER_INV_SLOT, true);
+         this.entityData.set(SHOW_PLAYER_INV_SLOT, true);
       }
    }
 
@@ -2645,27 +2645,27 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       param.jump = this.calculateSpeedModifier(param.maxWeight, param.weight) * param.jump;
       MechStatus mechStatus = this.applySkillEffects(param);
       MechStats mechStats = mechStatus.stats();
-      this.f_19804_.m_135381_(DURABILITY, (int)mechStats.health());
-      this.f_19804_.m_135381_(WEIGHT, param.weight);
-      this.f_19804_.m_135381_(MAX_WEIGHT, param.maxWeight);
-      this.f_19804_.m_135381_(SPEED, (float)mechStats.moveSpeed());
-      this.f_19804_.m_135381_(JUMP, (float)mechStats.jumpPower());
-      this.f_19804_.m_135381_(MAX_ENERGY, (int)mechStats.energyCapacity());
-      this.f_19804_.m_135381_(ENERGY_CHARGE_PER_TICK, (float)mechStats.energyRecovery());
-      this.f_19804_.m_135381_(WORK_SEC_PER_FUEL, param.workSecPerFuel);
-      this.f_19804_.m_135381_(SPEED_MODIFIER_EVASION, (float)mechStats.dashSpeed());
-      this.f_19804_.m_135381_(SPEED_MODIFIER_VERTICAL, (float)mechStats.verticalSpeed());
-      this.f_19804_.m_135381_(ENERGY_CONSUME_EVASION, (int)(mechStats.energyCost() * param.energyConsumeEvasion));
-      this.f_19804_.m_135381_(ENERGY_CONSUME_VERTICAL, (int)(mechStats.energyCost() * param.energyConsumeVertical));
-      this.f_19804_.m_135381_(HAS_LOCK_SOFT, this.hasSoftLockCircuit() || mechStatus.features().isEnabled(MechFeatureType.TARGET_ASSIST_SOFT));
-      this.f_19804_.m_135381_(HAS_LOCK_HARD, this.hasHardLockCircuit() || mechStatus.features().isEnabled(MechFeatureType.TARGET_ASSIST_HARD));
+      this.entityData.set(DURABILITY, (int)mechStats.health());
+      this.entityData.set(WEIGHT, param.weight);
+      this.entityData.set(MAX_WEIGHT, param.maxWeight);
+      this.entityData.set(SPEED, (float)mechStats.moveSpeed());
+      this.entityData.set(JUMP, (float)mechStats.jumpPower());
+      this.entityData.set(MAX_ENERGY, (int)mechStats.energyCapacity());
+      this.entityData.set(ENERGY_CHARGE_PER_TICK, (float)mechStats.energyRecovery());
+      this.entityData.set(WORK_SEC_PER_FUEL, param.workSecPerFuel);
+      this.entityData.set(SPEED_MODIFIER_EVASION, (float)mechStats.dashSpeed());
+      this.entityData.set(SPEED_MODIFIER_VERTICAL, (float)mechStats.verticalSpeed());
+      this.entityData.set(ENERGY_CONSUME_EVASION, (int)(mechStats.energyCost() * param.energyConsumeEvasion));
+      this.entityData.set(ENERGY_CONSUME_VERTICAL, (int)(mechStats.energyCost() * param.energyConsumeVertical));
+      this.entityData.set(HAS_LOCK_SOFT, this.hasSoftLockCircuit() || mechStatus.features().isEnabled(MechFeatureType.TARGET_ASSIST_SOFT));
+      this.entityData.set(HAS_LOCK_HARD, this.hasHardLockCircuit() || mechStatus.features().isEnabled(MechFeatureType.TARGET_ASSIST_HARD));
       this.syncFuels();
       if (updateHealth) {
-         this.m_21051_(Attributes.f_22276_).m_22100_(mechStats.health());
-         this.m_21153_(Math.min(this.m_21223_(), (float)mechStats.health()));
+         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(mechStats.health());
+         this.setHealth(Math.min(this.getHealth(), (float)mechStats.health()));
       }
 
-      this.m_21051_(Attributes.f_22278_).m_22100_(mechStats.knockBackResistance());
+      this.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(mechStats.knockBackResistance());
    }
 
    private MechStatus applySkillEffects(Pmvc01Entity.MechParam param) {
@@ -2674,8 +2674,8 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       SkillEffectApplicator.Accumulator accumulator = SkillEffectApplicator.createAccumulator();
 
       for (int i = 63; i < 81; i++) {
-         ItemStack item = this.m_8020_(i);
-         if (item.m_41720_() instanceof CircuitItem) {
+         ItemStack item = this.getItem(i);
+         if (item.getItem() instanceof CircuitItem) {
             CircuitInstance circuit = CircuitItemStackHelper.getCircuit(item);
             if (circuit != null) {
                accumulator.add(circuit);
@@ -2688,8 +2688,8 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    private void sumPartsParameter(ItemStack stack, Pmvc01Entity.MechParam param) {
-      if (stack != null && !stack.m_41619_()) {
-         if (stack.m_41720_() instanceof BasePartsItem partsItem) {
+      if (stack != null && !stack.isEmpty()) {
+         if (stack.getItem() instanceof BasePartsItem partsItem) {
             param.durability = param.durability + partsItem.getDurability(stack);
             param.weight = param.weight + partsItem.getWeight(stack);
             if (partsItem instanceof BasePartsItem.Legs legs) {
@@ -2721,195 +2721,195 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    public int getDurability() {
-      return (Integer)this.f_19804_.m_135370_(DURABILITY);
+      return (Integer)this.entityData.get(DURABILITY);
    }
 
    public int getWeight() {
-      return (Integer)this.f_19804_.m_135370_(WEIGHT);
+      return (Integer)this.entityData.get(WEIGHT);
    }
 
    public int getMaxWeight() {
-      return (Integer)this.f_19804_.m_135370_(MAX_WEIGHT);
+      return (Integer)this.entityData.get(MAX_WEIGHT);
    }
 
    public float getSpeedModifier() {
-      return (Float)this.f_19804_.m_135370_(SPEED);
+      return (Float)this.entityData.get(SPEED);
    }
 
    public float getJumpModifier() {
-      return (Float)this.f_19804_.m_135370_(JUMP);
+      return (Float)this.entityData.get(JUMP);
    }
 
    public float getEnergyChargePerTick() {
-      return (Float)this.f_19804_.m_135370_(ENERGY_CHARGE_PER_TICK);
+      return (Float)this.entityData.get(ENERGY_CHARGE_PER_TICK);
    }
 
    public float getWorkSecPerFuel() {
-      return ((Integer)this.f_19804_.m_135370_(WORK_SEC_PER_FUEL)).intValue();
+      return ((Integer)this.entityData.get(WORK_SEC_PER_FUEL)).intValue();
    }
 
    public float getSpeedModifierEvasion() {
-      return (Float)this.f_19804_.m_135370_(SPEED_MODIFIER_EVASION);
+      return (Float)this.entityData.get(SPEED_MODIFIER_EVASION);
    }
 
    public float getSpeedModifierVertical() {
-      return (Float)this.f_19804_.m_135370_(SPEED_MODIFIER_VERTICAL);
+      return (Float)this.entityData.get(SPEED_MODIFIER_VERTICAL);
    }
 
    public int getEnergyConsumeEvasion() {
-      return (Integer)this.f_19804_.m_135370_(ENERGY_CONSUME_EVASION);
+      return (Integer)this.entityData.get(ENERGY_CONSUME_EVASION);
    }
 
    public int getEnergyConsumeVertical() {
-      return (Integer)this.f_19804_.m_135370_(ENERGY_CONSUME_VERTICAL);
+      return (Integer)this.entityData.get(ENERGY_CONSUME_VERTICAL);
    }
 
    public boolean hasLockSoftCircuit() {
-      return (Boolean)this.f_19804_.m_135370_(HAS_LOCK_SOFT);
+      return (Boolean)this.entityData.get(HAS_LOCK_SOFT);
    }
 
    public boolean hasLockHardCircuit() {
-      return (Boolean)this.f_19804_.m_135370_(HAS_LOCK_HARD);
+      return (Boolean)this.entityData.get(HAS_LOCK_HARD);
    }
 
    public ItemStack getHeadParts() {
-      return (ItemStack)this.f_19804_.m_135370_(P_HEAD);
+      return (ItemStack)this.entityData.get(P_HEAD);
    }
 
    public ItemStack getBodyParts() {
-      return (ItemStack)this.f_19804_.m_135370_(P_BODY);
+      return (ItemStack)this.entityData.get(P_BODY);
    }
 
    public ItemStack getArmParts() {
-      return (ItemStack)this.f_19804_.m_135370_(P_ARMS);
+      return (ItemStack)this.entityData.get(P_ARMS);
    }
 
    public ItemStack getLegsParts() {
-      return (ItemStack)this.f_19804_.m_135370_(P_LEGS);
+      return (ItemStack)this.entityData.get(P_LEGS);
    }
 
    public ItemStack getBooster() {
-      return (ItemStack)this.f_19804_.m_135370_(P_BOOSTER);
+      return (ItemStack)this.entityData.get(P_BOOSTER);
    }
 
    public ItemStack getGenerator() {
-      return (ItemStack)this.f_19804_.m_135370_(P_GENERATOR);
+      return (ItemStack)this.entityData.get(P_GENERATOR);
    }
 
    public ItemStack getRightArmWeapon() {
-      return (ItemStack)this.f_19804_.m_135370_(W_RIGHT_ARM);
+      return (ItemStack)this.entityData.get(W_RIGHT_ARM);
    }
 
    public ItemStack getLeftArmWeapon() {
-      return (ItemStack)this.f_19804_.m_135370_(W_LEFT_ARM);
+      return (ItemStack)this.entityData.get(W_LEFT_ARM);
    }
 
    public ItemStack getRightShoulderWeapon() {
-      return (ItemStack)this.f_19804_.m_135370_(W_RIGHT_SHOULDER);
+      return (ItemStack)this.entityData.get(W_RIGHT_SHOULDER);
    }
 
    public ItemStack getLeftShoulderWeapon() {
-      return (ItemStack)this.f_19804_.m_135370_(W_LEFT_SHOULDER);
+      return (ItemStack)this.entityData.get(W_LEFT_SHOULDER);
    }
 
    public ItemStack getExtension1Weapon() {
-      return (ItemStack)this.f_19804_.m_135370_(W_EXTENSION1);
+      return (ItemStack)this.entityData.get(W_EXTENSION1);
    }
 
    public ItemStack getExtension2Weapon() {
-      return (ItemStack)this.f_19804_.m_135370_(W_EXTENSION2);
+      return (ItemStack)this.entityData.get(W_EXTENSION2);
    }
 
    public void setTextureColor(int i) {
-      this.f_19804_.m_135381_(TEXTURE_COLOR, i);
+      this.entityData.set(TEXTURE_COLOR, i);
    }
 
    public int getTextureColor() {
-      return (Integer)this.f_19804_.m_135370_(TEXTURE_COLOR);
+      return (Integer)this.entityData.get(TEXTURE_COLOR);
    }
 
    public int getMaxFuel() {
-      return (Integer)this.f_19804_.m_135370_(FUEL_MAX);
+      return (Integer)this.entityData.get(FUEL_MAX);
    }
 
    public int getFuelNow() {
-      return (Integer)this.f_19804_.m_135370_(FUEL_NOW);
+      return (Integer)this.entityData.get(FUEL_NOW);
    }
 
    public int getRepairKitNum() {
-      return (Integer)this.f_19804_.m_135370_(REPAIR_KIT_NUM);
+      return (Integer)this.entityData.get(REPAIR_KIT_NUM);
    }
 
    public boolean isBroken() {
-      return (Boolean)this.f_19804_.m_135370_(IS_BROKEN);
+      return (Boolean)this.entityData.get(IS_BROKEN);
    }
 
    public void setBroken(boolean broken) {
-      this.f_19804_.m_135381_(IS_BROKEN, broken);
+      this.entityData.set(IS_BROKEN, broken);
    }
 
    public boolean isLocked() {
-      return (Boolean)this.f_19804_.m_135370_(IS_LOCKED);
+      return (Boolean)this.entityData.get(IS_LOCKED);
    }
 
    public void setLocked(boolean broken) {
-      this.f_19804_.m_135381_(IS_LOCKED, broken);
+      this.entityData.set(IS_LOCKED, broken);
    }
 
    public boolean isOverHeat() {
-      return (Boolean)this.f_19804_.m_135370_(IS_OVER_HEAT);
+      return (Boolean)this.entityData.get(IS_OVER_HEAT);
    }
 
    public void setOverHeat(boolean broken) {
-      this.f_19804_.m_135381_(IS_OVER_HEAT, broken);
+      this.entityData.set(IS_OVER_HEAT, broken);
    }
 
    public boolean isSuperBoost() {
-      return (Boolean)this.f_19804_.m_135370_(IS_SUPER_BOOST);
+      return (Boolean)this.entityData.get(IS_SUPER_BOOST);
    }
 
    public void setSuperBoost(boolean flag) {
       if (this.isServerSide()) {
-         this.f_19804_.m_135381_(IS_SUPER_BOOST, flag);
-         this.m_20242_(flag);
+         this.entityData.set(IS_SUPER_BOOST, flag);
+         this.setNoGravity(flag);
       }
    }
 
    public boolean isShowPlayerInventory() {
-      return (Boolean)this.f_19804_.m_135370_(SHOW_PLAYER_INV_SLOT);
+      return (Boolean)this.entityData.get(SHOW_PLAYER_INV_SLOT);
    }
 
    public boolean isBuildMode() {
-      return (Boolean)this.f_19804_.m_135370_(BUILD_MODE);
+      return (Boolean)this.entityData.get(BUILD_MODE);
    }
 
    public void setBuildMode(boolean b) {
-      this.f_19804_.m_135381_(BUILD_MODE, b);
+      this.entityData.set(BUILD_MODE, b);
       if (b) {
-         if (this.blockPreviewEntity == null || this.blockPreviewEntity.m_213877_()) {
-            this.blockPreviewEntity = new BlockPlacementPreviewEntity(this.m_9236_(), this.m_20182_());
-            this.m_9236_().m_7967_(this.blockPreviewEntity);
+         if (this.blockPreviewEntity == null || this.blockPreviewEntity.isRemoved()) {
+            this.blockPreviewEntity = new BlockPlacementPreviewEntity(this.level(), this.position());
+            this.level().addFreshEntity(this.blockPreviewEntity);
          }
       } else if (this.blockPreviewEntity != null) {
-         this.blockPreviewEntity.m_146870_();
+         this.blockPreviewEntity.discard();
          this.blockPreviewEntity = null;
       }
    }
 
    public Optional<UUID> havingEntity() {
-      return (Optional<UUID>)this.f_19804_.m_135370_(HAVING_ENTITY);
+      return (Optional<UUID>)this.entityData.get(HAVING_ENTITY);
    }
 
    public void setHavingEntity(Optional<UUID> b) {
-      this.f_19804_.m_135381_(HAVING_ENTITY, b);
+      this.entityData.set(HAVING_ENTITY, b);
    }
 
    protected boolean isGliding() {
-      return (Boolean)this.f_19804_.m_135370_(IS_GLIDING);
+      return (Boolean)this.entityData.get(IS_GLIDING);
    }
 
    protected void setGliding(boolean b) {
-      this.f_19804_.m_135381_(IS_GLIDING, b);
+      this.entityData.set(IS_GLIDING, b);
    }
 
    public Vec3 getMuzzlePosLA() {
@@ -2975,7 +2975,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    public Vec3 getMainCameraPosition() {
-      return this.mainCameraPosition == null ? Vec3.f_82478_ : this.mainCameraPosition;
+      return this.mainCameraPosition == null ? Vec3.ZERO : this.mainCameraPosition;
    }
 
    public void setMainCameraPosition(Vec3 pos) {
@@ -2983,11 +2983,11 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    @Override
-   public void m_7023_(Vec3 pos) {
+   public void travel(Vec3 pos) {
       if (!this.isBroken()) {
          if (this.isSuperBoost()) {
             ItemStack sb = this.getSuperBoostUnit();
-            if (!(sb.m_41720_() instanceof BasePartsItem p && this.useEnergy(p.getEnergyConsumePerTick(sb))) && this.isServerSide()) {
+            if (!(sb.getItem() instanceof BasePartsItem p && this.useEnergy(p.getEnergyConsumePerTick(sb))) && this.isServerSide()) {
                this.setSuperBoost(false);
             }
 
@@ -2997,18 +2997,18 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                   return;
                }
 
-               Vec3 look = owner.m_20154_();
-               Vec3 velocity = look.m_82541_().m_82490_(4.0);
-               this.m_20256_(velocity);
-               this.m_146922_(owner.m_146908_());
-               this.m_146926_(owner.m_146909_());
-               this.f_19859_ = this.m_146908_();
-               this.f_19860_ = this.m_146909_();
-               this.f_20883_ = this.m_146908_();
-               this.f_20885_ = this.m_146908_();
-               this.m_20242_(true);
-               this.f_19812_ = true;
-               super.travelBypass(this.m_20182_().m_82549_(this.m_20184_()));
+               Vec3 look = owner.getLookAngle();
+               Vec3 velocity = look.normalize().scale(4.0);
+               this.setDeltaMovement(velocity);
+               this.setYRot(owner.getYRot());
+               this.setXRot(owner.getXRot());
+               this.yRotO = this.getYRot();
+               this.xRotO = this.getXRot();
+               this.yBodyRot = this.getYRot();
+               this.yHeadRot = this.getYRot();
+               this.setNoGravity(true);
+               this.hasImpulse = true;
+               super.travelBypass(this.position().add(this.getDeltaMovement()));
             }
          } else {
             this.travelInternal(pos);
@@ -3019,35 +3019,35 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    public void travelInternal(Vec3 pos) {
-      if (this.m_6084_() && this.m_20160_() && this.canWork()) {
+      if (this.isAlive() && this.isVehicle() && this.canWork()) {
          LivingEntity pilot = this.getDrivingPassenger();
          if (pilot != null) {
-            if (this.m_20202_() instanceof ElevatorEntity elv) {
-               this.m_146922_(elv.getFixedYaw());
-               this.f_19859_ = elv.getFixedYaw();
-               this.m_5618_(elv.getFixedYaw());
-               this.f_20884_ = elv.getFixedYaw();
-               this.m_5616_(elv.getFixedYaw());
+            if (this.getVehicle() instanceof ElevatorEntity elv) {
+               this.setYRot(elv.getFixedYaw());
+               this.yRotO = elv.getFixedYaw();
+               this.setYBodyRot(elv.getFixedYaw());
+               this.yBodyRotO = elv.getFixedYaw();
+               this.setYHeadRot(elv.getFixedYaw());
             } else {
-               this.m_146922_(pilot.m_146908_());
-               this.m_146926_(pilot.m_146909_() * 0.5F);
-               this.m_5618_(this.m_146908_());
-               this.m_5616_(this.m_146908_());
+               this.setYRot(pilot.getYRot());
+               this.setXRot(pilot.getXRot() * 0.5F);
+               this.setYBodyRot(this.getYRot());
+               this.setYHeadRot(this.getYRot());
             }
 
-            float strafe = pilot.f_20900_ * 0.5F;
-            float forward = pilot.f_20902_ * 0.5F;
-            if (!this.m_9236_().f_46443_) {
+            float strafe = pilot.xxa * 0.5F;
+            float forward = pilot.zza * 0.5F;
+            if (!this.level().isClientSide) {
                if (this.actionController.isBoost()) {
-                  this.m_7910_(this.getRunSpeed());
+                  this.setSpeed(this.getRunSpeed());
                } else {
-                  this.m_7910_(this.getWalkSpeed());
+                  this.setSpeed(this.getWalkSpeed());
                }
 
-               this.f_19812_ = true;
+               this.hasImpulse = true;
             }
 
-            super.travelBypass(new Vec3(strafe, pos.f_82480_, forward));
+            super.travelBypass(new Vec3(strafe, pos.y, forward));
             return;
          }
       }
@@ -3056,10 +3056,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    private ItemStack getSuperBoostUnit() {
-      if (this.getExtension1Weapon().m_41720_() instanceof SBUnitProtoTypeItem bst) {
+      if (this.getExtension1Weapon().getItem() instanceof SBUnitProtoTypeItem bst) {
          return this.getExtension1Weapon();
       } else {
-         return this.getExtension2Weapon().m_41720_() instanceof SBUnitProtoTypeItem bst ? this.getExtension2Weapon() : ItemStack.f_41583_;
+         return this.getExtension2Weapon().getItem() instanceof SBUnitProtoTypeItem bst ? this.getExtension2Weapon() : ItemStack.EMPTY;
       }
    }
 
@@ -3073,7 +3073,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    @Override
-   public boolean m_6469_(DamageSource source, float amount) {
+   public boolean hurt(DamageSource source, float amount) {
       if (this.isClientSide()) {
          this.wasHurtClient = true;
       } else if (this.isServerSide() && this.mechAutoController != null) {
@@ -3081,47 +3081,47 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       }
 
       if (this.isBroken()) {
-         return this.isForceKillSource(source) ? super.m_6469_(source, amount) : false;
+         return this.isForceKillSource(source) ? super.hurt(source, amount) : false;
       } else {
-         return super.m_6469_(source, amount);
+         return super.hurt(source, amount);
       }
    }
 
    private boolean isForceKillSource(DamageSource source) {
-      if (source != this.m_269291_().m_287172_() && !source.m_269533_(DamageTypeTags.f_268738_)) {
-         String msgId = source.m_19385_();
+      if (source != this.damageSources().genericKill() && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+         String msgId = source.getMsgId();
          return msgId.equals("kill") || msgId.equals("out_of_world");
       } else {
          return true;
       }
    }
 
-   protected void m_6475_(DamageSource damageSource, float f) {
+   protected void actuallyHurt(DamageSource damageSource, float f) {
       if (this.breakCompatible()) {
-         super.m_6475_(damageSource, f);
+         super.actuallyHurt(damageSource, f);
       } else {
          f = this.calcActualDamage(damageSource, f);
-         if (!this.isForceKillSource(damageSource) && f > this.m_21223_()) {
-            this.m_21153_(1.0F);
+         if (!this.isForceKillSource(damageSource) && f > this.getHealth()) {
+            this.setHealth(1.0F);
             this.setBroken(true);
 
-            for (Entity passenger : this.m_20197_()) {
-               passenger.m_8127_();
+            for (Entity passenger : this.getPassengers()) {
+               passenger.stopRiding();
                if (passenger instanceof Mob mob) {
-                  mob.m_21557_(false);
+                  mob.setNoAi(false);
                }
             }
          } else {
-            super.m_6475_(damageSource, f);
+            super.actuallyHurt(damageSource, f);
          }
       }
    }
 
    protected float calcActualDamage(DamageSource damageSource, float f) {
-      if (!this.m_6673_(damageSource)) {
-         f = this.m_21161_(damageSource, f);
-         f = this.m_6515_(damageSource, f);
-         return Math.max(f - this.m_6103_(), 0.0F);
+      if (!this.isInvulnerableTo(damageSource)) {
+         f = this.getDamageAfterArmorAbsorb(damageSource, f);
+         f = this.getDamageAfterMagicAbsorb(damageSource, f);
+         return Math.max(f - this.getAbsorptionAmount(), 0.0F);
       } else {
          return 0.0F;
       }
@@ -3131,43 +3131,43 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       return false;
    }
 
-   protected void m_6153_() {
-      super.m_6153_();
-      if (this.f_20919_ == 10 && this.isServerSide()) {
-         Level level = this.m_9236_();
+   protected void tickDeath() {
+      super.tickDeath();
+      if (this.deathTime == 10 && this.isServerSide()) {
+         Level level = this.level();
          ExplosionEntity e = new ExplosionEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.EXPLOSION.get(), level);
-         e.m_146884_(this.m_20182_());
-         level.m_7967_(e);
+         e.setPos(this.position());
+         level.addFreshEntity(e);
       }
    }
 
-   protected void m_20101_() {
+   protected void checkInsideBlocks() {
    }
 
-   public boolean m_6128_() {
+   public boolean ignoreExplosion() {
       return this.getDrivingPassenger() == null;
    }
 
    private void spawnDestructionParticles() {
       for (int i = 0; i < 5; i++) {
-         double offsetX = (this.f_19796_.m_188500_() - 0.5) * this.m_20205_();
-         double offsetY = this.f_19796_.m_188500_() * this.m_20206_();
-         double offsetZ = (this.f_19796_.m_188500_() - 0.5) * this.m_20205_();
-         double x = this.m_20185_() + offsetX;
-         double y = this.m_20186_() + offsetY;
-         double z = this.m_20189_() + offsetZ;
+         double offsetX = (this.random.nextDouble() - 0.5) * this.getBbWidth();
+         double offsetY = this.random.nextDouble() * this.getBbHeight();
+         double offsetZ = (this.random.nextDouble() - 0.5) * this.getBbWidth();
+         double x = this.getX() + offsetX;
+         double y = this.getY() + offsetY;
+         double z = this.getZ() + offsetZ;
 
-         ParticleOptions particle = switch (this.f_19796_.m_188503_(4)) {
-            case 0 -> ParticleTypes.f_123762_;
-            case 1 -> ParticleTypes.f_175834_;
-            case 2 -> ParticleTypes.f_175830_;
-            default -> ParticleTypes.f_123813_;
+         ParticleOptions particle = switch (this.random.nextInt(4)) {
+            case 0 -> ParticleTypes.SMOKE;
+            case 1 -> ParticleTypes.SMALL_FLAME;
+            case 2 -> ParticleTypes.ELECTRIC_SPARK;
+            default -> ParticleTypes.EXPLOSION;
          };
-         this.m_9236_().m_7106_(particle, x, y, z, 0.0, 0.01, 0.0);
+         this.level().addParticle(particle, x, y, z, 0.0, 0.01, 0.0);
       }
 
-      if (this.f_19796_.m_188501_() < 1.0F) {
-         this.playSoundEffect(SoundEvents.f_11913_);
+      if (this.random.nextFloat() < 1.0F) {
+         this.playSoundEffect(SoundEvents.GENERIC_EXPLODE);
       }
    }
 
@@ -3176,7 +3176,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    protected void playSoundEffectWithFade(String key, SoundEvent event, float volume, int fadein, int fadeout) {
-      key = this.m_19879_() + ":" + key;
+      key = this.getId() + ":" + key;
       PomkotsSoundManager.playSound(
          key, event, SoundConfig.loopFadeSE().followEntity(this).source(SoundSource.PLAYERS).relative(false).volume(volume).fadeIn(fadein).fadeOut(fadeout)
       );
@@ -3184,20 +3184,20 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
    }
 
    protected void stopSoundEffectWithFade(String key) {
-      key = this.m_19879_() + ":" + key;
+      key = this.getId() + ":" + key;
       PomkotsSoundManager.stopSound(key, true);
    }
 
    protected void stopAllSoundEffectWithFade() {
       if (this.hasLoopSound) {
-         PomkotsSoundManager.stopAllSounds(this.m_19879_(), true);
+         PomkotsSoundManager.stopAllSounds(this.getId(), true);
          this.hasLoopSound = false;
       }
    }
 
-   public void m_142036_() {
-      super.m_142036_();
-      PomkotsSoundManager.stopAllSounds(this.m_19879_(), true);
+   public void onClientRemoval() {
+      super.onClientRemoval();
+      PomkotsSoundManager.stopAllSounds(this.getId(), true);
    }
 
    @Override
@@ -3247,11 +3247,11 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
             ItemStack weaponStack = this.weaponStackSupplier.get();
             if (ammoStack != null
                && weaponStack != null
-               && ammoStack.m_41720_() instanceof BasePartsItem.Magazine mag
-               && weaponStack.m_41720_() instanceof BasePartsItem.Weapon weapon
+               && ammoStack.getItem() instanceof BasePartsItem.Magazine mag
+               && weaponStack.getItem() instanceof BasePartsItem.Weapon weapon
                && weapon.isMatchAmmo(mag)) {
                this.bulletNumPerMagazine = mag.getBulletsPerMagazine(ammoStack);
-               this.magazineNum = ammoStack.m_41613_();
+               this.magazineNum = ammoStack.getCount();
                if (resetBulletNum) {
                   if (this.bulletNumPerMagazine != tmpBNPM) {
                      this.bulletNum = Math.min(this.bulletNumPerMagazine, tmpBN);
@@ -3273,7 +3273,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
       protected void tick() {
          if (this.owner.isClientSide()) {
-            int state = (Integer)this.owner.f_19804_.m_135370_(this.reloadStateAccessor);
+            int state = (Integer)this.owner.entityData.get(this.reloadStateAccessor);
             if (this.prevState != state) {
                this.deserialize(state);
                this.prevState = state;
@@ -3294,10 +3294,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
       private boolean doActualReload(boolean doSync) {
          ItemStack ammoStack = this.ammoStackSupplier.get();
-         if (ammoStack.m_41613_() > 0 && ammoStack.m_41720_() instanceof BasePartsItem.Magazine mag) {
-            ammoStack.m_41774_(1);
+         if (ammoStack.getCount() > 0 && ammoStack.getItem() instanceof BasePartsItem.Magazine mag) {
+            ammoStack.shrink(1);
             this.bulletNum = this.bulletNumPerMagazine = mag.getBulletsPerMagazine(ammoStack);
-            this.magazineNum = ammoStack.m_41613_();
+            this.magazineNum = ammoStack.getCount();
             if (doSync) {
                this.syncClient();
             }
@@ -3309,7 +3309,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       }
 
       protected void syncClient() {
-         this.owner.f_19804_.m_135381_(this.reloadStateAccessor, this.serialize());
+         this.owner.entityData.set(this.reloadStateAccessor, this.serialize());
       }
 
       protected boolean consumeBullet(int num) {
@@ -3321,7 +3321,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                if (this.bulletNum > 0) {
                   return true;
                } else if (!(
-                  this.weaponStackSupplier.get().m_41720_() instanceof BasePartsItem.Weapon w
+                  this.weaponStackSupplier.get().getItem() instanceof BasePartsItem.Weapon w
                      && w.getWeaponCategory() == BasePartsItem.WeaponCategory.MISSILE
                      && this.owner.isServerSide()
                )) {
@@ -3394,15 +3394,15 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
          this.ent = ent;
       }
 
-      public void m_142044_() {
-         this.del.m_142044_();
+      public void onMove() {
+         this.del.onMove();
       }
 
-      public void m_142472_(RemovalReason removalReason) {
-         this.del.m_142472_(removalReason);
-         if (this.ent.m_9236_() instanceof ServerLevel serverLevel
+      public void onRemove(RemovalReason removalReason) {
+         this.del.onRemove(removalReason);
+         if (this.ent.level() instanceof ServerLevel serverLevel
             && (removalReason == RemovalReason.UNLOADED_TO_CHUNK || removalReason == RemovalReason.UNLOADED_WITH_PLAYER)) {
-            PomkotsMechsSaveData.get(serverLevel).updateMech(this.ent.m_20148_(), serverLevel.m_46472_(), new ChunkPos(this.ent.m_20183_()));
+            PomkotsMechsSaveData.get(serverLevel).updateMech(this.ent.getUUID(), serverLevel.dimension(), new ChunkPos(this.ent.blockPosition()));
          }
       }
    }

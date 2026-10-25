@@ -30,7 +30,7 @@ public class Pmb08Entity extends BaseBossEntity {
 
    public Pmb08Entity(EntityType<? extends GenericPomkotsMonster> entityType, Level world) {
       super(entityType, world);
-      this.m_20242_(true);
+      this.setNoGravity(true);
       this.actionController.registerAction("missile_straight", new BossActionController.BossAction(60, 20, this::missileStraightAction));
       this.actionController.registerAction("missile_horizontal", new BossActionController.BossAction(60, 20, this::missileHorizontalAction));
       this.actionController.registerAction("missile_vertical", new BossActionController.BossAction(60, 20, this::missileVerticalAction));
@@ -38,7 +38,7 @@ public class Pmb08Entity extends BaseBossEntity {
       this.actionController.registerAction("missile_pod2", new BossActionController.BossAction(200, 20, this::missilePodAction2));
       this.actionController.registerAction("gatling", new BossActionController.BossAction(40, 5, this::gatlingAction));
       this.actionController.registerAction("onsmalldown", new BossActionController.BossAction(20, 15, this::smallDown));
-      this.f_21345_.m_25352_(1, new HelicopterHoverMoveGoal(this, 2.0, 15.0, 30.0, 20));
+      this.goalSelector.addGoal(1, new HelicopterHoverMoveGoal(this, 2.0, 15.0, 30.0, 20));
       this.registerActionGoal(new SimpleBossAttackGoal(this.actionController.getAction("gatling"), this, true, 5, true), AI_MODE_ALL, 10);
       this.registerActionGoal(new SimpleBossAttackGoal(this.actionController.getAction("missile_straight"), this, true, true), AI_MODE_ALL, 10);
       this.registerActionGoal(new SimpleBossAttackGoal(this.actionController.getAction("missile_horizontal"), this, false), AI_MODE_ALL, 10);
@@ -48,43 +48,43 @@ public class Pmb08Entity extends BaseBossEntity {
    }
 
    @Override
-   public void m_8119_() {
-      if (this.f_19803_ && this.isServerSide()) {
-         this.registerAdditionalHitBox(new BossHitBoxEntity((EntityType<? extends LivingEntity>)PomkotsMechs.HITBOX_PMB08.get(), this.m_9236_(), this));
+   public void tick() {
+      if (this.firstTick && this.isServerSide()) {
+         this.registerAdditionalHitBox(new BossHitBoxEntity((EntityType<? extends LivingEntity>)PomkotsMechs.HITBOX_PMB08.get(), this.level(), this));
       }
 
-      this.m_20242_(true);
-      super.m_8119_();
+      this.setNoGravity(true);
+      super.tick();
    }
 
    private void gatlingAction(BossActionController.BossAction action) {
-      LivingEntity target = this.m_5448_();
+      LivingEntity target = this.getTarget();
       if (target != null) {
          if (action.onStartOfAction() && action.isFirstLoop()) {
             this.triggerAnim("action_controller", "gatling");
          } else if (action.currentActionTick == 3) {
             for (int side = -1; side < 2; side += 2) {
                BulletGrenadeEntity be = new BulletGrenadeEntity(
-                  (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_GRENADE.get(), this.m_9236_(), this, this.getMechData().bulletDamage
+                  (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_GRENADE.get(), this.level(), this, this.getMechData().bulletDamage
                );
-               be.m_20242_(true);
+               be.setNoGravity(true);
                be.setExplosionScale(1);
                be.setStunPoint(2);
-               Vec3 offset = this.m_20182_();
+               Vec3 offset = this.position();
                Vec3 muzzlPos = new Vec3(8 * side, 10.0, 3.0);
-               muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-               be.m_146884_(offset.m_82549_(muzzlPos));
+               muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+               be.setPos(offset.add(muzzlPos));
                float[] angle = Utils.getShootingAngle(be, target, true);
-               be.m_37251_(be, angle[0], angle[1], this.m_21256_(), this.getMechData().bulletSpeed, 0.0F);
-               this.m_9236_().m_7967_(be);
-               ParticleUtil.spawnAttachedMuzzleFlash((ServerLevel)this.m_9236_(), this, 50.0, new Vec3(8 * side, 10.0, 6.0));
+               be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), this.getMechData().bulletSpeed, 0.0F);
+               this.level().addFreshEntity(be);
+               ParticleUtil.spawnAttachedMuzzleFlash((ServerLevel)this.level(), this, 50.0, new Vec3(8 * side, 10.0, 6.0));
             }
          }
       }
    }
 
    private void missileStraightAction(BossActionController.BossAction action) {
-      LivingEntity target = this.m_5448_();
+      LivingEntity target = this.getTarget();
       if (target != null) {
          if (action.onStartOfAction()) {
             this.triggerAnim("action_controller", "missile");
@@ -94,22 +94,22 @@ public class Pmb08Entity extends BaseBossEntity {
                   for (int side = -1; side < 2; side += 2) {
                      MissileGenericEntity be = new MissileGenericEntity(
                         (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_GENERIC.get(),
-                        this.m_9236_(),
+                        this.level(),
                         this,
                         target,
                         this.getMechData().missileDamage,
                         this.getMechData().missileSpeed * this.missileModifier
                      );
                      be.setMaxRotationAnglePerTick(2.0F);
-                     Vec3 offset = this.m_20182_();
+                     Vec3 offset = this.position();
                      float slotX = (col * 0.8F + 15.0F) * side;
                      float slotY = row + 3.0F;
                      Vec3 muzzlPos = new Vec3(slotX, slotY, 3.0);
-                     muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-                     be.m_146884_(offset.m_82549_(muzzlPos));
+                     muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+                     be.setPos(offset.add(muzzlPos));
                      float[] angle = Utils.getShootingAngle(be, target, true);
-                     be.m_37251_(be, angle[0], angle[1], this.m_21256_(), this.getMechData().missileSpeed, 0.0F);
-                     this.m_9236_().m_7967_(be);
+                     be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), this.getMechData().missileSpeed, 0.0F);
+                     this.level().addFreshEntity(be);
                   }
                }
             }
@@ -118,7 +118,7 @@ public class Pmb08Entity extends BaseBossEntity {
    }
 
    private void missileHorizontalAction(BossActionController.BossAction action) {
-      LivingEntity target = this.m_5448_();
+      LivingEntity target = this.getTarget();
       if (target != null) {
          if (action.onStartOfAction()) {
             this.triggerAnim("action_controller", "missile");
@@ -128,22 +128,22 @@ public class Pmb08Entity extends BaseBossEntity {
                   for (int side = -1; side < 2; side += 2) {
                      MissileGenericEntity be = new MissileGenericEntity(
                         (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_GENERIC.get(),
-                        this.m_9236_(),
+                        this.level(),
                         this,
                         target,
                         this.getMechData().missileDamage,
                         this.getMechData().missileSpeed * this.missileModifier
                      );
                      be.setMaxRotationAnglePerTick(2.0F);
-                     Vec3 offset = this.m_20182_();
+                     Vec3 offset = this.position();
                      float slotX = (col * 0.8F + 15.0F) * side;
                      float slotY = row + 3.0F;
                      Vec3 muzzlPos = new Vec3(slotX, slotY, 3.0);
-                     muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-                     be.m_146884_(offset.m_82549_(muzzlPos));
+                     muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+                     be.setPos(offset.add(muzzlPos));
                      float[] angle = Utils.getShootingAngle(be, target, true);
-                     be.m_37251_(be, angle[0], angle[1] - side * 30, this.m_21256_(), this.getMechData().missileSpeed, 0.0F);
-                     this.m_9236_().m_7967_(be);
+                     be.shootFromRotation(be, angle[0], angle[1] - side * 30, this.getFallFlyingTicks(), this.getMechData().missileSpeed, 0.0F);
+                     this.level().addFreshEntity(be);
                   }
                }
             }
@@ -152,7 +152,7 @@ public class Pmb08Entity extends BaseBossEntity {
    }
 
    private void missileVerticalAction(BossActionController.BossAction action) {
-      LivingEntity target = this.m_5448_();
+      LivingEntity target = this.getTarget();
       if (target != null) {
          if (action.onStartOfAction()) {
             this.triggerAnim("action_controller", "missile");
@@ -162,22 +162,22 @@ public class Pmb08Entity extends BaseBossEntity {
                   for (int side = -1; side < 2; side += 2) {
                      MissileGenericEntity be = new MissileGenericEntity(
                         (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_GENERIC.get(),
-                        this.m_9236_(),
+                        this.level(),
                         this,
                         target,
                         this.getMechData().missileDamage,
                         this.getMechData().missileSpeed * this.missileModifier
                      );
                      be.setMaxRotationAnglePerTick(7.0F);
-                     Vec3 offset = this.m_20182_();
+                     Vec3 offset = this.position();
                      float slotX = (col * 0.8F + 15.0F) * side;
                      float slotY = row + 3.0F;
                      Vec3 muzzlPos = new Vec3(slotX, slotY, 3.0);
-                     muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-                     be.m_146884_(offset.m_82549_(muzzlPos));
+                     muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+                     be.setPos(offset.add(muzzlPos));
                      float[] angle = Utils.getShootingAngle(be, target, true);
-                     be.m_37251_(be, -80.0F, angle[1], this.m_21256_(), this.getMechData().missileSpeed, 0.0F);
-                     this.m_9236_().m_7967_(be);
+                     be.shootFromRotation(be, -80.0F, angle[1], this.getFallFlyingTicks(), this.getMechData().missileSpeed, 0.0F);
+                     this.level().addFreshEntity(be);
                   }
                }
             }
@@ -186,7 +186,7 @@ public class Pmb08Entity extends BaseBossEntity {
    }
 
    private void missilePodAction(BossActionController.BossAction action) {
-      LivingEntity target = this.m_5448_();
+      LivingEntity target = this.getTarget();
       if (target != null) {
          if (action.onStartOfAction()) {
             this.triggerAnim("action_controller", "missile");
@@ -194,26 +194,26 @@ public class Pmb08Entity extends BaseBossEntity {
             for (int side = -1; side < 2; side += 2) {
                MissilePodEntity be = new MissilePodEntity(
                   (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_POD.get(),
-                  this.m_9236_(),
+                  this.level(),
                   this,
                   target,
                   this.getMechData().missileDamage,
                   this.getMechData().missileSpeed * this.missileModifier
                );
-               Vec3 offset = this.m_20182_();
+               Vec3 offset = this.position();
                Vec3 muzzlPos = new Vec3(15 * side, 3.5, 7.0);
-               muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-               be.m_146884_(offset.m_82549_(muzzlPos));
+               muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+               be.setPos(offset.add(muzzlPos));
                float[] angle = Utils.getShootingAngle(be, target, true);
-               be.m_37251_(be, -15.0F, angle[1], this.m_21256_(), this.getMechData().missileSpeed, 0.0F);
-               this.m_9236_().m_7967_(be);
+               be.shootFromRotation(be, -15.0F, angle[1], this.getFallFlyingTicks(), this.getMechData().missileSpeed, 0.0F);
+               this.level().addFreshEntity(be);
             }
          }
       }
    }
 
    private void missilePodAction2(BossActionController.BossAction action) {
-      LivingEntity target = this.m_5448_();
+      LivingEntity target = this.getTarget();
       if (target != null) {
          if (action.onStartOfAction()) {
             this.triggerAnim("action_controller", "missile");
@@ -221,20 +221,20 @@ public class Pmb08Entity extends BaseBossEntity {
             for (int side = -1; side < 2; side += 2) {
                MissilePodEntity be = new MissilePodEntity(
                   (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_POD.get(),
-                  this.m_9236_(),
+                  this.level(),
                   this,
                   target,
                   this.getMechData().missileDamage,
                   this.getMechData().missileSpeed * this.missileModifier
                );
                be.setMode(MissilePodEntity.Mode.SPHERE);
-               Vec3 offset = this.m_20182_();
+               Vec3 offset = this.position();
                Vec3 muzzlPos = new Vec3(15 * side, 3.5, 7.0);
-               muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-               be.m_146884_(offset.m_82549_(muzzlPos));
+               muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+               be.setPos(offset.add(muzzlPos));
                float[] angle = Utils.getShootingAngle(be, target, true);
-               be.m_37251_(be, angle[0], angle[1], this.m_21256_(), this.getMechData().missileSpeed * this.missileModifier, 0.0F);
-               this.m_9236_().m_7967_(be);
+               be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), this.getMechData().missileSpeed * this.missileModifier, 0.0F);
+               this.level().addFreshEntity(be);
             }
          }
       }

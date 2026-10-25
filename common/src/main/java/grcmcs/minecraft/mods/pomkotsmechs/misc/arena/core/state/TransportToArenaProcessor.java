@@ -17,7 +17,7 @@ public class TransportToArenaProcessor extends AbstractArenaMatchStateProcessor 
    }
 
    private boolean startElevator(Level level, BlockPos gatePos) {
-      if (level.m_7702_(gatePos) instanceof ArenaGateBlockEntity gateEntity) {
+      if (level.getBlockEntity(gatePos) instanceof ArenaGateBlockEntity gateEntity) {
          ElevatorEntity elev = gateEntity.getElevator();
          if (elev == null) {
             return false;

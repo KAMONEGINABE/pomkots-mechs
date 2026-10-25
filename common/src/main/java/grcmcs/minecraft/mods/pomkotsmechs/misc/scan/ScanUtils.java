@@ -14,13 +14,13 @@ public class ScanUtils {
    public static boolean spawnScan(
       ServerLevel level, ServerPlayer owner, Vec3 center, ScanVisibility visibility, float maxRadius, int expansionTicks, int highlightTicks
    ) {
-      ScanPulseEntity pulse = (ScanPulseEntity)((EntityType)PomkotsMechs.SCAN_PULSE.get()).m_20615_(level);
+      ScanPulseEntity pulse = (ScanPulseEntity)((EntityType)PomkotsMechs.SCAN_PULSE.get()).create(level);
       if (pulse == null) {
          return false;
       }
 
-      pulse.m_7678_(center.f_82479_, center.f_82480_, center.f_82481_, 0.0F, 0.0F);
+      pulse.moveTo(center.x, center.y, center.z, 0.0F, 0.0F);
       pulse.initialize(owner, visibility, maxRadius, expansionTicks, highlightTicks);
-      return level.m_7967_(pulse);
+      return level.addFreshEntity(pulse);
    }
 }

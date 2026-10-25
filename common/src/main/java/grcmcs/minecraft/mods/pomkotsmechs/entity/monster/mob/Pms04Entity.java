@@ -40,22 +40,22 @@ public class Pms04Entity extends BaseSmallMonsterEntity implements GeoEntity, Ge
    @Override
    public void doAttack() {
       if (this.isServerSide()) {
-         this.rotateToTarget(this.m_5448_());
+         this.rotateToTarget(this.getTarget());
          MissileGenericEnemyEntity be = new MissileGenericEnemyEntity(
             (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_ENEMY.get(),
-            this.m_9236_(),
+            this.level(),
             this,
-            this.m_5448_(),
+            this.getTarget(),
             this.getMechData().missileDamage,
             this.getMechData().missileSpeed
          );
          be.setSwitchTick(32);
-         Vec3 offset = this.m_20182_();
+         Vec3 offset = this.position();
          Vec3 muzzlPos = new Vec3(1.0, 3.0, 0.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         be.m_146884_(offset.m_82549_(muzzlPos));
-         be.m_37251_(be, -89.0F, this.m_146908_(), this.m_21256_(), 0.9F, 0.0F);
-         this.m_9236_().m_7967_(be);
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         be.setPos(offset.add(muzzlPos));
+         be.shootFromRotation(be, -89.0F, this.getYRot(), this.getFallFlyingTicks(), 0.9F, 0.0F);
+         this.level().addFreshEntity(be);
          this.triggerAnim("shoot_controller", "shoot");
       }
    }
@@ -66,9 +66,9 @@ public class Pms04Entity extends BaseSmallMonsterEntity implements GeoEntity, Ge
    }
 
    @Override
-   protected void m_8099_() {
-      super.m_8099_();
-      this.f_21345_.m_25352_(1, new SimpleMobGoal(this, this.getMechData().speed));
+   protected void registerGoals() {
+      super.registerGoals();
+      this.goalSelector.addGoal(1, new SimpleMobGoal(this, this.getMechData().speed));
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

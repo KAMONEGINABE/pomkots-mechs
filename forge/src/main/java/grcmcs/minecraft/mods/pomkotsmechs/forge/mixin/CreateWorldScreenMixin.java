@@ -32,7 +32,7 @@ public class CreateWorldScreenMixin {
    private String pomkots$lastPreset = "UNKNOWN";
    private static final String SEED_VALUE = "-7229487307260543510";
    private static final ResourceLocation CUSTOM_PRESET_LOC = new ResourceLocation("pomkotsmechs", "pomkots_world");
-   private static final ResourceKey<WorldPreset> CUSTOM_PRESET_KEY = ResourceKey.m_135785_(Registries.f_256729_, CUSTOM_PRESET_LOC);
+   private static final ResourceKey<WorldPreset> CUSTOM_PRESET_KEY = ResourceKey.create(Registries.WORLD_PRESET, CUSTOM_PRESET_LOC);
    private static final String SOURCE_PROFILE_NAME = "00_pomkots_world";
    private static final String CUSTOMIZED_PROFILE_NAME = "customized";
 
@@ -56,24 +56,24 @@ public class CreateWorldScreenMixin {
    @Inject(method = "init", at = @At("TAIL"))
    private void onInit(CallbackInfo ci) {
       if (ModList.get().isLoaded("lostcities") && PomkotsMechs.CONFIG.survivalModeEnabled) {
-         CreateWorldScreen self = (CreateWorldScreen)this;
-         WorldCreationUiState uiState = self.m_267748_();
-         uiState.m_267755_(state -> {
+         CreateWorldScreen self = (CreateWorldScreen)(Object)this;
+         WorldCreationUiState uiState = self.getUiState();
+         uiState.addListener(state -> {
             String currentPreset = "";
-            if (state.m_267828_() != null && state.m_267828_().f_267398_() != null) {
-               currentPreset = state.m_267828_().f_267398_().m_203543_().map(key -> key.m_135782_().toString()).orElse("");
+            if (state.getWorldType() != null && state.getWorldType().preset() != null) {
+               currentPreset = state.getWorldType().preset().unwrapKey().map(key -> key.location().toString()).orElse("");
             }
 
             if (!currentPreset.equals(this.pomkots$lastPreset)) {
                this.pomkots$lastPreset = currentPreset;
-               if (CUSTOM_PRESET_KEY.m_135782_().toString().equals(currentPreset)) {
-                  if (!"-7229487307260543510".equals(state.m_267707_())) {
-                     state.m_267759_("-7229487307260543510");
+               if (CUSTOM_PRESET_KEY.location().toString().equals(currentPreset)) {
+                  if (!"-7229487307260543510".equals(state.getSeed())) {
+                     state.setSeed("-7229487307260543510");
                   }
 
-                  BooleanValue keepInv = (BooleanValue)state.m_267721_().m_46170_(GameRules.f_46133_);
-                  if (keepInv != null && !keepInv.m_46223_()) {
-                     keepInv.m_46246_(true, null);
+                  BooleanValue keepInv = (BooleanValue)state.getGameRules().getRule(GameRules.RULE_KEEPINVENTORY);
+                  if (keepInv != null && !keepInv.get()) {
+                     keepInv.set(true, null);
                   }
 
                   LostCityProfile sourceProfile = (LostCityProfile)ProfileSetup.STANDARD_PROFILES.get("00_pomkots_world");
@@ -89,13 +89,13 @@ public class CreateWorldScreenMixin {
                      Config.profileFromClient = "00_pomkots_world";
                   }
                } else {
-                  if ("-7229487307260543510".equals(state.m_267707_())) {
-                     state.m_267759_("");
+                  if ("-7229487307260543510".equals(state.getSeed())) {
+                     state.setSeed("");
                   }
 
-                  BooleanValue keepInv = (BooleanValue)state.m_267721_().m_46170_(GameRules.f_46133_);
-                  if (keepInv != null && keepInv.m_46223_()) {
-                     keepInv.m_46246_(false, null);
+                  BooleanValue keepInv = (BooleanValue)state.getGameRules().getRule(GameRules.RULE_KEEPINVENTORY);
+                  if (keepInv != null && keepInv.get()) {
+                     keepInv.set(false, null);
                   }
 
                   GuiLCConfig.selectProfile(null, null);
@@ -104,8 +104,8 @@ public class CreateWorldScreenMixin {
                }
             }
          });
-         Registry<WorldPreset> presetRegistry = uiState.m_267573_().m_246480_().m_175515_(Registries.f_256729_);
-         presetRegistry.m_203636_(CUSTOM_PRESET_KEY).ifPresent(holder -> uiState.m_267576_(new WorldTypeEntry(holder)));
+         Registry<WorldPreset> presetRegistry = uiState.getSettings().worldgenLoadContext().registryOrThrow(Registries.WORLD_PRESET);
+         presetRegistry.getHolder(CUSTOM_PRESET_KEY).ifPresent(holder -> uiState.setWorldType(new WorldTypeEntry(holder)));
       }
    }
 

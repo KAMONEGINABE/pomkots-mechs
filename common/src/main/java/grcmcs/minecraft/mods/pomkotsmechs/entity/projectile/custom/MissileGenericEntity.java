@@ -63,7 +63,7 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
       int stun
    ) {
       super(entityType, level, shooter, maxLifeTicks, damage, stun);
-      this.m_20242_(true);
+      this.setNoGravity(true);
       this.shooter = shooter;
       this.target = target;
       this.damage = damage;
@@ -75,27 +75,27 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
    }
 
    @Override
-   public void m_8119_() {
-      this.m_146867_();
-      if (this.m_9236_().f_46443_) {
+   public void tick() {
+      this.setOldPosAndRot();
+      if (this.level().isClientSide) {
          this.clientTick();
       } else if (this.lifeTicks++ >= this.maxLifeTicks) {
-         this.createExplosion(this.m_20182_());
-         this.m_146870_();
+         this.createExplosion(this.position());
+         this.discard();
       } else {
-         this.m_20101_();
+         this.checkInsideBlocks();
          if (this.performSubStepMovement()) {
-            if (this.target != null && this.target.m_6084_() && !this.straight) {
+            if (this.target != null && this.target.isAlive() && !this.straight) {
                if (this.lifeTicks > 3) {
                   this.homingUpdate();
                }
 
-               this.m_146884_(this.m_20182_().m_82549_(this.m_20184_()));
-               this.f_19812_ = true;
+               this.setPos(this.position().add(this.getDeltaMovement()));
+               this.hasImpulse = true;
             } else {
                this.moveStraight();
-               this.m_146884_(this.m_20182_().m_82549_(this.m_20184_()));
-               this.f_19812_ = true;
+               this.setPos(this.position().add(this.getDeltaMovement()));
+               this.hasImpulse = true;
             }
          }
       }
@@ -114,28 +114,28 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
    }
 
    private void moveStraight() {
-      Vec3 velocity = this.m_20184_();
-      if (velocity.m_82556_() < 1.0E-4) {
-         float yaw = this.m_146908_();
-         float pitch = this.m_146909_();
-         Vec3 forward = Vec3.m_82498_(pitch, yaw);
-         velocity = forward.m_82490_(1.2);
+      Vec3 velocity = this.getDeltaMovement();
+      if (velocity.lengthSqr() < 1.0E-4) {
+         float yaw = this.getYRot();
+         float pitch = this.getXRot();
+         Vec3 forward = Vec3.directionFromRotation(pitch, yaw);
+         velocity = forward.scale(1.2);
       }
 
       double maxSpeed = this.getSpeed();
-      if (velocity.m_82553_() > maxSpeed) {
-         velocity = velocity.m_82541_().m_82490_(maxSpeed);
+      if (velocity.length() > maxSpeed) {
+         velocity = velocity.normalize().scale(maxSpeed);
       }
 
-      this.m_20256_(velocity);
+      this.setDeltaMovement(velocity);
       this.updateRotationFromVelocity(velocity);
    }
 
    private void homingUpdate() {
-      Vec3 position = this.m_20182_();
-      Vec3 velocity = this.m_20184_();
-      Vec3 targetPos = this.target.m_20191_().m_82399_();
-      Vec3 diff = targetPos.m_82546_(position);
+      Vec3 position = this.position();
+      Vec3 velocity = this.getDeltaMovement();
+      Vec3 targetPos = this.target.getBoundingBox().getCenter();
+      Vec3 diff = targetPos.subtract(position);
       if (!this.rotationLimitReached && !this.isRotationLimitExceeded(velocity)) {
          if (this.lifeTicks > 60) {
             this.terminalPhase = true;
@@ -148,22 +148,22 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
                homingRate = 7.0F;
             }
 
-            Vec3 acceleration = diff.m_82546_(velocity.m_82490_(period)).m_82490_(homingRate / (period * period));
+            Vec3 acceleration = diff.subtract(velocity.scale(period)).scale(homingRate / (period * period));
             double maxAcc = this.getSpeed() * 8.0;
-            if (acceleration.m_82553_() > maxAcc) {
-               acceleration = acceleration.m_82541_().m_82490_(maxAcc);
+            if (acceleration.length() > maxAcc) {
+               acceleration = acceleration.normalize().scale(maxAcc);
             }
 
             double dt = 0.05;
-            velocity = velocity.m_82549_(acceleration.m_82490_(dt));
+            velocity = velocity.add(acceleration.scale(dt));
          }
 
          double maxSpeed = this.getSpeed();
-         if (velocity.m_82553_() > maxSpeed) {
-            velocity = velocity.m_82541_().m_82490_(maxSpeed);
+         if (velocity.length() > maxSpeed) {
+            velocity = velocity.normalize().scale(maxSpeed);
          }
 
-         this.m_20256_(velocity);
+         this.setDeltaMovement(velocity);
          this.updateRotationFromVelocity(velocity);
          this.remainingTicks--;
       } else {
@@ -173,13 +173,13 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
    }
 
    private boolean isRotationLimitExceeded(Vec3 currentVelocity) {
-      if (currentVelocity.m_82556_() < 1.0E-4) {
+      if (currentVelocity.lengthSqr() < 1.0E-4) {
          return false;
       }
 
-      Vec3 currentDir = currentVelocity.m_82541_();
+      Vec3 currentDir = currentVelocity.normalize();
       if (this.lastDirection != null) {
-         double dot = Mth.m_14008_(this.lastDirection.m_82526_(currentDir), -1.0, 1.0);
+         double dot = Mth.clamp(this.lastDirection.dot(currentDir), -1.0, 1.0);
          float deltaDeg = (float)Math.toDegrees(Math.acos(dot));
          this.totalRotatedDeg += deltaDeg;
       }
@@ -189,33 +189,33 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
    }
 
    protected void updateRotationFromVelocity(Vec3 vel) {
-      Vec3 velocity = this.m_20184_();
-      if (!velocity.equals(Vec3.f_82478_)) {
-         double yaw = Math.toDegrees(Math.atan2(velocity.f_82479_, velocity.f_82481_));
-         this.m_146922_((float)yaw);
-         double horizontalDistance = Math.sqrt(velocity.f_82479_ * velocity.f_82479_ + velocity.f_82481_ * velocity.f_82481_);
-         double pitch = Math.toDegrees(Math.atan2(velocity.f_82480_, horizontalDistance));
-         this.m_146926_((float)pitch);
-         this.f_19859_ = this.m_146908_();
-         this.f_19860_ = this.m_146909_();
+      Vec3 velocity = this.getDeltaMovement();
+      if (!velocity.equals(Vec3.ZERO)) {
+         double yaw = Math.toDegrees(Math.atan2(velocity.x, velocity.z));
+         this.setYRot((float)yaw);
+         double horizontalDistance = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+         double pitch = Math.toDegrees(Math.atan2(velocity.y, horizontalDistance));
+         this.setXRot((float)pitch);
+         this.yRotO = this.getYRot();
+         this.xRotO = this.getXRot();
       }
    }
 
    @Override
-   protected void m_5790_(EntityHitResult entityHitResult) {
-      super.m_5790_(entityHitResult);
-      this.createExplosion(this.m_20182_());
-      this.m_146870_();
+   protected void onHitEntity(EntityHitResult entityHitResult) {
+      super.onHitEntity(entityHitResult);
+      this.createExplosion(this.position());
+      this.discard();
    }
 
    @Override
-   protected void m_8060_(BlockHitResult blockHitResult) {
-      this.createExplosion(this.m_20182_());
-      this.m_146870_();
+   protected void onHitBlock(BlockHitResult blockHitResult) {
+      this.createExplosion(this.position());
+      this.discard();
    }
 
    public void clientTick() {
-      Vec3 currentPos = this.m_20182_();
+      Vec3 currentPos = this.position();
       if (this.prevClientPos != null) {
          this.spawnSmokeBetween(this.prevClientPos, currentPos);
       }
@@ -224,46 +224,46 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
    }
 
    private void spawnSmokeBetween(Vec3 from, Vec3 to) {
-      Level level = this.m_9236_();
-      Vec3 diff = to.m_82546_(from);
-      double length = diff.m_82553_();
+      Level level = this.level();
+      Vec3 diff = to.subtract(from);
+      double length = diff.length();
       if (!(length < 0.001)) {
-         Vec3 dir = diff.m_82541_();
+         Vec3 dir = diff.normalize();
          double spacing = 0.5;
          int count = (int)(length / spacing);
 
          for (int i = 0; i <= count; i++) {
             double d = i * spacing;
-            Vec3 pos = from.m_82549_(dir.m_82490_(d));
-            level.m_6485_((ParticleOptions)PomkotsMechs.MISSILE_SMOKE.get(), true, pos.f_82479_, pos.f_82480_, pos.f_82481_, 0.0, 0.0, 0.0);
+            Vec3 pos = from.add(dir.scale(d));
+            level.addAlwaysVisibleParticle((ParticleOptions)PomkotsMechs.MISSILE_SMOKE.get(), true, pos.x, pos.y, pos.z, 0.0, 0.0, 0.0);
          }
       }
    }
 
    protected void createExplosion(Vec3 pos) {
-      Level world = this.m_9236_();
-      if (world.f_46443_) {
-         this.addParticles(4.0F, this.m_20182_());
+      Level world = this.level();
+      if (world.isClientSide) {
+         this.addParticles(4.0F, this.position());
       } else if (Utils.isBlockDestructionAllowed(this.shooter)) {
-         Utils.explode(this, pos.f_82479_, pos.f_82480_, pos.f_82481_, BattleBalance.MECH_MISSILE_EXPLOSION, false, ExplosionInteraction.BLOCK, this.m_9236_());
+         Utils.explode(this, pos.x, pos.y, pos.z, BattleBalance.MECH_MISSILE_EXPLOSION, false, ExplosionInteraction.BLOCK, this.level());
       } else {
-         Utils.explode(this, pos.f_82479_, pos.f_82480_, pos.f_82481_, BattleBalance.MECH_MISSILE_EXPLOSION, false, ExplosionInteraction.NONE, this.m_9236_());
+         Utils.explode(this, pos.x, pos.y, pos.z, BattleBalance.MECH_MISSILE_EXPLOSION, false, ExplosionInteraction.NONE, this.level());
       }
    }
 
    protected void addParticles(float scale, Vec3 offset) {
-      Level level = this.m_9236_();
+      Level level = this.level();
       if (!(scale < 2.0F)) {
-         level.m_7106_(ParticleTypes.f_123812_, offset.f_82479_, offset.f_82480_, offset.f_82481_, 1.0, 0.0, 0.0);
+         level.addParticle(ParticleTypes.EXPLOSION_EMITTER, offset.x, offset.y, offset.z, 1.0, 0.0, 0.0);
       } else {
-         level.m_7106_(ParticleTypes.f_123813_, offset.f_82479_, offset.f_82480_, offset.f_82481_, 1.0, 0.0, 0.0);
+         level.addParticle(ParticleTypes.EXPLOSION, offset.x, offset.y, offset.z, 1.0, 0.0, 0.0);
       }
    }
 
    @Override
-   public void m_142036_() {
-      if (this.m_9236_().f_46443_) {
-         this.addParticles(1.0F, this.m_20182_());
+   public void onClientRemoval() {
+      if (this.level().isClientSide) {
+         this.addParticles(1.0F, this.position());
       }
    }
 
@@ -272,7 +272,7 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
       return this.shooter;
    }
 
-   protected void m_8097_() {
+   protected void defineSynchedData() {
    }
 
    public void registerControllers(ControllerRegistrar controllers) {
@@ -334,7 +334,7 @@ public class MissileGenericEntity extends PomkotsCustomThrowableProjectile imple
    }
 
    protected Vec3 getNonTargetVelocity() {
-      return this.m_20184_();
+      return this.getDeltaMovement();
    }
 
    protected Class getTargetClass() {

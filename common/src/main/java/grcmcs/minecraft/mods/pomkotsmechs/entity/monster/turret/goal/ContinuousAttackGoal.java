@@ -22,47 +22,47 @@ public class ContinuousAttackGoal extends Goal {
       this.maxCoolTime = maxCoolTime;
       this.maxActionTime = maxActionTime;
       this.interval = interval;
-      this.m_7021_(EnumSet.of(Flag.MOVE, Flag.LOOK));
+      this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
    }
 
-   public boolean m_8036_() {
+   public boolean canUse() {
       if (this.currentCoolTime > 0) {
          this.currentCoolTime--;
       }
 
-      return this.currentCoolTime <= 0 && this.mob.m_5448_() != null;
+      return this.currentCoolTime <= 0 && this.mob.getTarget() != null;
    }
 
-   public boolean m_8045_() {
+   public boolean canContinueToUse() {
       return this.currentActionTime > 0;
    }
 
-   public void m_8056_() {
+   public void start() {
       this.currentCoolTime = this.maxCoolTime;
       this.currentActionTime = this.maxActionTime;
       this.mob.startActionAnimation();
    }
 
-   public void m_8041_() {
+   public void stop() {
       this.mob.stopActionAnimation();
    }
 
-   public void m_8037_() {
+   public void tick() {
       if (this.currentActionTime > 0) {
          this.currentActionTime--;
       }
 
-      LivingEntity target = this.mob.m_5448_();
+      LivingEntity target = this.mob.getTarget();
       if (target != null && this.currentActionTime > 0 && this.currentActionTime % this.interval == 0) {
          this.mob.tryAttack();
       }
    }
 
-   public boolean m_6767_() {
+   public boolean isInterruptable() {
       return false;
    }
 
-   public boolean m_183429_() {
+   public boolean requiresUpdateEveryTick() {
       return true;
    }
 }

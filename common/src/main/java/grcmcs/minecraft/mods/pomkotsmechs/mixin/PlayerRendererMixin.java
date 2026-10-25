@@ -17,15 +17,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class PlayerRendererMixin {
    @Inject(method = "renderRightHand", at = @At("HEAD"))
    private void onRenderRightHand(PoseStack poseStack, MultiBufferSource buffer, int light, AbstractClientPlayer player, CallbackInfo ci) {
-      if (player != null && player.m_20202_() instanceof PomkotsVehicleBase vehicle && Utils.shouldRenderCockpit(vehicle)) {
-         poseStack.m_85836_();
-         poseStack.m_166856_();
-         poseStack.m_85837_(0.5, -1.8, 0.1);
-         poseStack.m_85841_(1.0F, 1.0F, 1.0F);
-         poseStack.m_252781_(Axis.f_252436_.m_252977_(180.0F));
-         poseStack.m_252781_(Axis.f_252529_.m_252977_(-player.m_146909_() / 2.0F));
+      if (player != null && player.getVehicle() instanceof PomkotsVehicleBase vehicle && Utils.shouldRenderCockpit(vehicle)) {
+         poseStack.pushPose();
+         poseStack.setIdentity();
+         poseStack.translate(0.5, -1.8, 0.1);
+         poseStack.scale(1.0F, 1.0F, 1.0F);
+         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+         poseStack.mulPose(Axis.XP.rotationDegrees(-player.getXRot() / 2.0F));
          CockpitHudRendererManager.renderCockpit(poseStack, buffer, light, vehicle, player);
-         poseStack.m_85849_();
+         poseStack.popPose();
       }
    }
 }

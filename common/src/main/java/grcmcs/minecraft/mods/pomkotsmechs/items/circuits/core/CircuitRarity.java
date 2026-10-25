@@ -26,7 +26,7 @@ public enum CircuitRarity implements StringRepresentable {
       this.tintColor = tintColor;
    }
 
-   public String m_7912_() {
+   public String getSerializedName() {
       return this.name;
    }
 
@@ -47,11 +47,11 @@ public enum CircuitRarity implements StringRepresentable {
    }
 
    public Component displayName() {
-      return Component.m_237115_("tooltip.pomkotsmechs.circuit.rarity." + this.name().toLowerCase());
+      return Component.translatable("tooltip.pomkotsmechs.circuit.rarity." + this.name().toLowerCase());
    }
 
    public int rollModifierCount(RandomSource random) {
-      return this.maxModifierCount <= 1 ? 1 : 1 + random.m_188503_(this.maxModifierCount);
+      return this.maxModifierCount <= 1 ? 1 : 1 + random.nextInt(this.maxModifierCount);
    }
 
    public static CircuitRarity byName(String name, CircuitRarity fallback) {

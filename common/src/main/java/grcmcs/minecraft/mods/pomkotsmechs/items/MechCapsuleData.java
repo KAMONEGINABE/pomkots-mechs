@@ -21,49 +21,49 @@ public final class MechCapsuleData {
 
    public static CompoundTag capture(Pmvc01Entity mech) {
       CompoundTag entityData = new CompoundTag();
-      mech.m_20240_(entityData);
+      mech.saveWithoutId(entityData);
       sanitizeCapturedEntityData(entityData);
-      ResourceLocation entityTypeId = EntityType.m_20613_(mech.m_6095_());
+      ResourceLocation entityTypeId = EntityType.getKey(mech.getType());
       CompoundTag storedMech = new CompoundTag();
-      storedMech.m_128405_("DataVersion", 1);
-      storedMech.m_128359_("EntityType", entityTypeId.toString());
-      storedMech.m_128365_("EntityData", entityData);
+      storedMech.putInt("DataVersion", 1);
+      storedMech.putString("EntityType", entityTypeId.toString());
+      storedMech.put("EntityData", entityData);
       return storedMech;
    }
 
    public static Optional<Entity> spawn(ServerLevel level, CompoundTag storedMech, Vec3 spawnPosition, float spawnYaw) {
-      if (storedMech.m_128425_("EntityType", 8) && storedMech.m_128425_("EntityData", 10)) {
-         ResourceLocation entityTypeId = ResourceLocation.m_135820_(storedMech.m_128461_("EntityType"));
+      if (storedMech.contains("EntityType", 8) && storedMech.contains("EntityData", 10)) {
+         ResourceLocation entityTypeId = ResourceLocation.tryParse(storedMech.getString("EntityType"));
          if (entityTypeId == null) {
             return Optional.empty();
          }
 
-         Optional<EntityType<?>> entityTypeOptional = EntityType.m_20632_(entityTypeId.toString());
+         Optional<EntityType<?>> entityTypeOptional = EntityType.byString(entityTypeId.toString());
          if (entityTypeOptional.isEmpty()) {
             return Optional.empty();
          }
 
          EntityType<?> entityType = entityTypeOptional.get();
-         Entity entity = entityType.m_20615_(level);
+         Entity entity = entityType.create(level);
          if (entity == null) {
             return Optional.empty();
          }
 
-         CompoundTag entityData = storedMech.m_128469_("EntityData").m_6426_();
+         CompoundTag entityData = storedMech.getCompound("EntityData").copy();
          sanitizeBeforeSpawn(entityData);
 
          try {
-            entity.m_20258_(entityData);
+            entity.load(entityData);
          } catch (RuntimeException exception) {
-            entity.m_146870_();
+            entity.discard();
             return Optional.empty();
          }
 
-         entity.m_7678_(spawnPosition.f_82479_, spawnPosition.f_82480_, spawnPosition.f_82481_, spawnYaw, 0.0F);
-         entity.m_20256_(Vec3.f_82478_);
-         entity.f_19789_ = 0.0F;
-         if (!level.m_7967_(entity)) {
-            entity.m_146870_();
+         entity.moveTo(spawnPosition.x, spawnPosition.y, spawnPosition.z, spawnYaw, 0.0F);
+         entity.setDeltaMovement(Vec3.ZERO);
+         entity.fallDistance = 0.0F;
+         if (!level.addFreshEntity(entity)) {
+            entity.discard();
             return Optional.empty();
          } else {
             return Optional.of(entity);
@@ -86,22 +86,22 @@ public final class MechCapsuleData {
    }
 
    private static void removeIdentityData(CompoundTag tag) {
-      tag.m_128473_("UUID");
+      tag.remove("UUID");
    }
 
    private static void removeWorldStateData(CompoundTag tag) {
-      tag.m_128473_("Pos");
-      tag.m_128473_("Motion");
-      tag.m_128473_("Rotation");
-      tag.m_128473_("FallDistance");
-      tag.m_128473_("OnGround");
-      tag.m_128473_("PortalCooldown");
-      tag.m_128473_("Fire");
-      tag.m_128473_("Air");
+      tag.remove("Pos");
+      tag.remove("Motion");
+      tag.remove("Rotation");
+      tag.remove("FallDistance");
+      tag.remove("OnGround");
+      tag.remove("PortalCooldown");
+      tag.remove("Fire");
+      tag.remove("Air");
    }
 
    private static void removeRelationshipData(CompoundTag tag) {
-      tag.m_128473_("Passengers");
-      tag.m_128473_("Leash");
+      tag.remove("Passengers");
+      tag.remove("Leash");
    }
 }

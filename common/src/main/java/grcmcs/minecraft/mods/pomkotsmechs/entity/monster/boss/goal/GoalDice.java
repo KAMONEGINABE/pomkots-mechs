@@ -28,7 +28,7 @@ public class GoalDice {
    }
 
    public void tick() {
-      LivingEntity target = this.mob.m_5448_();
+      LivingEntity target = this.mob.getTarget();
       if (target != null) {
          Set<GoalDice.GoalDefinition> goalCandidates = this.modeGoalMap.get(this.mob.getAiMode());
          if (goalCandidates != null && !goalCandidates.isEmpty()) {
@@ -40,7 +40,7 @@ public class GoalDice {
    }
 
    private Goal getRandomWeighted(Set<GoalDice.GoalDefinition> entries, Entity target) {
-      double distance = this.mob.m_20280_(target);
+      double distance = this.mob.distanceToSqr(target);
       int totalWeight = 0;
       HashSet<GoalDice.GoalDefinition> cand2 = new HashSet<>();
 
@@ -57,7 +57,7 @@ public class GoalDice {
          return null;
       }
 
-      int r = this.mob.m_217043_().m_188503_(totalWeight);
+      int r = this.mob.getRandom().nextInt(totalWeight);
       int cumulative = 0;
 
       for (GoalDice.GoalDefinition entry : cand2) {

@@ -32,7 +32,7 @@ public class MissileBaseEntityRenderer extends GeoEntityRenderer<MissileBaseEnti
       this.scaleHeight = animatable.getScale();
       this.scaleWidth = animatable.getScale();
       super.preApplyRenderLayers(poseStack, animatable, model, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
-      ((GeoBone)model.getBone("bone").get()).setRotX((float)Math.toRadians(animatable.m_146909_()));
-      ((GeoBone)model.getBone("bone").get()).setRotY((float)Math.toRadians(animatable.m_146908_()));
+      ((GeoBone)model.getBone("bone").get()).setRotX((float)Math.toRadians(animatable.getXRot()));
+      ((GeoBone)model.getBone("bone").get()).setRotY((float)Math.toRadians(animatable.getYRot()));
    }
 }

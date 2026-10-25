@@ -53,7 +53,7 @@ public class Pmb01EntityRenderer extends GeoEntityRenderer<Pmb01Entity> {
       super.actuallyRender(
          poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha
       );
-      if (animatable.m_6688_() != null) {
+      if (animatable.getControllingPassenger() != null) {
          animatable.setClientSeatPos(this.getSeatPosition(model));
       }
    }
@@ -66,7 +66,7 @@ public class Pmb01EntityRenderer extends GeoEntityRenderer<Pmb01Entity> {
          Vector3d rootPos = vcRoot.getLocalPosition();
          return new Vec3(seatPos.x * 2.0 - rootPos.x * 2.0, seatPos.y * 2.0 - rootPos.y * 2.0 - 19.0, seatPos.z * 2.0 - rootPos.z * 2.0);
       } else {
-         return Vec3.f_82478_;
+         return Vec3.ZERO;
       }
    }
 }

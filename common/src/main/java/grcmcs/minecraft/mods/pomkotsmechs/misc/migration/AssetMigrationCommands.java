@@ -12,23 +12,23 @@ public final class AssetMigrationCommands {
    }
 
    private static CommandSourceStack createCommandSource(AssetAnchorBlockEntity anchor) {
-      if (anchor.m_58904_() instanceof ServerLevel level) {
-         MinecraftServer server = level.m_7654_();
-         return server.m_129893_().m_81327_(level).m_81348_(Vec3.m_82512_(anchor.m_58899_())).m_81325_(4).m_81324_();
+      if (anchor.getLevel() instanceof ServerLevel level) {
+         MinecraftServer server = level.getServer();
+         return server.createCommandSourceStack().withLevel(level).withPosition(Vec3.atCenterOf(anchor.getBlockPos())).withPermission(4).withSuppressedOutput();
       } else {
          return null;
       }
    }
 
    public static int executeCommand(AssetAnchorBlockEntity anchor, String command) {
-      if (anchor.m_58904_() instanceof ServerLevel level) {
+      if (anchor.getLevel() instanceof ServerLevel level) {
          CommandSourceStack source = createCommandSource(anchor);
          if (source == null) {
             return -1;
          }
 
          try {
-            int result = level.m_7654_().m_129892_().m_230957_(source, command);
+            int result = level.getServer().getCommands().performPrefixedCommand(source, command);
             PomkotsMechs.LOGGER.info("[Asset] Executed: {} (result={})", command, result);
             return result;
          } catch (Exception e) {

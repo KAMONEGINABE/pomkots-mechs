@@ -14,7 +14,7 @@ public class HitBoxLegsEntity extends HitBoxEntity {
    private float damageCount = 100.0F;
 
    public static Builder createMobAttributes() {
-      return m_21183_().m_22266_(Attributes.f_22282_).m_22268_(Attributes.f_22276_, 50.0);
+      return createLivingAttributes().add(Attributes.ATTACK_KNOCKBACK).add(Attributes.MAX_HEALTH, 50.0);
    }
 
    public HitBoxLegsEntity(EntityType<? extends LivingEntity> entityType, Level world) {
@@ -26,7 +26,7 @@ public class HitBoxLegsEntity extends HitBoxEntity {
    }
 
    @Override
-   public boolean m_6469_(DamageSource source, float amount) {
+   public boolean hurt(DamageSource source, float amount) {
       if (this.isParentActive()) {
          this.damageCount -= amount;
          if (this.damageCount < 0.0F && this.breakCallback != null) {
@@ -34,13 +34,13 @@ public class HitBoxLegsEntity extends HitBoxEntity {
             this.damageCount = 100.0F;
          }
 
-         return this.parentEntity.m_6469_(source, amount * 0.5F);
+         return this.parentEntity.hurt(source, amount * 0.5F);
       } else {
-         return super.m_6469_(source, amount);
+         return super.hurt(source, amount);
       }
    }
 
-   public InteractionResult m_6096_(Player player, InteractionHand hand) {
-      return this.isParentActive() ? this.parentEntity.m_6096_(player, hand) : super.m_6096_(player, hand);
+   public InteractionResult interact(Player player, InteractionHand hand) {
+      return this.isParentActive() ? this.parentEntity.interact(player, hand) : super.interact(player, hand);
    }
 }

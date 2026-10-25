@@ -9,19 +9,19 @@ public class ArenaCameraClient {
 
    public static void startOpeningCamera() {
       PomkotsHud.setActive(false);
-      Minecraft mc = Minecraft.m_91087_();
-      previousCameraType = mc.f_91066_.m_92176_();
-      mc.f_91066_.m_92157_(CameraType.FIRST_PERSON);
+      Minecraft mc = Minecraft.getInstance();
+      previousCameraType = mc.options.getCameraType();
+      mc.options.setCameraType(CameraType.FIRST_PERSON);
    }
 
    public static void endOpeningCamera() {
       PomkotsHud.setActive(true);
-      Minecraft mc = Minecraft.m_91087_();
+      Minecraft mc = Minecraft.getInstance();
       if (previousCameraType != null) {
-         mc.f_91066_.m_92157_(previousCameraType);
+         mc.options.setCameraType(previousCameraType);
          previousCameraType = null;
       } else {
-         mc.f_91066_.m_92157_(CameraType.THIRD_PERSON_FRONT);
+         mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
       }
    }
 }

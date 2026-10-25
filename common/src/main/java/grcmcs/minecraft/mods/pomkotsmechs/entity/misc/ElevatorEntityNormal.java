@@ -39,9 +39,9 @@ public class ElevatorEntityNormal extends LivingEntity implements GeoEntity, Geo
    private static final float WIDTH = 7.0F;
    private static final float HEIGHT = 0.5F;
    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
-   private BlockPos srcBlockPos = BlockPos.f_121853_;
-   private BlockPos dstBlockPos = BlockPos.f_121853_;
-   private Vec3 moveVelocity = Vec3.f_82478_;
+   private BlockPos srcBlockPos = BlockPos.ZERO;
+   private BlockPos dstBlockPos = BlockPos.ZERO;
+   private Vec3 moveVelocity = Vec3.ZERO;
    private int curModeTicks = 0;
    private int moveTicks = 0;
    private boolean moveStarted = false;
@@ -49,30 +49,30 @@ public class ElevatorEntityNormal extends LivingEntity implements GeoEntity, Geo
    private static final double MOVE_SPEED = 0.7;
    private ElevatorEntityNormal.MovePhase movePhase = ElevatorEntityNormal.MovePhase.START_SHAKE;
    private int phaseTicks = 0;
-   private static final EntityDataAccessor<Integer> MODE = SynchedEntityData.m_135353_(ElevatorEntityNormal.class, EntityDataSerializers.f_135028_);
-   private static final EntityDataAccessor<Float> YAW = SynchedEntityData.m_135353_(ElevatorEntityNormal.class, EntityDataSerializers.f_135029_);
+   private static final EntityDataAccessor<Integer> MODE = SynchedEntityData.defineId(ElevatorEntityNormal.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Float> YAW = SynchedEntityData.defineId(ElevatorEntityNormal.class, EntityDataSerializers.FLOAT);
 
    public static Builder createMobAttributes() {
-      return LivingEntity.m_21183_().m_22266_(Attributes.f_22282_).m_22268_(Attributes.f_22278_, 1.0).m_22268_(Attributes.f_22276_, 50.0);
+      return LivingEntity.createLivingAttributes().add(Attributes.ATTACK_KNOCKBACK).add(Attributes.KNOCKBACK_RESISTANCE, 1.0).add(Attributes.MAX_HEALTH, 50.0);
    }
 
    public ElevatorEntityNormal(EntityType<? extends LivingEntity> type, Level level) {
       super(type, level);
-      this.m_20242_(true);
+      this.setNoGravity(true);
    }
 
-   public void m_8119_() {
-      this.m_20242_(true);
-      super.m_8119_();
+   public void tick() {
+      this.setNoGravity(true);
+      super.tick();
       this.lockYaw();
-      if (!this.m_9236_().m_5776_()) {
+      if (!this.level().isClientSide()) {
          this.curModeTicks++;
          switch (this.getMode()) {
             case IDLE:
-               this.moveVelocity = Vec3.f_82478_;
+               this.moveVelocity = Vec3.ZERO;
                break;
             case WAITING:
-               this.moveVelocity = Vec3.f_82478_;
+               this.moveVelocity = Vec3.ZERO;
                this.tickWaiting();
                break;
             case MOVING_TO_DST:
@@ -83,27 +83,27 @@ public class ElevatorEntityNormal extends LivingEntity implements GeoEntity, Geo
             case LOCKING:
          }
 
-         Vec3 prevPos = this.m_20182_();
-         this.m_6478_(MoverType.SELF, this.moveVelocity);
+         Vec3 prevPos = this.position();
+         this.move(MoverType.SELF, this.moveVelocity);
       }
    }
 
    private void lockYaw() {
-      this.m_146922_(this.getFixedYaw());
-      this.f_19859_ = this.getFixedYaw();
-      this.f_20883_ = this.getFixedYaw();
-      this.f_20884_ = this.getFixedYaw();
-      this.f_20885_ = this.getFixedYaw();
-      this.f_20886_ = this.getFixedYaw();
+      this.setYRot(this.getFixedYaw());
+      this.yRotO = this.getFixedYaw();
+      this.yBodyRot = this.getFixedYaw();
+      this.yBodyRotO = this.getFixedYaw();
+      this.yHeadRot = this.getFixedYaw();
+      this.yHeadRotO = this.getFixedYaw();
    }
 
    private void tickWaiting() {
       if (this.curModeTicks >= 100) {
-         AABB area = this.m_20191_().m_82400_(2.0);
+         AABB area = this.getBoundingBox().inflate(2.0);
 
-         for (Pmvc01Entity mech : this.m_9236_().m_45976_(Pmvc01Entity.class, area)) {
-            if (!mech.m_20159_()) {
-               mech.m_7998_(this, true);
+         for (Pmvc01Entity mech : this.level().getEntitiesOfClass(Pmvc01Entity.class, area)) {
+            if (!mech.isPassenger()) {
+               mech.startRiding(this, true);
                this.playSoundEffect((SoundEvent)PomkotsMechs.SE_GASHAN.get());
                this.beginMove();
                this.setMode(this.getNextMoveMode());
@@ -114,8 +114,8 @@ public class ElevatorEntityNormal extends LivingEntity implements GeoEntity, Geo
    }
 
    public ElevatorEntityNormal.Mode getNextMoveMode() {
-      double srcDistance = this.m_20238_(Vec3.m_82512_(this.srcBlockPos));
-      double dstDistance = this.m_20238_(Vec3.m_82512_(this.dstBlockPos));
+      double srcDistance = this.distanceToSqr(Vec3.atCenterOf(this.srcBlockPos));
+      double dstDistance = this.distanceToSqr(Vec3.atCenterOf(this.dstBlockPos));
       return srcDistance <= dstDistance ? ElevatorEntityNormal.Mode.MOVING_TO_DST : ElevatorEntityNormal.Mode.MOVING_TO_SRC;
    }
 
@@ -145,10 +145,10 @@ public class ElevatorEntityNormal extends LivingEntity implements GeoEntity, Geo
                this.playSoundEffect((SoundEvent)PomkotsMechs.SE_ELEVATOR.get());
             }
 
-            double x = Mth.m_14031_(this.phaseTicks * 3.0F) * 0.1;
-            double z = Mth.m_14089_(this.phaseTicks * 3.0F) * 0.1;
-            double y = Mth.m_14031_(this.phaseTicks * 5.0F) * 0.6;
-            this.m_6478_(MoverType.SELF, new Vec3(x, y, z));
+            double x = Mth.sin(this.phaseTicks * 3.0F) * 0.1;
+            double z = Mth.cos(this.phaseTicks * 3.0F) * 0.1;
+            double y = Mth.sin(this.phaseTicks * 5.0F) * 0.6;
+            this.move(MoverType.SELF, new Vec3(x, y, z));
          }
 
          this.phaseTicks = 0;
@@ -158,37 +158,37 @@ public class ElevatorEntityNormal extends LivingEntity implements GeoEntity, Geo
 
    private void tickMoving(BlockPos targetPos) {
       this.phaseTicks++;
-      Vec3 target = Vec3.m_82512_(targetPos);
-      Vec3 diff = target.m_82546_(this.m_20182_());
-      double distance = diff.m_82553_();
+      Vec3 target = Vec3.atCenterOf(targetPos);
+      Vec3 diff = target.subtract(this.position());
+      double distance = diff.length();
       if (distance < 0.3) {
-         this.moveVelocity = Vec3.f_82478_;
+         this.moveVelocity = Vec3.ZERO;
          this.phaseTicks = 0;
          this.movePhase = ElevatorEntityNormal.MovePhase.END_SHAKE;
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_ELEVATOR.get());
       } else {
          double t = this.phaseTicks % 5 * 0.2;
-         Vec3 shake = new Vec3((this.f_19796_.m_188500_() - 0.5) * 0.02, Math.sin(t * Math.PI) * 0.01, (this.f_19796_.m_188500_() - 0.5) * 0.02);
-         this.moveVelocity = diff.m_82541_().m_82490_(0.7).m_82549_(shake);
+         Vec3 shake = new Vec3((this.random.nextDouble() - 0.5) * 0.02, Math.sin(t * Math.PI) * 0.01, (this.random.nextDouble() - 0.5) * 0.02);
+         this.moveVelocity = diff.normalize().scale(0.7).add(shake);
       }
    }
 
    private void tickEndShake() {
       this.phaseTicks++;
-      double x = Mth.m_14031_(this.phaseTicks * 3.0F) * 0.1;
-      double z = Mth.m_14089_(this.phaseTicks * 3.0F) * 0.1;
-      double y = Mth.m_14031_(this.phaseTicks * 5.0F) * 0.6;
-      this.m_6478_(MoverType.SELF, new Vec3(x, y, z));
+      double x = Mth.sin(this.phaseTicks * 3.0F) * 0.1;
+      double z = Mth.cos(this.phaseTicks * 3.0F) * 0.1;
+      double y = Mth.sin(this.phaseTicks * 5.0F) * 0.6;
+      this.move(MoverType.SELF, new Vec3(x, y, z));
       if (this.phaseTicks >= 8) {
          this.phaseTicks = 0;
          this.movePhase = ElevatorEntityNormal.MovePhase.START_SHAKE;
-         this.m_20153_();
+         this.ejectPassengers();
          this.setMode(ElevatorEntityNormal.Mode.WAITING);
       }
    }
 
    private void playSoundEffect(SoundEvent se) {
-      this.m_9236_().m_5594_(null, this.m_20183_(), se, SoundSource.BLOCKS, 1.0F, 0.7F);
+      this.level().playSound(null, this.blockPosition(), se, SoundSource.BLOCKS, 1.0F, 0.7F);
    }
 
    public void setMoveVelocity(Vec3 velocity) {
@@ -196,35 +196,35 @@ public class ElevatorEntityNormal extends LivingEntity implements GeoEntity, Geo
    }
 
    private void moveEntitiesOnTop(Vec3 delta) {
-      if (!(delta.m_82556_() < 1.0E-4)) {
-         AABB area = this.m_20191_().m_82386_(0.0, 0.1, 0.0).m_82377_(0.0, 1.5, 0.0);
+      if (!(delta.lengthSqr() < 1.0E-4)) {
+         AABB area = this.getBoundingBox().move(0.0, 0.1, 0.0).inflate(0.0, 1.5, 0.0);
 
-         for (Entity entity : this.m_9236_().m_45933_(this, area)) {
-            if (!entity.m_20159_()) {
-               entity.m_6478_(MoverType.SHULKER_BOX, delta);
+         for (Entity entity : this.level().getEntities(this, area)) {
+            if (!entity.isPassenger()) {
+               entity.move(MoverType.SHULKER_BOX, delta);
             }
          }
       }
    }
 
-   public boolean m_5829_() {
+   public boolean canBeCollidedWith() {
       return true;
    }
 
-   public PushReaction m_7752_() {
+   public PushReaction getPistonPushReaction() {
       return PushReaction.IGNORE;
    }
 
-   public boolean m_7310_(Entity passenger) {
+   public boolean canAddPassenger(Entity passenger) {
       return true;
    }
 
-   public double m_6048_() {
+   public double getPassengersRidingOffset() {
       return 0.55;
    }
 
-   public EntityDimensions m_6972_(Pose pose) {
-      return EntityDimensions.m_20398_(7.0F, 0.5F);
+   public EntityDimensions getDimensions(Pose pose) {
+      return EntityDimensions.fixed(7.0F, 0.5F);
    }
 
    public BlockPos getDstBlockPos() {
@@ -248,41 +248,41 @@ public class ElevatorEntityNormal extends LivingEntity implements GeoEntity, Geo
       this.moveTicks = 0;
       this.moveStarted = false;
       this.arrivalShakeDone = false;
-      this.f_19804_.m_135381_(MODE, mode.getCode());
+      this.entityData.set(MODE, mode.getCode());
    }
 
    public ElevatorEntityNormal.Mode getMode() {
-      return ElevatorEntityNormal.Mode.byCode((Integer)this.f_19804_.m_135370_(MODE));
+      return ElevatorEntityNormal.Mode.byCode((Integer)this.entityData.get(MODE));
    }
 
    public float getFixedYaw() {
-      return (Float)this.f_19804_.m_135370_(YAW);
+      return (Float)this.entityData.get(YAW);
    }
 
    public void setFixedYaw(float fixedYaw) {
-      this.f_19804_.m_135381_(YAW, fixedYaw);
+      this.entityData.set(YAW, fixedYaw);
    }
 
-   protected void m_8097_() {
-      super.m_8097_();
-      this.f_19804_.m_135372_(MODE, ElevatorEntityNormal.Mode.WAITING.code);
-      this.f_19804_.m_135372_(YAW, 0.0F);
+   protected void defineSynchedData() {
+      super.defineSynchedData();
+      this.entityData.define(MODE, ElevatorEntityNormal.Mode.WAITING.code);
+      this.entityData.define(YAW, 0.0F);
    }
 
-   public void m_7378_(CompoundTag tag) {
-      super.m_7378_(tag);
-      this.setMode(ElevatorEntityNormal.Mode.byCode(tag.m_128451_(PomkotsMechs.nbtName("Mode"))));
+   public void readAdditionalSaveData(CompoundTag tag) {
+      super.readAdditionalSaveData(tag);
+      this.setMode(ElevatorEntityNormal.Mode.byCode(tag.getInt(PomkotsMechs.nbtName("Mode"))));
       this.dstBlockPos = Utils.loadBlockPos("Dst", tag);
       this.srcBlockPos = Utils.loadBlockPos("Src", tag);
-      this.setFixedYaw(tag.m_128457_(PomkotsMechs.nbtName("FixedYaw")));
+      this.setFixedYaw(tag.getFloat(PomkotsMechs.nbtName("FixedYaw")));
    }
 
-   public void m_7380_(CompoundTag tag) {
-      super.m_7380_(tag);
-      tag.m_128405_(PomkotsMechs.nbtName("Mode"), this.getMode().code);
+   public void addAdditionalSaveData(CompoundTag tag) {
+      super.addAdditionalSaveData(tag);
+      tag.putInt(PomkotsMechs.nbtName("Mode"), this.getMode().code);
       Utils.saveBlockPos(tag, "Dst", this.dstBlockPos);
       Utils.saveBlockPos(tag, "Src", this.srcBlockPos);
-      tag.m_128350_(PomkotsMechs.nbtName("FixedYaw"), this.getFixedYaw());
+      tag.putFloat(PomkotsMechs.nbtName("FixedYaw"), this.getFixedYaw());
    }
 
    public void registerControllers(ControllerRegistrar controllers) {
@@ -297,37 +297,37 @@ public class ElevatorEntityNormal extends LivingEntity implements GeoEntity, Geo
       return this.geoCache;
    }
 
-   public boolean m_5830_() {
+   public boolean isInWall() {
       return false;
    }
 
-   protected void m_20101_() {
+   protected void checkInsideBlocks() {
    }
 
-   public boolean m_6129_() {
+   public boolean isAffectedByFluids() {
       return false;
    }
 
-   public int m_7302_(int air) {
+   public int decreaseAirSupply(int air) {
       return 0;
    }
 
-   public Iterable<ItemStack> m_6168_() {
-      return NonNullList.m_122780_(4, ItemStack.f_41583_);
+   public Iterable<ItemStack> getArmorSlots() {
+      return NonNullList.withSize(4, ItemStack.EMPTY);
    }
 
-   public ItemStack m_6844_(EquipmentSlot equipmentSlot) {
-      return ItemStack.f_41583_;
+   public ItemStack getItemBySlot(EquipmentSlot equipmentSlot) {
+      return ItemStack.EMPTY;
    }
 
-   public void m_8061_(EquipmentSlot equipmentSlot, ItemStack itemStack) {
+   public void setItemSlot(EquipmentSlot equipmentSlot, ItemStack itemStack) {
    }
 
-   public boolean m_6094_() {
+   public boolean isPushable() {
       return false;
    }
 
-   public HumanoidArm m_5737_() {
+   public HumanoidArm getMainArm() {
       return null;
    }
 

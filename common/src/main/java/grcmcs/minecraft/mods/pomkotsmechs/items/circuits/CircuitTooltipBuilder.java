@@ -18,10 +18,10 @@ public final class CircuitTooltipBuilder {
    }
 
    public static void appendSkillSnapshot(List<Component> tooltip, CircuitSkillSnapshot snapshot) {
-      tooltip.add(Component.m_237113_(" - ").m_7220_(skillName(snapshot)).m_130940_(ChatFormatting.GRAY));
+      tooltip.add(Component.literal(" - ").append(skillName(snapshot)).withStyle(ChatFormatting.GRAY));
 
       for (SkillEffect effect : snapshot.effects()) {
-         tooltip.add(Component.m_237113_("    ").m_7220_(formatEffect(effect)).m_130940_(getChatFormatting(effect)));
+         tooltip.add(Component.literal("    ").append(formatEffect(effect)).withStyle(getChatFormatting(effect)));
       }
    }
 
@@ -40,7 +40,7 @@ public final class CircuitTooltipBuilder {
    }
 
    private static Component skillName(CircuitSkillSnapshot snapshot) {
-      return Component.m_237113_(snapshot.fallbackName());
+      return Component.literal(snapshot.fallbackName());
    }
 
    private static Component formatEffect(SkillEffect effect) {
@@ -50,22 +50,22 @@ public final class CircuitTooltipBuilder {
    private static Component formatStatEffect(SkillEffect effect) {
       Component statName = statName(effect.stat());
       String valueText = formatValue(effect.operation(), effect.value());
-      return Component.m_237113_(valueText + " ").m_7220_(statName);
+      return Component.literal(valueText + " ").append(statName);
    }
 
    private static Component formatFeatureEffect(SkillEffect effect) {
       Component featureName = featureName(effect.feature());
       return effect.enabled()
-         ? Component.m_237110_("tooltip.pomkotsmechs.feature.enabled", new Object[]{featureName})
-         : Component.m_237110_("tooltip.pomkotsmechs.feature.disabled", new Object[]{featureName});
+         ? Component.translatable("tooltip.pomkotsmechs.feature.enabled", new Object[]{featureName})
+         : Component.translatable("tooltip.pomkotsmechs.feature.disabled", new Object[]{featureName});
    }
 
    private static Component featureName(MechFeatureType featureType) {
-      return Component.m_237115_("mech_feature.pomkotsmechs." + featureType.name().toLowerCase());
+      return Component.translatable("mech_feature.pomkotsmechs." + featureType.name().toLowerCase());
    }
 
    private static Component statName(MechStatType statType) {
-      return Component.m_237115_("mech_stat.pomkotsmechs." + statType.name().toLowerCase());
+      return Component.translatable("mech_stat.pomkotsmechs." + statType.name().toLowerCase());
    }
 
    private static String formatValue(CircuitOperation operation, double value) {

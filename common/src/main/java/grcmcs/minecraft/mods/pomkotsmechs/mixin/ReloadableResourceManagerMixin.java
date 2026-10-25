@@ -15,24 +15,24 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 @Mixin(ReloadableResourceManager.class)
 public class ReloadableResourceManagerMixin {
    @Shadow
-   private PackType f_203817_;
+   private PackType type;
 
    @ModifyVariable(method = "createReload", at = @At("HEAD"), argsOnly = true)
    private List<PackResources> wrapPacks(List<PackResources> original) {
-      if (this.f_203817_ != PackType.CLIENT_RESOURCES) {
+      if (this.type != PackType.CLIENT_RESOURCES) {
          return original;
       }
 
       List<PackResources> wrapped = new ArrayList<>();
 
       for (PackResources pack : original) {
-         PomkotsMechs.LOGGER.info("packid:" + pack.m_5542_());
-         PomkotsMechs.LOGGER.info("packid:" + pack.m_5698_(PackType.CLIENT_RESOURCES));
+         PomkotsMechs.LOGGER.info("packid:" + pack.packId());
+         PomkotsMechs.LOGGER.info("packid:" + pack.getNamespaces(PackType.CLIENT_RESOURCES));
          if (pack instanceof EncryptedPackResources) {
             wrapped.add(pack);
-         } else if (pack.m_5542_().contains("pomkotsmechs")) {
+         } else if (pack.packId().contains("pomkotsmechs")) {
             wrapped.add(new EncryptedPackResources(pack));
-         } else if (pack.m_5698_(PackType.CLIENT_RESOURCES).contains("pomkotsmechs")) {
+         } else if (pack.getNamespaces(PackType.CLIENT_RESOURCES).contains("pomkotsmechs")) {
             wrapped.add(new EncryptedPackResources(pack));
          } else {
             wrapped.add(pack);

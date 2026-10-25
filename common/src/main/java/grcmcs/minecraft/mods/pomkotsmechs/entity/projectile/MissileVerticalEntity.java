@@ -10,7 +10,7 @@ import net.minecraft.world.phys.Vec3;
 public class MissileVerticalEntity extends MissileBaseEntity {
    public MissileVerticalEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
       super(entityType, world);
-      this.m_20242_(true);
+      this.setNoGravity(true);
    }
 
    public MissileVerticalEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter, LivingEntity target) {
@@ -51,7 +51,7 @@ public class MissileVerticalEntity extends MissileBaseEntity {
 
    @Override
    protected Vec3 getNonTargetVelocity() {
-      return new Vec3(0.0, -1.0, 1.0).m_82524_((float)Math.toRadians(-1.0 * this.firstYaw));
+      return new Vec3(0.0, -1.0, 1.0).yRot((float)Math.toRadians(-1.0 * this.firstYaw));
    }
 
    @Override

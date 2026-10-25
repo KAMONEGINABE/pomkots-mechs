@@ -32,7 +32,7 @@ public class UguisuItem extends BasePartsItem.WeaponArm {
    public void tickWeaponInAction(ActionWeapon.WeaponMechInterface mechInterface, int tick, boolean isOnFire) {
       Level world = mechInterface.getWorld();
       if (isOnFire) {
-         if (!world.f_46443_) {
+         if (!world.isClientSide) {
             Vec3 offset = mechInterface.getOffset();
             Vec3 muzzlPos = new Vec3(1.8 * mechInterface.isRight(), 3.0, 5.0);
             List<Entity> targets = mechInterface.consumeMultiLockTargets();
@@ -40,7 +40,7 @@ public class UguisuItem extends BasePartsItem.WeaponArm {
 
             for (int i = 0; i < targets.size(); i++) {
                if (mechInterface.consumeAmmoFromServerSide(1)) {
-                  Vec3 worldMuzzlPos = muzzlPos.m_82520_(1.0 * (i / 2 - 0.5), 1 * (i % 2), 0.0).m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+                  Vec3 worldMuzzlPos = muzzlPos.add(1.0 * (i / 2 - 0.5), 1 * (i % 2), 0.0).yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
                   MissileGenericEntity be = new MissileGenericEntity(
                      (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_GENERIC.get(),
                      world,
@@ -49,10 +49,10 @@ public class UguisuItem extends BasePartsItem.WeaponArm {
                      damage,
                      BattleBalance.MECH_MISSILE_GENERIC_SPEED2
                   );
-                  be.m_146884_(offset.m_82549_(worldMuzzlPos));
+                  be.setPos(offset.add(worldMuzzlPos));
                   be.setMaxRotationAnglePerTick(1.0F);
-                  be.m_37251_(be, 0.0F, mechInterface.getYRot(), mechInterface.getFallFlyingTicks(), BattleBalance.MECH_MISSILE_GENERIC_SPEED2, 0.0F);
-                  world.m_7967_(be);
+                  be.shootFromRotation(be, 0.0F, mechInterface.getYRot(), mechInterface.getFallFlyingTicks(), BattleBalance.MECH_MISSILE_GENERIC_SPEED2, 0.0F);
+                  world.addFreshEntity(be);
                }
             }
          } else if (tick == 2) {

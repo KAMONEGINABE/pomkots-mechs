@@ -9,31 +9,31 @@ import net.minecraft.client.renderer.RenderStateShard.LineStateShard;
 import net.minecraft.client.renderer.RenderType.CompositeState;
 
 public final class ScanRenderTypes extends RenderType {
-   public static final RenderType SCAN_DOME = RenderType.m_173215_(
+   public static final RenderType SCAN_DOME = RenderType.create(
       "pomkotsmechs_scan_dome",
-      DefaultVertexFormat.f_85815_,
+      DefaultVertexFormat.POSITION_COLOR,
       Mode.QUADS,
       65536,
       false,
       true,
-      CompositeState.m_110628_().m_173292_(f_173104_).m_110685_(f_110139_).m_110661_(f_110110_).m_110663_(f_110113_).m_110687_(f_110115_).m_110691_(false)
+      CompositeState.builder().setShaderState(POSITION_COLOR_SHADER).setTransparencyState(TRANSLUCENT_TRANSPARENCY).setCullState(NO_CULL).setDepthTestState(LEQUAL_DEPTH_TEST).setWriteMaskState(COLOR_WRITE).createCompositeState(false)
    );
-   public static final RenderType SCAN_HIGHLIGHT_LINES = RenderType.m_173215_(
+   public static final RenderType SCAN_HIGHLIGHT_LINES = RenderType.create(
       "pomkotsmechs_scan_highlight_lines",
-      DefaultVertexFormat.f_166851_,
+      DefaultVertexFormat.POSITION_COLOR_NORMAL,
       Mode.LINES,
       256,
       false,
       false,
-      CompositeState.m_110628_()
-         .m_173292_(f_173095_)
-         .m_110673_(new LineStateShard(OptionalDouble.of(2.0)))
-         .m_110669_(f_110119_)
-         .m_110685_(f_110139_)
-         .m_110663_(f_110111_)
-         .m_110661_(f_110110_)
-         .m_110687_(f_110115_)
-         .m_110691_(false)
+      CompositeState.builder()
+         .setShaderState(RENDERTYPE_LINES_SHADER)
+         .setLineState(new LineStateShard(OptionalDouble.of(2.0)))
+         .setLayeringState(VIEW_OFFSET_Z_LAYERING)
+         .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+         .setDepthTestState(NO_DEPTH_TEST)
+         .setCullState(NO_CULL)
+         .setWriteMaskState(COLOR_WRITE)
+         .createCompositeState(false)
    );
 
    private ScanRenderTypes(

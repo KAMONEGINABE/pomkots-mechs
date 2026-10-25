@@ -42,21 +42,21 @@ public class MechSalvagerScreen extends AbstractContainerScreen<MechSalvagerMenu
 
    public MechSalvagerScreen(MechSalvagerMenu menu, Inventory inv, Component title) {
       super(menu, inv, title);
-      this.f_97726_ = 480;
-      this.f_97727_ = 270;
+      this.imageWidth = 480;
+      this.imageHeight = 270;
    }
 
-   protected void m_7856_() {
-      super.m_7856_();
+   protected void init() {
+      super.init();
       int offsetX = 20;
       int offsetY = 40;
       this.leftCardOffsetX = offsetX + 28;
       this.leftCardOffsetY = offsetY;
       this.rightCardOffsetX = offsetX + 28 + 164 + 28 + 28;
       this.rightCardOffsetY = offsetY;
-      this.targetList = new SummonMechList(this, this.f_96541_);
-      this.m_142416_(this.targetList);
-      this.summonButton = (Button)this.m_142416_(
+      this.targetList = new SummonMechList(this, this.minecraft);
+      this.addRenderableWidget(this.targetList);
+      this.summonButton = (Button)this.addRenderableWidget(
          this.buildButton("Summon", this.rightCardOffsetX, this.rightCardOffsetY + 130, btn -> this.sendSummonPacket2Server())
       );
    }
@@ -68,22 +68,22 @@ public class MechSalvagerScreen extends AbstractContainerScreen<MechSalvagerMenu
    private void sendSummonPacket2Server() {
       if (this.mechUUID != null) {
          FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-         buf.m_130077_(this.mechUUID);
+         buf.writeUUID(this.mechUUID);
          NetworkManager.sendToServer(PomkotsMechs.id("smm"), buf);
       }
    }
 
-   public void m_88315_(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
       if (!this.isSlotInited
-         && ((MechSalvagerMenu)this.f_97732_).getDataPad() != null
-         && ((MechSalvagerMenu)this.f_97732_).getDataPad().m_41720_() instanceof PomkotsDatapadItem) {
+         && ((MechSalvagerMenu)this.menu).getDataPad() != null
+         && ((MechSalvagerMenu)this.menu).getDataPad().getItem() instanceof PomkotsDatapadItem) {
          this.isSlotInited = true;
-         ItemStack dataPad = ((MechSalvagerMenu)this.f_97732_).getDataPad();
-         if (dataPad.m_41720_() instanceof PomkotsDatapadItem) {
+         ItemStack dataPad = ((MechSalvagerMenu)this.menu).getDataPad();
+         if (dataPad.getItem() instanceof PomkotsDatapadItem) {
             List<Pair<UUID, String>> targets = new ArrayList<>();
 
-            for (ItemStack keyCardSlot : PomkotsDatapadItem.createKeyCardContainer(dataPad).f_19147_) {
-               if (keyCardSlot.m_41720_() instanceof KeycardItem && KeycardItem.getMechUuid(keyCardSlot) != null) {
+            for (ItemStack keyCardSlot : PomkotsDatapadItem.createKeyCardContainer(dataPad).items) {
+               if (keyCardSlot.getItem() instanceof KeycardItem && KeycardItem.getMechUuid(keyCardSlot) != null) {
                   targets.add(new Pair(KeycardItem.getMechUuid(keyCardSlot), KeycardItem.getMechName(keyCardSlot)));
                }
             }
@@ -92,26 +92,26 @@ public class MechSalvagerScreen extends AbstractContainerScreen<MechSalvagerMenu
          }
       }
 
-      this.summonButton.f_93623_ = this.mechUUID != null;
-      this.m_280273_(graphics);
-      super.m_88315_(graphics, mouseX, mouseY, partialTick);
-      this.m_280072_(graphics, mouseX, mouseY);
+      this.summonButton.active = this.mechUUID != null;
+      this.renderBackground(graphics);
+      super.render(graphics, mouseX, mouseY, partialTick);
+      this.renderTooltip(graphics, mouseX, mouseY);
    }
 
-   protected void m_7286_(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+   protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
       this.renderBgTexture(TEXTURE_MECH_SELECTOR, this.leftCardOffsetX, this.leftCardOffsetY, 164, 170, guiGraphics);
-      guiGraphics.m_280488_(this.f_96547_, "Select a mech to summon", this.leftCardOffsetX + 18, this.leftCardOffsetY + 4, -1);
-      if (((MechSalvagerMenu)this.f_97732_).getDataPad().m_41619_()) {
-         guiGraphics.m_280488_(this.f_96547_, "No data pad in your inventory", this.leftCardOffsetX + 10, this.leftCardOffsetY + 70, -56798);
+      guiGraphics.drawString(this.font, "Select a mech to summon", this.leftCardOffsetX + 18, this.leftCardOffsetY + 4, -1);
+      if (((MechSalvagerMenu)this.menu).getDataPad().isEmpty()) {
+         guiGraphics.drawString(this.font, "No data pad in your inventory", this.leftCardOffsetX + 10, this.leftCardOffsetY + 70, -56798);
       } else if (this.targetList.getSize() == 0) {
-         guiGraphics.m_280488_(this.f_96547_, "No key card in your data pad", this.leftCardOffsetX + 10, this.leftCardOffsetY + 70, -56798);
+         guiGraphics.drawString(this.font, "No key card in your data pad", this.leftCardOffsetX + 10, this.leftCardOffsetY + 70, -56798);
       }
 
       this.renderBgTexture(TEXTURE_PANEL_INV_PLAYER, this.rightCardOffsetX, this.leftCardOffsetY, 164, 94, guiGraphics);
-      guiGraphics.m_280488_(this.f_96547_, "Player Inventory", this.rightCardOffsetX + 18, this.leftCardOffsetY + 4, -1);
+      guiGraphics.drawString(this.font, "Player Inventory", this.rightCardOffsetX + 18, this.leftCardOffsetY + 4, -1);
    }
 
-   protected void m_280003_(GuiGraphics gui, int mouseX, int mouseY) {
+   protected void renderLabels(GuiGraphics gui, int mouseX, int mouseY) {
    }
 
    private ImageButton buildButton(String text, int x, int y, OnPress onPress) {
@@ -119,8 +119,8 @@ public class MechSalvagerScreen extends AbstractContainerScreen<MechSalvagerMenu
    }
 
    private ImageButton buildButton(String text, int x, int y, OnPress onPress, boolean active) {
-      ImageButton b = new ImageButton(x, y, 70, 14, TEXTURE_BUTTON, 0, 0, 70, 56, Component.m_237113_(text), onPress);
-      b.f_93623_ = active;
+      ImageButton b = new ImageButton(x, y, 70, 14, TEXTURE_BUTTON, 0, 0, 70, 56, Component.literal(text), onPress);
+      b.active = active;
       return b;
    }
 
@@ -132,7 +132,7 @@ public class MechSalvagerScreen extends AbstractContainerScreen<MechSalvagerMenu
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
       RenderSystem.enableBlend();
       RenderSystem.setShaderTexture(0, texture);
-      guiGraphics.m_280163_(texture, x, y, 0.0F, 0.0F, width, height, width, height);
+      guiGraphics.blit(texture, x, y, 0.0F, 0.0F, width, height, width, height);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 }

@@ -35,14 +35,14 @@ public class NosuriItem extends BasePartsItem.WeaponShoulder {
    public void tickWeaponInAction(ActionWeapon.WeaponMechInterface mechInterface, int tick, boolean isOnFire) {
       Level world = mechInterface.getWorld();
       if (isOnFire) {
-         if (!world.m_5776_()) {
+         if (!world.isClientSide()) {
             Entity target = mechInterface.consumeMultiLockTargetsSingle();
             if (target != null && mechInterface.consumeAmmoFromServerSide(1)) {
                Vec3 offset = mechInterface.getOffset();
                Vec3 muzzlPos = new Vec3(1.4 * mechInterface.isRight(), 6.0, 2.0);
                if (tick < 14) {
                   int i = tick / 2 - 1;
-                  Vec3 worldMuzzlPos = muzzlPos.m_82520_(0.0, 0.0, -2.5 - 0.5 * (i % 6)).m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+                  Vec3 worldMuzzlPos = muzzlPos.add(0.0, 0.0, -2.5 - 0.5 * (i % 6)).yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
                   MissileGenericEntity be = new MissileGenericEntity(
                      (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_GENERIC.get(),
                      world,
@@ -52,9 +52,9 @@ public class NosuriItem extends BasePartsItem.WeaponShoulder {
                      BattleBalance.MECH_MISSILE_GENERIC_SPEED2
                   );
                   be.setSwitchTick(24);
-                  be.m_146884_(offset.m_82549_(worldMuzzlPos));
-                  be.m_37251_(be, -80.0F, mechInterface.getYRot(), mechInterface.getFallFlyingTicks(), BattleBalance.MECH_MISSILE_GENERIC_SPEED2 * 3.0F, 0.0F);
-                  world.m_7967_(be);
+                  be.setPos(offset.add(worldMuzzlPos));
+                  be.shootFromRotation(be, -80.0F, mechInterface.getYRot(), mechInterface.getFallFlyingTicks(), BattleBalance.MECH_MISSILE_GENERIC_SPEED2 * 3.0F, 0.0F);
+                  world.addFreshEntity(be);
                }
             }
          } else {

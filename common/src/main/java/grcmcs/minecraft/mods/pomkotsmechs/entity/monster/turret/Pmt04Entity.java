@@ -34,7 +34,7 @@ public class Pmt04Entity extends BaseTurretEntity {
    @Override
    protected void registerTargetSelectorGoals() {
       super.registerTargetSelectorGoals();
-      this.f_21345_.m_25352_(1, new ContinuousAttackGoal(this, 0.8F, 21, 60, 20));
+      this.goalSelector.addGoal(1, new ContinuousAttackGoal(this, 0.8F, 21, 60, 20));
    }
 
    @Override
@@ -50,24 +50,24 @@ public class Pmt04Entity extends BaseTurretEntity {
 
    @Override
    public void doAttack() {
-      LivingEntity target = this.m_5448_();
+      LivingEntity target = this.getTarget();
       if (target != null) {
-         Vec3 offset = this.m_20182_();
+         Vec3 offset = this.position();
          float slotX = this.curSlot % 6 * -1 + 3;
          this.curSlot++;
          Vec3 muzzlPos = new Vec3(slotX, 2.0, 0.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
          MissileGenericLargeEntity be = new MissileGenericLargeEntity(
             (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_GENERIC_LARGE.get(),
-            this.m_9236_(),
+            this.level(),
             this,
             target,
             this.getMechData().missileDamage,
             this.getMechData().missileSpeed
          );
-         be.m_146884_(offset.m_82549_(muzzlPos));
-         be.m_37251_(be, -90.0F, this.m_146908_(), this.m_21256_(), this.getMechData().missileSpeed, 0.0F);
-         this.m_9236_().m_7967_(be);
+         be.setPos(offset.add(muzzlPos));
+         be.shootFromRotation(be, -90.0F, this.getYRot(), this.getFallFlyingTicks(), this.getMechData().missileSpeed, 0.0F);
+         this.level().addFreshEntity(be);
       }
    }
 

@@ -28,7 +28,7 @@ public class SimpleBossAttackGoal extends BaseBossGoal {
       super(mob);
       this.action = action;
       this.adjustRotation = adjustRotation;
-      this.m_7021_(EnumSet.of(Flag.MOVE, Flag.LOOK));
+      this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
       this.maxRepeatNum = repeatNum;
       this.rotateOnSamePlace = rotateOnSamePlace;
    }
@@ -38,31 +38,31 @@ public class SimpleBossAttackGoal extends BaseBossGoal {
       return !this.action.isInCooltime();
    }
 
-   public boolean m_8045_() {
+   public boolean canContinueToUse() {
       return this.action.isInAction();
    }
 
-   public boolean m_183429_() {
+   public boolean requiresUpdateEveryTick() {
       return true;
    }
 
-   public void m_8056_() {
+   public void start() {
       if (this.action.tryAction()) {
          if (!this.adjustRotation) {
-            this.mob.m_21573_().m_26573_();
+            this.mob.getNavigation().stop();
          }
 
          this.currentRepeatNum = this.maxRepeatNum;
-         this.mob.rotateToTarget(this.mob.m_5448_());
+         this.mob.rotateToTarget(this.mob.getTarget());
       }
    }
 
-   public void m_8041_() {
+   public void stop() {
    }
 
-   public void m_8037_() {
-      if (this.adjustRotation && this.mob.m_5448_() != null) {
-         this.mob.rotateToTarget(this.mob.m_5448_());
+   public void tick() {
+      if (this.adjustRotation && this.mob.getTarget() != null) {
+         this.mob.rotateToTarget(this.mob.getTarget());
          if (this.rotateOnSamePlace) {
             this.mob.choiMove();
          }

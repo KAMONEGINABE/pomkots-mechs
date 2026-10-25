@@ -41,7 +41,7 @@ public class PomkotsBGMManager {
 
    private static void stopVanillaMusic() {
       suppressingVanilla = true;
-      Minecraft.m_91087_().m_91397_().m_120186_();
+      Minecraft.getInstance().getMusicManager().stopPlaying();
    }
 
    private static void fadeOutCurrent() {
@@ -61,7 +61,7 @@ public class PomkotsBGMManager {
       };
       if (sound != null) {
          currentSound = new PomkotsSoundInstance(sound, SoundConfig.loopFadeSE().source(SoundSource.MUSIC).relative(false).volume(0.5F).fadeIn(40).fadeOut(40));
-         Minecraft.m_91087_().m_91106_().m_120367_(currentSound);
+         Minecraft.getInstance().getSoundManager().play(currentSound);
       }
    }
 }

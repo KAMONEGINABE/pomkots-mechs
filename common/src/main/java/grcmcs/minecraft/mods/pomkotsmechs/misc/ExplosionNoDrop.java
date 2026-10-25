@@ -34,45 +34,45 @@ public class ExplosionNoDrop extends Explosion {
       this.blockInteraction = blockInteraction;
    }
 
-   public void m_46075_(boolean bl) {
-      if (this.level.f_46443_) {
+   public void finalizeExplosion(boolean bl) {
+      if (this.level.isClientSide) {
          this.level
-            .m_7785_(
+            .playLocalSound(
                this.x,
                this.y,
                this.z,
-               SoundEvents.f_11913_,
+               SoundEvents.GENERIC_EXPLODE,
                SoundSource.BLOCKS,
                4.0F,
-               (1.0F + (this.level.f_46441_.m_188501_() - this.level.f_46441_.m_188501_()) * 0.2F) * 0.7F,
+               (1.0F + (this.level.random.nextFloat() - this.level.random.nextFloat()) * 0.2F) * 0.7F,
                false
             );
       }
 
-      boolean bl2 = this.m_254884_();
+      boolean bl2 = this.interactsWithBlocks();
       if (bl) {
-         if (!(this.f_46017_ < 2.0F) && bl2) {
-            this.level.m_7106_(ParticleTypes.f_123812_, this.x, this.y, this.z, 1.0, 0.0, 0.0);
+         if (!(this.radius < 2.0F) && bl2) {
+            this.level.addParticle(ParticleTypes.EXPLOSION_EMITTER, this.x, this.y, this.z, 1.0, 0.0, 0.0);
          } else {
-            this.level.m_7106_(ParticleTypes.f_123813_, this.x, this.y, this.z, 1.0, 0.0, 0.0);
+            this.level.addParticle(ParticleTypes.EXPLOSION, this.x, this.y, this.z, 1.0, 0.0, 0.0);
          }
       }
 
       if (bl2) {
          ObjectArrayList<Pair<ItemStack, BlockPos>> objectArrayList = new ObjectArrayList();
-         ObjectArrayList<BlockPos> toBlow = (ObjectArrayList<BlockPos>)this.m_46081_();
-         Util.m_214673_(toBlow, this.level.f_46441_);
+         ObjectArrayList<BlockPos> toBlow = (ObjectArrayList<BlockPos>)this.getToBlow();
+         Util.shuffle(toBlow, this.level.random);
          ObjectListIterator var5 = toBlow.iterator();
 
          while (var5.hasNext()) {
             BlockPos blockPos = (BlockPos)var5.next();
-            BlockState blockState = this.level.m_8055_(blockPos);
-            Block block = blockState.m_60734_();
-            if (!blockState.m_60795_()) {
-               this.level.m_46473_().m_6180_("explosion_blocks");
-               this.level.m_7731_(blockPos, Blocks.f_50016_.m_49966_(), 3);
-               block.m_7592_(this.level, blockPos, this);
-               this.level.m_46473_().m_7238_();
+            BlockState blockState = this.level.getBlockState(blockPos);
+            Block block = blockState.getBlock();
+            if (!blockState.isAir()) {
+               this.level.getProfiler().push("explosion_blocks");
+               this.level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 3);
+               block.wasExploded(this.level, blockPos, this);
+               this.level.getProfiler().pop();
             }
          }
 
@@ -80,7 +80,7 @@ public class ExplosionNoDrop extends Explosion {
 
          while (var5.hasNext()) {
             Pair<ItemStack, BlockPos> pair = (Pair<ItemStack, BlockPos>)var5.next();
-            Block.m_49840_(this.level, (BlockPos)pair.getSecond(), (ItemStack)pair.getFirst());
+            Block.popResource(this.level, (BlockPos)pair.getSecond(), (ItemStack)pair.getFirst());
          }
       }
    }

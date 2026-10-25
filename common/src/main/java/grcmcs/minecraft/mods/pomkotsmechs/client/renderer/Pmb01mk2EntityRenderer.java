@@ -53,7 +53,7 @@ public class Pmb01mk2EntityRenderer extends GeoEntityRenderer<Pmb01mk2Entity> {
    }
 
    public void render(Pmb01mk2Entity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-      super.m_7392_(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
-      RenderUtils.renderBossBars(entity, poseStack, bufferSource, this.f_114476_, 7.0F);
+      super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+      RenderUtils.renderBossBars(entity, poseStack, bufferSource, this.entityRenderDispatcher, 7.0F);
    }
 }

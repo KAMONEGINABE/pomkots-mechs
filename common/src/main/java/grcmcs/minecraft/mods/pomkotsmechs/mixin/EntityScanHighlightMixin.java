@@ -13,10 +13,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class EntityScanHighlightMixin {
    @Inject(method = "isCurrentlyGlowing", at = @At("HEAD"), cancellable = true)
    private void pomkotsmechs$showScanHighlight(CallbackInfoReturnable<Boolean> cir) {
-      Entity self = (Entity)this;
-      if (self.m_9236_().f_46443_) {
-         if (ClientScanManager.isEntityHighlighted(self.m_19879_())) {
-            if (self instanceof Pmvc01Entity mech && mech.getDrivingPassenger() == Minecraft.m_91087_().f_91074_) {
+      Entity self = (Entity)(Object)this;
+      if (self.level().isClientSide) {
+         if (ClientScanManager.isEntityHighlighted(self.getId())) {
+            if (self instanceof Pmvc01Entity mech && mech.getDrivingPassenger() == Minecraft.getInstance().player) {
                return;
             }
 

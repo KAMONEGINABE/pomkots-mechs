@@ -56,16 +56,16 @@ public class Pmc01Entity extends GenericPomkotsMonsterPercistant implements GeoE
 
    public Pmc01Entity(EntityType<? extends Monster> entityType, Level level) {
       super(entityType, level);
-      this.m_20242_(true);
+      this.setNoGravity(true);
       this.alwaysLookAtTarget = false;
    }
 
    @Override
-   protected void m_8099_() {
-      super.m_8099_();
-      this.f_21345_.m_25352_(1, new StraightRushGoal(this, 2.0));
-      this.f_21346_.m_25352_(1, new NearestEntityTargetGoal<RaidObjectiveEntity>(this, RaidObjectiveEntity.class, false));
-      this.f_21346_.m_25352_(2, new NearestEntityTargetGoal(this, Player.class, false));
+   protected void registerGoals() {
+      super.registerGoals();
+      this.goalSelector.addGoal(1, new StraightRushGoal(this, 2.0));
+      this.targetSelector.addGoal(1, new NearestEntityTargetGoal<RaidObjectiveEntity>(this, RaidObjectiveEntity.class, false));
+      this.targetSelector.addGoal(2, new NearestEntityTargetGoal(this, Player.class, false));
    }
 
    public void registerControllers(ControllerRegistrar controllers) {
@@ -84,42 +84,42 @@ public class Pmc01Entity extends GenericPomkotsMonsterPercistant implements GeoE
    }
 
    protected void updateRotationBasedOnVelocity() {
-      Vec3 vel = this.m_20184_();
-      if (vel.m_82556_() > 1.0E-4) {
-         float yaw = (float)Math.toDegrees(Math.atan2(vel.f_82479_, vel.f_82481_));
-         this.m_146922_(yaw);
-         this.f_19859_ = yaw;
-         this.m_5618_(yaw);
-         this.f_20884_ = yaw;
-         this.m_5616_(yaw);
-         this.f_20886_ = yaw;
+      Vec3 vel = this.getDeltaMovement();
+      if (vel.lengthSqr() > 1.0E-4) {
+         float yaw = (float)Math.toDegrees(Math.atan2(vel.x, vel.z));
+         this.setYRot(yaw);
+         this.yRotO = yaw;
+         this.setYBodyRot(yaw);
+         this.yBodyRotO = yaw;
+         this.setYHeadRot(yaw);
+         this.yHeadRotO = yaw;
       }
    }
 
    @Override
-   public void m_8119_() {
-      this.m_20242_(true);
-      super.m_8119_();
+   public void tick() {
+      this.setNoGravity(true);
+      super.tick();
       if (this.isServerSide()) {
-         if (this.f_19797_ > 600) {
+         if (this.tickCount > 600) {
             if (this.container != null) {
-               this.container.m_146870_();
+               this.container.discard();
             }
 
-            this.m_146870_();
+            this.discard();
          }
 
          if (this.raidControllerEntityUUID != null && this.raidControllerEntity == null) {
-            this.raidControllerEntity = (RaidControllerEntity)((ServerLevel)this.m_9236_()).m_8791_(this.raidControllerEntityUUID);
+            this.raidControllerEntity = (RaidControllerEntity)((ServerLevel)this.level()).getEntity(this.raidControllerEntityUUID);
          }
 
          if (!"".equals(this.containerType) && this.containerUUID == null) {
             RegistrySupplier<EntityType<?>> type = Utils.getEntityType(this.containerType);
             if (type != null) {
-               Entity entity = ((EntityType)type.get()).m_20615_(this.m_9236_());
-               entity.m_146884_(this.m_20182_());
-               this.m_9236_().m_7967_(entity);
-               this.containerUUID = entity.m_20148_();
+               Entity entity = ((EntityType)type.get()).create(this.level());
+               entity.setPos(this.position());
+               this.level().addFreshEntity(entity);
+               this.containerUUID = entity.getUUID();
                this.container = entity;
                if (entity instanceof GenericPomkotsMonster pomkots) {
                   pomkots.setInRaid(this.isInRaid);
@@ -130,7 +130,7 @@ public class Pmc01Entity extends GenericPomkotsMonsterPercistant implements GeoE
                if (this.raidControllerEntity != null) {
                   this.raidControllerEntity.addSpawnedEntity(entity);
                   if (entity instanceof Pmc02Entity pmc02) {
-                     pmc02.raidControllerEntityUUID = this.raidControllerEntity.m_20148_();
+                     pmc02.raidControllerEntityUUID = this.raidControllerEntity.getUUID();
                      pmc02.raidControllerEntity = this.raidControllerEntity;
                   }
                }
@@ -140,7 +140,7 @@ public class Pmc01Entity extends GenericPomkotsMonsterPercistant implements GeoE
          }
 
          if (this.containerUUID != null && this.container == null) {
-            Entity c = ((ServerLevel)this.m_9236_()).m_8791_(this.containerUUID);
+            Entity c = ((ServerLevel)this.level()).getEntity(this.containerUUID);
             if (c != null) {
                this.container = c;
             }
@@ -154,18 +154,18 @@ public class Pmc01Entity extends GenericPomkotsMonsterPercistant implements GeoE
                cont.setSpawnTargetMobs(this.spawnTargetMobs);
             }
 
-            Vec3 pos = this.m_20182_();
-            this.container.m_6034_(pos.f_82479_, pos.f_82480_ - 10.0, pos.f_82481_);
-            float yaw = this.m_146908_();
-            this.container.m_146922_(yaw);
-            this.container.m_5616_(yaw);
-            this.container.f_19859_ = yaw;
-            if (this.m_5448_() != null
+            Vec3 pos = this.position();
+            this.container.setPos(pos.x, pos.y - 10.0, pos.z);
+            float yaw = this.getYRot();
+            this.container.setYRot(yaw);
+            this.container.setYHeadRot(yaw);
+            this.container.yRotO = yaw;
+            if (this.getTarget() != null
                && this.container != null
-               && !isFartherThanXZ(this, this.m_5448_(), this.dropDistance)
-               && isBelowGroundNotWater(this.m_9236_(), this.m_20183_())) {
+               && !isFartherThanXZ(this, this.getTarget(), this.dropDistance)
+               && isBelowGroundNotWater(this.level(), this.blockPosition())) {
                if (this.container instanceof Mob mob) {
-                  mob.m_6710_(this.m_5448_());
+                  mob.setTarget(this.getTarget());
                }
 
                this.container = null;
@@ -177,24 +177,24 @@ public class Pmc01Entity extends GenericPomkotsMonsterPercistant implements GeoE
          if (this.countDownForDiscard > 0) {
             this.countDownForDiscard--;
          } else if (this.countDownForDiscard == 0) {
-            this.m_146870_();
+            this.discard();
          }
       }
    }
 
    public static boolean isFartherThanXZ(Entity a, Entity b, double n) {
-      double dx = a.m_20185_() - b.m_20185_();
-      double dz = a.m_20189_() - b.m_20189_();
+      double dx = a.getX() - b.getX();
+      double dz = a.getZ() - b.getZ();
       double distSqr = dx * dx + dz * dz;
       return distSqr >= n * n;
    }
 
    public static boolean isBelowGroundNotWater(Level level, BlockPos startPos) {
-      for (int y = startPos.m_123342_(); y >= level.m_141937_(); y--) {
-         BlockPos checkPos = new BlockPos(startPos.m_123341_(), y, startPos.m_123343_());
-         BlockState state = level.m_8055_(checkPos);
-         if (!state.m_60795_()) {
-            return !state.m_60819_().m_205070_(FluidTags.f_13131_);
+      for (int y = startPos.getY(); y >= level.getMinBuildHeight(); y--) {
+         BlockPos checkPos = new BlockPos(startPos.getX(), y, startPos.getZ());
+         BlockState state = level.getBlockState(checkPos);
+         if (!state.isAir()) {
+            return !state.getFluidState().is(FluidTags.WATER);
          }
       }
 
@@ -202,89 +202,89 @@ public class Pmc01Entity extends GenericPomkotsMonsterPercistant implements GeoE
    }
 
    @Override
-   public void m_7380_(CompoundTag compound) {
-      super.m_7380_(compound);
-      compound.m_128359_(PomkotsMechs.nbtName("ContainerType"), this.containerType);
+   public void addAdditionalSaveData(CompoundTag compound) {
+      super.addAdditionalSaveData(compound);
+      compound.putString(PomkotsMechs.nbtName("ContainerType"), this.containerType);
       if (this.containerUUID != null) {
-         compound.m_128362_(PomkotsMechs.nbtName("ContainerUUID"), this.containerUUID);
+         compound.putUUID(PomkotsMechs.nbtName("ContainerUUID"), this.containerUUID);
       } else {
-         compound.m_128473_(PomkotsMechs.nbtName("ContainerUUID"));
+         compound.remove(PomkotsMechs.nbtName("ContainerUUID"));
       }
 
       if (this.raidControllerEntityUUID != null) {
-         compound.m_128362_(PomkotsMechs.nbtName("RaidControllerEntityUUID"), this.raidControllerEntityUUID);
+         compound.putUUID(PomkotsMechs.nbtName("RaidControllerEntityUUID"), this.raidControllerEntityUUID);
       } else {
-         compound.m_128473_(PomkotsMechs.nbtName("RaidControllerEntityUUID"));
+         compound.remove(PomkotsMechs.nbtName("RaidControllerEntityUUID"));
       }
 
       ListTag list = new ListTag();
 
       for (String type : this.spawnTargetMobs) {
-         list.add(StringTag.m_129297_(type));
+         list.add(StringTag.valueOf(type));
       }
 
-      compound.m_128365_(PomkotsMechs.nbtName("SpawnTargetMobs"), list);
+      compound.put(PomkotsMechs.nbtName("SpawnTargetMobs"), list);
    }
 
    @Override
-   public void m_7378_(CompoundTag compound) {
-      super.m_7378_(compound);
-      if (compound.m_128441_(PomkotsMechs.nbtName("ContainerType"))) {
-         this.containerType = compound.m_128461_(PomkotsMechs.nbtName("ContainerType"));
+   public void readAdditionalSaveData(CompoundTag compound) {
+      super.readAdditionalSaveData(compound);
+      if (compound.contains(PomkotsMechs.nbtName("ContainerType"))) {
+         this.containerType = compound.getString(PomkotsMechs.nbtName("ContainerType"));
       } else {
          this.containerType = "";
       }
 
-      if (compound.m_128441_(PomkotsMechs.nbtName("ContainerUUID"))) {
-         this.containerUUID = compound.m_128342_(PomkotsMechs.nbtName("ContainerUUID"));
+      if (compound.contains(PomkotsMechs.nbtName("ContainerUUID"))) {
+         this.containerUUID = compound.getUUID(PomkotsMechs.nbtName("ContainerUUID"));
       } else {
          this.containerUUID = null;
       }
 
-      if (compound.m_128441_(PomkotsMechs.nbtName("RaidControllerEntityUUID"))) {
-         this.raidControllerEntityUUID = compound.m_128342_(PomkotsMechs.nbtName("RaidControllerEntityUUID"));
+      if (compound.contains(PomkotsMechs.nbtName("RaidControllerEntityUUID"))) {
+         this.raidControllerEntityUUID = compound.getUUID(PomkotsMechs.nbtName("RaidControllerEntityUUID"));
       } else {
          this.raidControllerEntityUUID = null;
       }
 
-      if (compound.m_128441_(PomkotsMechs.nbtName("SpawnTargetMobs"))) {
+      if (compound.contains(PomkotsMechs.nbtName("SpawnTargetMobs"))) {
          this.spawnTargetMobs.clear();
-         ListTag list = (ListTag)compound.m_128423_(PomkotsMechs.nbtName("SpawnTargetMobs"));
+         ListTag list = (ListTag)compound.get(PomkotsMechs.nbtName("SpawnTargetMobs"));
          if (list != null) {
             for (Tag t : list) {
-               this.spawnTargetMobs.add(t.m_7916_());
+               this.spawnTargetMobs.add(t.getAsString());
             }
          }
       }
 
-      if (compound.m_128441_(PomkotsMechs.nbtName("DropDistance"))) {
-         this.dropDistance = compound.m_128457_(PomkotsMechs.nbtName("DropDistance"));
+      if (compound.contains(PomkotsMechs.nbtName("DropDistance"))) {
+         this.dropDistance = compound.getFloat(PomkotsMechs.nbtName("DropDistance"));
       } else {
          this.dropDistance = 100.0F;
       }
 
-      if (compound.m_128441_(PomkotsMechs.nbtName("MonsterHealthModifier"))) {
-         this.healthModifier = compound.m_128457_(PomkotsMechs.nbtName("MonsterHealthModifier"));
+      if (compound.contains(PomkotsMechs.nbtName("MonsterHealthModifier"))) {
+         this.healthModifier = compound.getFloat(PomkotsMechs.nbtName("MonsterHealthModifier"));
       } else {
          this.healthModifier = 1.0F;
       }
    }
 
    @Override
-   protected void m_6153_() {
-      this.f_20919_++;
-      if (this.f_20919_ == 10) {
-         if (this.isServerSide() && RemovalReason.KILLED.equals(this.m_146911_())) {
-            Level level = this.m_9236_();
+   protected void tickDeath() {
+      this.deathTime++;
+      if (this.deathTime == 10) {
+         if (this.isServerSide() && RemovalReason.KILLED.equals(this.getRemovalReason())) {
+            Level level = this.level();
             ExplosionEntity e = new ExplosionEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.EXPLOSION.get(), level);
-            e.m_146884_(this.m_20182_());
-            level.m_7967_(e);
+            e.setPos(this.position());
+            level.addFreshEntity(e);
             if (this.container != null) {
-               this.container.m_146870_();
+               this.container.discard();
             }
          }
 
-         this.m_142687_(RemovalReason.KILLED);
+         this.remove(RemovalReason.KILLED);
       }
    }
 

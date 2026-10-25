@@ -21,20 +21,20 @@ public class GliderUnitItem extends BasePartsItem.Extension {
    }
 
    public void startUsing(Level level, ItemStack stack, Entity entity) {
-      if (!level.f_46443_) {
+      if (!level.isClientSide) {
          this.triggerAnim(entity, GeoItem.getOrAssignId(stack, (ServerLevel)level), "Activation", "use");
       }
    }
 
    public void endUsing(Level level, ItemStack stack, Entity entity) {
-      if (!level.f_46443_) {
+      if (!level.isClientSide) {
          this.triggerAnim(entity, GeoItem.getOrAssignId(stack, (ServerLevel)level), "Activation", "stop");
       }
    }
 
-   public void m_6883_(ItemStack stack, Level level, Entity ent, int slotIndex, boolean bl) {
-      super.m_6883_(stack, level, ent, slotIndex, bl);
-      if (!level.f_46443_ && level instanceof ServerLevel serverLevel) {
+   public void inventoryTick(ItemStack stack, Level level, Entity ent, int slotIndex, boolean bl) {
+      super.inventoryTick(stack, level, ent, slotIndex, bl);
+      if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
          GeoItem.getOrAssignId(stack, serverLevel);
       }
    }

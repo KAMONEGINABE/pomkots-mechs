@@ -28,42 +28,42 @@ public class ReturningProcessor extends AbstractArenaMatchStateProcessor {
    private void returnFighter(ArenaFighterData info, Entity pilotEntity, Entity mechEntity, BlockPos pos, ServerLevel level) {
       if (info.getType() == ArenaFighterData.FighterType.NPC) {
          if (pilotEntity instanceof MechPilotEntity) {
-            pilotEntity.m_146870_();
+            pilotEntity.discard();
          }
 
          if (mechEntity instanceof Pmvc01Entity) {
-            mechEntity.m_146870_();
+            mechEntity.discard();
          }
       } else {
          float yaw = this.getYaw(level, pos);
-         pos = pos.m_6630_(2);
+         pos = pos.above(2);
          if (pilotEntity instanceof Player player) {
-            player.m_21195_(MobEffects.f_19606_);
+            player.removeEffect(MobEffects.DAMAGE_RESISTANCE);
          }
 
-         if (mechEntity instanceof Pmvc01Entity mech && mechEntity.m_6084_()) {
+         if (mechEntity instanceof Pmvc01Entity mech && mechEntity.isAlive()) {
             if (mech.getDrivingPassenger() != null && mech.getDrivingPassenger().equals(pilotEntity)) {
                this.setYaw(mech, yaw);
                this.setYaw(pilotEntity, yaw);
-               mech.m_7678_(pos.m_123341_(), pos.m_123342_(), pos.m_123343_(), yaw, 0.0F);
+               mech.moveTo(pos.getX(), pos.getY(), pos.getZ(), yaw, 0.0F);
                return;
             }
 
-            mech.m_6021_(pos.m_123341_(), pos.m_123342_(), pos.m_123343_());
+            mech.teleportTo(pos.getX(), pos.getY(), pos.getZ());
             this.setYaw(mech, yaw);
          }
 
-         if (pilotEntity != null && pilotEntity.m_6084_()) {
-            pilotEntity.m_6021_(pos.m_123341_(), pos.m_123342_(), pos.m_123343_());
+         if (pilotEntity != null && pilotEntity.isAlive()) {
+            pilotEntity.teleportTo(pos.getX(), pos.getY(), pos.getZ());
             this.setYaw(pilotEntity, yaw);
          }
       }
    }
 
    private void setYaw(Entity ent, float yaw) {
-      ent.m_146922_(yaw);
-      ent.m_5618_(yaw);
-      ent.m_5616_(yaw);
+      ent.setYRot(yaw);
+      ent.setYBodyRot(yaw);
+      ent.setYHeadRot(yaw);
    }
 
    @Override
@@ -75,9 +75,9 @@ public class ReturningProcessor extends AbstractArenaMatchStateProcessor {
    }
 
    private float getYaw(ServerLevel level, BlockPos pos) {
-      BlockState state = level.m_8055_(pos);
-      Direction facing = (Direction)state.m_61143_(ArenaGateBlock.FACING);
-      Direction exitDirection = facing.m_122424_();
+      BlockState state = level.getBlockState(pos);
+      Direction facing = (Direction)state.getValue(ArenaGateBlock.FACING);
+      Direction exitDirection = facing.getOpposite();
       return this.directionToYaw(exitDirection);
    }
 

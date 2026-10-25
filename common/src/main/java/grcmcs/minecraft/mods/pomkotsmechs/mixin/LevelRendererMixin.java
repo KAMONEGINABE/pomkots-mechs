@@ -29,10 +29,10 @@ public class LevelRendererMixin {
       Matrix4f projectionMatrix,
       CallbackInfo ci
    ) {
-      BufferSource bufferSource = Minecraft.m_91087_().m_91269_().m_110104_();
+      BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
       RadarArrowRenderer.onRenderWorld(poseStack, bufferSource, camera, partialTick);
-      bufferSource.m_109912_(RadarArrowRenderer.WIREFRAME);
-      bufferSource.m_109912_(RadarArrowRenderer.TRIANGLE);
+      bufferSource.endBatch(RadarArrowRenderer.WIREFRAME);
+      bufferSource.endBatch(RadarArrowRenderer.TRIANGLE);
       ScanBlockEntityHighlightRenderer.render(poseStack, camera, bufferSource);
    }
 }

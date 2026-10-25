@@ -37,23 +37,23 @@ public class Pms05Entity extends BaseSmallMonsterEntity implements GeoEntity, Ge
 
    @Override
    public void doAttack() {
-      if (this.isServerSide() && this.m_5448_() != null) {
-         this.rotateToTarget(this.m_5448_());
+      if (this.isServerSide() && this.getTarget() != null) {
+         this.rotateToTarget(this.getTarget());
          GrenadeEntity be = new GrenadeEntity(
             (EntityType<? extends ThrowableProjectile>)PomkotsMechs.GRENADE.get(),
-            this.m_9236_(),
+            this.level(),
             this,
             this.getMechData().grenadeDamage,
             this.getMechData().grenadeExplosionScale
          );
-         be.m_20242_(true);
-         Vec3 offset = this.m_20182_();
+         be.setNoGravity(true);
+         Vec3 offset = this.position();
          Vec3 muzzlPos = new Vec3(1.0, 3.0, 0.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         be.m_146884_(offset.m_82549_(muzzlPos));
-         float[] angle = Utils.getShootingAngle(be, this.m_5448_(), true);
-         be.m_37251_(be, angle[0], angle[1], this.m_21256_(), this.getMechData().grenadeSpeed, 0.0F);
-         this.m_9236_().m_7967_(be);
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         be.setPos(offset.add(muzzlPos));
+         float[] angle = Utils.getShootingAngle(be, this.getTarget(), true);
+         be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), this.getMechData().grenadeSpeed, 0.0F);
+         this.level().addFreshEntity(be);
          this.triggerAnim("shoot_controller", "shoot");
       }
    }
@@ -63,14 +63,14 @@ public class Pms05Entity extends BaseSmallMonsterEntity implements GeoEntity, Ge
       return 20;
    }
 
-   public double m_6048_() {
+   public double getPassengersRidingOffset() {
       return 4.0;
    }
 
    @Override
-   protected void m_8099_() {
-      super.m_8099_();
-      this.f_21345_.m_25352_(1, new SimpleMobGoal(this, this.getMechData().speed));
+   protected void registerGoals() {
+      super.registerGoals();
+      this.goalSelector.addGoal(1, new SimpleMobGoal(this, this.getMechData().speed));
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

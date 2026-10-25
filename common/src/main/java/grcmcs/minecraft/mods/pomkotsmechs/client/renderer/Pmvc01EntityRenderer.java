@@ -36,8 +36,8 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
 
    public Pmvc01EntityRenderer(Context renderManager, Pmvc01EntityModel model) {
       super(renderManager, model);
-      this.addRenderLayer(new Pmvc01EntityPartsLayer(this, renderManager.m_174025_()));
-      this.itemRenderer = renderManager.m_174025_();
+      this.addRenderLayer(new Pmvc01EntityPartsLayer(this, renderManager.getItemRenderer()));
+      this.itemRenderer = renderManager.getItemRenderer();
    }
 
    public void actuallyRender(
@@ -56,9 +56,9 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
       float blue,
       float alpha
    ) {
-      if (animatable.m_20202_() instanceof Pmb99Entity pmb99) {
-         poseStack.m_85836_();
-         poseStack.m_85837_(pmb99.seatPos.f_82479_, pmb99.seatPos.f_82480_, pmb99.seatPos.f_82481_);
+      if (animatable.getVehicle() instanceof Pmb99Entity pmb99) {
+         poseStack.pushPose();
+         poseStack.translate(pmb99.seatPos.x, pmb99.seatPos.y, pmb99.seatPos.z);
       }
 
       super.actuallyRender(
@@ -72,9 +72,9 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
          animatable.setMainCameraPosition(this.getMainCameraPosition(model, animatable, partialTick, 1.0F));
       }
 
-      RenderUtils.renderAdditionalHud2(animatable, poseStack, bufferSource, this.f_114476_, 1.0F);
-      if (animatable.m_20202_() instanceof Pmb99Entity pmb99) {
-         poseStack.m_85849_();
+      RenderUtils.renderAdditionalHud2(animatable, poseStack, bufferSource, this.entityRenderDispatcher, 1.0F);
+      if (animatable.getVehicle() instanceof Pmb99Entity pmb99) {
+         poseStack.popPose();
       }
    }
 
@@ -94,9 +94,9 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
       float blue,
       float alpha
    ) {
-      poseStack.m_85836_();
-      float yaw = this.lerpYaw(partialTick, animatable.f_20884_, animatable.f_20883_) + 180.0F;
-      poseStack.m_252781_(Axis.f_252436_.m_252977_(-yaw));
+      poseStack.pushPose();
+      float yaw = this.lerpYaw(partialTick, animatable.yBodyRotO, animatable.yBodyRot) + 180.0F;
+      poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
       this.renderPart(
          animatable.getHeadParts(),
          item -> item instanceof BasePartsItem.Head,
@@ -141,11 +141,11 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
          packedLight,
          packedOverlay
       );
-      poseStack.m_85849_();
+      poseStack.popPose();
    }
 
    private float lerpYaw(float partialTick, float prevYaw, float currentYaw) {
-      float delta = Mth.m_14177_(currentYaw - prevYaw);
+      float delta = Mth.wrapDegrees(currentYaw - prevYaw);
       return prevYaw + partialTick * delta;
    }
 
@@ -175,8 +175,8 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
       int packedLight,
       int packedOverlay
    ) {
-      if (!itemStack.m_41619_()) {
-         Item i = itemStack.m_41720_();
+      if (!itemStack.isEmpty()) {
+         Item i = itemStack.getItem();
          if (isTarget.test(i)) {
             BasePartsItem ti = (BasePartsItem)i;
             if (ti instanceof BasePartsItem.Weapon w) {
@@ -186,7 +186,7 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
             ti.setParentEntity(animatable);
             ti.setCachedBoneFinder(animatable.getBoneFinder());
             this.itemRenderer
-               .m_269491_(animatable, itemStack, ItemDisplayContext.NONE, false, poseStack, bufferSource, null, packedLight, packedOverlay, packedLight);
+               .renderStatic(animatable, itemStack, ItemDisplayContext.NONE, false, poseStack, bufferSource, null, packedLight, packedOverlay, packedLight);
             ti.setCachedBoneFinder(null);
             ti.setParentEntity(null);
             if (ti instanceof BasePartsItem.Weapon w) {
@@ -204,7 +204,7 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
          Vector3d rootPos = vcRoot.getLocalPosition();
          return new Vec3(seatPos.x * 1.0 - rootPos.x * 1.0, seatPos.y * 1.0 - rootPos.y * 1.0 - 4.2F, seatPos.z * 1.0 - rootPos.z * 1.0);
       } else {
-         return Vec3.f_82478_;
+         return Vec3.ZERO;
       }
    }
 
@@ -220,7 +220,7 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
          Vector3d seatPos = vcSeat.getLocalPosition();
          return new Vec3(seatPos.x, seatPos.y * scale, seatPos.z);
       } else {
-         return Vec3.f_82478_;
+         return Vec3.ZERO;
       }
    }
 
@@ -249,13 +249,13 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
             flame.setRotY(0.0F);
             flame.setRotX(0.0F);
          } else {
-            float bodyYaw = entity.m_146908_();
-            float bodyPitch = entity.m_146909_();
-            Vec3 vel = entity.m_20184_();
-            if (!(vel.m_82556_() < 1.0E-6)) {
-               float velocityYaw = (float)(Mth.m_14136_(vel.f_82481_, vel.f_82479_) * (180.0 / Math.PI)) - 90.0F;
+            float bodyYaw = entity.getYRot();
+            float bodyPitch = entity.getXRot();
+            Vec3 vel = entity.getDeltaMovement();
+            if (!(vel.lengthSqr() < 1.0E-6)) {
+               float velocityYaw = (float)(Mth.atan2(vel.z, vel.x) * (180.0 / Math.PI)) - 90.0F;
                float velocityPitch = (float)(
-                  -Mth.m_14136_(vel.f_82480_, Math.sqrt(vel.f_82479_ * vel.f_82479_ + vel.f_82481_ * vel.f_82481_)) * (180.0 / Math.PI)
+                  -Mth.atan2(vel.y, Math.sqrt(vel.x * vel.x + vel.z * vel.z)) * (180.0 / Math.PI)
                );
                float localYaw = velocityYaw - bodyYaw;
                float localPitch = velocityPitch - bodyPitch;
@@ -263,8 +263,8 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
                localPitch *= -1.0F;
                float currentYaw = flame.getRotY() * (180.0F / (float)Math.PI);
                float currentPitch = flame.getRotX() * (180.0F / (float)Math.PI);
-               float smoothYaw = Mth.m_14179_(0.2F, currentYaw, localYaw);
-               float smoothPitch = Mth.m_14179_(0.2F, currentPitch, localPitch);
+               float smoothYaw = Mth.lerp(0.2F, currentYaw, localYaw);
+               float smoothPitch = Mth.lerp(0.2F, currentPitch, localPitch);
                flame.setRotY(smoothYaw * (float) (Math.PI / 180.0));
                flame.setRotX(smoothPitch * (float) (Math.PI / 180.0));
             }
@@ -279,20 +279,20 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
             flame.setRotY(0.0F);
             flame.setRotX(0.0F);
          } else {
-            Vec3 motion = entity.m_20184_();
-            float targetYaw = (float)Math.toDegrees(Math.atan2(-motion.f_82479_, motion.f_82481_));
+            Vec3 motion = entity.getDeltaMovement();
+            float targetYaw = (float)Math.toDegrees(Math.atan2(-motion.x, motion.z));
             float targetPitch = (float)Math.toDegrees(
-               Math.atan2(motion.f_82480_, Math.sqrt(motion.f_82479_ * motion.f_82479_ + motion.f_82481_ * motion.f_82481_))
+               Math.atan2(motion.y, Math.sqrt(motion.x * motion.x + motion.z * motion.z))
             );
             float currentYaw = (float)Math.toDegrees(flame.getRotY());
             float currentPitch = (float)Math.toDegrees(flame.getRotX());
-            float deltaYaw = Mth.m_14177_(targetYaw - currentYaw);
-            float deltaPitch = Mth.m_14177_(targetPitch - currentPitch);
+            float deltaYaw = Mth.wrapDegrees(targetYaw - currentYaw);
+            float deltaPitch = Mth.wrapDegrees(targetPitch - currentPitch);
             float maxTurnPerTick = 5.0F;
-            deltaYaw = Mth.m_14036_(deltaYaw, -maxTurnPerTick, maxTurnPerTick);
-            deltaPitch = Mth.m_14036_(deltaPitch, -maxTurnPerTick, maxTurnPerTick);
-            float newYaw = Mth.m_14177_(currentYaw + deltaYaw * 0.5F);
-            float newPitch = Mth.m_14177_(currentPitch + deltaPitch * 0.5F);
+            deltaYaw = Mth.clamp(deltaYaw, -maxTurnPerTick, maxTurnPerTick);
+            deltaPitch = Mth.clamp(deltaPitch, -maxTurnPerTick, maxTurnPerTick);
+            float newYaw = Mth.wrapDegrees(currentYaw + deltaYaw * 0.5F);
+            float newPitch = Mth.wrapDegrees(currentPitch + deltaPitch * 0.5F);
             flame.setRotY((float)Math.toRadians(newYaw));
             flame.setRotX((float)Math.toRadians(newPitch));
          }
@@ -305,15 +305,15 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
          if (flame1 != null) {
             CoreGeoBone flame2 = (CoreGeoBone)this.getGeoModel().getBone("fire_bpcl_quick").orElse(null);
             if (flame2 != null) {
-               double dx = entity.m_20184_().f_82479_;
-               double dy = entity.m_20184_().f_82480_;
-               double dz = entity.m_20184_().f_82481_;
-               float yaw = (float)(Mth.m_14136_(-dx, dz) * (180.0 / Math.PI));
-               float pitch = (float)(Mth.m_14136_(dy, Math.sqrt(dx * dx + dz * dz)) * (180.0 / Math.PI));
+               double dx = entity.getDeltaMovement().x;
+               double dy = entity.getDeltaMovement().y;
+               double dz = entity.getDeltaMovement().z;
+               float yaw = (float)(Mth.atan2(-dx, dz) * (180.0 / Math.PI));
+               float pitch = (float)(Mth.atan2(dy, Math.sqrt(dx * dx + dz * dz)) * (180.0 / Math.PI));
                yaw += 180.0F;
                pitch = -pitch;
-               yaw = Mth.m_14177_(yaw);
-               pitch = Mth.m_14177_(pitch);
+               yaw = Mth.wrapDegrees(yaw);
+               pitch = Mth.wrapDegrees(pitch);
                flame1.setRotX(pitch * (float) (Math.PI / 180.0));
                flame1.setRotY(yaw * (float) (Math.PI / 180.0));
                flame2.setRotX(pitch * (float) (Math.PI / 180.0));
@@ -324,13 +324,13 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
    }
 
    private void setBoosterVisibilitty(BakedGeoModel model, Pmvc01Entity ent) {
-      Vec3 vel = ent.m_20184_();
-      vel = vel.m_82524_((float)Math.toRadians(ent.m_146908_()));
+      Vec3 vel = ent.getDeltaMovement();
+      vel = vel.yRot((float)Math.toRadians(ent.getYRot()));
       boolean hasHorizontalBoost = !ent.noHorizontalBoost();
-      if (vel.f_82479_ > 1.0 && hasHorizontalBoost) {
+      if (vel.x > 1.0 && hasHorizontalBoost) {
          ((GeoBone)model.getBone("fire_rsb").get()).setHidden(false);
          ((GeoBone)model.getBone("fire_lsb").get()).setHidden(true);
-      } else if (vel.f_82479_ < -1.0 && hasHorizontalBoost) {
+      } else if (vel.x < -1.0 && hasHorizontalBoost) {
          ((GeoBone)model.getBone("fire_rsb").get()).setHidden(true);
          ((GeoBone)model.getBone("fire_lsb").get()).setHidden(false);
       } else {
@@ -338,7 +338,7 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
          ((GeoBone)model.getBone("fire_lsb").get()).setHidden(true);
       }
 
-      if (vel.f_82481_ > 1.0 && hasHorizontalBoost) {
+      if (vel.z > 1.0 && hasHorizontalBoost) {
          ((GeoBone)model.getBone("fire_bpcr").get()).setHidden(false);
          ((GeoBone)model.getBone("fire_bpcl").get()).setHidden(false);
          ((GeoBone)model.getBone("fire_rl").get()).setHidden(false);
@@ -350,7 +350,7 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
          ((GeoBone)model.getBone("fire_ll").get()).setHidden(true);
       }
 
-      if (ent.getDriverInput() != null && ent.getDriverInput().isJumpPressed() && ent.m_20068_() && !ent.isOverHeat()) {
+      if (ent.getDriverInput() != null && ent.getDriverInput().isJumpPressed() && ent.isNoGravity() && !ent.isOverHeat()) {
          ((GeoBone)model.getBone("fire_bpcr").get()).setHidden(false);
          ((GeoBone)model.getBone("fire_bpcl").get()).setHidden(false);
       } else {
@@ -360,8 +360,8 @@ public class Pmvc01EntityRenderer extends GeoEntityRenderer<Pmvc01Entity> {
    }
 
    private void setWeaponsVisibility(BakedGeoModel model, Pmvc01Entity ent, boolean b) {
-      ((GeoBone)model.getBone("left_shoulder_hunger").get()).setHidden(((Pmvc01Entity)this.animatable).getLeftShoulderWeapon().m_41619_());
-      ((GeoBone)model.getBone("right_shoulder_hunger").get()).setHidden(((Pmvc01Entity)this.animatable).getRightShoulderWeapon().m_41619_());
+      ((GeoBone)model.getBone("left_shoulder_hunger").get()).setHidden(((Pmvc01Entity)this.animatable).getLeftShoulderWeapon().isEmpty());
+      ((GeoBone)model.getBone("right_shoulder_hunger").get()).setHidden(((Pmvc01Entity)this.animatable).getRightShoulderWeapon().isEmpty());
    }
 
    public boolean shouldShowName(Pmvc01Entity entity) {

@@ -89,7 +89,7 @@ public class BasePartsItemRenderer<T extends BasePartsItem> extends GeoItemRende
          }
 
          Pmvc01Entity pe = animatable.getParentEntity();
-         boolean showLid = pe != null && pe.getHeadParts().m_41720_() instanceof BasePartsItem.Head head && head.isFullCovered();
+         boolean showLid = pe != null && pe.getHeadParts().getItem() instanceof BasePartsItem.Head head && head.isFullCovered();
          Optional<GeoBone> lid = model.getBone("body_lid");
          if (lid.isPresent()) {
             lid.get().setHidden(!showLid);
@@ -167,13 +167,13 @@ public class BasePartsItemRenderer<T extends BasePartsItem> extends GeoItemRende
          float alpha
       ) {
          Pmvc01Entity parentEntity = animatable.getParentEntity();
-         if (parentEntity != null && parentEntity.getBodyParts().m_41720_() instanceof BasePartsItem.Body body && body.getNeckPos() != 0.0F) {
-            poseStack.m_85836_();
-            poseStack.m_252880_(0.0F, body.getNeckPos(), 0.0F);
+         if (parentEntity != null && parentEntity.getBodyParts().getItem() instanceof BasePartsItem.Body body && body.getNeckPos() != 0.0F) {
+            poseStack.pushPose();
+            poseStack.translate(0.0F, body.getNeckPos(), 0.0F);
             super.actuallyRender(
                poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha
             );
-            poseStack.m_85849_();
+            poseStack.popPose();
          } else {
             super.actuallyRender(
                poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha

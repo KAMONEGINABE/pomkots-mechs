@@ -53,8 +53,8 @@ public final class CircuitRewardRoller {
       float dropChance,
       RandomSource random
    ) {
-      if (random.m_188501_() >= dropChance) {
-         return ItemStack.f_41583_;
+      if (random.nextFloat() >= dropChance) {
+         return ItemStack.EMPTY;
       }
 
       CircuitPrefix prefix = rollWeighted(random, weightPrefix);
@@ -71,7 +71,7 @@ public final class CircuitRewardRoller {
          totalWeight += entry.weight();
       }
 
-      int roll = random.m_188503_(totalWeight);
+      int roll = random.nextInt(totalWeight);
       int current = 0;
 
       for (CircuitRewardRoller.WeightedEntry<T> entry : entries) {

@@ -25,13 +25,13 @@ public class ArenaSavedData extends SavedData {
    private final Map<String, ArenaInstance> arenas = new HashMap<>();
 
    public static ArenaSavedData get(MinecraftServer server) {
-      ServerLevel level = server.m_129783_();
-      return (ArenaSavedData)level.m_8895_().m_164861_(ArenaSavedData::load, ArenaSavedData::create, "pomkotsmechs_mech_arena");
+      ServerLevel level = server.overworld();
+      return (ArenaSavedData)level.getDataStorage().computeIfAbsent(ArenaSavedData::load, ArenaSavedData::create, "pomkotsmechs_mech_arena");
    }
 
    private static ArenaSavedData create() {
       ArenaSavedData data = new ArenaSavedData();
-      data.m_77762_();
+      data.setDirty();
       return data;
    }
 
@@ -46,7 +46,7 @@ public class ArenaSavedData extends SavedData {
    public ArenaInstance getOrCreateArena(String arenaId) {
       return this.arenas.computeIfAbsent(arenaId, id -> {
          ArenaInstance arena = createArena(arenaId, null);
-         this.m_77762_();
+         this.setDirty();
          return arena;
       });
    }
@@ -74,7 +74,7 @@ public class ArenaSavedData extends SavedData {
          mech.setTextureColor(npc.mech.texture_color);
 
          for (PomkotsDataPack.PartJson part : npc.mech.parts) {
-            Item item = (Item)BuiltInRegistries.f_257033_.m_7745_(new ResourceLocation(part.item));
+            Item item = (Item)BuiltInRegistries.ITEM.get(new ResourceLocation(part.item));
             if (item instanceof BasePartsItem bitem) {
                ItemStack stack = new ItemStack(item);
                if (part.level != 0) {
@@ -99,21 +99,21 @@ public class ArenaSavedData extends SavedData {
    }
 
    @NotNull
-   public CompoundTag m_7176_(CompoundTag tag) {
+   public CompoundTag save(CompoundTag tag) {
       ListTag arenaList = new ListTag();
 
       for (ArenaInstance arena : this.arenas.values()) {
          arenaList.add(arena.save());
       }
 
-      tag.m_128365_("Arenas", arenaList);
+      tag.put("Arenas", arenaList);
       return tag;
    }
 
    public static ArenaSavedData load(CompoundTag tag) {
       ArenaSavedData data = new ArenaSavedData();
 
-      for (Tag element : tag.m_128437_("Arenas", 10)) {
+      for (Tag element : tag.getList("Arenas", 10)) {
          ArenaInstance arena = ArenaInstance.load((CompoundTag)element);
          data.arenas.put(arena.getArenaId(), arena);
       }

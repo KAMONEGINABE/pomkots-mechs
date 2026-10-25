@@ -17,26 +17,26 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class ExchangeBlock extends HorizontalDirectionalBlock {
-   protected static final VoxelShape SHAPE = Block.m_49796_(0.1, 0.1, 0.1, 15.9, 15.9, 15.9);
+   protected static final VoxelShape SHAPE = Block.box(0.1, 0.1, 0.1, 15.9, 15.9, 15.9);
 
    public ExchangeBlock() {
-      super(Properties.m_284310_().m_60978_(2.5F).m_60918_(SoundType.f_56743_));
-      this.m_49959_((BlockState)((BlockState)this.f_49792_.m_61090_()).m_61124_(BlockStateProperties.f_61374_, Direction.NORTH));
+      super(Properties.of().strength(2.5F).sound(SoundType.METAL));
+      this.registerDefaultState((BlockState)((BlockState)this.stateDefinition.any()).setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH));
    }
 
-   public BlockState m_5573_(BlockPlaceContext context) {
-      return (BlockState)this.m_49966_().m_61124_(BlockStateProperties.f_61374_, context.m_8125_().m_122424_());
+   public BlockState getStateForPlacement(BlockPlaceContext context) {
+      return (BlockState)this.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, context.getHorizontalDirection().getOpposite());
    }
 
-   public RenderShape m_7514_(BlockState state) {
+   public RenderShape getRenderShape(BlockState state) {
       return RenderShape.MODEL;
    }
 
-   public VoxelShape m_5940_(BlockState bs, BlockGetter bg, BlockPos bp, CollisionContext cc) {
+   public VoxelShape getShape(BlockState bs, BlockGetter bg, BlockPos bp, CollisionContext cc) {
       return SHAPE;
    }
 
-   protected void m_7926_(Builder<Block, BlockState> builder) {
-      builder.m_61104_(new Property[]{BlockStateProperties.f_61374_});
+   protected void createBlockStateDefinition(Builder<Block, BlockState> builder) {
+      builder.add(new Property[]{BlockStateProperties.HORIZONTAL_FACING});
    }
 }

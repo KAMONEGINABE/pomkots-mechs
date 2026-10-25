@@ -28,15 +28,15 @@ public class ArenaInstance {
 
    public CompoundTag save() {
       CompoundTag tag = new CompoundTag();
-      tag.m_128359_("ArenaId", this.arenaId);
-      tag.m_128359_("DisplayName", this.displayName);
+      tag.putString("ArenaId", this.arenaId);
+      tag.putString("DisplayName", this.displayName);
       if (this.controllerPos != null) {
          CompoundTag posTag = new CompoundTag();
-         posTag.m_128359_("Dimension", this.controllerPos.m_122640_().m_135782_().toString());
-         posTag.m_128405_("X", this.controllerPos.m_122646_().m_123341_());
-         posTag.m_128405_("Y", this.controllerPos.m_122646_().m_123342_());
-         posTag.m_128405_("Z", this.controllerPos.m_122646_().m_123343_());
-         tag.m_128365_("ControllerPos", posTag);
+         posTag.putString("Dimension", this.controllerPos.dimension().location().toString());
+         posTag.putInt("X", this.controllerPos.pos().getX());
+         posTag.putInt("Y", this.controllerPos.pos().getY());
+         posTag.putInt("Z", this.controllerPos.pos().getZ());
+         tag.put("ControllerPos", posTag);
       }
 
       ListTag fighterList = new ListTag();
@@ -45,16 +45,16 @@ public class ArenaInstance {
          fighterList.add(fighter.save());
       }
 
-      tag.m_128365_("Fighters", fighterList);
+      tag.put("Fighters", fighterList);
       ListTag historyList = new ListTag();
 
       for (ArenaBattleRecord record : this.battleHistory) {
          historyList.add(record.save());
       }
 
-      tag.m_128365_("History", historyList);
+      tag.put("History", historyList);
       if (this.activeMatch != null) {
-         tag.m_128365_("ActiveMatch", this.activeMatch.save());
+         tag.put("ActiveMatch", this.activeMatch.save());
       }
 
       return tag;
@@ -62,26 +62,26 @@ public class ArenaInstance {
 
    public static ArenaInstance load(CompoundTag tag) {
       ArenaInstance arena = new ArenaInstance();
-      arena.arenaId = tag.m_128461_("ArenaId");
-      arena.displayName = tag.m_128461_("DisplayName");
-      if (tag.m_128425_("ControllerPos", 10)) {
-         CompoundTag posTag = tag.m_128469_("ControllerPos");
-         ResourceKey<Level> dimension = ResourceKey.m_135785_(Registries.f_256858_, new ResourceLocation(posTag.m_128461_("Dimension")));
-         BlockPos pos = new BlockPos(posTag.m_128451_("X"), posTag.m_128451_("Y"), posTag.m_128451_("Z"));
-         arena.controllerPos = GlobalPos.m_122643_(dimension, pos);
+      arena.arenaId = tag.getString("ArenaId");
+      arena.displayName = tag.getString("DisplayName");
+      if (tag.contains("ControllerPos", 10)) {
+         CompoundTag posTag = tag.getCompound("ControllerPos");
+         ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(posTag.getString("Dimension")));
+         BlockPos pos = new BlockPos(posTag.getInt("X"), posTag.getInt("Y"), posTag.getInt("Z"));
+         arena.controllerPos = GlobalPos.of(dimension, pos);
       }
 
-      for (Tag element : tag.m_128437_("Fighters", 10)) {
+      for (Tag element : tag.getList("Fighters", 10)) {
          ArenaFighterData fighter = ArenaFighterData.load((CompoundTag)element);
          arena.fighters.put(fighter.getFighterId(), fighter);
       }
 
-      for (Tag element : tag.m_128437_("History", 10)) {
+      for (Tag element : tag.getList("History", 10)) {
          arena.battleHistory.add(ArenaBattleRecord.load((CompoundTag)element));
       }
 
-      if (tag.m_128441_("ActiveMatch")) {
-         arena.activeMatch = ArenaMatchData.load(tag.m_128469_("ActiveMatch"));
+      if (tag.contains("ActiveMatch")) {
+         arena.activeMatch = ArenaMatchData.load(tag.getCompound("ActiveMatch"));
       }
 
       return arena;

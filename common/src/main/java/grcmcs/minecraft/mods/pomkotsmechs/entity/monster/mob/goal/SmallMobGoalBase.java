@@ -12,7 +12,7 @@ public abstract class SmallMobGoalBase extends Goal {
       this.speedModifier = speedModifier;
    }
 
-   public boolean m_8036_() {
+   public boolean canUse() {
       return !this.mob.isClosed();
    }
 }

@@ -25,15 +25,15 @@ public class WaveHorizontalEntity extends PomkotsThrowableProjectile implements 
 
    public WaveHorizontalEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
       super(entityType, world);
-      this.m_20242_(true);
+      this.setNoGravity(true);
    }
 
    @Override
-   public void m_8119_() {
-      this.m_20242_(true);
-      super.m_8119_();
+   public void tick() {
+      this.setNoGravity(true);
+      super.tick();
       if (this.lifeTicks++ >= 40) {
-         this.m_146870_();
+         this.discard();
       } else if (this.lifeTicks == 5) {
          this.generateLava();
       }
@@ -42,46 +42,46 @@ public class WaveHorizontalEntity extends PomkotsThrowableProjectile implements 
    }
 
    protected void updateRotationBasedOnVelocity() {
-      Vec3 velocity = this.m_20184_();
-      if (!velocity.equals(Vec3.f_82478_)) {
-         double yaw = Math.toDegrees(Math.atan2(velocity.f_82479_, velocity.f_82481_));
-         this.m_146922_((float)yaw);
-         double horizontalDistance = Math.sqrt(velocity.f_82479_ * velocity.f_82479_ + velocity.f_82481_ * velocity.f_82481_);
-         double pitch = Math.toDegrees(Math.atan2(velocity.f_82480_, horizontalDistance));
-         this.m_146926_((float)pitch);
-         this.f_19859_ = this.m_146908_();
-         this.f_19860_ = this.m_146909_();
+      Vec3 velocity = this.getDeltaMovement();
+      if (!velocity.equals(Vec3.ZERO)) {
+         double yaw = Math.toDegrees(Math.atan2(velocity.x, velocity.z));
+         this.setYRot((float)yaw);
+         double horizontalDistance = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+         double pitch = Math.toDegrees(Math.atan2(velocity.y, horizontalDistance));
+         this.setXRot((float)pitch);
+         this.yRotO = this.getYRot();
+         this.xRotO = this.getXRot();
       }
    }
 
    private void generateLava() {
-      if (this.m_9236_().f_46443_) {
-         RandomSource random = this.m_9236_().m_213780_();
+      if (this.level().isClientSide) {
+         RandomSource random = this.level().getRandom();
 
          for (int i = 0; i < 20; i++) {
-            double velocityX = random.m_188500_() * 2.0 - 1.0;
-            double velocityY = random.m_188500_() * 2.0 - 1.0;
-            double velocityZ = random.m_188500_() * 2.0 - 1.0;
-            this.m_9236_().m_7106_(ParticleTypes.f_123756_, this.m_20185_(), this.m_20186_(), this.m_20189_(), velocityX, velocityY, velocityZ);
+            double velocityX = random.nextDouble() * 2.0 - 1.0;
+            double velocityY = random.nextDouble() * 2.0 - 1.0;
+            double velocityZ = random.nextDouble() * 2.0 - 1.0;
+            this.level().addParticle(ParticleTypes.LAVA, this.getX(), this.getY(), this.getZ(), velocityX, velocityY, velocityZ);
          }
       }
    }
 
-   protected void m_5790_(EntityHitResult entityHitResult) {
-      Entity entity = entityHitResult.m_82443_();
+   protected void onHitEntity(EntityHitResult entityHitResult) {
+      Entity entity = entityHitResult.getEntity();
       if (entity instanceof LivingEntity) {
-         entity.m_6469_(entity.m_269291_().m_269390_(this, (Entity)(this.m_19749_() != null ? this.m_19749_() : this)), 20.0F);
-         entity.f_19802_ = 20;
-         Vec3 velocity = this.m_20184_();
-         Vec3 kbVel = new Vec3(velocity.f_82479_, 0.0, velocity.f_82481_).m_82541_();
-         ((LivingEntity)entity).m_147240_(2.0, kbVel.f_82479_, kbVel.f_82481_);
+         entity.hurt(entity.damageSources().thrown(this, (Entity)(this.getOwner() != null ? this.getOwner() : this)), 20.0F);
+         entity.invulnerableTime = 20;
+         Vec3 velocity = this.getDeltaMovement();
+         Vec3 kbVel = new Vec3(velocity.x, 0.0, velocity.z).normalize();
+         ((LivingEntity)entity).knockback(2.0, kbVel.x, kbVel.z);
       }
    }
 
-   protected void m_8060_(BlockHitResult blockHitResult) {
+   protected void onHitBlock(BlockHitResult blockHitResult) {
    }
 
-   protected void m_8097_() {
+   protected void defineSynchedData() {
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

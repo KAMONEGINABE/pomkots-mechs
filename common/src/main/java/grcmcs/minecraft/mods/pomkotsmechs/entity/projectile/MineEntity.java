@@ -46,70 +46,70 @@ public class MineEntity extends PomkotsThrowableProjectile implements GeoEntity,
 
    public MineEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter, float damage) {
       super(entityType, shooter, world);
-      this.m_20242_(false);
-      this.f_19811_ = true;
-      this.f_19794_ = true;
+      this.setNoGravity(false);
+      this.noCulling = true;
+      this.noPhysics = true;
       this.shooter = shooter;
       this.damage = damage;
    }
 
-   public boolean m_6000_(double a, double b, double c) {
+   public boolean shouldRender(double a, double b, double c) {
       return true;
    }
 
-   public boolean m_6783_(double e) {
+   public boolean shouldRenderAtSqrDistance(double e) {
       return true;
    }
 
    @Override
-   public void m_8119_() {
-      if (!this.m_20096_()) {
-         super.m_8119_();
-         this.f_19812_ = true;
+   public void tick() {
+      if (!this.onGround()) {
+         super.tick();
+         this.hasImpulse = true;
       } else {
          this.onGroundTicks++;
-         if (this.onGroundTicks > 5 && !this.m_9236_().f_46443_) {
-            AABB mineAabb = this.m_20191_();
-            List<Player> players = this.m_9236_().m_6443_(Player.class, mineAabb, player -> !player.m_5833_());
+         if (this.onGroundTicks > 5 && !this.level().isClientSide) {
+            AABB mineAabb = this.getBoundingBox();
+            List<Player> players = this.level().getEntitiesOfClass(Player.class, mineAabb, player -> !player.isSpectator());
             if (!players.isEmpty()) {
-               this.createExplosion(this.m_20182_());
+               this.createExplosion(this.position());
                this.alreadyExplode = true;
-               this.m_146870_();
+               this.discard();
             }
          }
       }
 
       if (this.lifeTicks++ >= 160) {
-         this.m_146870_();
+         this.discard();
       }
    }
 
-   protected void m_5790_(EntityHitResult entityHitResult) {
+   protected void onHitEntity(EntityHitResult entityHitResult) {
    }
 
-   protected void m_8060_(BlockHitResult blockHitResult) {
-      this.m_20334_(0.0, 0.0, 0.0);
-      this.m_6853_(true);
+   protected void onHitBlock(BlockHitResult blockHitResult) {
+      this.setDeltaMovement(0.0, 0.0, 0.0);
+      this.setOnGround(true);
    }
 
    private void createExplosion(Vec3 pos) {
-      Level world = this.m_9236_();
-      if (!world.f_46443_) {
+      Level world = this.level();
+      if (!world.isClientSide) {
          if (ProjectileUtil.isDestructionAllowed(this)) {
-            Utils.explode(this, pos.f_82479_, pos.f_82480_ + 1.0, pos.f_82481_, this.explosionScale, false, ExplosionInteraction.BLOCK, this.m_9236_());
+            Utils.explode(this, pos.x, pos.y + 1.0, pos.z, this.explosionScale, false, ExplosionInteraction.BLOCK, this.level());
          } else {
-            Utils.explode(this, pos.f_82479_, pos.f_82480_ + 1.0, pos.f_82481_, this.explosionScale, false, ExplosionInteraction.NONE, this.m_9236_());
+            Utils.explode(this, pos.x, pos.y + 1.0, pos.z, this.explosionScale, false, ExplosionInteraction.NONE, this.level());
          }
       }
    }
 
-   public void m_142036_() {
-      if (this.m_9236_().f_46443_) {
-         ParticleUtil.addSparkParticles(this.m_20182_(), this.m_9236_());
+   public void onClientRemoval() {
+      if (this.level().isClientSide) {
+         ParticleUtil.addSparkParticles(this.position(), this.level());
       }
    }
 
-   protected void m_8097_() {
+   protected void defineSynchedData() {
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

@@ -10,7 +10,7 @@ public class PersonalPomkotsCubeRenderer extends GeoBlockRenderer<PersonalPomkot
       super(new PersonalPomkotsCubeModel());
    }
 
-   public int m_142163_() {
+   public int getViewDistance() {
       return 128;
    }
 }

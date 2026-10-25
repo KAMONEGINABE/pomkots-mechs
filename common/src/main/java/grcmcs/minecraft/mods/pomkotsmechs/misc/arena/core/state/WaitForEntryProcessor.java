@@ -38,7 +38,7 @@ public class WaitForEntryProcessor implements IArenaMatchStateProcessor {
                      TitleUtil.showArenaMessage(player, "New Challenger", "Check Arena by data pad");
 
                      for (ItemStack dataPad : PomkotsDatapadItem.getPlayersDataPads(player)) {
-                        PomkotsDatapadItem.addArenaRequest(dataPad, challengerEntity.m_20148_(), context.match().getMatchId(), context.arena().getArenaId());
+                        PomkotsDatapadItem.addArenaRequest(dataPad, challengerEntity.getUUID(), context.match().getMatchId(), context.arena().getArenaId());
                      }
                   }
 
@@ -51,14 +51,14 @@ public class WaitForEntryProcessor implements IArenaMatchStateProcessor {
    }
 
    private boolean setupElevator(ServerLevel level, BlockPos pos, Entity target) {
-      if (level.m_7702_(pos) instanceof ArenaGateBlockEntity gateEntity) {
+      if (level.getBlockEntity(pos) instanceof ArenaGateBlockEntity gateEntity) {
          ElevatorEntity elevator = gateEntity.refreshElevator();
          if (elevator == null) {
             return false;
          }
 
          elevator.setMode(ElevatorEntity.Mode.WAITING);
-         elevator.setPassengerUUID(target.m_20148_());
+         elevator.setPassengerUUID(target.getUUID());
          return true;
       } else {
          return false;
@@ -74,17 +74,17 @@ public class WaitForEntryProcessor implements IArenaMatchStateProcessor {
          ArenaBossBarUtil.updateCountdownBar(context, "Time Left", elapsed, 180000L);
          if (elapsed >= 180000L) {
             ArenaMatchProcessor.cancelMatch(context, "Entry timeout.");
-         } else if (this.isMechEntried(context.getLevel(), context.match().getGatePosA()) && challenger.m_20202_() instanceof Pmvc01Entity mech) {
+         } else if (this.isMechEntried(context.getLevel(), context.match().getGatePosA()) && challenger.getVehicle() instanceof Pmvc01Entity mech) {
             if (context.runtime().runOnce("WFE_01")) {
                ArenaUtil.supplyMechConsumables(mech);
-               context.match().setChallengerMechId(mech.m_20148_());
+               context.match().setChallengerMechId(mech.getUUID());
                ArenaManager.update(context.server(), context.arena().getArenaId());
             }
 
-            if (this.isMechEntried(context.getLevel(), context.match().getGatePosB()) && opponent.m_20202_() instanceof Pmvc01Entity mech2) {
+            if (this.isMechEntried(context.getLevel(), context.match().getGatePosB()) && opponent.getVehicle() instanceof Pmvc01Entity mech2) {
                if (context.runtime().runOnce("WFE_02")) {
                   ArenaUtil.supplyMechConsumables(mech2);
-                  context.match().setOpponentMechId(mech2.m_20148_());
+                  context.match().setOpponentMechId(mech2.getUUID());
                   if (context.getOpponentEntity() instanceof ServerPlayer player) {
                      for (ItemStack dataPad : PomkotsDatapadItem.getPlayersDataPads(player)) {
                         PomkotsDatapadItem.removeArenaRequest(dataPad, context.match().getMatchId());
@@ -103,9 +103,9 @@ public class WaitForEntryProcessor implements IArenaMatchStateProcessor {
    }
 
    private boolean isMechEntried(Level level, BlockPos gatePos) {
-      if (level.m_7702_(gatePos) instanceof ArenaGateBlockEntity gateEntity) {
+      if (level.getBlockEntity(gatePos) instanceof ArenaGateBlockEntity gateEntity) {
          ElevatorEntity elev = gateEntity.getElevator();
-         return elev == null ? false : !elev.m_20197_().isEmpty();
+         return elev == null ? false : !elev.getPassengers().isEmpty();
       } else {
          return false;
       }

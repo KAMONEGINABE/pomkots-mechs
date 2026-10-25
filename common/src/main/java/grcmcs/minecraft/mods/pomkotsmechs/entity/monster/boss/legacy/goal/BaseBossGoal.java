@@ -15,51 +15,51 @@ public class BaseBossGoal extends Goal {
    public BaseBossGoal(GenericPomkotsMonster mob, float speedModifier) {
       this.mob = mob;
       this.speedModifier = speedModifier;
-      this.m_7021_(EnumSet.of(Flag.MOVE, Flag.LOOK));
+      this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
    }
 
-   public boolean m_8036_() {
+   public boolean canUse() {
       return true;
    }
 
-   public boolean m_8045_() {
-      return this.m_8036_();
+   public boolean canContinueToUse() {
+      return this.canUse();
    }
 
-   public boolean m_6767_() {
+   public boolean isInterruptable() {
       return false;
    }
 
-   public boolean m_183429_() {
+   public boolean requiresUpdateEveryTick() {
       return true;
    }
 
-   public void m_8056_() {
+   public void start() {
    }
 
-   public void m_8041_() {
+   public void stop() {
    }
 
-   public void m_8037_() {
+   public void tick() {
    }
 
    protected boolean isInShortAttackRange() {
-      LivingEntity target = this.mob.m_5448_();
+      LivingEntity target = this.mob.getTarget();
       if (target == null) {
          return false;
       }
 
-      double distance = target.m_20182_().m_82554_(this.mob.m_20182_());
+      double distance = target.position().distanceTo(this.mob.position());
       return distance < 40.0;
    }
 
    protected boolean isInLongAttackRange() {
-      LivingEntity target = this.mob.m_5448_();
+      LivingEntity target = this.mob.getTarget();
       if (target == null) {
          return false;
       }
 
-      double distance = target.m_20182_().m_82554_(this.mob.m_20182_());
+      double distance = target.position().distanceTo(this.mob.position());
       return 40.0 < distance && distance < 200.0;
    }
 }

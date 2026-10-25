@@ -6,27 +6,27 @@ import net.minecraft.world.item.crafting.Ingredient;
 public class VehicleEquipMaterial implements Tier {
    public static final VehicleEquipMaterial INSTANCE = new VehicleEquipMaterial();
 
-   public int m_6609_() {
+   public int getUses() {
       return 0;
    }
 
-   public float m_6624_() {
+   public float getSpeed() {
       return 0.0F;
    }
 
-   public float m_6631_() {
+   public float getAttackDamageBonus() {
       return 0.0F;
    }
 
-   public int m_6604_() {
+   public int getLevel() {
       return 0;
    }
 
-   public int m_6601_() {
+   public int getEnchantmentValue() {
       return 0;
    }
 
-   public Ingredient m_6282_() {
+   public Ingredient getRepairIngredient() {
       return null;
    }
 }

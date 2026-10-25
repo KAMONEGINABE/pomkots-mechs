@@ -13,7 +13,7 @@ public class Pms10EntityRenderer extends GeoEntityRenderer<Pms10Entity> {
    }
 
    public void render(Pms10Entity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-      super.m_7392_(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
-      RenderUtils.renderMobBars(entity, poseStack, bufferSource, this.f_114476_, 1.3F);
+      super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+      RenderUtils.renderMobBars(entity, poseStack, bufferSource, this.entityRenderDispatcher, 1.3F);
    }
 }

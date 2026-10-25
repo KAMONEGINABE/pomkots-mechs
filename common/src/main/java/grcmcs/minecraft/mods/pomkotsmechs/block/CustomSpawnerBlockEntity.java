@@ -39,39 +39,39 @@ public class CustomSpawnerBlockEntity extends BlockEntity {
       super((BlockEntityType)PomkotsMechs.CUSTOM_SPAWNER_BLOCK_ENTITY.get(), blockPos, blockState);
    }
 
-   public void m_183515_(CompoundTag tag) {
-      tag.m_128405_(PomkotsMechs.nbtName("MaxMobs"), this.maxMobs);
-      tag.m_128405_(PomkotsMechs.nbtName("SpawnInterval"), this.spawnInterval);
-      tag.m_128405_(PomkotsMechs.nbtName("MaxHops"), this.maxHops);
-      tag.m_128347_(PomkotsMechs.nbtName("SpawnSpaceX"), this.spawnSpace.f_82291_ - this.spawnSpace.f_82288_);
-      tag.m_128347_(PomkotsMechs.nbtName("SpawnSpaceY"), this.spawnSpace.f_82292_ - this.spawnSpace.f_82289_);
-      tag.m_128347_(PomkotsMechs.nbtName("SpawnSpaceZ"), this.spawnSpace.f_82293_ - this.spawnSpace.f_82290_);
+   public void saveAdditional(CompoundTag tag) {
+      tag.putInt(PomkotsMechs.nbtName("MaxMobs"), this.maxMobs);
+      tag.putInt(PomkotsMechs.nbtName("SpawnInterval"), this.spawnInterval);
+      tag.putInt(PomkotsMechs.nbtName("MaxHops"), this.maxHops);
+      tag.putDouble(PomkotsMechs.nbtName("SpawnSpaceX"), this.spawnSpace.maxX - this.spawnSpace.minX);
+      tag.putDouble(PomkotsMechs.nbtName("SpawnSpaceY"), this.spawnSpace.maxY - this.spawnSpace.minY);
+      tag.putDouble(PomkotsMechs.nbtName("SpawnSpaceZ"), this.spawnSpace.maxZ - this.spawnSpace.minZ);
       ListTag mobList = new ListTag();
 
       for (WeightedList.Entry<ResourceLocation> entry : this.mobTypes.getEntries()) {
          CompoundTag mobTag = new CompoundTag();
-         mobTag.m_128359_("type", entry.instance().toString());
-         mobTag.m_128405_("weight", entry.weight());
+         mobTag.putString("type", entry.instance().toString());
+         mobTag.putInt("weight", entry.weight());
          mobList.add(mobTag);
       }
 
-      tag.m_128365_(PomkotsMechs.nbtName("MobTypes"), mobList);
+      tag.put(PomkotsMechs.nbtName("MobTypes"), mobList);
    }
 
-   public void m_142466_(CompoundTag tag) {
-      this.maxMobs = tag.m_128451_(PomkotsMechs.nbtName("MaxMobs"));
-      this.spawnInterval = tag.m_128451_(PomkotsMechs.nbtName("SpawnInterval"));
-      this.maxHops = tag.m_128451_(PomkotsMechs.nbtName("MaxHops"));
-      double sx = tag.m_128459_(PomkotsMechs.nbtName("SpawnSpaceX"));
-      double sy = tag.m_128459_(PomkotsMechs.nbtName("SpawnSpaceY"));
-      double sz = tag.m_128459_(PomkotsMechs.nbtName("SpawnSpaceZ"));
+   public void load(CompoundTag tag) {
+      this.maxMobs = tag.getInt(PomkotsMechs.nbtName("MaxMobs"));
+      this.spawnInterval = tag.getInt(PomkotsMechs.nbtName("SpawnInterval"));
+      this.maxHops = tag.getInt(PomkotsMechs.nbtName("MaxHops"));
+      double sx = tag.getDouble(PomkotsMechs.nbtName("SpawnSpaceX"));
+      double sy = tag.getDouble(PomkotsMechs.nbtName("SpawnSpaceY"));
+      double sz = tag.getDouble(PomkotsMechs.nbtName("SpawnSpaceZ"));
       this.spawnSpace = new AABB(0.0, 0.0, 0.0, sx, sy, sz);
       this.mobTypes = new WeightedList<>();
 
-      for (Tag t : tag.m_128437_(PomkotsMechs.nbtName("MobTypes"), 10)) {
+      for (Tag t : tag.getList(PomkotsMechs.nbtName("MobTypes"), 10)) {
          CompoundTag mobTag = (CompoundTag)t;
-         ResourceLocation rl = new ResourceLocation(mobTag.m_128461_("type"));
-         int weight = mobTag.m_128451_("weight");
+         ResourceLocation rl = new ResourceLocation(mobTag.getString("type"));
+         int weight = mobTag.getInt("weight");
          this.mobTypes.addObject(weight, rl);
       }
    }
@@ -79,21 +79,21 @@ public class CustomSpawnerBlockEntity extends BlockEntity {
    public static void tick(Level level, BlockPos pos, BlockState state, CustomSpawnerBlockEntity be) {
       if (level instanceof ServerLevel serverLevel) {
          if (!Utils.isMapEditingMode(level)) {
-            be.spawnedMobs.entrySet().removeIf(e -> e.getValue() == null || !e.getValue().m_6084_());
+            be.spawnedMobs.entrySet().removeIf(e -> e.getValue() == null || !e.getValue().isAlive());
             if (be.spawnedMobs.size() < be.maxMobs) {
-               if (level.m_46467_() % be.spawnInterval == 0L) {
+               if (level.getGameTime() % be.spawnInterval == 0L) {
                   if (!be.mobTypes.isEmpty()) {
-                     be.findSpawnPos(serverLevel, pos, RandomSource.m_216327_()).ifPresent(spawnPos -> {
-                        ResourceLocation mobType = be.mobTypes.getRandomObject(serverLevel.m_213780_());
-                        EntityType<?> entityType = (EntityType<?>)BuiltInRegistries.f_256780_.m_6612_(mobType).orElse(null);
+                     be.findSpawnPos(serverLevel, pos, RandomSource.create()).ifPresent(spawnPos -> {
+                        ResourceLocation mobType = be.mobTypes.getRandomObject(serverLevel.getRandom());
+                        EntityType<?> entityType = (EntityType<?>)BuiltInRegistries.ENTITY_TYPE.getOptional(mobType).orElse(null);
                         if (entityType == null) {
                            PomkotsMechs.LOGGER.error("Unknown entity type: {}", mobType);
                         } else {
-                           Entity mob = entityType.m_20615_(serverLevel);
+                           Entity mob = entityType.create(serverLevel);
                            if (mob != null) {
-                              mob.m_6027_(spawnPos.m_123341_() + 0.5, spawnPos.m_123342_(), spawnPos.m_123343_() + 0.5);
-                              serverLevel.m_7967_(mob);
-                              be.spawnedMobs.put(mob.m_20148_(), mob);
+                              mob.moveTo(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
+                              serverLevel.addFreshEntity(mob);
+                              be.spawnedMobs.put(mob.getUUID(), mob);
                            }
                         }
                      });
@@ -106,26 +106,26 @@ public class CustomSpawnerBlockEntity extends BlockEntity {
 
    private Optional<BlockPos> findSpawnPos(ServerLevel level, BlockPos origin, RandomSource random) {
       for (int attempt = 0; attempt < 20; attempt++) {
-         double angle = random.m_188500_() * Math.PI * 2.0;
-         double dist = random.m_188500_() * this.maxHops;
+         double angle = random.nextDouble() * Math.PI * 2.0;
+         double dist = random.nextDouble() * this.maxHops;
          double dx = Math.cos(angle) * dist;
          double dz = Math.sin(angle) * dist;
-         double dy = random.m_188500_() * 8.0;
-         BlockPos candidate = origin.m_7918_((int)dx, (int)dy, (int)dz);
-         if (candidate.m_123342_() >= origin.m_123342_()) {
-            BlockHitResult hit = level.m_151353_(
+         double dy = random.nextDouble() * 8.0;
+         BlockPos candidate = origin.offset((int)dx, (int)dy, (int)dz);
+         if (candidate.getY() >= origin.getY()) {
+            BlockHitResult hit = level.isBlockInLine(
                new ClipBlockStateContext(
-                  Vec3.m_82512_(candidate), Vec3.m_82512_(origin), blockState -> !blockState.m_60795_() && !blockState.equals(level.m_8055_(origin))
+                  Vec3.atCenterOf(candidate), Vec3.atCenterOf(origin), blockState -> !blockState.isAir() && !blockState.equals(level.getBlockState(origin))
                )
             );
-            if (hit.m_6662_().equals(Type.MISS)) {
+            if (hit.getType().equals(Type.MISS)) {
                AABB checkBox = this.spawnSpace
-                  .m_82386_(
-                     candidate.m_123341_() - this.spawnSpace.f_82288_,
-                     candidate.m_123342_() - this.spawnSpace.f_82289_,
-                     candidate.m_123343_() - this.spawnSpace.f_82290_
+                  .move(
+                     candidate.getX() - this.spawnSpace.minX,
+                     candidate.getY() - this.spawnSpace.minY,
+                     candidate.getZ() - this.spawnSpace.minZ
                   );
-               if (level.m_45772_(checkBox)) {
+               if (level.noCollision(checkBox)) {
                   return Optional.of(candidate);
                }
             }

@@ -41,40 +41,40 @@ public class EarthbreakEntity extends PomkotsThrowableProjectile implements GeoE
 
    public EarthbreakEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
       super(entityType, world);
-      this.m_20242_(true);
+      this.setNoGravity(true);
       this.shooter = null;
    }
 
    public EarthbreakEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter) {
       super(entityType, world);
-      this.m_20242_(true);
+      this.setNoGravity(true);
       this.shooter = shooter;
    }
 
    @Override
-   public void m_8119_() {
-      if (this.f_19803_ && this.m_9236_().m_5776_()) {
+   public void tick() {
+      if (this.firstTick && this.level().isClientSide()) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_EARTHBREAK_EVENT.get());
       }
 
-      this.m_20242_(true);
-      super.m_8119_();
+      this.setNoGravity(true);
+      super.tick();
       if (this.lifeTicks++ >= 20) {
-         this.m_146870_();
+         this.discard();
       } else if (this.lifeTicks == 1) {
          this.atarihantei();
       }
    }
 
    private void atarihantei() {
-      for (Entity ent : this.m_9236_().m_45933_(null, this.m_20191_())) {
+      for (Entity ent : this.level().getEntities(null, this.getBoundingBox())) {
          if (!ent.equals(this.shooter) && !(ent instanceof HitBoxEntity) && !(ent instanceof BossHitBoxEntity) && ent instanceof LivingEntity le) {
-            if (!(ent instanceof Pmb01Entity) && !(ent.m_20202_() instanceof Pmb01Entity)) {
-               le.m_246865_(new Vec3(0.0, 2.0, 0.0));
+            if (!(ent instanceof Pmb01Entity) && !(ent.getVehicle() instanceof Pmb01Entity)) {
+               le.addDeltaMovement(new Vec3(0.0, 2.0, 0.0));
             }
 
-            le.f_19802_ = 20;
-            le.m_6469_(this.m_269291_().m_269264_(), 60.0F);
+            le.invulnerableTime = 20;
+            le.hurt(this.damageSources().generic(), 60.0F);
          }
       }
 
@@ -84,17 +84,17 @@ public class EarthbreakEntity extends PomkotsThrowableProjectile implements GeoE
    }
 
    private void breakBlocks(int radius) {
-      BlockPos pos = this.m_20183_();
+      BlockPos pos = this.blockPosition();
       int height = 15;
 
       for (int y = 0; y < height; y++) {
          for (int x = -radius; x <= radius; x++) {
             for (int z = -radius; z <= radius; z++) {
                if (x * x + z * z <= radius * radius) {
-                  BlockPos blockPos = pos.m_7918_(x, y, z);
-                  BlockState state = this.m_9236_().m_8055_(blockPos);
-                  if (!state.m_60795_()) {
-                     Utils.eraseBlock(this.m_9236_(), blockPos);
+                  BlockPos blockPos = pos.offset(x, y, z);
+                  BlockState state = this.level().getBlockState(blockPos);
+                  if (!state.isAir()) {
+                     Utils.eraseBlock(this.level(), blockPos);
                   }
                }
             }
@@ -102,23 +102,23 @@ public class EarthbreakEntity extends PomkotsThrowableProjectile implements GeoE
       }
    }
 
-   protected void m_5790_(EntityHitResult entityHitResult) {
+   protected void onHitEntity(EntityHitResult entityHitResult) {
    }
 
-   protected void m_8060_(BlockHitResult blockHitResult) {
+   protected void onHitBlock(BlockHitResult blockHitResult) {
    }
 
    @Override
-   public boolean m_142391_() {
+   public boolean shouldBeSaved() {
       return false;
    }
 
    @Override
-   public boolean m_6128_() {
+   public boolean ignoreExplosion() {
       return true;
    }
 
-   protected void m_8097_() {
+   protected void defineSynchedData() {
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

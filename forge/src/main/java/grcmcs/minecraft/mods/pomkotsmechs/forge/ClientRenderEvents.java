@@ -14,9 +14,9 @@ public class ClientRenderEvents {
 
    @SubscribeEvent
    public static void onRenderGuiOverlay(Pre event) {
-      Minecraft client = Minecraft.m_91087_();
-      LocalPlayer p = client.f_91074_;
-      if (p != null && p.m_20202_() instanceof PomkotsVehicle) {
+      Minecraft client = Minecraft.getInstance();
+      LocalPlayer p = client.player;
+      if (p != null && p.getVehicle() instanceof PomkotsVehicle) {
          String id = event.getOverlay().id().toString();
          if ("minecraft:player_health".equals(id) || "minecraft:mount_health".equals(id) || "minecraft:armor_level".equals(id)) {
             event.setCanceled(true);
@@ -25,8 +25,8 @@ public class ClientRenderEvents {
    }
 
    private static boolean shouldCancel(Object v) {
-      Minecraft client = Minecraft.m_91087_();
-      LocalPlayer p = client.f_91074_;
-      return p != null && p.m_20202_() instanceof PomkotsVehicle;
+      Minecraft client = Minecraft.getInstance();
+      LocalPlayer p = client.player;
+      return p != null && p.getVehicle() instanceof PomkotsVehicle;
    }
 }

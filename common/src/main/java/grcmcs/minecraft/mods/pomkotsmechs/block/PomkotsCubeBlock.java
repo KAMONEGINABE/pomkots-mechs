@@ -26,61 +26,61 @@ import net.minecraft.world.phys.BlockHitResult;
 
 public class PomkotsCubeBlock extends ChestBlock implements PomkotsUnbreakableBlock {
    public PomkotsCubeBlock() {
-      this(Properties.m_284310_().m_60913_(-1.0F, 3600000.0F).m_60918_(SoundType.f_56743_), PomkotsMechs.POMKOTS_CUBE_BLOCK_ENTITY::get);
+      this(Properties.of().strength(-1.0F, 3600000.0F).sound(SoundType.METAL), PomkotsMechs.POMKOTS_CUBE_BLOCK_ENTITY::get);
    }
 
    public PomkotsCubeBlock(Properties properties, Supplier<BlockEntityType<? extends ChestBlockEntity>> supplier) {
       super(properties, supplier);
    }
 
-   public float m_5880_(BlockState state, Player player, BlockGetter level, BlockPos pos) {
+   public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
       return 0.0F;
    }
 
-   public BlockState m_5573_(BlockPlaceContext arg) {
+   public BlockState getStateForPlacement(BlockPlaceContext arg) {
       ChestType chesttype = ChestType.SINGLE;
-      Direction direction = arg.m_8125_().m_122424_();
-      FluidState fluidstate = arg.m_43725_().m_6425_(arg.m_8083_());
-      boolean flag = arg.m_7078_();
-      Direction direction1 = arg.m_43719_();
-      if (direction1.m_122434_().m_122479_() && flag) {
-         Direction direction2 = this.candidatePartnerFacing(arg, direction1.m_122424_());
-         if (direction2 != null && direction2.m_122434_() != direction1.m_122434_()) {
+      Direction direction = arg.getHorizontalDirection().getOpposite();
+      FluidState fluidstate = arg.getLevel().getFluidState(arg.getClickedPos());
+      boolean flag = arg.isSecondaryUseActive();
+      Direction direction1 = arg.getClickedFace();
+      if (direction1.getAxis().isHorizontal() && flag) {
+         Direction direction2 = this.candidatePartnerFacing(arg, direction1.getOpposite());
+         if (direction2 != null && direction2.getAxis() != direction1.getAxis()) {
             direction = direction2;
-            chesttype = direction2.m_122428_() == direction1.m_122424_() ? ChestType.RIGHT : ChestType.LEFT;
+            chesttype = direction2.getCounterClockWise() == direction1.getOpposite() ? ChestType.RIGHT : ChestType.LEFT;
          }
       }
 
       if (chesttype == ChestType.SINGLE && !flag) {
-         if (direction == this.candidatePartnerFacing(arg, direction.m_122427_())) {
+         if (direction == this.candidatePartnerFacing(arg, direction.getClockWise())) {
             chesttype = ChestType.LEFT;
-         } else if (direction == this.candidatePartnerFacing(arg, direction.m_122428_())) {
+         } else if (direction == this.candidatePartnerFacing(arg, direction.getCounterClockWise())) {
             chesttype = ChestType.RIGHT;
          }
       }
 
-      return (BlockState)((BlockState)((BlockState)this.m_49966_().m_61124_(f_51478_, direction)).m_61124_(f_51479_, chesttype))
-         .m_61124_(f_51480_, fluidstate.m_76152_() == Fluids.f_76193_);
+      return (BlockState)((BlockState)((BlockState)this.defaultBlockState().setValue(FACING, direction)).setValue(TYPE, chesttype))
+         .setValue(WATERLOGGED, fluidstate.getType() == Fluids.WATER);
    }
 
    private Direction candidatePartnerFacing(BlockPlaceContext arg, Direction arg2) {
       return null;
    }
 
-   public BlockEntity m_142194_(BlockPos pos, BlockState state) {
+   public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
       return new PomkotsCubeBlockEntity(pos, state);
    }
 
-   public <T extends BlockEntity> BlockEntityTicker<T> m_142354_(Level level, BlockState blockState, BlockEntityType<T> blockEntityType) {
-      return level.f_46443_
-         ? m_152132_(blockEntityType, this.m_153066_(), ChestBlockEntity::m_155343_)
-         : m_152132_(blockEntityType, (BlockEntityType)PomkotsMechs.POMKOTS_CUBE_BLOCK_ENTITY.get(), PomkotsCubeBlockEntity::serverTick);
+   public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState blockState, BlockEntityType<T> blockEntityType) {
+      return level.isClientSide
+         ? createTickerHelper(blockEntityType, this.blockEntityType(), ChestBlockEntity::lidAnimateTick)
+         : createTickerHelper(blockEntityType, (BlockEntityType)PomkotsMechs.POMKOTS_CUBE_BLOCK_ENTITY.get(), PomkotsCubeBlockEntity::serverTick);
    }
 
-   public InteractionResult m_6227_(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-      if (level.m_7702_(pos) instanceof PomkotsCubeBlockEntity cubeBe) {
-         if (player.m_6144_()) {
-            if (!level.f_46443_) {
+   public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+      if (level.getBlockEntity(pos) instanceof PomkotsCubeBlockEntity cubeBe) {
+         if (player.isShiftKeyDown()) {
+            if (!level.isClientSide) {
                cubeBe.incrementMode();
             }
 
@@ -89,7 +89,7 @@ public class PomkotsCubeBlock extends ChestBlock implements PomkotsUnbreakableBl
             switch (cubeBe.getMode()) {
                case 0:
                   cubeBe.openBox(player);
-                  return super.m_6227_(state, level, pos, player, hand, hit);
+                  return super.use(state, level, pos, player, hand, hit);
                default:
                   cubeBe.openBox(player);
                   return InteractionResult.CONSUME;
@@ -100,7 +100,7 @@ public class PomkotsCubeBlock extends ChestBlock implements PomkotsUnbreakableBl
       }
    }
 
-   public RenderShape m_7514_(BlockState state) {
+   public RenderShape getRenderShape(BlockState state) {
       return RenderShape.ENTITYBLOCK_ANIMATED;
    }
 }

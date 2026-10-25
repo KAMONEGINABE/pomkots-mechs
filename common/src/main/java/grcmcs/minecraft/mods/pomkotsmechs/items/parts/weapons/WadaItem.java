@@ -31,29 +31,29 @@ public class WadaItem extends BasePartsItem.WeaponArm {
       if (isOnFire) {
          Pmvc01Entity mech = mechInterface.getMechEntity();
          if (mechInterface.isToggleOnStart()) {
-            if (world.f_46443_) {
+            if (world.isClientSide) {
                mechInterface.playSoundEffect((SoundEvent)PomkotsMechs.SE_LIFT.get());
             } else {
                Entity p = findFirstEntityInFront3x3x3(mech);
                if (p != null && this.isTargetClass(p)) {
-                  Vec3 pos = mech.m_20182_();
-                  p.m_6034_(pos.f_82479_, pos.f_82480_ + 7.5, pos.f_82481_);
-                  p.m_20242_(true);
-                  mech.setHavingEntity(Optional.of(p.m_20148_()));
+                  Vec3 pos = mech.position();
+                  p.setPos(pos.x, pos.y + 7.5, pos.z);
+                  p.setNoGravity(true);
+                  mech.setHavingEntity(Optional.of(p.getUUID()));
                } else {
                   mech.setHavingEntity(Optional.empty());
                }
             }
-         } else if (world.f_46443_) {
+         } else if (world.isClientSide) {
             mechInterface.playSoundEffect((SoundEvent)PomkotsMechs.SE_THROW.get());
          } else {
-            Entity p = ((ServerLevel)world).m_8791_(mech.havingEntity().get());
+            Entity p = ((ServerLevel)world).getEntity(mech.havingEntity().get());
             if (p != null) {
-               p.f_19802_ = 20;
+               p.invulnerableTime = 20;
                Vec3 muzzlPos = new Vec3(0.0, 0.0, 6.0);
-               muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
-               p.m_146884_(mech.m_20182_().m_82549_(muzzlPos));
-               p.m_20242_(false);
+               muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+               p.setPos(mech.position().add(muzzlPos));
+               p.setNoGravity(false);
             }
 
             mech.setHavingEntity(Optional.empty());
@@ -62,32 +62,32 @@ public class WadaItem extends BasePartsItem.WeaponArm {
    }
 
    public static void shootFromRotation(Entity ent, Entity entity, float f, float g, float h, float i, float j) {
-      float k = -Mth.m_14031_(g * (float) (Math.PI / 180.0)) * Mth.m_14089_(f * (float) (Math.PI / 180.0));
-      float l = -Mth.m_14031_((f + h) * (float) (Math.PI / 180.0));
-      float m = Mth.m_14089_(g * (float) (Math.PI / 180.0)) * Mth.m_14089_(f * (float) (Math.PI / 180.0));
+      float k = -Mth.sin(g * (float) (Math.PI / 180.0)) * Mth.cos(f * (float) (Math.PI / 180.0));
+      float l = -Mth.sin((f + h) * (float) (Math.PI / 180.0));
+      float m = Mth.cos(g * (float) (Math.PI / 180.0)) * Mth.cos(f * (float) (Math.PI / 180.0));
       shoot(ent, k, l, m, i, j);
-      Vec3 vec3 = entity.m_20184_();
-      ent.m_20256_(ent.m_20184_().m_82520_(vec3.f_82479_, entity.m_20096_() ? 0.0 : vec3.f_82480_, vec3.f_82481_));
+      Vec3 vec3 = entity.getDeltaMovement();
+      ent.setDeltaMovement(ent.getDeltaMovement().add(vec3.x, entity.onGround() ? 0.0 : vec3.y, vec3.z));
    }
 
    public static void shoot(Entity ent, double d, double e, double f, float g, float h) {
-      Vec3 vec3 = new Vec3(d, e, f).m_82541_().m_82490_(g);
-      ent.m_20256_(vec3);
-      double i = vec3.m_165924_();
-      ent.m_146922_((float)(Mth.m_14136_(vec3.f_82479_, vec3.f_82481_) * 180.0F / (float)Math.PI));
-      ent.m_146926_((float)(Mth.m_14136_(vec3.f_82480_, i) * 180.0F / (float)Math.PI));
-      ent.f_19859_ = ent.m_146908_();
-      ent.f_19860_ = ent.m_146909_();
+      Vec3 vec3 = new Vec3(d, e, f).normalize().scale(g);
+      ent.setDeltaMovement(vec3);
+      double i = vec3.horizontalDistance();
+      ent.setYRot((float)(Mth.atan2(vec3.x, vec3.z) * 180.0F / (float)Math.PI));
+      ent.setXRot((float)(Mth.atan2(vec3.y, i) * 180.0F / (float)Math.PI));
+      ent.yRotO = ent.getYRot();
+      ent.xRotO = ent.getXRot();
    }
 
    public static Entity findFirstEntityInFront3x3x3(Entity self) {
-      Level level = self.m_9236_();
-      Vec3 forward = Vec3.m_82498_(0.0F, self.m_146908_());
-      Vec3 center = self.m_20182_().m_82520_(0.0, 0.0, 0.0).m_82549_(forward.m_82490_(5.0));
+      Level level = self.level();
+      Vec3 forward = Vec3.directionFromRotation(0.0F, self.getYRot());
+      Vec3 center = self.position().add(0.0, 0.0, 0.0).add(forward.scale(5.0));
       AABB box = new AABB(
-         center.f_82479_ - 1.5, center.f_82480_ - 0.0, center.f_82481_ - 1.5, center.f_82479_ + 1.5, center.f_82480_ + 3.0, center.f_82481_ + 1.5
+         center.x - 1.5, center.y - 0.0, center.z - 1.5, center.x + 1.5, center.y + 3.0, center.z + 1.5
       );
-      List<Entity> list = level.m_6249_(self, box, e -> e.m_6084_() && e != self);
+      List<Entity> list = level.getEntities(self, box, e -> e.isAlive() && e != self);
       return list.isEmpty() ? null : list.get(0);
    }
 

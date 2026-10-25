@@ -30,36 +30,36 @@ public class DataPadScreen extends AbstractContainerScreen<DataPadMenu> {
 
    public DataPadScreen(DataPadMenu menu, Inventory inventory, Component title) {
       super(menu, inventory, title);
-      this.f_97726_ = 480;
-      this.f_97727_ = 270;
+      this.imageWidth = 480;
+      this.imageHeight = 270;
    }
 
-   protected void m_7856_() {
-      super.m_7856_();
-      this.menuButtonsOffsetX = this.f_97735_ + 100;
-      this.menuButtonsOffsetY = this.f_97736_ + 75;
-      this.btnMech = (ImageButton)this.m_142416_(
+   protected void init() {
+      super.init();
+      this.menuButtonsOffsetX = this.leftPos + 100;
+      this.menuButtonsOffsetY = this.topPos + 75;
+      this.btnMech = (ImageButton)this.addRenderableWidget(
          this.buildMenuButton(
             "Mech",
             this.menuButtonsOffsetX,
             this.menuButtonsOffsetY,
             btn -> this.btnClicked(0),
-            ((DataPadMenu)this.f_97732_).player != null && ((DataPadMenu)this.f_97732_).player.m_20202_() instanceof Pmvc01Entity
+            ((DataPadMenu)this.menu).player != null && ((DataPadMenu)this.menu).player.getVehicle() instanceof Pmvc01Entity
          )
       );
-      this.btnMechKeycards = (ImageButton)this.m_142416_(
+      this.btnMechKeycards = (ImageButton)this.addRenderableWidget(
          this.buildMenuButton("Mech Key Cards", this.menuButtonsOffsetX + 140 + 20, this.menuButtonsOffsetY, btn -> this.btnClicked(1), true)
       );
-      this.btnArena = (ImageButton)this.m_142416_(
+      this.btnArena = (ImageButton)this.addRenderableWidget(
          this.buildMenuButton("Arena", this.menuButtonsOffsetX, this.menuButtonsOffsetY + 38, btn -> this.btnClicked(2), true)
       );
-      this.btnRadar = (ImageButton)this.m_142416_(
+      this.btnRadar = (ImageButton)this.addRenderableWidget(
          this.buildMenuButton("Radar", this.menuButtonsOffsetX + 140 + 20, this.menuButtonsOffsetY + 38, btn -> this.btnClicked(3), true)
       );
-      this.btnQuests = (ImageButton)this.m_142416_(
+      this.btnQuests = (ImageButton)this.addRenderableWidget(
          this.buildMenuButton("Quests", this.menuButtonsOffsetX, this.menuButtonsOffsetY + 76 + 10, btn -> this.btnClicked(4), this.isFtbQuestLoaded())
       );
-      this.btnTeams = (ImageButton)this.m_142416_(
+      this.btnTeams = (ImageButton)this.addRenderableWidget(
          this.buildMenuButton(
             "Teams", this.menuButtonsOffsetX + 140 + 20, this.menuButtonsOffsetY + 76 + 10, btn -> this.btnClicked(5), this.isFtbTeamsLoaded()
          )
@@ -75,36 +75,36 @@ public class DataPadScreen extends AbstractContainerScreen<DataPadMenu> {
    }
 
    private ImageButton buildMenuButton(String text, int x, int y, OnPress onPress, boolean active) {
-      ImageButton b = new ImageButton(x, y, 140, 28, TEXTURE_BUTTON, 0, 0, 140, 112, Component.m_237113_(text), onPress);
-      b.f_93623_ = active;
+      ImageButton b = new ImageButton(x, y, 140, 28, TEXTURE_BUTTON, 0, 0, 140, 112, Component.literal(text), onPress);
+      b.active = active;
       return b;
    }
 
    private void btnClicked(int btnId) {
-      this.f_96541_.f_91072_.m_105208_(((DataPadMenu)this.f_97732_).f_38840_, btnId);
+      this.minecraft.gameMode.handleInventoryButtonClick(((DataPadMenu)this.menu).containerId, btnId);
    }
 
-   public void m_88315_(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-      this.m_280273_(graphics);
+   public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+      this.renderBackground(graphics);
       if (!this.isSlotInited
-         && ((DataPadMenu)this.f_97732_).getDataPad() != null
-         && ((DataPadMenu)this.f_97732_).getDataPad().m_41720_() instanceof PomkotsDatapadItem) {
+         && ((DataPadMenu)this.menu).getDataPad() != null
+         && ((DataPadMenu)this.menu).getDataPad().getItem() instanceof PomkotsDatapadItem) {
          this.isSlotInited = true;
-         if (PomkotsDatapadItem.getRegisteredArenaIds(((DataPadMenu)this.f_97732_).getDataPad()).isEmpty()) {
-            this.btnArena.f_93623_ = false;
+         if (PomkotsDatapadItem.getRegisteredArenaIds(((DataPadMenu)this.menu).getDataPad()).isEmpty()) {
+            this.btnArena.active = false;
          } else {
-            this.btnArena.setBadgeCount(PomkotsDatapadItem.getArenaRequests(((DataPadMenu)this.f_97732_).getDataPad()).size());
+            this.btnArena.setBadgeCount(PomkotsDatapadItem.getArenaRequests(((DataPadMenu)this.menu).getDataPad()).size());
          }
       }
 
-      super.m_88315_(graphics, mouseX, mouseY, partialTick);
-      this.m_280072_(graphics, mouseX, mouseY);
+      super.render(graphics, mouseX, mouseY, partialTick);
+      this.renderTooltip(graphics, mouseX, mouseY);
    }
 
-   protected void m_7286_(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+   protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
    }
 
-   protected void m_280003_(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+   protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
    }
 
    private void renderBgTexture(ResourceLocation texture, int x, int y, int width, int height, GuiGraphics guiGraphics) {
@@ -115,7 +115,7 @@ public class DataPadScreen extends AbstractContainerScreen<DataPadMenu> {
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
       RenderSystem.enableBlend();
       RenderSystem.setShaderTexture(0, texture);
-      guiGraphics.m_280163_(texture, x, y, 0.0F, 0.0F, width, height, width, height);
+      guiGraphics.blit(texture, x, y, 0.0F, 0.0F, width, height, width, height);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 }

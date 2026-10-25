@@ -21,7 +21,7 @@ public final class ArenaMatchProcessor {
    public static void tick(MinecraftServer server, ArenaInstance arena) {
       ArenaMatchData match = arena.getActiveMatch();
       if (match != null && arena.getControllerPos() != null) {
-         ArenaMatchContext context = createContext(server, server.m_129880_(arena.getControllerPos().m_122640_()), arena, match);
+         ArenaMatchContext context = createContext(server, server.getLevel(arena.getControllerPos().dimension()), arena, match);
          ArenaStateProcessors.get(match.getState()).tick(context);
       }
    }
@@ -45,7 +45,7 @@ public final class ArenaMatchProcessor {
       }
 
       context.runtime().resetOnceFlag();
-      ArenaSavedData.get(context.server()).m_77762_();
+      ArenaSavedData.get(context.server()).setDirty();
    }
 
    public static void cancelMatch(String reason, String arenaId, UUID matchId, MinecraftServer server) {
@@ -53,7 +53,7 @@ public final class ArenaMatchProcessor {
       if (arena != null && arena.getControllerPos() != null) {
          ArenaMatchData m1 = arena.getActiveMatch();
          if (m1 != null && m1.getMatchId().equals(matchId)) {
-            ArenaMatchContext context = createContext(server, server.m_129880_(arena.getControllerPos().m_122640_()), arena, m1);
+            ArenaMatchContext context = createContext(server, server.getLevel(arena.getControllerPos().dimension()), arena, m1);
             cancelMatch(context, reason);
          }
       }

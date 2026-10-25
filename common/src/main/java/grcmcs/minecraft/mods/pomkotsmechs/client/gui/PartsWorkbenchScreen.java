@@ -40,7 +40,7 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
    private int scrollOffset = 0;
    private int selectedIndex = -1;
    private final List<PartsWorkbenchScreen.Material> requiredMaterials = new ArrayList<>();
-   private ItemStack previewItem = ItemStack.f_41583_;
+   private ItemStack previewItem = ItemStack.EMPTY;
    private int previewX = 9;
    private int previewY = 45;
    private int previewSize = 64;
@@ -50,8 +50,8 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
    private final int inventorySectionWidth;
    private Button craftButton;
    private Button upgradeButton;
-   private ItemStack prevUpgradeTarget = ItemStack.f_41583_;
-   private ItemStack upgradeTarget = ItemStack.f_41583_;
+   private ItemStack prevUpgradeTarget = ItemStack.EMPTY;
+   private ItemStack upgradeTarget = ItemStack.EMPTY;
    private List<ItemStack> upgradeTargetLevels = new ArrayList<>();
    private static final int ENTRY_SIZE = 24;
    private static final int ENTRIES_PER_ROW = 4;
@@ -60,30 +60,30 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
 
    public PartsWorkbenchScreen(PartsWorkbenchMenu menu, Inventory inv, Component title) {
       super(menu, inv, title);
-      this.f_97726_ = 400;
-      this.f_97727_ = 180;
+      this.imageWidth = 400;
+      this.imageHeight = 180;
       this.previewSectionWidth = 80;
       this.materialSectionWidth = 80;
       this.partsSelectSectionWidth = 120;
-      this.inventorySectionWidth = this.f_97726_ - (this.previewSectionWidth + this.materialSectionWidth + this.partsSelectSectionWidth);
-      this.f_97728_ = 90;
-      this.f_97731_ = 60;
+      this.inventorySectionWidth = this.imageWidth - (this.previewSectionWidth + this.materialSectionWidth + this.partsSelectSectionWidth);
+      this.titleLabelX = 90;
+      this.inventoryLabelY = 60;
    }
 
-   protected void m_7856_() {
-      super.m_7856_();
-      this.currentTab = ((PartsWorkbenchMenu)this.f_97732_).getCurrentTab();
+   protected void init() {
+      super.init();
+      this.currentTab = ((PartsWorkbenchMenu)this.menu).getCurrentTab();
       this.craftablePartsList.clear();
       this.registerAllParts();
-      this.craftButton = (Button)this.m_142416_(
-         Button.m_253074_(Utils.string2Component("{text.pomkotsmechs.gui.partsworkbench.btn.craft}"), this::onCraftButtonPressed)
-            .m_252987_(this.f_97735_ + this.previewX, this.f_97736_ + 120, 70, 14)
-            .m_253136_()
+      this.craftButton = (Button)this.addRenderableWidget(
+         Button.builder(Utils.string2Component("{text.pomkotsmechs.gui.partsworkbench.btn.craft}"), this::onCraftButtonPressed)
+            .bounds(this.leftPos + this.previewX, this.topPos + 120, 70, 14)
+            .build()
       );
-      this.upgradeButton = (Button)this.m_142416_(
-         Button.m_253074_(Utils.string2Component("{text.pomkotsmechs.gui.partsworkbench.btn.upgrade}"), this::onUpgradeButtonPressed)
-            .m_252987_(this.f_97735_ + this.previewX, this.f_97736_ + 120, 70, 14)
-            .m_253136_()
+      this.upgradeButton = (Button)this.addRenderableWidget(
+         Button.builder(Utils.string2Component("{text.pomkotsmechs.gui.partsworkbench.btn.upgrade}"), this::onUpgradeButtonPressed)
+            .bounds(this.leftPos + this.previewX, this.topPos + 120, 70, 14)
+            .build()
       );
       this.setupButtonVisibility(this.currentTab);
    }
@@ -154,11 +154,11 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
 
    private void registerParts(RegistrySupplier<Item> partsSupplier) {
       PomkotsDataPack dataPack = PomkotsDataPackManager.getInstance().getDataPack();
-      PomkotsDataPack.PartsData partsData = dataPack.getPartsData(partsSupplier.getId().m_135815_());
+      PomkotsDataPack.PartsData partsData = dataPack.getPartsData(partsSupplier.getId().getPath());
       if (partsData != null) {
-         Minecraft mc = Minecraft.m_91087_();
-         boolean isCreative = mc.f_91074_.m_7500_();
-         boolean hasBluePrint = this.hasBluePrint(mc.f_91074_.m_150109_(), partsSupplier.getId());
+         Minecraft mc = Minecraft.getInstance();
+         boolean isCreative = mc.player.isCreative();
+         boolean hasBluePrint = this.hasBluePrint(mc.player.getInventory(), partsSupplier.getId());
          if (isCreative || hasBluePrint) {
             this.craftablePartsList.add(new PartsWorkbenchScreen.PartEntry(partsSupplier.getId(), partsData, new ItemStack((ItemLike)partsSupplier.get())));
          }
@@ -166,14 +166,14 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
    }
 
    private boolean hasBluePrint(Inventory inventory, ResourceLocation partsId) {
-      String partsName = partsId.m_135815_();
+      String partsName = partsId.getPath();
       if (partsName.endsWith("head") || partsName.endsWith("body") || partsName.endsWith("arm") || partsName.endsWith("legs")) {
          partsName = partsName.replaceAll("head", "").replaceAll("body", "").replaceAll("arm", "").replaceAll("legs", "");
       }
 
-      ResourceLocation bluePrintId = this.getBluePrintId(partsId.m_135827_(), partsName);
-      Item bluePrint = (Item)BuiltInRegistries.f_257033_.m_7745_(bluePrintId);
-      return bluePrint == Items.f_41852_ ? false : inventory.m_18947_(bluePrint) > 0;
+      ResourceLocation bluePrintId = this.getBluePrintId(partsId.getNamespace(), partsName);
+      Item bluePrint = (Item)BuiltInRegistries.ITEM.get(bluePrintId);
+      return bluePrint == Items.AIR ? false : inventory.countItem(bluePrint) > 0;
    }
 
    private ResourceLocation getBluePrintId(String nameSpace, String partsName) {
@@ -188,20 +188,20 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
    }
 
    private void onCraftButtonPressed(Button btn) {
-      if (!((PartsWorkbenchMenu)this.f_97732_).m_38853_(0).m_7993_().m_41619_()) {
+      if (!((PartsWorkbenchMenu)this.menu).getSlot(0).getItem().isEmpty()) {
          this.displayMessage("{text.pomkotsmechs.messages.partsworkbench.01}");
-      } else if (this.previewItem.m_41619_()) {
+      } else if (this.previewItem.isEmpty()) {
          this.displayMessage("{text.pomkotsmechs.messages.partsworkbench.08}");
-      } else if (this.previewItem.m_41720_() instanceof BasePartsItem parts) {
+      } else if (this.previewItem.getItem() instanceof BasePartsItem parts) {
          PomkotsDataPack.PartsData partsData = PartsWorkbenchMenu.getPartsData(parts);
          if (partsData == null || partsData.recipes.isEmpty() || partsData.recipes.get(0).isEmpty()) {
             this.displayMessage("{text.pomkotsmechs.messages.partsworkbench.02}");
             return;
          }
 
-         if (PartsWorkbenchMenu.isCraftable(Minecraft.m_91087_().f_91074_.m_150109_(), partsData.recipes.get(0))) {
+         if (PartsWorkbenchMenu.isCraftable(Minecraft.getInstance().player.getInventory(), partsData.recipes.get(0))) {
             FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-            buf.m_236818_(BuiltInRegistries.f_257033_, parts);
+            buf.writeId(BuiltInRegistries.ITEM, parts);
             NetworkManager.sendToServer(PomkotsMechs.id("pwc"), buf);
          } else {
             this.displayMessage("{text.pomkotsmechs.messages.partsworkbench.03}");
@@ -212,10 +212,10 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
    }
 
    private void onUpgradeButtonPressed(Button btn) {
-      ItemStack inputItemStack = ((PartsWorkbenchMenu)this.f_97732_).m_38853_(1).m_7993_();
-      if (inputItemStack.m_41619_()) {
+      ItemStack inputItemStack = ((PartsWorkbenchMenu)this.menu).getSlot(1).getItem();
+      if (inputItemStack.isEmpty()) {
          this.displayMessage("{text.pomkotsmechs.messages.partsworkbench.10}");
-      } else if (inputItemStack.m_41720_() instanceof BasePartsItem parts) {
+      } else if (inputItemStack.getItem() instanceof BasePartsItem parts) {
          PomkotsDataPack.PartsData partsData = PartsWorkbenchMenu.getPartsData(parts);
          int curLevel = parts.getLevel(inputItemStack);
          if (partsData == null) {
@@ -233,9 +233,9 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
             return;
          }
 
-         if (PartsWorkbenchMenu.isCraftable(Minecraft.m_91087_().f_91074_.m_150109_(), partsData.recipes.get(curLevel))) {
+         if (PartsWorkbenchMenu.isCraftable(Minecraft.getInstance().player.getInventory(), partsData.recipes.get(curLevel))) {
             FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-            buf.m_236818_(BuiltInRegistries.f_257033_, parts);
+            buf.writeId(BuiltInRegistries.ITEM, parts);
             NetworkManager.sendToServer(PomkotsMechs.id("pwu"), buf);
          } else {
             this.displayMessage("{text.pomkotsmechs.messages.partsworkbench.03}");
@@ -245,36 +245,36 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
       }
    }
 
-   public void m_88315_(GuiGraphics guiGraphics, int i, int j, float f) {
-      super.m_88315_(guiGraphics, i, j, f);
-      this.m_280072_(guiGraphics, i, j);
+   public void render(GuiGraphics guiGraphics, int i, int j, float f) {
+      super.render(guiGraphics, i, j, f);
+      this.renderTooltip(guiGraphics, i, j);
       if (PartsWorkbenchMenu.Tab.UPGRADE == this.currentTab) {
          this.prevUpgradeTarget = this.upgradeTarget;
-         this.upgradeTarget = ((PartsWorkbenchMenu)this.f_97732_).m_38853_(1).m_7993_();
+         this.upgradeTarget = ((PartsWorkbenchMenu)this.menu).getSlot(1).getItem();
          if (this.prevUpgradeTarget != this.upgradeTarget) {
             this.setupUpgradeTarget(this.upgradeTarget);
          }
       }
    }
 
-   protected void m_7286_(GuiGraphics gui, float partialTick, int mouseX, int mouseY) {
+   protected void renderBg(GuiGraphics gui, float partialTick, int mouseX, int mouseY) {
       if (this.currentTab == PartsWorkbenchMenu.Tab.CRAFT) {
          this.renderBgTexture(TEXTURE_PROD, gui);
-         int left = this.f_97735_;
-         int top = this.f_97736_;
-         gui.m_280509_(left + this.previewSectionWidth, top + 35, left + this.previewSectionWidth + 1, top + this.f_97727_ - 22, -10461088);
-         gui.m_280509_(
+         int left = this.leftPos;
+         int top = this.topPos;
+         gui.fill(left + this.previewSectionWidth, top + 35, left + this.previewSectionWidth + 1, top + this.imageHeight - 22, -10461088);
+         gui.fill(
             left + this.previewSectionWidth + this.materialSectionWidth,
             top + 35,
             left + this.previewSectionWidth + this.materialSectionWidth + 1,
-            top + this.f_97727_ - 22,
+            top + this.imageHeight - 22,
             -10461088
          );
-         gui.m_280509_(
+         gui.fill(
             left + this.previewSectionWidth + this.materialSectionWidth + this.partsSelectSectionWidth,
             top + 35,
             left + this.previewSectionWidth + this.materialSectionWidth + this.partsSelectSectionWidth + 1,
-            top + this.f_97727_ - 22,
+            top + this.imageHeight - 22,
             -10461088
          );
          this.renderPreview(gui, this.previewItem, left, top, this.previewSectionWidth, this.previewSize, partialTick);
@@ -290,21 +290,21 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
          );
       } else {
          this.renderBgTexture(TEXTURE_ENH, gui);
-         int left = this.f_97735_;
-         int top = this.f_97736_;
-         gui.m_280509_(left + this.previewSectionWidth, top + 35, left + this.previewSectionWidth + 1, top + this.f_97727_ - 22, -10461088);
-         gui.m_280509_(
+         int left = this.leftPos;
+         int top = this.topPos;
+         gui.fill(left + this.previewSectionWidth, top + 35, left + this.previewSectionWidth + 1, top + this.imageHeight - 22, -10461088);
+         gui.fill(
             left + this.previewSectionWidth + this.materialSectionWidth,
             top + 35,
             left + this.previewSectionWidth + this.materialSectionWidth + 1,
-            top + this.f_97727_ - 22,
+            top + this.imageHeight - 22,
             -10461088
          );
-         gui.m_280509_(
+         gui.fill(
             left + this.previewSectionWidth + this.materialSectionWidth + this.partsSelectSectionWidth,
             top + 35,
             left + this.previewSectionWidth + this.materialSectionWidth + this.partsSelectSectionWidth + 1,
-            top + this.f_97727_ - 22,
+            top + this.imageHeight - 22,
             -10461088
          );
          this.renderPreview(gui, this.previewItem, left, top, this.previewSectionWidth, this.previewSize, partialTick);
@@ -323,63 +323,63 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
 
    private void renderBgTexture(ResourceLocation texture, GuiGraphics gfx) {
       RenderSystem.setShaderTexture(0, texture);
-      int x = this.f_97735_;
-      int y = this.f_97736_;
-      gfx.m_280163_(texture, x, y, 0.0F, 0.0F, this.f_97726_, this.f_97727_, this.f_97726_, 256);
+      int x = this.leftPos;
+      int y = this.topPos;
+      gfx.blit(texture, x, y, 0.0F, 0.0F, this.imageWidth, this.imageHeight, this.imageWidth, 256);
    }
 
-   protected void m_280003_(GuiGraphics guiGraphics, int i, int j) {
-      guiGraphics.m_280137_(this.f_96547_, "Parts Workbench: Level 1", this.f_97726_ / 2, this.f_97729_, 16777215);
+   protected void renderLabels(GuiGraphics guiGraphics, int i, int j) {
+      guiGraphics.drawCenteredString(this.font, "Parts Workbench: Level 1", this.imageWidth / 2, this.titleLabelY, 16777215);
       if (this.currentTab == PartsWorkbenchMenu.Tab.CRAFT) {
-         guiGraphics.m_280137_(this.f_96547_, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.tab.craft}"), 30, 18, 16777215);
-         guiGraphics.m_280137_(this.f_96547_, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.tab.upgrade}"), 81, 18, 4210752);
-         guiGraphics.m_280056_(this.f_96547_, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.output}"), 30, 145, 16777215, false);
+         guiGraphics.drawCenteredString(this.font, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.tab.craft}"), 30, 18, 16777215);
+         guiGraphics.drawCenteredString(this.font, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.tab.upgrade}"), 81, 18, 4210752);
+         guiGraphics.drawString(this.font, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.output}"), 30, 145, 16777215, false);
       } else if (this.currentTab == PartsWorkbenchMenu.Tab.UPGRADE) {
-         guiGraphics.m_280137_(this.f_96547_, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.tab.craft}"), 30, 18, 4210752);
-         guiGraphics.m_280137_(this.f_96547_, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.tab.upgrade}"), 81, 18, 16777215);
-         guiGraphics.m_280056_(this.f_96547_, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.target}"), 30, 145, 16777215, false);
+         guiGraphics.drawCenteredString(this.font, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.tab.craft}"), 30, 18, 4210752);
+         guiGraphics.drawCenteredString(this.font, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.tab.upgrade}"), 81, 18, 16777215);
+         guiGraphics.drawString(this.font, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.target}"), 30, 145, 16777215, false);
       }
    }
 
    private void renderPreview(GuiGraphics gui, ItemStack stack, int left, int top, int width, int size, float partialTicks) {
-      Lighting.m_166384_();
-      gui.m_280137_(this.f_96547_, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.preview}"), left + width / 2, top + 33, 16777215);
+      Lighting.setupForEntityInInventory();
+      gui.drawCenteredString(this.font, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.preview}"), left + width / 2, top + 33, 16777215);
       left += this.previewX;
       top += this.previewY;
-      gui.m_280509_(left, top, left + size, top + size, -12566464);
-      if (!this.previewItem.m_41619_()) {
-         Minecraft mc = Minecraft.m_91087_();
-         PoseStack pose = gui.m_280168_();
-         pose.m_85836_();
-         pose.m_85837_(left + size / 2.0, top + size / 2.0 + 8.0, 150.0);
-         pose.m_85841_(1.0F, -1.0F, 1.0F);
+      gui.fill(left, top, left + size, top + size, -12566464);
+      if (!this.previewItem.isEmpty()) {
+         Minecraft mc = Minecraft.getInstance();
+         PoseStack pose = gui.pose();
+         pose.pushPose();
+         pose.translate(left + size / 2.0, top + size / 2.0 + 8.0, 150.0);
+         pose.scale(1.0F, -1.0F, 1.0F);
          float scale = size / 8.0F;
-         pose.m_85841_(scale, scale, scale);
+         pose.scale(scale, scale, scale);
          double time = System.currentTimeMillis() % 8000L / 8000.0;
          float rotation = (float)(time * 360.0);
-         pose.m_252781_(Axis.f_252436_.m_252977_(rotation));
-         pose.m_252781_(Axis.f_252529_.m_252977_(-25.0F));
-         mc.m_91291_().m_269128_(stack, ItemDisplayContext.GROUND, 15728880, 0, pose, gui.m_280091_(), mc.f_91073_, 0);
-         gui.m_280091_().m_109911_();
-         pose.m_85849_();
-         Lighting.m_84931_();
+         pose.mulPose(Axis.YP.rotationDegrees(rotation));
+         pose.mulPose(Axis.XP.rotationDegrees(-25.0F));
+         mc.getItemRenderer().renderStatic(stack, ItemDisplayContext.GROUND, 15728880, 0, pose, gui.bufferSource(), mc.level, 0);
+         gui.bufferSource().endBatch();
+         pose.popPose();
+         Lighting.setupFor3DItems();
       }
    }
 
-   protected void m_280072_(GuiGraphics graphics, int mouseX, int mouseY) {
-      super.m_280072_(graphics, mouseX, mouseY);
+   protected void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+      super.renderTooltip(graphics, mouseX, mouseY);
       if (PartsWorkbenchMenu.Tab.CRAFT == this.currentTab) {
-         int px = this.f_97735_ + this.previewX;
-         int py = this.f_97736_ + this.previewY;
-         if (mouseX >= px && mouseX <= px + this.previewSize && mouseY >= py && mouseY <= py + this.previewSize && !this.previewItem.m_41619_()) {
-            graphics.m_280153_(this.f_96547_, this.previewItem, mouseX, mouseY);
+         int px = this.leftPos + this.previewX;
+         int py = this.topPos + this.previewY;
+         if (mouseX >= px && mouseX <= px + this.previewSize && mouseY >= py && mouseY <= py + this.previewSize && !this.previewItem.isEmpty()) {
+            graphics.renderTooltip(this.font, this.previewItem, mouseX, mouseY);
          }
       }
    }
 
    private void renderMaterialSection(GuiGraphics gui, int left, int top, int width, int mouseX, int mouseY) {
-      gui.m_280137_(this.f_96547_, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.requirements}"), left + width / 2, top + 33, 16777215);
-      if (!this.previewItem.m_41619_()) {
+      gui.drawCenteredString(this.font, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.requirements}"), left + width / 2, top + 33, 16777215);
+      if (!this.previewItem.isEmpty()) {
          int x = left + 2;
          int y = top + 45;
          int slotSize = 18;
@@ -388,15 +388,15 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
          for (PartsWorkbenchScreen.Material mat : this.requiredMaterials) {
             Item item = (Item)mat.getFirst();
             int required = (Integer)mat.getSecond();
-            int has = Minecraft.m_91087_().f_91074_.m_150109_().m_18947_(item);
-            gui.m_280509_(x - 1, y - 1, x + slotSize + 1, y + slotSize + 1, -12566464);
+            int has = Minecraft.getInstance().player.getInventory().countItem(item);
+            gui.fill(x - 1, y - 1, x + slotSize + 1, y + slotSize + 1, -12566464);
             ItemStack stack = new ItemStack(item);
-            gui.m_280480_(stack, x + 1, y + 1);
+            gui.renderItem(stack, x + 1, y + 1);
             String countText = has + "/" + required;
             int color = has >= required ? 8454016 : 16744576;
-            drawScaledTextCentered(gui, this.f_96547_, Component.m_237113_(countText), x + slotSize / 2, y + slotSize + 2, slotSize, color);
+            drawScaledTextCentered(gui, this.font, Component.literal(countText), x + slotSize / 2, y + slotSize + 2, slotSize, color);
             if (mouseX >= x && mouseX <= x + slotSize && mouseY >= y && mouseY <= y + slotSize) {
-               gui.m_280153_(this.f_96547_, stack, mouseX, mouseY);
+               gui.renderTooltip(this.font, stack, mouseX, mouseY);
             }
 
             index++;
@@ -410,9 +410,9 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
    }
 
    private void renderPartList(GuiGraphics gui, int left, int top, int width, int mouseX, int mouseY) {
-      gui.m_280137_(this.f_96547_, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.selectparts}"), left + width / 2, top + 33, 16777215);
+      gui.drawCenteredString(this.font, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.selectparts}"), left + width / 2, top + 33, 16777215);
       int listTop = top + 45;
-      int listHeight = this.f_97727_ - 55;
+      int listHeight = this.imageHeight - 55;
       int entriesPerRow = 4;
       int visibleRows = listHeight / 26;
       int totalRows = (int)Math.ceil((float)this.craftablePartsList.size() / entriesPerRow);
@@ -432,14 +432,14 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
             boolean hovered = this.isInside(mouseX, mouseY, x, y, 24, 24);
             boolean selected = index == this.selectedIndex;
             int bg = hovered ? -11513776 : (selected ? -10461024 : -13619152);
-            gui.m_280509_(x, y, x + 24, y + 24, bg);
-            gui.m_280480_(entry.getItemStack(), x + 4, y + 4);
+            gui.fill(x, y, x + 24, y + 24, bg);
+            gui.renderItem(entry.getItemStack(), x + 4, y + 4);
          }
       }
 
       int barHeight = Math.max(10, (int)((float)listHeight * visibleRows / Math.max(1, totalRows)));
       int barPos = listTop + (int)((float)this.scrollOffset / Math.max(1, totalRows - visibleRows) * (listHeight - barHeight));
-      gui.m_280509_(left + width - 6, barPos, left + width - 2, barPos + barHeight, -11513776);
+      gui.fill(left + width - 6, barPos, left + width - 2, barPos + barHeight, -11513776);
 
       for (int row = startRow; row < endRow; row++) {
          for (int col = 0; col < entriesPerRow; col++) {
@@ -452,7 +452,7 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
             int y = listTop + (row - startRow) * 26;
             if (this.isInside(mouseX, mouseY, x, y, 24, 24)) {
                PartsWorkbenchScreen.PartEntry entry = this.craftablePartsList.get(index);
-               gui.m_280153_(this.f_96547_, entry.getItemStack(), mouseX, mouseY);
+               gui.renderTooltip(this.font, entry.getItemStack(), mouseX, mouseY);
                return;
             }
          }
@@ -460,8 +460,8 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
    }
 
    private void renderPartsLevels(GuiGraphics gui, int left, int top, int width, int mouseX, int mouseY) {
-      gui.m_280137_(this.f_96547_, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.partslevels}"), left + width / 2, top + 33, 16777215);
-      if (!this.upgradeTargetLevels.isEmpty() && this.upgradeTarget.m_41720_() instanceof BasePartsItem parts) {
+      gui.drawCenteredString(this.font, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.partslevels}"), left + width / 2, top + 33, 16777215);
+      if (!this.upgradeTargetLevels.isEmpty() && this.upgradeTarget.getItem() instanceof BasePartsItem parts) {
          int var16 = top + 45;
          int startRow = 0;
 
@@ -470,10 +470,10 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
             int y = var16 + (row - startRow) * (LEVEL_ROW_HEIGHT + 2);
             boolean isCurrent = parts.getLevel(this.upgradeTarget) - 1 == row;
             int bg = isCurrent ? -10461024 : -13619152;
-            gui.m_280509_(x, y, x + LEVEL_ROW_WIDTH, y + LEVEL_ROW_HEIGHT, bg);
-            gui.m_280056_(this.f_96547_, "Level " + (row + 1) + (isCurrent ? ": Current" : ""), left + 24, y + 6, 16777215, false);
+            gui.fill(x, y, x + LEVEL_ROW_WIDTH, y + LEVEL_ROW_HEIGHT, bg);
+            gui.drawString(this.font, "Level " + (row + 1) + (isCurrent ? ": Current" : ""), left + 24, y + 6, 16777215, false);
             ItemStack itemStack = this.upgradeTargetLevels.get(row);
-            gui.m_280480_(itemStack, x + 4, y + 4);
+            gui.renderItem(itemStack, x + 4, y + 4);
          }
 
          for (int row = startRow; row < this.upgradeTargetLevels.size(); row++) {
@@ -482,7 +482,7 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
             boolean hovered = this.isInside(mouseX, mouseY, x, y, LEVEL_ROW_WIDTH, LEVEL_ROW_HEIGHT);
             ItemStack itemStack = this.upgradeTargetLevels.get(row);
             if (hovered) {
-               gui.m_280153_(this.f_96547_, itemStack, mouseX, mouseY);
+               gui.renderTooltip(this.font, itemStack, mouseX, mouseY);
             }
          }
       }
@@ -492,7 +492,7 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
       this.setPreviewItem(target);
       this.upgradeTargetLevels.clear();
       this.requiredMaterials.clear();
-      if (target.m_41720_() instanceof BasePartsItem partsItem) {
+      if (target.getItem() instanceof BasePartsItem partsItem) {
          int maxLevel = partsItem.getMaxLevel();
 
          for (int l = 0; l < maxLevel; l++) {
@@ -509,36 +509,36 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
    }
 
    private void renderInventory(GuiGraphics gui, int left, int top, int width, int mouseX, int mouseY) {
-      gui.m_280137_(this.f_96547_, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.inventory}"), left + width / 2, top + 33, 16777215);
+      gui.drawCenteredString(this.font, this.getLocalizedString("{text.pomkotsmechs.gui.partsworkbench.label.inventory}"), left + width / 2, top + 33, 16777215);
    }
 
-   public boolean m_6050_(double mouseX, double mouseY, double delta) {
+   public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
       if (PartsWorkbenchMenu.Tab.CRAFT == this.currentTab) {
-         int listHeight = this.f_97727_ - 55;
+         int listHeight = this.imageHeight - 55;
          int visibleRows = listHeight / 26;
          int totalRows = (int)Math.ceil(this.craftablePartsList.size() / 4.0F);
          int maxScroll = Math.max(0, totalRows - visibleRows);
-         this.scrollOffset = Mth.m_14045_(this.scrollOffset - (int)Math.signum(delta), 0, maxScroll);
+         this.scrollOffset = Mth.clamp(this.scrollOffset - (int)Math.signum(delta), 0, maxScroll);
       }
 
       return true;
    }
 
-   public boolean m_6375_(double mouseX, double mouseY, int button) {
-      if (this.isInside(mouseX, mouseY, this.f_97735_ + 5, this.f_97736_ + 19, 48, 10)) {
+   public boolean mouseClicked(double mouseX, double mouseY, int button) {
+      if (this.isInside(mouseX, mouseY, this.leftPos + 5, this.topPos + 19, 48, 10)) {
          this.switchTab(PartsWorkbenchMenu.Tab.CRAFT);
          return true;
       }
 
-      if (this.isInside(mouseX, mouseY, this.f_97735_ + 55, this.f_97736_ + 19, 48, 10)) {
+      if (this.isInside(mouseX, mouseY, this.leftPos + 55, this.topPos + 19, 48, 10)) {
          this.switchTab(PartsWorkbenchMenu.Tab.UPGRADE);
          return true;
       }
 
       if (PartsWorkbenchMenu.Tab.CRAFT == this.currentTab && button == 0) {
-         int listLeft = this.f_97735_ + this.previewSectionWidth + this.materialSectionWidth + 4;
-         int listTop = this.f_97736_ + 48;
-         int listHeight = this.f_97727_ - 55;
+         int listLeft = this.leftPos + this.previewSectionWidth + this.materialSectionWidth + 4;
+         int listTop = this.topPos + 48;
+         int listHeight = this.imageHeight - 55;
          int entriesPerRow = 4;
          int visibleRows = listHeight / 24;
          int startRow = this.scrollOffset;
@@ -561,18 +561,18 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
          }
       }
 
-      return super.m_6375_(mouseX, mouseY, button);
+      return super.mouseClicked(mouseX, mouseY, button);
    }
 
    private void partsForCraftSelected(int i) {
       this.setupCraftTarget(i);
-      Minecraft.m_91087_().f_91074_.m_5661_(Component.m_237113_("Selected: " + this.craftablePartsList.get(i).getName().getString()), true);
+      Minecraft.getInstance().player.displayClientMessage(Component.literal("Selected: " + this.craftablePartsList.get(i).getName().getString()), true);
    }
 
    private void setupCraftTarget(int i) {
       this.selectedIndex = i;
       if (i < 0) {
-         this.setPreviewItem(ItemStack.f_41583_);
+         this.setPreviewItem(ItemStack.EMPTY);
          this.requiredMaterials.clear();
       } else {
          this.setPreviewItem(this.craftablePartsList.get(this.selectedIndex).getItemStack());
@@ -597,8 +597,8 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
       for (PomkotsDataPack.SerializablePair<String, Integer> material : partsData.recipes.get(level)) {
          String key = material.getFirst();
          Integer num = material.getSecond();
-         Item item = (Item)BuiltInRegistries.f_257033_.m_7745_(new ResourceLocation(key));
-         if (Items.f_41852_.equals(item)) {
+         Item item = (Item)BuiltInRegistries.ITEM.get(new ResourceLocation(key));
+         if (Items.AIR.equals(item)) {
             return false;
          }
 
@@ -611,12 +611,12 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
    private void switchTab(PartsWorkbenchMenu.Tab tab) {
       if (tab != this.currentTab) {
          this.currentTab = tab;
-         ((PartsWorkbenchMenu)this.f_97732_).setTab(tab);
+         ((PartsWorkbenchMenu)this.menu).setTab(tab);
          this.sendTabChange(tab);
          if (tab == PartsWorkbenchMenu.Tab.CRAFT) {
             this.setupCraftTarget(this.selectedIndex);
          } else if (tab == PartsWorkbenchMenu.Tab.UPGRADE) {
-            this.setupUpgradeTarget(((PartsWorkbenchMenu)this.f_97732_).m_38853_(1).m_7993_());
+            this.setupUpgradeTarget(((PartsWorkbenchMenu)this.menu).getSlot(1).getItem());
          }
       }
 
@@ -634,12 +634,12 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
    }
 
    private void setupButtonVisibility(PartsWorkbenchMenu.Tab tab) {
-      this.craftButton.f_93624_ = PartsWorkbenchMenu.Tab.CRAFT == tab;
-      this.upgradeButton.f_93624_ = PartsWorkbenchMenu.Tab.UPGRADE == tab;
+      this.craftButton.visible = PartsWorkbenchMenu.Tab.CRAFT == tab;
+      this.upgradeButton.visible = PartsWorkbenchMenu.Tab.UPGRADE == tab;
    }
 
    private void displayMessage(String msg) {
-      Minecraft.m_91087_().f_91074_.m_5661_(Utils.string2Component(msg), false);
+      Minecraft.getInstance().player.displayClientMessage(Utils.string2Component(msg), false);
    }
 
    private String getLocalizedString(String id) {
@@ -647,16 +647,16 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
    }
 
    public static void drawScaledTextCentered(GuiGraphics graphics, Font font, Component text, float centerX, float y, float maxWidth, int color) {
-      float textWidth = font.m_92852_(text);
+      float textWidth = font.width(text);
       float scale = Math.min(1.0F, maxWidth / textWidth);
       float scaledWidth = textWidth * scale;
       float x = centerX - scaledWidth / 2.0F;
-      PoseStack poseStack = graphics.m_280168_();
-      poseStack.m_85836_();
-      poseStack.m_252880_(x, y, 0.0F);
-      poseStack.m_85841_(scale, scale, 1.0F);
-      graphics.m_280614_(font, text, 0, 0, color, true);
-      poseStack.m_85849_();
+      PoseStack poseStack = graphics.pose();
+      poseStack.pushPose();
+      poseStack.translate(x, y, 0.0F);
+      poseStack.scale(scale, scale, 1.0F);
+      graphics.drawString(font, text, 0, 0, color, true);
+      poseStack.popPose();
    }
 
    public static class Material extends Pair<Item, Integer> {
@@ -675,7 +675,7 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
          this.id = id;
          this.itemParams = itemParams;
          this.itemStack = itemStack;
-         this.name = itemStack.m_41720_().m_7626_(itemStack);
+         this.name = itemStack.getItem().getName(itemStack);
       }
 
       public ResourceLocation getId() {

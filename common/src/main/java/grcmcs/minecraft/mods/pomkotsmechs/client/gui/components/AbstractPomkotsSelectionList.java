@@ -34,18 +34,18 @@ public abstract class AbstractPomkotsSelectionList<T extends Entry<T>> extends O
       this.listY = listY;
       this.listWidth = listWidth;
       this.listHeight = listHeight;
-      this.m_93507_(listX);
-      this.m_93488_(false);
-      this.m_93496_(false);
+      this.setLeftPos(listX);
+      this.setRenderBackground(false);
+      this.setRenderTopAndBottom(false);
    }
 
-   public void m_88315_(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-      this.m_7733_(guiGraphics);
-      this.hovered = (T)(this.m_5953_(mouseX, mouseY) ? this.m_93412_(mouseX, mouseY) : null);
-      this.m_280310_(guiGraphics);
-      this.m_239227_(guiGraphics, mouseX, mouseY, partialTick);
-      guiGraphics.m_280618_();
-      this.m_7154_(guiGraphics, mouseX, mouseY);
+   public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+      this.renderBackground(guiGraphics);
+      this.hovered = (T)(this.isMouseOver(mouseX, mouseY) ? this.getEntryAtPosition(mouseX, mouseY) : null);
+      this.enableScissor(guiGraphics);
+      this.renderList(guiGraphics, mouseX, mouseY, partialTick);
+      guiGraphics.disableScissor();
+      this.renderDecorations(guiGraphics, mouseX, mouseY);
       RenderSystem.disableBlend();
       this.renderCustomScrollbar(guiGraphics);
    }
@@ -56,37 +56,37 @@ public abstract class AbstractPomkotsSelectionList<T extends Entry<T>> extends O
 
    private void renderCustomScrollbar(GuiGraphics graphics) {
       if (this.hasScrollbar()) {
-         int barX = this.m_5756_();
+         int barX = this.getScrollbarPosition();
          int barY = this.listY;
          int barHeight = this.listHeight;
          renderBgTexture(TEXTURE_SCROLLBAR_BG, barX, barY, 2, barHeight, graphics);
-         int maxScroll = this.m_93518_();
+         int maxScroll = this.getMaxScroll();
          if (maxScroll > 0) {
-            int thumbHeight = Math.max(16, (int)((float)barHeight * barHeight / this.m_5775_()));
-            int thumbY = (int)(this.m_93517_() * (barHeight - thumbHeight) / maxScroll);
+            int thumbHeight = Math.max(16, (int)((float)barHeight * barHeight / this.getMaxPosition()));
+            int thumbY = (int)(this.getScrollAmount() * (barHeight - thumbHeight) / maxScroll);
             renderBgTexture(TEXTURE_SCROLLBAR_THUMB, barX - 1, barY + thumbY, 4, thumbHeight, graphics);
          }
       }
    }
 
    private boolean hasScrollbar() {
-      return this.m_93518_() > 0;
+      return this.getMaxScroll() > 0;
    }
 
-   protected void m_240140_(GuiGraphics graphics, int top, int width, int height, int outerColor, int innerColor) {
-      renderBgTexture(TEXTURE_LIST_SELECTION, this.m_5747_(), top, this.m_5759_(), height, graphics);
+   protected void renderSelection(GuiGraphics graphics, int top, int width, int height, int outerColor, int innerColor) {
+      renderBgTexture(TEXTURE_LIST_SELECTION, this.getRowLeft(), top, this.getRowWidth(), height, graphics);
    }
 
-   public int m_5747_() {
+   public int getRowLeft() {
       return this.listX;
    }
 
-   public int m_5759_() {
+   public int getRowWidth() {
       return this.listWidth;
    }
 
-   protected int m_5756_() {
-      return this.m_5747_() + this.listWidth - 2;
+   protected int getScrollbarPosition() {
+      return this.getRowLeft() + this.listWidth - 2;
    }
 
    private static void renderBgTexture(ResourceLocation texture, int x, int y, int width, int height, GuiGraphics guiGraphics) {
@@ -97,22 +97,22 @@ public abstract class AbstractPomkotsSelectionList<T extends Entry<T>> extends O
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
       RenderSystem.enableBlend();
       RenderSystem.setShaderTexture(0, texture);
-      guiGraphics.m_280163_(texture, x, y, 0.0F, 0.0F, width, height, width, height);
+      guiGraphics.blit(texture, x, y, 0.0F, 0.0F, width, height, width, height);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 
    public abstract static class PomkotsEntry<E extends AbstractPomkotsSelectionList.PomkotsEntry<E>> extends Entry<E> {
-      public void m_6311_(GuiGraphics guiGraphics, int i, int j, int k, int l, int m, int n, int o, boolean bl, float f) {
+      public void render(GuiGraphics guiGraphics, int i, int j, int k, int l, int m, int n, int o, boolean bl, float f) {
       }
 
-      public void m_274437_(
+      public void renderBack(
          GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovered, float partialTick
       ) {
          AbstractPomkotsSelectionList.renderBgTexture(AbstractPomkotsSelectionList.TEXTURE_LIST_BG_1, left, top, width, height, graphics);
       }
 
-      public Component m_142172_() {
-         return Component.m_237113_("");
+      public Component getNarration() {
+         return Component.literal("");
       }
    }
 }

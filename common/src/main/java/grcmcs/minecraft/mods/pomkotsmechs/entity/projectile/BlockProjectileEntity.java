@@ -16,49 +16,49 @@ import net.minecraft.world.phys.BlockHitResult;
 public class BlockProjectileEntity extends PomkotsThrowableProjectile {
    private static final int MAX_LIFE_TICKS = 40;
    private int lifeTicks = 0;
-   private static final EntityDataAccessor<String> BLOCK_REGISTRY_NAME = SynchedEntityData.m_135353_(
-      BlockProjectileEntity.class, EntityDataSerializers.f_135030_
+   private static final EntityDataAccessor<String> BLOCK_REGISTRY_NAME = SynchedEntityData.defineId(
+      BlockProjectileEntity.class, EntityDataSerializers.STRING
    );
    private BlockState cachedBlockState;
 
    public BlockProjectileEntity(EntityType<? extends BlockProjectileEntity> type, Level world) {
       super(type, null, world);
-      this.m_20242_(true);
+      this.setNoGravity(true);
    }
 
    @Override
-   public void m_8119_() {
-      super.m_8119_();
+   public void tick() {
+      super.tick();
       if (this.lifeTicks++ >= 40) {
-         this.m_146870_();
+         this.discard();
       }
    }
 
-   protected void m_8060_(BlockHitResult hitResult) {
-      Level world = this.m_9236_();
-      BlockPos pos = hitResult.m_82425_().m_121945_(hitResult.m_82434_());
+   protected void onHitBlock(BlockHitResult hitResult) {
+      Level world = this.level();
+      BlockPos pos = hitResult.getBlockPos().relative(hitResult.getDirection());
       BlockState bs = this.getBlockState();
-      if (!world.m_5776_() && bs != null) {
-         world.m_7731_(pos, bs, 3);
+      if (!world.isClientSide() && bs != null) {
+         world.setBlock(pos, bs, 3);
       }
 
-      this.m_146870_();
+      this.discard();
    }
 
-   protected void m_8097_() {
-      this.f_19804_.m_135372_(BLOCK_REGISTRY_NAME, "minecraft:air");
+   protected void defineSynchedData() {
+      this.entityData.define(BLOCK_REGISTRY_NAME, "minecraft:air");
    }
 
    public void setBlock(Block block) {
-      this.f_19804_.m_135381_(BLOCK_REGISTRY_NAME, BuiltInRegistries.f_256975_.m_7981_(block).toString());
-      this.cachedBlockState = block.m_49966_();
+      this.entityData.set(BLOCK_REGISTRY_NAME, BuiltInRegistries.BLOCK.getKey(block).toString());
+      this.cachedBlockState = block.defaultBlockState();
    }
 
    public BlockState getBlockState() {
       if (this.cachedBlockState == null) {
-         String registryName = (String)this.f_19804_.m_135370_(BLOCK_REGISTRY_NAME);
-         Block block = (Block)BuiltInRegistries.f_256975_.m_7745_(new ResourceLocation(registryName));
-         this.cachedBlockState = block != null ? block.m_49966_() : Blocks.f_50016_.m_49966_();
+         String registryName = (String)this.entityData.get(BLOCK_REGISTRY_NAME);
+         Block block = (Block)BuiltInRegistries.BLOCK.get(new ResourceLocation(registryName));
+         this.cachedBlockState = block != null ? block.defaultBlockState() : Blocks.AIR.defaultBlockState();
       }
 
       return this.cachedBlockState;

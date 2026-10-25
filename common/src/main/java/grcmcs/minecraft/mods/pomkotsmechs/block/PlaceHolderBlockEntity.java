@@ -15,13 +15,13 @@ public class PlaceHolderBlockEntity extends BlockEntity {
       super((BlockEntityType)PomkotsMechs.PLACE_HOLDER_BLOCK_ENTITY.get(), pos, state);
    }
 
-   public void m_183515_(@NotNull CompoundTag tag) {
-      super.m_183515_(tag);
-      tag.m_128379_(PomkotsMechs.nbtName("PlaceHolderDummy"), true);
+   public void saveAdditional(@NotNull CompoundTag tag) {
+      super.saveAdditional(tag);
+      tag.putBoolean(PomkotsMechs.nbtName("PlaceHolderDummy"), true);
    }
 
-   public void m_142466_(@NotNull CompoundTag tag) {
-      super.m_142466_(tag);
-      this.dummyFlag = tag.m_128471_(PomkotsMechs.nbtName("PlaceHolderDummy"));
+   public void load(@NotNull CompoundTag tag) {
+      super.load(tag);
+      this.dummyFlag = tag.getBoolean(PomkotsMechs.nbtName("PlaceHolderDummy"));
    }
 }

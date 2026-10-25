@@ -13,7 +13,7 @@ public class AttackLongRangeBossGoal extends AttackBossGoal {
    }
 
    @Override
-   public boolean m_8036_() {
-      return super.m_8036_() && this.isInLongAttackRange();
+   public boolean canUse() {
+      return super.canUse() && this.isInLongAttackRange();
    }
 }

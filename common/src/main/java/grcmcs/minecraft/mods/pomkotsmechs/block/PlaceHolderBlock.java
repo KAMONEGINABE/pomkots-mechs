@@ -14,22 +14,22 @@ import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 
 public class PlaceHolderBlock extends BaseEntityBlock {
    public PlaceHolderBlock() {
-      super(Properties.m_284310_().m_60978_(2.5F).m_60918_(SoundType.f_56743_));
+      super(Properties.of().strength(2.5F).sound(SoundType.METAL));
    }
 
-   public RenderShape m_7514_(BlockState state) {
+   public RenderShape getRenderShape(BlockState state) {
       return RenderShape.MODEL;
    }
 
-   public <T extends BlockEntity> BlockEntityTicker<T> m_142354_(Level level, BlockState state, BlockEntityType<T> type) {
-      return level.m_5776_() ? null : (lvl, pos, blockState, be) -> {
-         if (!lvl.m_46469_().m_46207_(PomkotsMechs.RULE_MAP_EDIT)) {
-            lvl.m_7471_(pos, false);
+   public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+      return level.isClientSide() ? null : (lvl, pos, blockState, be) -> {
+         if (!lvl.getGameRules().getBoolean(PomkotsMechs.RULE_MAP_EDIT)) {
+            lvl.removeBlock(pos, false);
          }
       };
    }
 
-   public BlockEntity m_142194_(BlockPos pos, BlockState state) {
+   public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
       return new PlaceHolderBlockEntity(pos, state);
    }
 }

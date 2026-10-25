@@ -39,10 +39,10 @@ public class DataPadKeyCardMenu extends AbstractContainerMenu {
       int offsetY = 70;
       int slot = 0;
 
-      for (int row = 0; row < container.m_6643_(); row++) {
-         this.m_38897_(new Slot(container, row, offsetX, offsetY + row * 18) {
-            public boolean m_5857_(ItemStack stack) {
-               return stack.m_41720_() instanceof KeycardItem;
+      for (int row = 0; row < container.getContainerSize(); row++) {
+         this.addSlot(new Slot(container, row, offsetX, offsetY + row * 18) {
+            public boolean mayPlace(ItemStack stack) {
+               return stack.getItem() instanceof KeycardItem;
             }
          });
       }
@@ -54,71 +54,71 @@ public class DataPadKeyCardMenu extends AbstractContainerMenu {
 
       for (int row = 0; row < 3; row++) {
          for (int col = 0; col < 9; col++) {
-            if (inventory.m_8020_(col + row * 9 + 9).m_150930_((Item)PomkotsMechs.POMKOTS_DATAPAD_ITEM.get())) {
-               this.m_38897_(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18) {
-                  public boolean m_8010_(Player player) {
+            if (inventory.getItem(col + row * 9 + 9).is((Item)PomkotsMechs.POMKOTS_DATAPAD_ITEM.get())) {
+               this.addSlot(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18) {
+                  public boolean mayPickup(Player player) {
                      return false;
                   }
                });
             } else {
-               this.m_38897_(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18));
+               this.addSlot(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18));
             }
          }
       }
 
       for (int i = 0; i < 9; i++) {
-         if (inventory.m_8020_(i).m_150930_((Item)PomkotsMechs.POMKOTS_DATAPAD_ITEM.get())) {
-            this.m_38897_(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4) {
-               public boolean m_8010_(Player player) {
+         if (inventory.getItem(i).is((Item)PomkotsMechs.POMKOTS_DATAPAD_ITEM.get())) {
+            this.addSlot(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4) {
+               public boolean mayPickup(Player player) {
                   return false;
                }
             });
          } else {
-            this.m_38897_(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4));
+            this.addSlot(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4));
          }
       }
    }
 
-   public ItemStack m_7648_(Player player, int index) {
-      ItemStack result = ItemStack.f_41583_;
-      Slot slot = (Slot)this.f_38839_.get(index);
-      if (!slot.m_6657_()) {
-         return ItemStack.f_41583_;
+   public ItemStack quickMoveStack(Player player, int index) {
+      ItemStack result = ItemStack.EMPTY;
+      Slot slot = (Slot)this.slots.get(index);
+      if (!slot.hasItem()) {
+         return ItemStack.EMPTY;
       }
 
-      ItemStack stack = slot.m_7993_();
-      result = stack.m_41777_();
+      ItemStack stack = slot.getItem();
+      result = stack.copy();
       if (index < 8) {
-         if (!this.m_38903_(stack, 8, this.f_38839_.size(), true)) {
-            return ItemStack.f_41583_;
+         if (!this.moveItemStackTo(stack, 8, this.slots.size(), true)) {
+            return ItemStack.EMPTY;
          }
       } else {
-         if (!(stack.m_41720_() instanceof KeycardItem)) {
-            return ItemStack.f_41583_;
+         if (!(stack.getItem() instanceof KeycardItem)) {
+            return ItemStack.EMPTY;
          }
 
-         if (!this.m_38903_(stack, 0, 8, false)) {
-            return ItemStack.f_41583_;
+         if (!this.moveItemStackTo(stack, 0, 8, false)) {
+            return ItemStack.EMPTY;
          }
       }
 
-      if (stack.m_41619_()) {
-         slot.m_5852_(ItemStack.f_41583_);
+      if (stack.isEmpty()) {
+         slot.set(ItemStack.EMPTY);
       } else {
-         slot.m_6654_();
+         slot.setChanged();
       }
 
       return result;
    }
 
-   public void m_6877_(Player player) {
-      super.m_6877_(player);
-      if (!player.m_9236_().m_5776_()) {
+   public void removed(Player player) {
+      super.removed(player);
+      if (!player.level().isClientSide()) {
          PomkotsDatapadItem.saveKeyCardContainer(this.datapad, this.keyCardContainer);
       }
    }
 
-   public boolean m_6875_(Player player) {
+   public boolean stillValid(Player player) {
       return true;
    }
 }

@@ -32,10 +32,10 @@ public class IntroNarrationScreen extends Screen {
    };
 
    public IntroNarrationScreen() {
-      super(Component.m_237119_());
+      super(Component.empty());
    }
 
-   public void m_86600_() {
+   public void tick() {
       this.tickCounter++;
       if (this.tickCounter < 20) {
          if (this.alpha < 255) {
@@ -55,30 +55,30 @@ public class IntroNarrationScreen extends Screen {
       this.tickCounter = 0;
       this.lineIndex++;
       if (this.lineIndex >= NARRATION.size()) {
-         this.f_96541_.m_91152_(null);
+         this.minecraft.setScreen(null);
       }
    }
 
-   public void m_88315_(GuiGraphics gfx, int mouseX, int mouseY, float partialTicks) {
-      gfx.m_280509_(0, 0, this.f_96543_, this.f_96544_, -16777216);
+   public void render(GuiGraphics gfx, int mouseX, int mouseY, float partialTicks) {
+      gfx.fill(0, 0, this.width, this.height, -16777216);
       if (this.lineIndex / 4 < BACKGROUNDS.length) {
-         gfx.m_280163_(BACKGROUNDS[this.lineIndex / 4], 0, 0, 0.0F, 0.0F, this.f_96543_, this.f_96544_, this.f_96543_, this.f_96544_);
+         gfx.blit(BACKGROUNDS[this.lineIndex / 4], 0, 0, 0.0F, 0.0F, this.width, this.height, this.width, this.height);
       }
 
       if (this.lineIndex < NARRATION.size() && this.alpha != 0) {
          int color = this.alpha << 24 | 16777215;
-         gfx.m_280137_(this.f_96547_, NARRATION.get(this.lineIndex), this.f_96543_ / 2, this.f_96544_ / 2, color);
+         gfx.drawCenteredString(this.font, NARRATION.get(this.lineIndex), this.width / 2, this.height / 2, color);
       }
 
-      super.m_88315_(gfx, mouseX, mouseY, partialTicks);
+      super.render(gfx, mouseX, mouseY, partialTicks);
    }
 
-   public boolean m_7933_(int keyCode, int scanCode, int modifiers) {
+   public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
       if (keyCode == 256) {
-         this.f_96541_.m_91152_(null);
+         this.minecraft.setScreen(null);
          return true;
       } else {
-         return super.m_7933_(keyCode, scanCode, modifiers);
+         return super.keyPressed(keyCode, scanCode, modifiers);
       }
    }
 }

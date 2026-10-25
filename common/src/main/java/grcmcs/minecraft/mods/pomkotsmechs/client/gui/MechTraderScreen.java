@@ -49,17 +49,17 @@ public class MechTraderScreen extends AbstractContainerScreen<MechTraderMenu> {
 
    public MechTraderScreen(MechTraderMenu menu, Inventory inventory, Component component) {
       super(menu, inventory, component);
-      this.f_97726_ = 480;
-      this.f_97727_ = 270;
+      this.imageWidth = 480;
+      this.imageHeight = 270;
    }
 
-   protected void m_7856_() {
-      super.m_7856_();
-      this.offersOffsetX = this.f_97735_ + 20;
-      this.offersOffsetY = this.f_97736_ + 35;
-      this.playerInvX = this.f_97735_ + 310;
-      this.playerInvY = this.f_97736_ + 35;
-      this.buyButton = (Button)this.m_142416_(
+   protected void init() {
+      super.init();
+      this.offersOffsetX = this.leftPos + 20;
+      this.offersOffsetY = this.topPos + 35;
+      this.playerInvX = this.leftPos + 310;
+      this.playerInvY = this.topPos + 35;
+      this.buyButton = (Button)this.addRenderableWidget(
          new ImageButton(
             this.playerInvX,
             this.playerInvY + this.playerInvHeight + 10,
@@ -70,35 +70,35 @@ public class MechTraderScreen extends AbstractContainerScreen<MechTraderMenu> {
             0,
             70,
             56,
-            Component.m_237113_("Buy"),
+            Component.literal("Buy"),
             btn -> this.buySelected()
          )
       );
    }
 
-   public void m_88315_(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-      if (this.f_96541_ != null && this.f_96541_.f_91073_ != null && this.trader == null) {
-         for (Entity entity : this.f_96541_.f_91073_.m_104735_()) {
-            if (entity instanceof MechTraderEntity m && (short)entity.m_20148_().hashCode() == ((MechTraderMenu)this.f_97732_).getEntityId()) {
+   public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+      if (this.minecraft != null && this.minecraft.level != null && this.trader == null) {
+         for (Entity entity : this.minecraft.level.entitiesForRendering()) {
+            if (entity instanceof MechTraderEntity m && (short)entity.getUUID().hashCode() == ((MechTraderMenu)this.menu).getEntityId()) {
                this.trader = m;
             }
          }
       }
 
-      this.m_280273_(guiGraphics);
-      super.m_88315_(guiGraphics, mouseX, mouseY, partialTick);
-      this.m_280072_(guiGraphics, mouseX, mouseY);
+      this.renderBackground(guiGraphics);
+      super.render(guiGraphics, mouseX, mouseY, partialTick);
+      this.renderTooltip(guiGraphics, mouseX, mouseY);
    }
 
-   protected void m_7286_(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+   protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
       this.renderOfferPanel(guiGraphics, partialTick, mouseX, mouseY);
       this.renderPlayerInventoryPanel(guiGraphics);
-      guiGraphics.m_280056_(this.f_96547_, "Time Left: " + this.getRemainingTimeString(), this.offersOffsetX, this.offersOffsetY - 15, -1, false);
+      guiGraphics.drawString(this.font, "Time Left: " + this.getRemainingTimeString(), this.offersOffsetX, this.offersOffsetY - 15, -1, false);
    }
 
    private void renderPlayerInventoryPanel(GuiGraphics guiGraphics) {
       this.renderBgTexture(TEXTURE_PANEL_INV_PLAYER, this.playerInvX, this.playerInvY, this.playerInvWidth, this.playerInvHeight, guiGraphics);
-      guiGraphics.m_280488_(this.f_96547_, "Player Inventory", this.playerInvX + 18, this.playerInvY + 4, -1);
+      guiGraphics.drawString(this.font, "Player Inventory", this.playerInvX + 18, this.playerInvY + 4, -1);
    }
 
    private void renderOfferPanel(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
@@ -107,7 +107,7 @@ public class MechTraderScreen extends AbstractContainerScreen<MechTraderMenu> {
       for (MechTraderEntity.TraderCategory category : MechTraderEntity.TraderCategory.values()) {
          int col = category.ordinal();
          drawCenteredStringNoShadow(
-            guiGraphics, this.f_96547_, this.getCategoryString(category), this.offersOffsetX + 5 + col * 65 + 31, this.offersOffsetY + 4, -1
+            guiGraphics, this.font, this.getCategoryString(category), this.offersOffsetX + 5 + col * 65 + 31, this.offersOffsetY + 4, -1
          );
 
          for (int row = 0; row < 8; row++) {
@@ -128,11 +128,11 @@ public class MechTraderScreen extends AbstractContainerScreen<MechTraderMenu> {
    }
 
    private void renderOfferCard(GuiGraphics gg, int offerSlot, int priceSlot, int col, int row, int mouseX, int mouseY) {
-      Slot offer = ((MechTraderMenu)this.f_97732_).m_38853_(offerSlot);
-      Slot price = ((MechTraderMenu)this.f_97732_).m_38853_(priceSlot);
-      ItemStack offerStack = offer.m_7993_();
-      ItemStack priceStack = price.m_7993_();
-      if (!offerStack.m_41619_()) {
+      Slot offer = ((MechTraderMenu)this.menu).getSlot(offerSlot);
+      Slot price = ((MechTraderMenu)this.menu).getSlot(priceSlot);
+      ItemStack offerStack = offer.getItem();
+      ItemStack priceStack = price.getItem();
+      if (!offerStack.isEmpty()) {
          int x = this.offersOffsetX + 5 + col * 65;
          int y = this.offersOffsetY + 17 + row * 22;
          boolean selected = this.selectedOfferSlot == offerSlot;
@@ -142,11 +142,11 @@ public class MechTraderScreen extends AbstractContainerScreen<MechTraderMenu> {
             this.renderBgTexture(TEXTURE_CARD, x, y, 58, 18, gg);
          }
 
-         drawCenteredStringNoShadow(gg, this.f_96547_, "=", x + 30, y + 6, -1);
+         drawCenteredStringNoShadow(gg, this.font, "=", x + 30, y + 6, -1);
       }
    }
 
-   public boolean m_6375_(double mouseX, double mouseY, int button) {
+   public boolean mouseClicked(double mouseX, double mouseY, int button) {
       for (MechTraderEntity.TraderCategory category : MechTraderEntity.TraderCategory.values()) {
          int col = category.ordinal();
 
@@ -155,7 +155,7 @@ public class MechTraderScreen extends AbstractContainerScreen<MechTraderMenu> {
             int x = this.offersOffsetX + 5 + col * 65;
             int y = this.offersOffsetY + 17 + row * 22;
             if (this.isPointInside(x, y, 58, 18, mouseX, mouseY)) {
-               if (!((MechTraderMenu)this.f_97732_).m_38853_(offerSlot).m_7993_().m_41619_()) {
+               if (!((MechTraderMenu)this.menu).getSlot(offerSlot).getItem().isEmpty()) {
                   this.selectedOfferSlot = offerSlot;
                }
 
@@ -164,7 +164,7 @@ public class MechTraderScreen extends AbstractContainerScreen<MechTraderMenu> {
          }
       }
 
-      return super.m_6375_(mouseX, mouseY, button);
+      return super.mouseClicked(mouseX, mouseY, button);
    }
 
    private boolean isPointInside(int x, int y, int width, int height, double mouseX, double mouseY) {
@@ -173,8 +173,8 @@ public class MechTraderScreen extends AbstractContainerScreen<MechTraderMenu> {
 
    private void buySelected() {
       if (this.selectedOfferSlot >= 0) {
-         if (!((MechTraderMenu)this.f_97732_).m_38853_(this.selectedOfferSlot).m_7993_().m_150930_((Item)PomkotsMechs.SOLD_ITEM.get())) {
-            this.f_96541_.f_91072_.m_105208_(((MechTraderMenu)this.f_97732_).f_38840_, this.selectedOfferSlot);
+         if (!((MechTraderMenu)this.menu).getSlot(this.selectedOfferSlot).getItem().is((Item)PomkotsMechs.SOLD_ITEM.get())) {
+            this.minecraft.gameMode.handleInventoryButtonClick(((MechTraderMenu)this.menu).containerId, this.selectedOfferSlot);
          }
       }
    }
@@ -187,31 +187,31 @@ public class MechTraderScreen extends AbstractContainerScreen<MechTraderMenu> {
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
       RenderSystem.enableBlend();
       RenderSystem.setShaderTexture(0, texture);
-      guiGraphics.m_280163_(texture, x, y, 0.0F, 0.0F, width, height, width, height);
+      guiGraphics.blit(texture, x, y, 0.0F, 0.0F, width, height, width, height);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 
-   protected void m_280003_(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+   protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
    }
 
-   protected void m_280072_(GuiGraphics guiGraphics, int i, int j) {
-      if (((MechTraderMenu)this.f_97732_).m_142621_().m_41619_()
-         && this.f_97734_ != null
-         && this.f_97734_.m_6657_()
-         && !(this.f_97734_.m_7993_().m_41720_() instanceof AbstractPomCoinItem)) {
-         super.m_280072_(guiGraphics, i, j);
+   protected void renderTooltip(GuiGraphics guiGraphics, int i, int j) {
+      if (((MechTraderMenu)this.menu).getCarried().isEmpty()
+         && this.hoveredSlot != null
+         && this.hoveredSlot.hasItem()
+         && !(this.hoveredSlot.getItem().getItem() instanceof AbstractPomCoinItem)) {
+         super.renderTooltip(guiGraphics, i, j);
       }
    }
 
    public static void drawCenteredStringNoShadow(GuiGraphics guiGraphics, Font font, String text, int centerX, int y, int color) {
-      int width = font.m_92895_(text);
-      guiGraphics.m_280056_(font, text, centerX - width / 2, y, color, false);
+      int width = font.width(text);
+      guiGraphics.drawString(font, text, centerX - width / 2, y, color, false);
    }
 
    public String getRemainingTimeString() {
       if (this.trader != null && this.trader.getDespawnTime() >= 0L) {
          long despawnDayTime = this.trader.getDespawnTime();
-         long currentDayTime = this.trader.m_9236_().m_46468_();
+         long currentDayTime = this.trader.level().getDayTime();
          long remainingTicks = Math.max(0L, despawnDayTime - currentDayTime);
          int totalSeconds = (int)(remainingTicks / 20L);
          int minutes = totalSeconds / 60;

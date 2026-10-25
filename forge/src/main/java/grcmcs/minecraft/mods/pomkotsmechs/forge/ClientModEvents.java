@@ -67,17 +67,17 @@ public class ClientModEvents {
             BlockEntityRendererRegistry.register((BlockEntityType)PomkotsMechs.PERSONAL_POMKOTS_CUBE_BLOCK_ENTITY.get(), PersonalPomkotsCubeRenderer::new);
             BlockEntityRendererRegistry.register((BlockEntityType)PomkotsMechs.POMKOTS_LEVER_BLOCK_ENTITY.get(), context -> new PomkotsLeverRenderer(context));
             ColorHandlerRegistry.registerItemColors((stack, tintIndex) -> {
-               CompoundTag tag = stack.m_41783_();
+               CompoundTag tag = stack.getTag();
                if (tag == null) {
                   return -1;
-               } else if (tintIndex == 0 && tag.m_128441_(PomkotsMechs.nbtName("PrimaryColor"))) {
-                  return tag.m_128451_(PomkotsMechs.nbtName("PrimaryColor"));
+               } else if (tintIndex == 0 && tag.contains(PomkotsMechs.nbtName("PrimaryColor"))) {
+                  return tag.getInt(PomkotsMechs.nbtName("PrimaryColor"));
                } else {
-                  return tintIndex == 1 && tag.m_128441_(PomkotsMechs.nbtName("SecondaryColor")) ? tag.m_128451_(PomkotsMechs.nbtName("SecondaryColor")) : -1;
+                  return tintIndex == 1 && tag.contains(PomkotsMechs.nbtName("SecondaryColor")) ? tag.getInt(PomkotsMechs.nbtName("SecondaryColor")) : -1;
                }
             }, new ItemLike[]{(ItemLike)PomkotsMechs.MECH_CAPSULE_ITEM.get()});
             ColorHandlerRegistry.registerItemColors((stack, tintIndex) -> {
-               if (!(stack.m_41720_() instanceof MechCapsule2Item)) {
+               if (!(stack.getItem() instanceof MechCapsule2Item)) {
                   return -1;
                } else if (tintIndex == 0) {
                   return -5395027;
@@ -103,9 +103,9 @@ public class ClientModEvents {
    @SubscribeEvent
    public static void onRegisterOverlays(RegisterGuiOverlaysEvent event) {
       event.registerAboveAll("hide_mech_hud", (gui, poseStack, partialTick, screenWidth, screenHeight) -> {
-         Minecraft mc = Minecraft.m_91087_();
-         Player player = mc.f_91074_;
-         if (player != null && player.m_20202_() instanceof Pmvc01Entity) {
+         Minecraft mc = Minecraft.getInstance();
+         Player player = mc.player;
+         if (player != null && player.getVehicle() instanceof Pmvc01Entity) {
             gui.leftHeight = 0;
             gui.rightHeight = 0;
          }

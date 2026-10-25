@@ -38,14 +38,14 @@ public class Pmss02Entity extends BaseTinyMonsterEntity implements GeoEntity, Ge
    }
 
    @Override
-   public void m_8119_() {
-      super.m_8119_();
+   public void tick() {
+      super.tick();
       if (this.isAttacking()) {
-         this.m_20334_(0.0, this.m_20184_().f_82480_, 0.0);
+         this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
       }
    }
 
-   public void m_6504_(LivingEntity livingEntity, float f) {
+   public void performRangedAttack(LivingEntity livingEntity, float f) {
       this.startAttack();
    }
 
@@ -59,7 +59,7 @@ public class Pmss02Entity extends BaseTinyMonsterEntity implements GeoEntity, Ge
    protected void tickAttack() {
       super.tickAttack();
       if (this.isAttacking()) {
-         this.rotateToTarget(this.m_5448_());
+         this.rotateToTarget(this.getTarget());
          this.choiMove();
       }
 
@@ -69,19 +69,19 @@ public class Pmss02Entity extends BaseTinyMonsterEntity implements GeoEntity, Ge
    }
 
    private void actualAttack() {
-      LivingEntity target = this.m_5448_();
-      if (target != null && target.m_6084_()) {
+      LivingEntity target = this.getTarget();
+      if (target != null && target.isAlive()) {
          BulletRifleEntity be = new BulletRifleEntity(
-            (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_RIFLE.get(), this.m_9236_(), this, this.getMechData().bulletDamage
+            (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_RIFLE.get(), this.level(), this, this.getMechData().bulletDamage
          );
-         be.m_20242_(true);
-         Vec3 offset = this.m_20182_();
+         be.setNoGravity(true);
+         Vec3 offset = this.position();
          Vec3 muzzlPos = new Vec3(-0.5, 1.5, 2.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         be.m_146884_(offset.m_82549_(muzzlPos));
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         be.setPos(offset.add(muzzlPos));
          float[] angle = Utils.getShootingAngle(be, target, true, false);
-         be.m_37251_(be, angle[0], angle[1], this.m_21256_(), this.getMechData().bulletSpeed, 0.0F);
-         this.m_9236_().m_7967_(be);
+         be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), this.getMechData().bulletSpeed, 0.0F);
+         this.level().addFreshEntity(be);
       }
    }
 
@@ -96,12 +96,12 @@ public class Pmss02Entity extends BaseTinyMonsterEntity implements GeoEntity, Ge
    }
 
    @Override
-   protected void m_8099_() {
-      super.m_8099_();
-      this.f_21345_.m_25352_(1, new RangedAttackGoal(this, this.getMechData().speed, 60, 80, 20.0F));
-      this.f_21345_.m_25352_(2, new WaterAvoidingRandomStrollGoal(this, this.getMechData().speed));
-      this.f_21345_.m_25352_(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
-      this.f_21345_.m_25352_(4, new RandomLookAroundGoal(this));
+   protected void registerGoals() {
+      super.registerGoals();
+      this.goalSelector.addGoal(1, new RangedAttackGoal(this, this.getMechData().speed, 60, 80, 20.0F));
+      this.goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, this.getMechData().speed));
+      this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
+      this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

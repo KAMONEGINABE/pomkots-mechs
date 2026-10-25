@@ -21,19 +21,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class SoundBufferLibraryMixin {
    @Inject(method = "getStream", at = @At("HEAD"), cancellable = true)
    private void hook(ResourceLocation loc, boolean loop, CallbackInfoReturnable<CompletableFuture<AudioStream>> cir) {
-      if (loc.m_135827_().equals("pomkotsmechs")) {
-         if (loc.m_135815_().endsWith(".ogg")) {
-            if (loc.m_135815_().contains("bgm/")) {
+      if (loc.getNamespace().equals("pomkotsmechs")) {
+         if (loc.getPath().endsWith(".ogg")) {
+            if (loc.getPath().contains("bgm/")) {
                CompletableFuture<AudioStream> future = CompletableFuture.supplyAsync(() -> {
                   try {
-                     ResourceLocation encrypted = new ResourceLocation(loc.m_135827_(), loc.m_135815_().replace(".ogg", ".dat"));
-                     InputStream dat = Minecraft.m_91087_().m_91098_().m_215595_(encrypted);
+                     ResourceLocation encrypted = new ResourceLocation(loc.getNamespace(), loc.getPath().replace(".ogg", ".dat"));
+                     InputStream dat = Minecraft.getInstance().getResourceManager().open(encrypted);
                      InputStream decrypted = CryptoUtil.decrypt(dat);
                      return (AudioStream)(loop ? new LoopingAudioStream(OggAudioStream::new, decrypted) : new OggAudioStream(decrypted));
                   } catch (IOException e) {
                      throw new CompletionException(e);
                   }
-               }, Util.m_183991_());
+               }, Util.backgroundExecutor());
                cir.setReturnValue(future);
             }
          }

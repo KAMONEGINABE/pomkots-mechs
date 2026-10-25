@@ -25,7 +25,7 @@ public class MechTraderMenu extends AbstractContainerMenu {
       this.trader = trader;
       this.addTraderSlots(trader);
       this.addPlayerInventory(playerInventory);
-      this.entityId = (MechWorkbenchMenu.ShortDataSlot)this.m_38895_(this.entityId);
+      this.entityId = (MechWorkbenchMenu.ShortDataSlot)this.addDataSlot(this.entityId);
    }
 
    public short getEntityId() {
@@ -33,7 +33,7 @@ public class MechTraderMenu extends AbstractContainerMenu {
    }
 
    public void setEntityId(int id) {
-      this.m_7511_(0, (short)(id & 65535));
+      this.setData(0, (short)(id & 65535));
    }
 
    private void addTraderSlots(MechTraderEntity trader) {
@@ -56,30 +56,30 @@ public class MechTraderMenu extends AbstractContainerMenu {
             int y = offsetY + row * 22;
             int offerX = offsetX + col * 65;
             int priceX = offerX + 30;
-            this.m_38897_(new Slot(traderInv, offerSlot, offerX, y) {
-               public boolean m_5857_(ItemStack stack) {
+            this.addSlot(new Slot(traderInv, offerSlot, offerX, y) {
+               public boolean mayPlace(ItemStack stack) {
                   return false;
                }
 
-               public boolean m_8010_(Player player) {
+               public boolean mayPickup(Player player) {
                   return false;
                }
 
-               public boolean m_6659_() {
-                  return !this.m_7993_().m_41619_();
+               public boolean isActive() {
+                  return !this.getItem().isEmpty();
                }
             });
-            this.m_38897_(new Slot(traderInv, priceSlot, priceX, y) {
-               public boolean m_5857_(ItemStack stack) {
+            this.addSlot(new Slot(traderInv, priceSlot, priceX, y) {
+               public boolean mayPlace(ItemStack stack) {
                   return false;
                }
 
-               public boolean m_8010_(Player player) {
+               public boolean mayPickup(Player player) {
                   return false;
                }
 
-               public boolean m_6659_() {
-                  return !this.m_7993_().m_41619_();
+               public boolean isActive() {
+                  return !this.getItem().isEmpty();
                }
             });
          }
@@ -92,24 +92,24 @@ public class MechTraderMenu extends AbstractContainerMenu {
 
       for (int row = 0; row < 3; row++) {
          for (int col = 0; col < 9; col++) {
-            this.m_38897_(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18));
+            this.addSlot(new Slot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18));
          }
       }
 
       for (int i = 0; i < 9; i++) {
-         this.m_38897_(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4));
+         this.addSlot(new Slot(inventory, i, offsetX + i * 18, offsetY + 54 + 4));
       }
    }
 
-   public ItemStack m_7648_(Player player, int i) {
-      return ItemStack.f_41583_;
+   public ItemStack quickMoveStack(Player player, int i) {
+      return ItemStack.EMPTY;
    }
 
-   public boolean m_6875_(Player player) {
-      return this.trader.m_6084_() && this.trader.m_20270_(player) < 8.0F && !this.trader.isLeaving();
+   public boolean stillValid(Player player) {
+      return this.trader.isAlive() && this.trader.distanceTo(player) < 8.0F && !this.trader.isLeaving();
    }
 
-   public boolean m_6366_(Player player, int id) {
+   public boolean clickMenuButton(Player player, int id) {
       if (player instanceof ServerPlayer sp) {
          this.buy(sp, id);
       }
@@ -118,7 +118,7 @@ public class MechTraderMenu extends AbstractContainerMenu {
    }
 
    public void buy(ServerPlayer player, int slot) {
-      if (!player.m_9236_().m_5776_() && this.trader != null) {
+      if (!player.level().isClientSide() && this.trader != null) {
          this.trader.buy(player, slot);
       }
    }

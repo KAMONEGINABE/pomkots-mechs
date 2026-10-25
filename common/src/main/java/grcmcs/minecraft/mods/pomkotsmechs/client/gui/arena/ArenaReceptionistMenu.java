@@ -37,7 +37,7 @@ public class ArenaReceptionistMenu extends AbstractContainerMenu {
    private final SimpleContainer dataPadContainerForRegistration = new SimpleContainer(1);
    private String arenaId = "";
    private int mode = 0;
-   private ItemStack dataPadStack = ItemStack.f_41583_;
+   private ItemStack dataPadStack = ItemStack.EMPTY;
    private List<ArenaRankingEntry> rankings = List.of();
 
    public ArenaReceptionistMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
@@ -65,9 +65,9 @@ public class ArenaReceptionistMenu extends AbstractContainerMenu {
    }
 
    private void addSlots(Inventory playerInventory) {
-      this.m_38897_(new ArenaReceptionistMenu.ToggleableSlot(this.dataPadContainerForRegistration, 0, 40, 164) {
-         public boolean m_5857_(ItemStack stack) {
-            return stack.m_150930_((Item)PomkotsMechs.POMKOTS_DATAPAD_ITEM.get());
+      this.addSlot(new ArenaReceptionistMenu.ToggleableSlot(this.dataPadContainerForRegistration, 0, 40, 164) {
+         public boolean mayPlace(ItemStack stack) {
+            return stack.is((Item)PomkotsMechs.POMKOTS_DATAPAD_ITEM.get());
          }
       });
       this.addPlayerInventory(playerInventory);
@@ -79,12 +79,12 @@ public class ArenaReceptionistMenu extends AbstractContainerMenu {
 
       for (int row = 0; row < 3; row++) {
          for (int col = 0; col < 9; col++) {
-            this.m_38897_(new ArenaReceptionistMenu.ToggleableSlot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18));
+            this.addSlot(new ArenaReceptionistMenu.ToggleableSlot(inventory, col + row * 9 + 9, offsetX + col * 18, offsetY + row * 18));
          }
       }
 
       for (int i = 0; i < 9; i++) {
-         this.m_38897_(new ArenaReceptionistMenu.ToggleableSlot(inventory, i, offsetX + i * 18, offsetY + 54 + 4));
+         this.addSlot(new ArenaReceptionistMenu.ToggleableSlot(inventory, i, offsetX + i * 18, offsetY + 54 + 4));
       }
    }
 
@@ -104,36 +104,36 @@ public class ArenaReceptionistMenu extends AbstractContainerMenu {
       return this.mode;
    }
 
-   public boolean m_6875_(Player player) {
+   public boolean stillValid(Player player) {
       return true;
    }
 
-   public ItemStack m_7648_(Player player, int slot) {
-      return ItemStack.f_41583_;
+   public ItemStack quickMoveStack(Player player, int slot) {
+      return ItemStack.EMPTY;
    }
 
    public void savePlayerProfile(Player player, String name, String comment, String arenaId) {
       if (player instanceof ServerPlayer serverPlayer) {
-         ItemStack dataPadItemStack = this.dataPadContainerForRegistration.m_8020_(0);
-         ArenaFighterData registeredInfo = ArenaManager.getFighter(serverPlayer.f_8924_, arenaId, serverPlayer.m_20148_());
+         ItemStack dataPadItemStack = this.dataPadContainerForRegistration.getItem(0);
+         ArenaFighterData registeredInfo = ArenaManager.getFighter(serverPlayer.server, arenaId, serverPlayer.getUUID());
          if (registeredInfo == null) {
             ArenaFighterData data = new ArenaFighterData();
             if (name.isEmpty()) {
-               name = player.m_7755_().getString();
+               name = player.getName().getString();
             }
 
             if (comment.isEmpty()) {
                comment = "NO COMMENT";
             }
 
-            if (!(dataPadItemStack.m_41720_() instanceof PomkotsDatapadItem)) {
+            if (!(dataPadItemStack.getItem() instanceof PomkotsDatapadItem)) {
                this.sendMessage("Set your Pomkots Data Pad to the slot", player);
                return;
             }
 
             data.setType(ArenaFighterData.FighterType.PLAYER);
             data.setRating(0);
-            data.setFighterId(player.m_20148_());
+            data.setFighterId(player.getUUID());
             data.setDisplayName(name);
             data.setComment(comment);
             ArenaMechData mech = this.getMechDataFromDataPad(dataPadItemStack, player);
@@ -146,7 +146,7 @@ public class ArenaReceptionistMenu extends AbstractContainerMenu {
             System.out.println(mech.getMechName());
             PomkotsDatapadItem.addArenaRegistration(dataPadItemStack, arenaId);
             this.backDataPad(player);
-            ArenaManager.registerFighter(serverPlayer.f_8924_, arenaId, data);
+            ArenaManager.registerFighter(serverPlayer.server, arenaId, data);
             Utils.completeAdvancement(PomkotsMechs.id("pomkots_mechs/arena_register"), serverPlayer);
          } else {
             boolean changed = false;
@@ -160,7 +160,7 @@ public class ArenaReceptionistMenu extends AbstractContainerMenu {
                changed = true;
             }
 
-            if (dataPadItemStack.m_41720_() instanceof PomkotsDatapadItem) {
+            if (dataPadItemStack.getItem() instanceof PomkotsDatapadItem) {
                ArenaMechData mech = this.getMechDataFromDataPad(dataPadItemStack, player);
                if (mech != null) {
                   registeredInfo.setMechData(mech);
@@ -171,25 +171,25 @@ public class ArenaReceptionistMenu extends AbstractContainerMenu {
             }
 
             if (changed) {
-               ArenaManager.update(serverPlayer.f_8924_, arenaId);
+               ArenaManager.update(serverPlayer.server, arenaId);
             }
          }
       }
    }
 
    private void backDataPad(Player player) {
-      ItemStack card = this.dataPadContainerForRegistration.m_8020_(0);
-      this.dataPadContainerForRegistration.m_6836_(0, ItemStack.f_41583_);
-      if (!card.m_41619_() && !player.m_150109_().m_36054_(card)) {
-         player.m_36176_(card, false);
+      ItemStack card = this.dataPadContainerForRegistration.getItem(0);
+      this.dataPadContainerForRegistration.setItem(0, ItemStack.EMPTY);
+      if (!card.isEmpty() && !player.getInventory().add(card)) {
+         player.drop(card, false);
       }
    }
 
    private ArenaMechData getMechDataFromDataPad(ItemStack dataPadItemStack, Player player) {
       ArenaMechData res = null;
 
-      for (ItemStack card : PomkotsDatapadItem.createKeyCardContainer(dataPadItemStack).f_19147_) {
-         if (card.m_41720_() instanceof KeycardItem) {
+      for (ItemStack card : PomkotsDatapadItem.createKeyCardContainer(dataPadItemStack).items) {
+         if (card.getItem() instanceof KeycardItem) {
             res = this.getMechDataFromKeyCard(card, player);
             break;
          }
@@ -199,10 +199,10 @@ public class ArenaReceptionistMenu extends AbstractContainerMenu {
    }
 
    private ArenaMechData getMechDataFromKeyCard(ItemStack cardItemStack, Player player) {
-      CompoundTag tag = cardItemStack.m_41783_();
-      if (tag != null && tag.m_128403_(KeycardItem.NBT_MECH_UUID)) {
-         UUID mechUuid = tag.m_128342_(KeycardItem.NBT_MECH_UUID);
-         if (((ServerLevel)player.m_9236_()).m_8791_(mechUuid) instanceof Pmvc01Entity mech) {
+      CompoundTag tag = cardItemStack.getTag();
+      if (tag != null && tag.hasUUID(KeycardItem.NBT_MECH_UUID)) {
+         UUID mechUuid = tag.getUUID(KeycardItem.NBT_MECH_UUID);
+         if (((ServerLevel)player.level()).getEntity(mechUuid) instanceof Pmvc01Entity mech) {
             return ArenaMechData.fromMechInstance(mech);
          } else {
             this.sendMessage("Bring mech near by", player);
@@ -216,11 +216,11 @@ public class ArenaReceptionistMenu extends AbstractContainerMenu {
 
    public void removePlayerProfile(Player player, String arenaId) {
       if (player instanceof ServerPlayer serverPlayer) {
-         ItemStack dataPadItemStack = this.dataPadContainerForRegistration.m_8020_(0);
-         if (dataPadItemStack.m_41720_() instanceof PomkotsDatapadItem) {
+         ItemStack dataPadItemStack = this.dataPadContainerForRegistration.getItem(0);
+         if (dataPadItemStack.getItem() instanceof PomkotsDatapadItem) {
             PomkotsDatapadItem.removeArenaRegistration(dataPadItemStack, arenaId);
             this.backDataPad(player);
-            ArenaManager.removeFighter(serverPlayer.f_8924_, arenaId, serverPlayer.m_20148_());
+            ArenaManager.removeFighter(serverPlayer.server, arenaId, serverPlayer.getUUID());
          } else {
             this.sendMessage("Set your Data Pad to remove", player);
          }
@@ -228,19 +228,19 @@ public class ArenaReceptionistMenu extends AbstractContainerMenu {
    }
 
    private void sendMessage(String msg, Player player) {
-      player.m_213846_(Component.m_237113_(msg));
+      player.sendSystemMessage(Component.literal(msg));
    }
 
    public void setRankings(List<ArenaRankingEntry> rankings) {
       this.rankings = rankings;
    }
 
-   public void m_6877_(Player player) {
+   public void removed(Player player) {
       this.backDataPad(player);
-      super.m_6877_(player);
+      super.removed(player);
    }
 
-   public boolean m_6366_(Player player, int id) {
+   public boolean clickMenuButton(Player player, int id) {
       if (player instanceof ServerPlayer serverPlayer) {
          switch (id) {
             case 0:
@@ -248,19 +248,19 @@ public class ArenaReceptionistMenu extends AbstractContainerMenu {
                   return true;
                }
 
-               if (serverPlayer.m_20202_() instanceof Pmvc01Entity mech) {
+               if (serverPlayer.getVehicle() instanceof Pmvc01Entity mech) {
                   for (PomkotsDatapadItem.ArenaRequestInfo req : PomkotsDatapadItem.getArenaRequests(this.dataPadStack)) {
-                     ArenaMatchData match = ArenaManager.getActiveMatch(this.arenaId, req.requestUuid(), serverPlayer.m_20194_());
+                     ArenaMatchData match = ArenaManager.getActiveMatch(this.arenaId, req.requestUuid(), serverPlayer.getServer());
                      if (match != null && match.getTeleportPointPos() != null) {
-                        PomkotsDatapadItem.setReturnLocation(this.dataPadStack, serverPlayer.m_9236_().m_46472_(), mech.m_20183_());
+                        PomkotsDatapadItem.setReturnLocation(this.dataPadStack, serverPlayer.level().dimension(), mech.blockPosition());
                         PomkotsDatapadItem.clearArenaRequests(this.dataPadStack);
                         BlockPos pos = match.getTeleportPointPos();
-                        mech.m_6021_(pos.m_123341_(), pos.m_123342_(), pos.m_123343_());
+                        mech.teleportTo(pos.getX(), pos.getY(), pos.getZ());
                         return true;
                      }
                   }
                } else {
-                  serverPlayer.m_213846_(Component.m_237113_("Ride a mech before teleport"));
+                  serverPlayer.sendSystemMessage(Component.literal("Ride a mech before teleport"));
                }
                break;
             case 1:
@@ -269,32 +269,32 @@ public class ArenaReceptionistMenu extends AbstractContainerMenu {
                }
 
                for (PomkotsDatapadItem.ArenaRequestInfo req : PomkotsDatapadItem.getArenaRequests(this.dataPadStack)) {
-                  ArenaMatchData match = ArenaManager.getActiveMatch(this.arenaId, req.requestUuid(), serverPlayer.m_20194_());
+                  ArenaMatchData match = ArenaManager.getActiveMatch(this.arenaId, req.requestUuid(), serverPlayer.getServer());
                   if (match != null) {
-                     ArenaManager.cancelMatch("Declined from opponent", this.arenaId, match.getMatchId(), serverPlayer.f_8924_);
+                     ArenaManager.cancelMatch("Declined from opponent", this.arenaId, match.getMatchId(), serverPlayer.server);
                   }
                }
                break;
             case 2:
-               if (serverPlayer.m_20202_() instanceof Pmvc01Entity mech) {
+               if (serverPlayer.getVehicle() instanceof Pmvc01Entity mech) {
                   PomkotsDatapadItem.ReturnLocation location = PomkotsDatapadItem.getReturnLocation(this.dataPadStack);
                   if (location != null) {
-                     ServerLevel targetLevel = serverPlayer.f_8924_.m_129880_(location.dimension());
+                     ServerLevel targetLevel = serverPlayer.server.getLevel(location.dimension());
                      if (targetLevel != null) {
                         PomkotsDatapadItem.clearReturnLocation(this.dataPadStack);
-                        mech.m_264318_(
+                        mech.teleportTo(
                            targetLevel,
-                           location.pos().m_123341_() + 0.5,
-                           location.pos().m_123342_(),
-                           location.pos().m_123343_() + 0.5,
+                           location.pos().getX() + 0.5,
+                           location.pos().getY(),
+                           location.pos().getZ() + 0.5,
                            Set.of(),
-                           player.m_146908_(),
-                           player.m_146909_()
+                           player.getYRot(),
+                           player.getXRot()
                         );
                      }
                   }
                } else {
-                  serverPlayer.m_213846_(Component.m_237113_("Ride a mech before teleport"));
+                  serverPlayer.sendSystemMessage(Component.literal("Ride a mech before teleport"));
                }
          }
       }
@@ -309,7 +309,7 @@ public class ArenaReceptionistMenu extends AbstractContainerMenu {
          super(container, slot, x, y);
       }
 
-      public boolean m_6659_() {
+      public boolean isActive() {
          return this.active;
       }
 

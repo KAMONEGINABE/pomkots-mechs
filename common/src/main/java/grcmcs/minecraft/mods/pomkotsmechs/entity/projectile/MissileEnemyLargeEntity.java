@@ -25,19 +25,19 @@ public class MissileEnemyLargeEntity extends MissileBaseEntity {
    }
 
    @Override
-   protected void m_5790_(EntityHitResult entityHitResult) {
-      Entity entity = entityHitResult.m_82443_();
+   protected void onHitEntity(EntityHitResult entityHitResult) {
+      Entity entity = entityHitResult.getEntity();
       if (entity instanceof LivingEntity) {
          if (entity.equals(this.shooter) || entity instanceof HitBoxEntity) {
             return;
          }
 
-         entity.m_6469_(entity.m_269291_().m_269390_(this, (Entity)(this.m_19749_() != null ? this.m_19749_() : this)), this.getDamage());
-         entity.f_19802_ = 0;
+         entity.hurt(entity.damageSources().thrown(this, (Entity)(this.getOwner() != null ? this.getOwner() : this)), this.getDamage());
+         entity.invulnerableTime = 0;
       }
 
-      this.createExplosion(this.m_20182_());
-      this.m_146870_();
+      this.createExplosion(this.position());
+      this.discard();
    }
 
    @Override
@@ -62,7 +62,7 @@ public class MissileEnemyLargeEntity extends MissileBaseEntity {
 
    @Override
    protected Vec3 getNonTargetVelocity() {
-      return this.m_20184_();
+      return this.getDeltaMovement();
    }
 
    @Override
@@ -87,13 +87,13 @@ public class MissileEnemyLargeEntity extends MissileBaseEntity {
 
    @Override
    protected void createExplosion(Vec3 pos) {
-      Level world = this.m_9236_();
-      if (!world.f_46443_) {
+      Level world = this.level();
+      if (!world.isClientSide) {
          ExplosionInteraction exp = ProjectileUtil.isDestructionAllowed(this) ? ExplosionInteraction.BLOCK : ExplosionInteraction.NONE;
-         Utils.explode(this, pos.f_82479_, pos.f_82480_, pos.f_82481_, 8.0F, false, exp, this.m_9236_());
+         Utils.explode(this, pos.x, pos.y, pos.z, 8.0F, false, exp, this.level());
          ExplosionEntity e = new ExplosionEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.EXPLOSION.get(), world);
-         e.m_146884_(this.m_20182_());
-         world.m_7967_(e);
+         e.setPos(this.position());
+         world.addFreshEntity(e);
       }
    }
 }

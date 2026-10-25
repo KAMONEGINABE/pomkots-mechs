@@ -34,14 +34,14 @@ public class Pmt01Entity extends BaseTurretEntity {
    @Override
    protected void registerTargetSelectorGoals() {
       super.registerTargetSelectorGoals();
-      this.f_21345_.m_25352_(1, new ContinuousAttackGoal(this, 0.8F, 100, 60, 10));
+      this.goalSelector.addGoal(1, new ContinuousAttackGoal(this, 0.8F, 100, 60, 10));
    }
 
    @Override
-   public void m_8119_() {
-      super.m_8119_();
-      LivingEntity target = this.m_5448_();
-      if (!this.m_9236_().f_46443_ && target != null) {
+   public void tick() {
+      super.tick();
+      LivingEntity target = this.getTarget();
+      if (!this.level().isClientSide && target != null) {
          this.rotateToTarget(target);
       }
    }
@@ -59,23 +59,23 @@ public class Pmt01Entity extends BaseTurretEntity {
 
    @Override
    public void doAttack() {
-      LivingEntity target = this.m_5448_();
+      LivingEntity target = this.getTarget();
       if (target != null) {
          BulletGrenadeEntity be = new BulletGrenadeEntity(
-            (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_GRENADE.get(), this.m_9236_(), this, this.getMechData().bulletDamage
+            (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_GRENADE.get(), this.level(), this, this.getMechData().bulletDamage
          );
-         be.m_20242_(true);
+         be.setNoGravity(true);
          be.setExplosionScale(3);
          be.setStunPoint(2);
-         Vec3 offset = this.m_20182_();
+         Vec3 offset = this.position();
          Vec3 muzzlPos = new Vec3(1 * this.curSide, 2.0, 4.0);
          this.curSide *= -1;
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         be.m_146884_(offset.m_82549_(muzzlPos));
-         if (!Utils.isObstructed(this.m_9236_(), be, target)) {
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         be.setPos(offset.add(muzzlPos));
+         if (!Utils.isObstructed(this.level(), be, target)) {
             float[] angle = Utils.getShootingAngle(be, target, true);
-            be.m_37251_(be, angle[0], angle[1], this.m_21256_(), this.getMechData().bulletSpeed, 0.0F);
-            this.m_9236_().m_7967_(be);
+            be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), this.getMechData().bulletSpeed, 0.0F);
+            this.level().addFreshEntity(be);
          }
       }
    }

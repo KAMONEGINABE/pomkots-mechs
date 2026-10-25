@@ -64,7 +64,7 @@ public class Pmv03Entity extends PomkotsVehicleBase {
 
    @Override
    protected void fireWeapons() {
-      Level level = this.m_9236_();
+      Level level = this.level();
       if (this.actionController.getAction(4).isOnFire()) {
          this.fireRifle(level, -1);
       } else if (this.actionController.getAction(5).isOnFire()) {
@@ -75,25 +75,25 @@ public class Pmv03Entity extends PomkotsVehicleBase {
    }
 
    public void fireRifle(Level level, int isRight) {
-      if (!level.m_5776_()) {
+      if (!level.isClientSide()) {
          BulletRifleEntity be = new BulletRifleEntity((EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_RIFLE.get(), level, this, 50.0F);
          Vec3 offset = this.posHistory.getFirst();
          Vec3 muzzlPos = new Vec3(2.8 * isRight, 6.0, 5.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         be.m_146884_(offset.m_82549_(muzzlPos));
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         be.setPos(offset.add(muzzlPos));
          float[] angle = this.getShootingAngle(be, true);
-         be.m_37251_(be, angle[0], angle[1], this.m_21256_(), BattleBalance.MECH_RIFLE_SPEED, 0.0F);
-         level.m_7967_(be);
+         be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), BattleBalance.MECH_RIFLE_SPEED, 0.0F);
+         level.addFreshEntity(be);
       } else {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_RIFLE.get());
       }
    }
 
    private void fireMissile(Level world, int slot) {
-      if (!world.m_5776_()) {
+      if (!world.isClientSide()) {
          Vec3 offset = this.posHistory.getFirst();
          Vec3 muzzlPos = new Vec3(-1.5, 11.0, 2.0);
-         Vec3 worldMuzzlPos = muzzlPos.m_82520_(0.0, 0.0, -slot * 0.3).m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
+         Vec3 worldMuzzlPos = muzzlPos.add(0.0, 0.0, -slot * 0.3).yRot((float)Math.toRadians(-1.0 * this.getYRot()));
          LivingEntity target = null;
          List<Entity> lockTargetsMulti = this.lockTargets.getLockTargetMulti();
          if (!lockTargetsMulti.isEmpty()) {
@@ -109,9 +109,9 @@ public class Pmv03Entity extends PomkotsVehicleBase {
          MissileGenericEntity be = new MissileGenericEntity(
             (EntityType<? extends ThrowableProjectile>)PomkotsMechs.MISSILE_GENERIC.get(), world, this, target, 20.0F, BattleBalance.MECH_MISSILE_GENERIC_SPEED
          );
-         be.m_146884_(offset.m_82549_(worldMuzzlPos));
-         be.m_37251_(be, -10.0F, this.m_146908_(), this.m_21256_(), 1.0F, 0.0F);
-         world.m_7967_(be);
+         be.setPos(offset.add(worldMuzzlPos));
+         be.shootFromRotation(be, -10.0F, this.getYRot(), this.getFallFlyingTicks(), 1.0F, 0.0F);
+         world.addFreshEntity(be);
          if (slot == 5) {
             this.lockTargets.clearLockTargetsMulti();
          }
@@ -173,7 +173,7 @@ public class Pmv03Entity extends PomkotsVehicleBase {
    }
 
    public Vec3 getMainCameraPosition() {
-      return this.mainCameraPosition == null ? Vec3.f_82478_ : this.mainCameraPosition;
+      return this.mainCameraPosition == null ? Vec3.ZERO : this.mainCameraPosition;
    }
 
    public void setMainCameraPosition(Vec3 pos) {
@@ -196,7 +196,7 @@ public class Pmv03Entity extends PomkotsVehicleBase {
    }
 
    @Override
-   public double m_6048_() {
+   public double getPassengersRidingOffset() {
       return 5.0;
    }
 }

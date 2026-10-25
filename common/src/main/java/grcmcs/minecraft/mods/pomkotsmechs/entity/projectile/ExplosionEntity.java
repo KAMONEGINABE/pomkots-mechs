@@ -32,52 +32,52 @@ public class ExplosionEntity extends PomkotsThrowableProjectile implements GeoEn
 
    public ExplosionEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, int explosionScale) {
       super(entityType, world);
-      this.m_20242_(true);
+      this.setNoGravity(true);
       this.explosionScale = explosionScale;
    }
 
    @Override
-   public void m_8119_() {
-      this.m_20242_(true);
-      super.m_8119_();
-      Level level = this.m_9236_();
+   public void tick() {
+      this.setNoGravity(true);
+      super.tick();
+      Level level = this.level();
       if (this.lifeTicks++ >= 50) {
-         this.m_146870_();
+         this.discard();
       } else if (this.lifeTicks == 5) {
          this.generateLava();
-         if (level.f_46443_) {
+         if (level.isClientSide) {
             this.playSoundEffect((SoundEvent)PomkotsMechs.SE_EXPLOSION_EVENT.get());
          }
-      } else if (this.lifeTicks == 4 && !level.f_46443_ && this.explosionScale > 0) {
-         Vec3 pos = this.m_20182_();
+      } else if (this.lifeTicks == 4 && !level.isClientSide && this.explosionScale > 0) {
+         Vec3 pos = this.position();
          if (PomkotsMechs.CONFIG.enableEntityBlockDestruction) {
-            Utils.explode(this, pos.f_82479_, pos.f_82480_, pos.f_82481_, this.explosionScale, false, ExplosionInteraction.BLOCK, this.m_9236_());
+            Utils.explode(this, pos.x, pos.y, pos.z, this.explosionScale, false, ExplosionInteraction.BLOCK, this.level());
          } else {
-            Utils.explode(this, pos.f_82479_, pos.f_82480_, pos.f_82481_, this.explosionScale, false, ExplosionInteraction.NONE, this.m_9236_());
+            Utils.explode(this, pos.x, pos.y, pos.z, this.explosionScale, false, ExplosionInteraction.NONE, this.level());
          }
       }
    }
 
    private void generateLava() {
-      if (this.m_9236_().f_46443_) {
-         RandomSource random = this.m_9236_().m_213780_();
+      if (this.level().isClientSide) {
+         RandomSource random = this.level().getRandom();
 
          for (int i = 0; i < 20; i++) {
-            double velocityX = random.m_188500_() * 2.0 - 1.0;
-            double velocityY = random.m_188500_() * 2.0 - 1.0;
-            double velocityZ = random.m_188500_() * 2.0 - 1.0;
-            this.m_9236_().m_7106_(ParticleTypes.f_123756_, this.m_20185_(), this.m_20186_(), this.m_20189_(), velocityX, velocityY, velocityZ);
+            double velocityX = random.nextDouble() * 2.0 - 1.0;
+            double velocityY = random.nextDouble() * 2.0 - 1.0;
+            double velocityZ = random.nextDouble() * 2.0 - 1.0;
+            this.level().addParticle(ParticleTypes.LAVA, this.getX(), this.getY(), this.getZ(), velocityX, velocityY, velocityZ);
          }
       }
    }
 
-   protected void m_5790_(EntityHitResult entityHitResult) {
+   protected void onHitEntity(EntityHitResult entityHitResult) {
    }
 
-   protected void m_8060_(BlockHitResult blockHitResult) {
+   protected void onHitBlock(BlockHitResult blockHitResult) {
    }
 
-   protected void m_8097_() {
+   protected void defineSynchedData() {
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

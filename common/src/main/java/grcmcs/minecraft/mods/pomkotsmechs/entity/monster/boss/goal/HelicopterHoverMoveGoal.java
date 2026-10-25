@@ -34,45 +34,45 @@ public class HelicopterHoverMoveGoal extends Goal {
       this.minHoverHeight = minHoverHeight;
       this.maxHoverHeight = maxHoverHeight;
       this.patternSwitchInterval = patternSwitchInterval;
-      this.m_7021_(EnumSet.of(Flag.JUMP));
+      this.setFlags(EnumSet.of(Flag.JUMP));
       this.randomizeHoverHeight();
    }
 
-   public boolean m_8036_() {
-      this.target = this.mob.m_5448_();
-      return this.target != null && this.target.m_6084_();
+   public boolean canUse() {
+      this.target = this.mob.getTarget();
+      return this.target != null && this.target.isAlive();
    }
 
-   public boolean m_8045_() {
-      return this.target != null && this.target.m_6084_();
+   public boolean canContinueToUse() {
+      return this.target != null && this.target.isAlive();
    }
 
-   public void m_8056_() {
+   public void start() {
       this.tickCounter = 0;
       this.patternSwitchTimer = this.patternSwitchInterval;
-      this.mob.m_20242_(true);
+      this.mob.setNoGravity(true);
       this.randomizePattern();
    }
 
-   public void m_8041_() {
+   public void stop() {
       this.target = null;
       this.currentPattern = HelicopterHoverMoveGoal.MovementPattern.HOVER;
-      Vec3 vel = this.mob.m_20184_();
-      this.mob.m_20334_(0.0, vel.f_82480_ * 0.5, 0.0);
+      Vec3 vel = this.mob.getDeltaMovement();
+      this.mob.setDeltaMovement(0.0, vel.y * 0.5, 0.0);
    }
 
-   public void m_8037_() {
+   public void tick() {
       this.tickCounter++;
       if (this.target != null) {
          if (this.mob.isStunning()) {
-            this.mob.m_20256_(Vec3.f_82478_);
+            this.mob.setDeltaMovement(Vec3.ZERO);
          } else {
             if (this.currentPattern == HelicopterHoverMoveGoal.MovementPattern.APPROACH
                || this.currentPattern == HelicopterHoverMoveGoal.MovementPattern.RAPID_APPROACH) {
-               Vec3 currentPos = this.mob.m_20182_();
-               Vec3 toTarget = this.target.m_20182_().m_82546_(currentPos);
-               Vec3 horizontal = new Vec3(toTarget.f_82479_, 0.0, toTarget.f_82481_);
-               double distance = horizontal.m_82553_();
+               Vec3 currentPos = this.mob.position();
+               Vec3 toTarget = this.target.position().subtract(currentPos);
+               Vec3 horizontal = new Vec3(toTarget.x, 0.0, toTarget.z);
+               double distance = horizontal.length();
                if (distance < 20.0) {
                   this.patternSwitchTimer = 0;
                }
@@ -82,10 +82,10 @@ public class HelicopterHoverMoveGoal extends Goal {
             this.patternSwitchTimer--;
             if (this.patternSwitchTimer <= 0) {
                this.randomizePattern();
-               this.patternSwitchTimer = this.patternSwitchInterval + this.mob.m_217043_().m_188503_(40) - 20;
+               this.patternSwitchTimer = this.patternSwitchInterval + this.mob.getRandom().nextInt(40) - 20;
             }
 
-            if (this.mob.m_217043_().m_188501_() < 0.1F) {
+            if (this.mob.getRandom().nextFloat() < 0.1F) {
                this.randomizeHoverHeight();
             }
 
@@ -95,22 +95,22 @@ public class HelicopterHoverMoveGoal extends Goal {
    }
 
    private void performMovement() {
-      Vec3 currentPos = this.mob.m_20182_();
-      Vec3 toTarget = this.target.m_20182_().m_82546_(currentPos);
+      Vec3 currentPos = this.mob.position();
+      Vec3 toTarget = this.target.position().subtract(currentPos);
       Vec3 horizontalMove = this.calculateHorizontalMovement(toTarget);
       double verticalMove = this.calculateVerticalMovement(currentPos);
-      this.mob.m_20334_(horizontalMove.f_82479_, verticalMove, horizontalMove.f_82481_);
+      this.mob.setDeltaMovement(horizontalMove.x, verticalMove, horizontalMove.z);
    }
 
    private Vec3 calculateHorizontalMovement(Vec3 toTarget) {
-      Vec3 horizontal = new Vec3(toTarget.f_82479_, 0.0, toTarget.f_82481_);
-      double distance = horizontal.m_82553_();
+      Vec3 horizontal = new Vec3(toTarget.x, 0.0, toTarget.z);
+      double distance = horizontal.length();
 
       return switch (this.currentPattern) {
-         case APPROACH -> distance < 0.1 ? Vec3.f_82478_ : horizontal.m_82541_().m_82490_(this.baseSpeed);
-         case RAPID_APPROACH -> distance < 0.1 ? Vec3.f_82478_ : horizontal.m_82541_().m_82490_(this.baseSpeed * 2.0);
+         case APPROACH -> distance < 0.1 ? Vec3.ZERO : horizontal.normalize().scale(this.baseSpeed);
+         case RAPID_APPROACH -> distance < 0.1 ? Vec3.ZERO : horizontal.normalize().scale(this.baseSpeed * 2.0);
          case CIRCLE -> {
-            double angleToTarget = Math.atan2(horizontal.f_82481_, horizontal.f_82479_);
+            double angleToTarget = Math.atan2(horizontal.z, horizontal.x);
             double circleAngle = angleToTarget + this.circleDirection * Math.PI / 2.0;
             yield new Vec3(Math.cos(circleAngle) * this.baseSpeed * 1.2, 0.0, Math.sin(circleAngle) * this.baseSpeed * 1.2);
          }
@@ -118,17 +118,17 @@ public class HelicopterHoverMoveGoal extends Goal {
             this.strafeTimer--;
             if (this.strafeTimer <= 0) {
                this.strafeDirection *= -1;
-               this.strafeTimer = 20 + this.mob.m_217043_().m_188503_(20);
+               this.strafeTimer = 20 + this.mob.getRandom().nextInt(20);
             }
 
-            double angleToTarget = Math.atan2(horizontal.f_82481_, horizontal.f_82479_);
+            double angleToTarget = Math.atan2(horizontal.z, horizontal.x);
             double strafeAngle = angleToTarget + this.strafeDirection * Math.PI / 2.0;
             yield new Vec3(Math.cos(strafeAngle) * this.baseSpeed * 1.5, 0.0, Math.sin(strafeAngle) * this.baseSpeed * 1.5);
          }
-         case RETREAT -> distance < 0.1 ? Vec3.f_82478_ : horizontal.m_82541_().m_82490_(-this.baseSpeed * 0.8);
+         case RETREAT -> distance < 0.1 ? Vec3.ZERO : horizontal.normalize().scale(-this.baseSpeed * 0.8);
          case HOVER -> {
             Vec3 drift = new Vec3(
-               (this.mob.m_217043_().m_188500_() - 0.5) * this.baseSpeed * 0.2, 0.0, (this.mob.m_217043_().m_188500_() - 0.5) * this.baseSpeed * 0.2
+               (this.mob.getRandom().nextDouble() - 0.5) * this.baseSpeed * 0.2, 0.0, (this.mob.getRandom().nextDouble() - 0.5) * this.baseSpeed * 0.2
             );
             yield drift;
          }
@@ -136,43 +136,43 @@ public class HelicopterHoverMoveGoal extends Goal {
    }
 
    private double calculateVerticalMovement(Vec3 currentPos) {
-      double groundY = this.findGroundOrWaterLevel(currentPos.f_82479_, currentPos.f_82480_, currentPos.f_82481_);
+      double groundY = this.findGroundOrWaterLevel(currentPos.x, currentPos.y, currentPos.z);
       if (groundY == Double.MIN_VALUE) {
          return this.limitVerticalSpeed(0.0);
       }
 
       double targetY = groundY + this.currentHoverHeight;
-      double yDiff = targetY - currentPos.f_82480_;
-      double verticalSpeed = Mth.m_14008_(yDiff * 0.2, -0.5, 0.5);
+      double yDiff = targetY - currentPos.y;
+      double verticalSpeed = Mth.clamp(yDiff * 0.2, -0.5, 0.5);
       return this.limitVerticalSpeed(verticalSpeed);
    }
 
    private double limitVerticalSpeed(double speed) {
-      return Mth.m_14008_(speed, -0.8, 0.8);
+      return Mth.clamp(speed, -0.8, 0.8);
    }
 
    private double findGroundOrWaterLevel(double x, double y, double z) {
-      Level level = this.mob.m_9236_();
-      int startY = Mth.m_14107_(y);
+      Level level = this.mob.level();
+      int startY = Mth.floor(y);
       int searchRange = 200;
 
       for (int checkY = startY; checkY >= startY - searchRange; checkY--) {
-         BlockPos pos = new BlockPos(Mth.m_14107_(x), checkY, Mth.m_14107_(z));
-         BlockState state = level.m_8055_(pos);
-         if (!state.m_60819_().m_76178_()) {
+         BlockPos pos = new BlockPos(Mth.floor(x), checkY, Mth.floor(z));
+         BlockState state = level.getBlockState(pos);
+         if (!state.getFluidState().isEmpty()) {
             return checkY + 1.0;
          }
 
-         if (state.m_280296_() && !state.m_60795_()) {
+         if (state.isSolid() && !state.isAir()) {
             try {
-               VoxelShape shape = state.m_60812_(level, pos);
-               if (!shape.m_83281_()) {
-                  return pos.m_123342_() + shape.m_83297_(Axis.Y);
+               VoxelShape shape = state.getCollisionShape(level, pos);
+               if (!shape.isEmpty()) {
+                  return pos.getY() + shape.max(Axis.Y);
                }
             } catch (Exception var14) {
             }
 
-            return pos.m_123342_() + 1.0;
+            return pos.getY() + 1.0;
          }
       }
 
@@ -181,24 +181,24 @@ public class HelicopterHoverMoveGoal extends Goal {
 
    private void randomizePattern() {
       HelicopterHoverMoveGoal.MovementPattern[] patterns = HelicopterHoverMoveGoal.MovementPattern.values();
-      HelicopterHoverMoveGoal.MovementPattern newPattern = patterns[this.mob.m_217043_().m_188503_(patterns.length)];
+      HelicopterHoverMoveGoal.MovementPattern newPattern = patterns[this.mob.getRandom().nextInt(patterns.length)];
       if (newPattern == this.currentPattern) {
-         newPattern = patterns[this.mob.m_217043_().m_188503_(patterns.length)];
+         newPattern = patterns[this.mob.getRandom().nextInt(patterns.length)];
       }
 
       this.currentPattern = newPattern;
       switch (this.currentPattern) {
          case CIRCLE:
-            this.circleDirection = this.mob.m_217043_().m_188499_() ? 1 : -1;
+            this.circleDirection = this.mob.getRandom().nextBoolean() ? 1 : -1;
             break;
          case STRAFE:
-            this.strafeDirection = this.mob.m_217043_().m_188499_() ? 1 : -1;
-            this.strafeTimer = 20 + this.mob.m_217043_().m_188503_(20);
+            this.strafeDirection = this.mob.getRandom().nextBoolean() ? 1 : -1;
+            this.strafeTimer = 20 + this.mob.getRandom().nextInt(20);
       }
    }
 
    private void randomizeHoverHeight() {
-      this.currentHoverHeight = this.minHoverHeight + this.mob.m_217043_().m_188500_() * (this.maxHoverHeight - this.minHoverHeight);
+      this.currentHoverHeight = this.minHoverHeight + this.mob.getRandom().nextDouble() * (this.maxHoverHeight - this.minHoverHeight);
    }
 
    public HelicopterHoverMoveGoal.MovementPattern getCurrentPattern() {

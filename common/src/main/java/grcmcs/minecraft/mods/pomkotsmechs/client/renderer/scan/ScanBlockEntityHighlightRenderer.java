@@ -28,30 +28,30 @@ public final class ScanBlockEntityHighlightRenderer {
    }
 
    public static void render(PoseStack poseStack, Camera camera, BufferSource bufferSource) {
-      ClientLevel level = Minecraft.m_91087_().f_91073_;
+      ClientLevel level = Minecraft.getInstance().level;
       if (level != null) {
-         if (Minecraft.m_91087_().f_91074_ != null) {
+         if (Minecraft.getInstance().player != null) {
             if (!ClientScanManager.isBlockHighlightEmpty()) {
-               Vec3 cameraPos = camera.m_90583_();
+               Vec3 cameraPos = camera.getPosition();
                RenderSystem.disableDepthTest();
                RenderSystem.depthMask(false);
 
                try {
-                  VertexConsumer consumer = bufferSource.m_6299_(ScanRenderTypes.SCAN_HIGHLIGHT_LINES);
+                  VertexConsumer consumer = bufferSource.getBuffer(ScanRenderTypes.SCAN_HIGHLIGHT_LINES);
                   boolean rendered = false;
 
                   for (BlockPos pos : ClientScanManager.getHighlightedBlockEntities()) {
-                     BlockEntity blockEntity = level.m_7702_(pos);
+                     BlockEntity blockEntity = level.getBlockEntity(pos);
                      if (blockEntity instanceof ScanTargetBlockEntity scanTarget) {
-                        AABB renderBox = createHighlightBox(blockEntity).m_82400_(0.02).m_82386_(-cameraPos.f_82479_, -cameraPos.f_82480_, -cameraPos.f_82481_);
+                        AABB renderBox = createHighlightBox(blockEntity).inflate(0.02).move(-cameraPos.x, -cameraPos.y, -cameraPos.z);
                         float[] color = getColor(blockEntity);
-                        LevelRenderer.m_109646_(poseStack, consumer, renderBox, color[0], color[1], color[2], 0.65F);
+                        LevelRenderer.renderLineBox(poseStack, consumer, renderBox, color[0], color[1], color[2], 0.65F);
                         rendered = true;
                      }
                   }
 
                   if (rendered) {
-                     bufferSource.m_109912_(ScanRenderTypes.SCAN_HIGHLIGHT_LINES);
+                     bufferSource.endBatch(ScanRenderTypes.SCAN_HIGHLIGHT_LINES);
                   }
                } finally {
                   RenderSystem.depthMask(true);
@@ -73,7 +73,7 @@ public final class ScanBlockEntityHighlightRenderer {
    }
 
    private static AABB createHighlightBox(BlockEntity blockEntity) {
-      BlockPos pos = blockEntity.m_58899_();
+      BlockPos pos = blockEntity.getBlockPos();
       return new AABB(pos);
    }
 }

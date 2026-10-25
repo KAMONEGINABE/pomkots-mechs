@@ -30,12 +30,12 @@ public class OrbitalFlyGoal extends BaseBossGoal {
       this.maxRadius = maxRadius;
       this.heightMin = heightMin;
       this.heightMax = heightMax;
-      this.m_7021_(EnumSet.of(Flag.MOVE));
+      this.setFlags(EnumSet.of(Flag.MOVE));
       this.currentRadius = this.getRandomRadius();
    }
 
    private double getRandomRadius() {
-      return this.minRadius + this.mob.m_217043_().m_188500_() * (this.maxRadius - this.minRadius);
+      return this.minRadius + this.mob.getRandom().nextDouble() * (this.maxRadius - this.minRadius);
    }
 
    @Override
@@ -43,45 +43,45 @@ public class OrbitalFlyGoal extends BaseBossGoal {
       return true;
    }
 
-   public boolean m_8045_() {
+   public boolean canContinueToUse() {
       return --this.ticksUntilNextSwitch > 0;
    }
 
-   public void m_8056_() {
-      this.target = this.mob.m_5448_();
-      this.ticksUntilNextSwitch = this.mob.m_217043_().m_188503_(30) + 30;
+   public void start() {
+      this.target = this.mob.getTarget();
+      this.ticksUntilNextSwitch = this.mob.getRandom().nextInt(30) + 30;
    }
 
-   public void m_8041_() {
+   public void stop() {
       this.target = null;
    }
 
-   public void m_8037_() {
+   public void tick() {
       if (this.target != null) {
          this.mob.rotateToTarget(this.target);
          if (--this.switchCooldown <= 0) {
-            this.clockwise = this.mob.m_217043_().m_188499_();
-            this.switchCooldown = 100 + this.mob.m_217043_().m_188503_(60);
+            this.clockwise = this.mob.getRandom().nextBoolean();
+            this.switchCooldown = 100 + this.mob.getRandom().nextInt(60);
          }
 
          if (--this.radiusCooldown <= 0) {
             this.currentRadius = this.getRandomRadius();
-            this.radiusCooldown = 60 + this.mob.m_217043_().m_188503_(60);
+            this.radiusCooldown = 60 + this.mob.getRandom().nextInt(60);
          }
 
          this.angle = this.angle + (this.clockwise ? 1 : -1) * 20.0F;
          double rad = Math.toRadians(this.angle);
-         double x = this.target.m_20185_() + this.currentRadius * Math.cos(rad);
-         double z = this.target.m_20189_() + this.currentRadius * Math.sin(rad);
-         Level level = this.mob.m_9236_();
-         BlockPos ground = level.m_5452_(Types.WORLD_SURFACE, this.mob.m_20183_());
-         double baseY = ground.m_123342_() + this.heightMin;
-         double y = baseY + this.mob.m_217043_().m_188500_() * (this.heightMax - this.heightMin);
-         Vec3 currentPos = this.mob.m_20182_();
+         double x = this.target.getX() + this.currentRadius * Math.cos(rad);
+         double z = this.target.getZ() + this.currentRadius * Math.sin(rad);
+         Level level = this.mob.level();
+         BlockPos ground = level.getHeightmapPos(Types.WORLD_SURFACE, this.mob.blockPosition());
+         double baseY = ground.getY() + this.heightMin;
+         double y = baseY + this.mob.getRandom().nextDouble() * (this.heightMax - this.heightMin);
+         Vec3 currentPos = this.mob.position();
          Vec3 targetVec = new Vec3(x, y, z);
-         Vec3 motion = targetVec.m_82546_(currentPos).m_82541_().m_82490_(0.6);
-         this.mob.m_20256_(this.mob.m_20184_().m_82549_(motion).m_82490_(this.speed));
-         this.mob.f_19864_ = true;
+         Vec3 motion = targetVec.subtract(currentPos).normalize().scale(0.6);
+         this.mob.setDeltaMovement(this.mob.getDeltaMovement().add(motion).scale(this.speed));
+         this.mob.hurtMarked = true;
       }
    }
 }

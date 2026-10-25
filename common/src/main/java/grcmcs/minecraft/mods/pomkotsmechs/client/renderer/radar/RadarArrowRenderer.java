@@ -34,34 +34,34 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
 public class RadarArrowRenderer {
-   public static final RenderType WIREFRAME = RenderType.m_173215_(
+   public static final RenderType WIREFRAME = RenderType.create(
       "radar_arrow_wireframe",
-      DefaultVertexFormat.f_166851_,
+      DefaultVertexFormat.POSITION_COLOR_NORMAL,
       Mode.LINES,
       131072,
       false,
       true,
-      CompositeState.m_110628_()
-         .m_173292_(RenderStateShard.f_173095_)
-         .m_110685_(RenderStateShard.f_110139_)
-         .m_110663_(RenderStateShard.f_110111_)
-         .m_110661_(RenderStateShard.f_110110_)
-         .m_110673_(new LineStateShard(OptionalDouble.of(4.0)))
-         .m_110691_(false)
+      CompositeState.builder()
+         .setShaderState(RenderStateShard.RENDERTYPE_LINES_SHADER)
+         .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+         .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
+         .setCullState(RenderStateShard.NO_CULL)
+         .setLineState(new LineStateShard(OptionalDouble.of(4.0)))
+         .createCompositeState(false)
    );
-   public static final RenderType TRIANGLE = RenderType.m_173215_(
+   public static final RenderType TRIANGLE = RenderType.create(
       "radar_cone",
-      DefaultVertexFormat.f_85815_,
+      DefaultVertexFormat.POSITION_COLOR,
       Mode.TRIANGLES,
       131072,
       false,
       true,
-      CompositeState.m_110628_()
-         .m_173292_(RenderStateShard.f_173104_)
-         .m_110685_(RenderStateShard.f_110139_)
-         .m_110663_(RenderStateShard.f_110113_)
-         .m_110661_(RenderStateShard.f_110158_)
-         .m_110691_(false)
+      CompositeState.builder()
+         .setShaderState(RenderStateShard.POSITION_COLOR_SHADER)
+         .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+         .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+         .setCullState(RenderStateShard.CULL)
+         .createCompositeState(false)
    );
    private static final int COLOR_R = 0;
    private static final int COLOR_G = 80;
@@ -73,57 +73,57 @@ public class RadarArrowRenderer {
    private static final Set<UUID> notFoundCache = new HashSet<>();
 
    public static void onRenderWorld(PoseStack poseStack, BufferSource bufferSource, Camera camera, float partialTick) {
-      Minecraft mc = Minecraft.m_91087_();
-      Player player = mc.f_91074_;
+      Minecraft mc = Minecraft.getInstance();
+      Player player = mc.player;
       if (player != null) {
-         ItemStack stack = player.m_21205_();
+         ItemStack stack = player.getMainHandItem();
          RadarTarget target = null;
-         if (stack.m_41720_() instanceof PomkotsRadarItem) {
+         if (stack.getItem() instanceof PomkotsRadarItem) {
             target = PomkotsRadarItem.getActiveTarget(stack).orElse(null);
-         } else if (stack.m_41720_() instanceof PomkotsDatapadItem) {
+         } else if (stack.getItem() instanceof PomkotsDatapadItem) {
             target = PomkotsDatapadItem.getActiveTarget(stack).orElse(null);
          }
 
          if (target != null) {
-            Vec3 camPos = camera.m_90583_();
-            Vec3 centerPos = player.m_20318_(partialTick);
-            Vec3 targetPos = resolveTargetPos(target, mc.f_91073_, partialTick);
+            Vec3 camPos = camera.getPosition();
+            Vec3 centerPos = player.getPosition(partialTick);
+            Vec3 targetPos = resolveTargetPos(target, mc.level, partialTick);
             if (targetPos == null) {
-               int blinkAlpha = (int)(getBlinkAlpha((ClientLevel)player.m_9236_(), partialTick) * 200.0F);
+               int blinkAlpha = (int)(getBlinkAlpha((ClientLevel)player.level(), partialTick) * 200.0F);
                if (blinkAlpha < 10) {
                   return;
                }
 
-               Vec3 crossPos = centerPos.m_82520_(0.0, player.m_20206_() + 1.0, 0.0);
-               poseStack.m_85836_();
-               poseStack.m_85837_(crossPos.f_82479_ - camPos.f_82479_, crossPos.f_82480_ - camPos.f_82480_, crossPos.f_82481_ - camPos.f_82481_);
-               poseStack.m_252781_(camera.m_253121_());
-               poseStack.m_85841_(0.5F, 0.5F, 0.5F);
-               VertexConsumer vc = bufferSource.m_6299_(WIREFRAME);
-               renderCross(vc, poseStack.m_85850_(), 255, 80, 80, blinkAlpha);
-               poseStack.m_85849_();
+               Vec3 crossPos = centerPos.add(0.0, player.getBbHeight() + 1.0, 0.0);
+               poseStack.pushPose();
+               poseStack.translate(crossPos.x - camPos.x, crossPos.y - camPos.y, crossPos.z - camPos.z);
+               poseStack.mulPose(camera.rotation());
+               poseStack.scale(0.5F, 0.5F, 0.5F);
+               VertexConsumer vc = bufferSource.getBuffer(WIREFRAME);
+               renderCross(vc, poseStack.last(), 255, 80, 80, blinkAlpha);
+               poseStack.popPose();
             } else {
-               float time = (float)player.m_9236_().m_46467_() + partialTick;
-               Vec3 diff = targetPos.m_82546_(centerPos);
-               double dist = diff.m_82553_();
+               float time = (float)player.level().getGameTime() + partialTick;
+               Vec3 diff = targetPos.subtract(centerPos);
+               double dist = diff.length();
                if (dist < 1.0) {
                   return;
                }
 
-               Vec3 dir = diff.m_82541_();
-               Vec3 playerCenter = centerPos.m_82520_(0.0, player.m_20206_() * 0.5, 0.0);
+               Vec3 dir = diff.normalize();
+               Vec3 playerCenter = centerPos.add(0.0, player.getBbHeight() * 0.5, 0.0);
                float bobOffset = (float)(Math.sin(time / 10.0) * 0.5);
-               Vec3 arrowWorldPos = playerCenter.m_82549_(dir.m_82490_(4.0F + bobOffset));
-               float scale = (float)Mth.m_14008_(dist / 30.0, 0.5, 2.0) * 0.4F;
-               poseStack.m_85836_();
-               poseStack.m_85837_(arrowWorldPos.f_82479_ - camPos.f_82479_, arrowWorldPos.f_82480_ - camPos.f_82480_, arrowWorldPos.f_82481_ - camPos.f_82481_);
+               Vec3 arrowWorldPos = playerCenter.add(dir.scale(4.0F + bobOffset));
+               float scale = (float)Mth.clamp(dist / 30.0, 0.5, 2.0) * 0.4F;
+               poseStack.pushPose();
+               poseStack.translate(arrowWorldPos.x - camPos.x, arrowWorldPos.y - camPos.y, arrowWorldPos.z - camPos.z);
                alignToDirection(poseStack, dir);
                float rotation = (float)(time / 20.0 * Math.PI);
-               poseStack.m_252781_(new Quaternionf().rotateZ(rotation));
-               poseStack.m_85841_(scale, scale, scale);
-               VertexConsumer vc = bufferSource.m_6299_(TRIANGLE);
-               renderCone(vc, poseStack.m_85850_(), 0, 80, 255, 128);
-               poseStack.m_85849_();
+               poseStack.mulPose(new Quaternionf().rotateZ(rotation));
+               poseStack.scale(scale, scale, scale);
+               VertexConsumer vc = bufferSource.getBuffer(TRIANGLE);
+               renderCone(vc, poseStack.last(), 0, 80, 255, 128);
+               poseStack.popPose();
             }
          }
       }
@@ -131,23 +131,23 @@ public class RadarArrowRenderer {
 
    private static void alignToDirection(PoseStack poseStack, Vec3 direction) {
       Vec3 from = new Vec3(0.0, 0.0, 1.0);
-      Vec3 axis = from.m_82537_(direction);
-      double axisLen = axis.m_82553_();
+      Vec3 axis = from.cross(direction);
+      double axisLen = axis.length();
       if (axisLen < 1.0E-6) {
-         if (direction.f_82481_ < 0.0) {
-            poseStack.m_252781_(new Quaternionf().rotateY((float) Math.PI));
+         if (direction.z < 0.0) {
+            poseStack.mulPose(new Quaternionf().rotateY((float) Math.PI));
          }
       } else {
-         double angle = Math.acos(Mth.m_14008_(from.m_82526_(direction), -1.0, 1.0));
-         Vec3 normalizedAxis = axis.m_82541_();
-         poseStack.m_252781_(
-            new Quaternionf().rotateAxis((float)angle, (float)normalizedAxis.f_82479_, (float)normalizedAxis.f_82480_, (float)normalizedAxis.f_82481_)
+         double angle = Math.acos(Mth.clamp(from.dot(direction), -1.0, 1.0));
+         Vec3 normalizedAxis = axis.normalize();
+         poseStack.mulPose(
+            new Quaternionf().rotateAxis((float)angle, (float)normalizedAxis.x, (float)normalizedAxis.y, (float)normalizedAxis.z)
          );
       }
    }
 
    private static float getBlinkAlpha(ClientLevel level, float partialTick) {
-      float time = ((float)level.m_46467_() + partialTick) / 10.0F;
+      float time = ((float)level.getGameTime() + partialTick) / 10.0F;
       return (float)(Math.sin(time * Math.PI) * 0.5 + 0.5);
    }
 
@@ -165,8 +165,8 @@ public class RadarArrowRenderer {
       nx /= len;
       ny /= len;
       nz /= len;
-      vc.m_252986_(pose.m_252922_(), x1, y1, z1).m_6122_(r, g, b, a).m_252939_(pose.m_252943_(), nx, ny, nz).m_5752_();
-      vc.m_252986_(pose.m_252922_(), x2, y2, z2).m_6122_(r, g, b, a).m_252939_(pose.m_252943_(), nx, ny, nz).m_5752_();
+      vc.vertex(pose.pose(), x1, y1, z1).color(r, g, b, a).normal(pose.normal(), nx, ny, nz).endVertex();
+      vc.vertex(pose.pose(), x2, y2, z2).color(r, g, b, a).normal(pose.normal(), nx, ny, nz).endVertex();
    }
 
    private static void renderCone(VertexConsumer vc, Pose pose, int r, int g, int b, int a) {
@@ -208,29 +208,29 @@ public class RadarArrowRenderer {
       r = (int)(r * brightness);
       g = (int)(g * brightness);
       b = (int)(b * brightness);
-      vc.m_252986_(pose.m_252922_(), x1, y1, z1).m_6122_(r, g, b, a).m_5752_();
-      vc.m_252986_(pose.m_252922_(), x2, y2, z2).m_6122_(r, g, b, a).m_5752_();
-      vc.m_252986_(pose.m_252922_(), x3, y3, z3).m_6122_(r, g, b, a).m_5752_();
+      vc.vertex(pose.pose(), x1, y1, z1).color(r, g, b, a).endVertex();
+      vc.vertex(pose.pose(), x2, y2, z2).color(r, g, b, a).endVertex();
+      vc.vertex(pose.pose(), x3, y3, z3).color(r, g, b, a).endVertex();
    }
 
    private static Vec3 resolveTargetPos(RadarTarget target, ClientLevel level, float partialTick) {
       if (target instanceof RadarTarget.CoordTarget c) {
-         return Vec3.m_82512_(c.pos());
+         return Vec3.atCenterOf(c.pos());
       } else if (target instanceof RadarTarget.EntityTarget e) {
          Entity cached = Optional.ofNullable(entityCache.get(e.uuid())).map(Reference::get).orElse(null);
-         if (cached != null && cached.m_6084_()) {
-            return cached.m_20318_(partialTick);
-         } else if (notFoundCache.contains(e.uuid()) && level.m_46467_() % 100L != 0L) {
+         if (cached != null && cached.isAlive()) {
+            return cached.getPosition(partialTick);
+         } else if (notFoundCache.contains(e.uuid()) && level.getGameTime() % 100L != 0L) {
             return null;
          } else {
-            Entity found = (Entity)level.m_6443_(Entity.class, new AABB(level.m_220360_()).m_82400_(999999.0), en -> en.m_20148_().equals(e.uuid()))
+            Entity found = (Entity)level.getEntitiesOfClass(Entity.class, new AABB(level.getSharedSpawnPos()).inflate(999999.0), en -> en.getUUID().equals(e.uuid()))
                .stream()
                .findFirst()
                .orElse(null);
             if (found != null) {
                entityCache.put(e.uuid(), new WeakReference<>(found));
                notFoundCache.remove(e.uuid());
-               return found.m_20318_(partialTick);
+               return found.getPosition(partialTick);
             } else {
                entityCache.remove(e.uuid());
                notFoundCache.add(e.uuid());

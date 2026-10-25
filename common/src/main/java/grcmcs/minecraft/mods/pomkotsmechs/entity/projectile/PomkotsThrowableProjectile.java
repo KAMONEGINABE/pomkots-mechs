@@ -25,24 +25,24 @@ public abstract class PomkotsThrowableProjectile extends ThrowableProjectile {
       this.shooter = shooter;
    }
 
-   public void m_8119_() {
+   public void tick() {
       this.soundEffectVolume = -1.0F;
-      super.m_8119_();
+      super.tick();
    }
 
    public void onHitEntityPublic(Entity entity) {
-      this.m_5790_(new EntityHitResult(entity));
+      this.onHitEntity(new EntityHitResult(entity));
    }
 
    public float getHitDamage() {
       return 0.0F;
    }
 
-   public boolean m_142391_() {
+   public boolean shouldBeSaved() {
       return false;
    }
 
-   public boolean m_6128_() {
+   public boolean ignoreExplosion() {
       return true;
    }
 
@@ -64,23 +64,23 @@ public abstract class PomkotsThrowableProjectile extends ThrowableProjectile {
       }
 
       if (this.soundEffectVolume > 0.0F) {
-         this.m_9236_().m_7785_(this.m_20185_(), this.m_20186_(), this.m_20189_(), event, SoundSource.PLAYERS, volume * this.soundEffectVolume, 1.0F, false);
+         this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), event, SoundSource.PLAYERS, volume * this.soundEffectVolume, 1.0F, false);
       }
    }
 
    private float computeVolume(double maxDistance) {
-      Minecraft mc = Minecraft.m_91087_();
-      LocalPlayer player = mc.f_91074_;
+      Minecraft mc = Minecraft.getInstance();
+      LocalPlayer player = mc.player;
       if (player == null) {
          return 0.0F;
       }
 
-      double distance = player.m_20270_(this);
+      double distance = player.distanceTo(this);
       if (distance > maxDistance) {
          return 0.0F;
       }
 
       float volume = 1.0F - (float)(distance / maxDistance);
-      return Mth.m_14036_(volume, 0.0F, 1.0F);
+      return Mth.clamp(volume, 0.0F, 1.0F);
    }
 }

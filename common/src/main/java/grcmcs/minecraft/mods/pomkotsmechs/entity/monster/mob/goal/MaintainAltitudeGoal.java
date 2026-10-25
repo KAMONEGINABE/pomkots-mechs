@@ -13,14 +13,14 @@ public class MaintainAltitudeGoal extends SmallMobGoalBase {
       this.targetAltitude = targetAltitude;
    }
 
-   public void m_8037_() {
-      BlockPos currentPosition = this.mob.m_20183_();
-      double groundY = this.mob.m_9236_().m_5452_(Types.MOTION_BLOCKING, currentPosition).m_123342_();
-      double currentAltitude = this.mob.m_20186_() - groundY;
+   public void tick() {
+      BlockPos currentPosition = this.mob.blockPosition();
+      double groundY = this.mob.level().getHeightmapPos(Types.MOTION_BLOCKING, currentPosition).getY();
+      double currentAltitude = this.mob.getY() - groundY;
       if (this.isInRangeLower(currentAltitude)) {
-         this.mob.m_20256_(this.mob.m_20184_().m_82520_(0.0, this.speedModifier, 0.0));
+         this.mob.setDeltaMovement(this.mob.getDeltaMovement().add(0.0, this.speedModifier, 0.0));
       } else if (this.isInRangeUpper(currentAltitude)) {
-         this.mob.m_20256_(this.mob.m_20184_().m_82520_(0.0, -this.speedModifier, 0.0));
+         this.mob.setDeltaMovement(this.mob.getDeltaMovement().add(0.0, -this.speedModifier, 0.0));
       }
    }
 

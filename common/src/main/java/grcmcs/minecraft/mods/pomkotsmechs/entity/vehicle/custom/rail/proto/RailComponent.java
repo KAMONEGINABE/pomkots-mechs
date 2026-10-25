@@ -25,10 +25,10 @@ public class RailComponent {
    }
 
    public void tick() {
-      if (!this.ent.m_9236_().f_46443_) {
-         Level level = this.ent.m_9236_();
+      if (!this.ent.level().isClientSide) {
+         Level level = this.ent.level();
          if (!this.railBound) {
-            this.findInitialRail(level, this.ent.m_20183_()).ifPresent(pos -> {
+            this.findInitialRail(level, this.ent.blockPosition()).ifPresent(pos -> {
                this.railBound = true;
                this.currentRailPos = pos;
                this.previousRailPos = null;
@@ -41,21 +41,21 @@ public class RailComponent {
             return;
          }
 
-         Vec3 velocity = this.ent.m_20184_();
-         double remainingDistance = velocity.m_82553_();
-         Vec3 position = this.ent.m_20182_();
-         Vec3 accumulatedMovement = Vec3.f_82478_;
+         Vec3 velocity = this.ent.getDeltaMovement();
+         double remainingDistance = velocity.length();
+         Vec3 position = this.ent.position();
+         Vec3 accumulatedMovement = Vec3.ZERO;
 
          while (remainingDistance > 0.001 && this.currentRailPos != null) {
             List<BlockPos> neighbors = this.getConnectedRails(level, this.currentRailPos);
             BlockPos bestNext = null;
             double bestDot = -Double.MAX_VALUE;
-            Vec3 moveDir = velocity.m_82541_();
+            Vec3 moveDir = velocity.normalize();
 
             for (BlockPos neighbor : neighbors) {
                if (!neighbor.equals(this.previousRailPos) && this.isRail(level, neighbor)) {
-                  Vec3 dir = Vec3.m_82512_(neighbor).m_82546_(Vec3.m_82512_(this.currentRailPos)).m_82541_();
-                  double dot = moveDir.m_82526_(dir);
+                  Vec3 dir = Vec3.atCenterOf(neighbor).subtract(Vec3.atCenterOf(this.currentRailPos)).normalize();
+                  double dot = moveDir.dot(dir);
                   if (dot > bestDot) {
                      bestDot = dot;
                      bestNext = neighbor;
@@ -67,27 +67,27 @@ public class RailComponent {
                break;
             }
 
-            Vec3 nextCenter = Vec3.m_82512_(bestNext);
-            Vec3 currentCenter = Vec3.m_82512_(this.currentRailPos);
-            Vec3 segmentVec = nextCenter.m_82546_(currentCenter);
-            double segmentLength = segmentVec.m_82553_();
+            Vec3 nextCenter = Vec3.atCenterOf(bestNext);
+            Vec3 currentCenter = Vec3.atCenterOf(this.currentRailPos);
+            Vec3 segmentVec = nextCenter.subtract(currentCenter);
+            double segmentLength = segmentVec.length();
             if (segmentLength <= remainingDistance) {
-               accumulatedMovement = accumulatedMovement.m_82549_(segmentVec);
+               accumulatedMovement = accumulatedMovement.add(segmentVec);
                remainingDistance -= segmentLength;
                this.previousRailPos = this.currentRailPos;
                this.currentRailPos = bestNext;
             } else {
-               Vec3 step = segmentVec.m_82541_().m_82490_(remainingDistance);
-               accumulatedMovement = accumulatedMovement.m_82549_(step);
+               Vec3 step = segmentVec.normalize().scale(remainingDistance);
+               accumulatedMovement = accumulatedMovement.add(step);
                remainingDistance = 0.0;
             }
          }
 
-         if (accumulatedMovement.m_82556_() > 0.0) {
-            this.ent.m_20256_(accumulatedMovement);
+         if (accumulatedMovement.lengthSqr() > 0.0) {
+            this.ent.setDeltaMovement(accumulatedMovement);
             if (this.passedPoweredRail(level, Arrays.asList(this.currentRailPos, this.previousRailPos))) {
-               Vec3 boosted = this.ent.m_20184_().m_82490_(1.2);
-               this.ent.m_20256_(boosted);
+               Vec3 boosted = this.ent.getDeltaMovement().scale(1.2);
+               this.ent.setDeltaMovement(boosted);
             }
          } else {
             this.unbindRail();
@@ -106,8 +106,8 @@ public class RailComponent {
    }
 
    public boolean isRail(Level level, BlockPos pos) {
-      BlockState state = level.m_8055_(pos);
-      return state.m_60734_() instanceof BaseRailBlock;
+      BlockState state = level.getBlockState(pos);
+      return state.getBlock() instanceof BaseRailBlock;
    }
 
    public Optional<BlockPos> findInitialRail(Level level, BlockPos pos) {
@@ -115,13 +115,13 @@ public class RailComponent {
          return Optional.of(pos);
       }
 
-      BlockPos below = pos.m_7495_();
+      BlockPos below = pos.below();
       return this.isRail(level, below) ? Optional.of(below) : Optional.empty();
    }
 
    public RailShape getRailShape(Level level, BlockPos pos) {
-      BlockState state = level.m_8055_(pos);
-      return state.m_60734_() instanceof BaseRailBlock ? (RailShape)state.m_61143_(((BaseRailBlock)state.m_60734_()).m_7978_()) : RailShape.NORTH_SOUTH;
+      BlockState state = level.getBlockState(pos);
+      return state.getBlock() instanceof BaseRailBlock ? (RailShape)state.getValue(((BaseRailBlock)state.getBlock()).getShapeProperty()) : RailShape.NORTH_SOUTH;
    }
 
    public List<BlockPos> getConnectedRails(Level level, BlockPos pos) {
@@ -129,44 +129,44 @@ public class RailComponent {
       List<BlockPos> neighbors = new ArrayList<>();
       switch (shape) {
          case NORTH_SOUTH:
-            neighbors.add(pos.m_122012_());
-            neighbors.add(pos.m_122019_());
+            neighbors.add(pos.north());
+            neighbors.add(pos.south());
             break;
          case EAST_WEST:
-            neighbors.add(pos.m_122029_());
-            neighbors.add(pos.m_122024_());
+            neighbors.add(pos.east());
+            neighbors.add(pos.west());
             break;
          case ASCENDING_EAST:
-            neighbors.add(pos.m_122029_().m_7494_());
-            neighbors.add(pos.m_122024_());
+            neighbors.add(pos.east().above());
+            neighbors.add(pos.west());
             break;
          case ASCENDING_WEST:
-            neighbors.add(pos.m_122024_().m_7494_());
-            neighbors.add(pos.m_122029_());
+            neighbors.add(pos.west().above());
+            neighbors.add(pos.east());
             break;
          case ASCENDING_NORTH:
-            neighbors.add(pos.m_122012_().m_7494_());
-            neighbors.add(pos.m_122019_());
+            neighbors.add(pos.north().above());
+            neighbors.add(pos.south());
             break;
          case ASCENDING_SOUTH:
-            neighbors.add(pos.m_122019_().m_7494_());
-            neighbors.add(pos.m_122012_());
+            neighbors.add(pos.south().above());
+            neighbors.add(pos.north());
             break;
          case NORTH_EAST:
-            neighbors.add(pos.m_122012_());
-            neighbors.add(pos.m_122029_());
+            neighbors.add(pos.north());
+            neighbors.add(pos.east());
             break;
          case NORTH_WEST:
-            neighbors.add(pos.m_122012_());
-            neighbors.add(pos.m_122024_());
+            neighbors.add(pos.north());
+            neighbors.add(pos.west());
             break;
          case SOUTH_EAST:
-            neighbors.add(pos.m_122019_());
-            neighbors.add(pos.m_122029_());
+            neighbors.add(pos.south());
+            neighbors.add(pos.east());
             break;
          case SOUTH_WEST:
-            neighbors.add(pos.m_122019_());
-            neighbors.add(pos.m_122024_());
+            neighbors.add(pos.south());
+            neighbors.add(pos.west());
       }
 
       return neighbors;
@@ -174,7 +174,7 @@ public class RailComponent {
 
    public boolean passedPoweredRail(Level level, List<BlockPos> path) {
       for (BlockPos pos : path) {
-         if (pos != null && level.m_8055_(pos).m_60713_(Blocks.f_50030_) && (Boolean)level.m_8055_(pos).m_61143_(PoweredRailBlock.f_55215_)) {
+         if (pos != null && level.getBlockState(pos).is(Blocks.POWERED_RAIL) && (Boolean)level.getBlockState(pos).getValue(PoweredRailBlock.POWERED)) {
             return true;
          }
       }

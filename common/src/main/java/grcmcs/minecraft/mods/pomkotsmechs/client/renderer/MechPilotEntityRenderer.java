@@ -35,19 +35,19 @@ public class MechPilotEntityRenderer extends GeoEntityRenderer<MechPilotEntity> 
       float blue,
       float alpha
    ) {
-      if (animatable.m_20202_() instanceof PomkotsVehicle robot) {
+      if (animatable.getVehicle() instanceof PomkotsVehicle robot) {
          Vec3 seatPos = robot.getClientSeatPos(animatable);
-         poseStack.m_85836_();
-         if (robot instanceof Pmvc01Entity pmvc && pmvc.getHeadParts().m_41720_() instanceof BasePartsItem.Head h && h.isFullCovered()) {
-            poseStack.m_85837_(seatPos.m_7096_(), seatPos.m_7098_() - 1.0, seatPos.m_7094_());
+         poseStack.pushPose();
+         if (robot instanceof Pmvc01Entity pmvc && pmvc.getHeadParts().getItem() instanceof BasePartsItem.Head h && h.isFullCovered()) {
+            poseStack.translate(seatPos.x(), seatPos.y() - 1.0, seatPos.z());
          } else {
-            poseStack.m_85837_(seatPos.m_7096_(), seatPos.m_7098_(), seatPos.m_7094_());
+            poseStack.translate(seatPos.x(), seatPos.y(), seatPos.z());
          }
 
          super.actuallyRender(
             poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha
          );
-         poseStack.m_85849_();
+         poseStack.popPose();
       } else {
          super.actuallyRender(
             poseStack, animatable, model, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha

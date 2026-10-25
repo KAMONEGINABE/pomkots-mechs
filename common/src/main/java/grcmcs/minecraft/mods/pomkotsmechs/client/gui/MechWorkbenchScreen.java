@@ -165,26 +165,26 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
 
    public MechWorkbenchScreen(MechWorkbenchMenu menu, Inventory inventory, Component title) {
       super(menu, inventory, title);
-      this.f_97726_ = 480;
-      this.f_97727_ = 270;
-      this.f_97728_ = 44;
-      this.f_97731_ = this.f_97727_ - 94;
+      this.imageWidth = 480;
+      this.imageHeight = 270;
+      this.titleLabelX = 44;
+      this.inventoryLabelY = this.imageHeight - 94;
    }
 
-   protected void m_7856_() {
-      super.m_7856_();
-      this.panelX = this.f_97735_ + 8;
-      this.panelY = this.f_97736_ + 50;
-      this.cargoX = this.f_97735_ + 310;
-      this.cargoY = this.f_97736_ + 35;
-      this.playerInvX = this.f_97735_ + 310;
-      this.playerInvY = this.f_97736_ + 135;
+   protected void init() {
+      super.init();
+      this.panelX = this.leftPos + 8;
+      this.panelY = this.topPos + 50;
+      this.cargoX = this.leftPos + 310;
+      this.cargoY = this.topPos + 35;
+      this.playerInvX = this.leftPos + 310;
+      this.playerInvY = this.topPos + 135;
       this.specsX = this.panelX + this.panelWidth + 7;
       this.specsY = this.panelY + this.panelHeight + this.slotSize * 2 + 5 - this.specsHeight;
-      this.nameField = new EditBox(this.f_96547_, this.panelX + 120, this.f_97736_ + 15, 80, 14, Component.m_237113_("Name"));
-      this.nameField.m_94199_(32);
-      this.m_142416_(this.nameField);
-      this.circuitButton = (Button)this.m_142416_(
+      this.nameField = new EditBox(this.font, this.panelX + 120, this.topPos + 15, 80, 14, Component.literal("Name"));
+      this.nameField.setMaxLength(32);
+      this.addRenderableWidget(this.nameField);
+      this.circuitButton = (Button)this.addRenderableWidget(
          new ImageButton(
             this.specsX + this.specsWidth - 70 - 5,
             this.specsY + 2,
@@ -198,14 +198,14 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
             Utils.string2Component("{text.pomkotsmechs.gui.mechworkbench.circuit}"),
             btn -> {
                this.circuitInvActive = !this.circuitInvActive;
-               ((MechWorkbenchMenu)this.f_97732_).setActivationForCircuitSlots(this.circuitInvActive);
+               ((MechWorkbenchMenu)this.menu).setActivationForCircuitSlots(this.circuitInvActive);
             }
          )
       );
-      this.renameButton = (Button)this.m_142416_(
+      this.renameButton = (Button)this.addRenderableWidget(
          new ImageButton(
             this.panelX + 120 + 80 + 5,
-            this.f_97736_ + 15,
+            this.topPos + 15,
             70,
             14,
             TEXTURE_BUTTON,
@@ -214,13 +214,13 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
             70,
             56,
             Utils.string2Component("{text.pomkotsmechs.gui.mechworkbench.rename}"),
-            btn -> this.sendMechName(this.nameField.m_94155_())
+            btn -> this.sendMechName(this.nameField.getValue())
          )
       );
-      this.generateCardButton = (Button)this.m_142416_(
+      this.generateCardButton = (Button)this.addRenderableWidget(
          new ImageButton(
             this.playerInvX,
-            this.f_97736_ + 15,
+            this.topPos + 15,
             70,
             14,
             TEXTURE_BUTTON,
@@ -232,10 +232,10 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
             btn -> this.sendMechOperationAction("sgc")
          )
       );
-      this.textureColorButton = (Button)this.m_142416_(
+      this.textureColorButton = (Button)this.addRenderableWidget(
          new ImageButton(
-            this.f_97735_ + 400,
-            this.f_97736_ + 15,
+            this.leftPos + 400,
+            this.topPos + 15,
             70,
             14,
             TEXTURE_BUTTON,
@@ -243,12 +243,12 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
             0,
             70,
             56,
-            Component.m_237113_(this.selectedOption),
+            Component.literal(this.selectedOption),
             btn -> this.isDropdownOpen = !this.isDropdownOpen
          )
       );
       int buttonBottom = this.panelY + this.panelHeight + this.slotSize + 16 + 4;
-      this.repairMechButton = (Button)this.m_142416_(
+      this.repairMechButton = (Button)this.addRenderableWidget(
          new ImageButton(
             this.playerInvX,
             buttonBottom - 14,
@@ -263,7 +263,7 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
             btn -> this.sendMechOperationAction("rpm")
          )
       );
-      this.autoSupply = (Button)this.m_142416_(
+      this.autoSupply = (Button)this.addRenderableWidget(
          new ImageButton(
             this.playerInvX + 90,
             buttonBottom - 14,
@@ -279,55 +279,55 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
          )
       );
       this.mech = null;
-      ((MechWorkbenchMenu)this.f_97732_).setActivationForCircuitSlots(false);
+      ((MechWorkbenchMenu)this.menu).setActivationForCircuitSlots(false);
       this.rebuildVisibleParts();
    }
 
-   protected void m_7286_(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-      if (!this.nameFieldInited && this.mech != null && this.mech.m_8077_()) {
-         this.nameField.m_94144_(this.mech.m_7770_().getString());
+   protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+      if (!this.nameFieldInited && this.mech != null && this.mech.hasCustomName()) {
+         this.nameField.setValue(this.mech.getCustomName().getString());
          this.nameFieldInited = true;
       }
 
-      if (((MechWorkbenchMenu)this.f_97732_).getMode() == MechWorkbenchMenu.MODE_VIEW) {
-         this.renameButton.f_93624_ = false;
-         this.generateCardButton.f_93624_ = false;
-         this.repairMechButton.f_93624_ = false;
-         this.textureColorButton.f_93624_ = false;
-         this.nameField.f_93623_ = false;
+      if (((MechWorkbenchMenu)this.menu).getMode() == MechWorkbenchMenu.MODE_VIEW) {
+         this.renameButton.visible = false;
+         this.generateCardButton.visible = false;
+         this.repairMechButton.visible = false;
+         this.textureColorButton.visible = false;
+         this.nameField.active = false;
       }
 
-      guiGraphics.m_280168_().m_85836_();
-      guiGraphics.m_280168_().m_252880_(0.0F, 0.0F, 0.0F);
-      if (((MechWorkbenchMenu)this.f_97732_).getMode() == MechWorkbenchMenu.MODE_ASSEMBLE) {
+      guiGraphics.pose().pushPose();
+      guiGraphics.pose().translate(0.0F, 0.0F, 0.0F);
+      if (((MechWorkbenchMenu)this.menu).getMode() == MechWorkbenchMenu.MODE_ASSEMBLE) {
          RenderSystem.setShaderTexture(0, TEXTURE_BG_1);
-         guiGraphics.m_280411_(TEXTURE_BG_1, 0, 0, this.f_96543_, this.f_96544_, 0.0F, 0.0F, 960, 540, 960, 540);
+         guiGraphics.blit(TEXTURE_BG_1, 0, 0, this.width, this.height, 0.0F, 0.0F, 960, 540, 960, 540);
       }
 
       String title;
-      if (((MechWorkbenchMenu)this.f_97732_).getMode() == MechWorkbenchMenu.MODE_VIEW) {
+      if (((MechWorkbenchMenu)this.menu).getMode() == MechWorkbenchMenu.MODE_VIEW) {
          title = "Mech Resupply";
       } else {
          title = "Mech Assemble";
       }
 
-      guiGraphics.m_280056_(this.f_96547_, title, this.panelX, this.f_97736_ + 15, -1, false);
+      guiGraphics.drawString(this.font, title, this.panelX, this.topPos + 15, -1, false);
       this.renderCircuitSlotHighlights(guiGraphics);
-      guiGraphics.m_280168_().m_85849_();
+      guiGraphics.pose().popPose();
    }
 
    private void renderCircuitSlotHighlights(GuiGraphics guiGraphics) {
-      ItemStack carried = ((MechWorkbenchMenu)this.f_97732_).m_142621_();
-      if (carried.m_41720_() instanceof CircuitItem) {
+      ItemStack carried = ((MechWorkbenchMenu)this.menu).getCarried();
+      if (carried.getItem() instanceof CircuitItem) {
          CircuitPrefix carriedPrefix = CircuitItemStackHelper.getPrefixOrDefault(carried);
 
-         for (Slot slot : ((MechWorkbenchMenu)this.f_97732_).f_38839_) {
+         for (Slot slot : ((MechWorkbenchMenu)this.menu).slots) {
             if (slot instanceof MechWorkbenchMenu.MechCircuitSlot circuitSlot
                && !circuitSlot.isDisablePlace()
                && circuitSlot.acceptsCircuitPrefix(carriedPrefix)
-               && !slot.m_6657_()) {
-               int x = this.f_97735_ + slot.f_40220_;
-               int y = this.f_97736_ + slot.f_40221_;
+               && !slot.hasItem()) {
+               int x = this.leftPos + slot.x;
+               int y = this.topPos + slot.y;
                renderSlotHighlight(guiGraphics, x, y);
             }
          }
@@ -337,11 +337,11 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
    private static void renderSlotHighlight(GuiGraphics guiGraphics, int x, int y) {
       int fillColor = 1426063615;
       int borderColor = -866822657;
-      guiGraphics.m_280509_(x, y, x + 16, y + 16, fillColor);
-      guiGraphics.m_280509_(x - 1, y - 1, x + 17, y, borderColor);
-      guiGraphics.m_280509_(x - 1, y + 16, x + 17, y + 17, borderColor);
-      guiGraphics.m_280509_(x - 1, y, x, y + 16, borderColor);
-      guiGraphics.m_280509_(x + 16, y, x + 17, y + 16, borderColor);
+      guiGraphics.fill(x, y, x + 16, y + 16, fillColor);
+      guiGraphics.fill(x - 1, y - 1, x + 17, y, borderColor);
+      guiGraphics.fill(x - 1, y + 16, x + 17, y + 17, borderColor);
+      guiGraphics.fill(x - 1, y, x, y + 16, borderColor);
+      guiGraphics.fill(x + 16, y, x + 17, y + 16, borderColor);
    }
 
    private void renderBgTexture(ResourceLocation texture, int x, int y, int width, int height, GuiGraphics guiGraphics) {
@@ -352,14 +352,14 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
       RenderSystem.enableBlend();
       RenderSystem.setShaderTexture(0, texture);
-      guiGraphics.m_280163_(texture, x, y, 0.0F, 0.0F, width, height, width, height);
+      guiGraphics.blit(texture, x, y, 0.0F, 0.0F, width, height, width, height);
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 
-   public void m_88315_(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-      if (this.f_96541_ != null && this.f_96541_.f_91073_ != null && this.mech == null) {
-         for (Entity entity : this.f_96541_.f_91073_.m_104735_()) {
-            if (entity instanceof Pmvc01Entity m && (short)entity.m_20148_().hashCode() == ((MechWorkbenchMenu)this.f_97732_).getEntityId()) {
+   public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+      if (this.minecraft != null && this.minecraft.level != null && this.mech == null) {
+         for (Entity entity : this.minecraft.level.entitiesForRendering()) {
+            if (entity instanceof Pmvc01Entity m && (short)entity.getUUID().hashCode() == ((MechWorkbenchMenu)this.menu).getEntityId()) {
                this.mech = m;
                this.rebuildVisibleParts();
             }
@@ -367,30 +367,30 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
       }
 
       if (this.mech != null) {
-         this.m_280273_(guiGraphics);
-         super.m_88315_(guiGraphics, mouseX, mouseY, partialTick);
+         this.renderBackground(guiGraphics);
+         super.render(guiGraphics, mouseX, mouseY, partialTick);
          if (!this.circuitInvActive) {
             this.renderMech3DModel(guiGraphics);
          }
 
-         guiGraphics.m_280168_().m_85836_();
-         guiGraphics.m_280168_().m_252880_(0.0F, 0.0F, 100.0F);
+         guiGraphics.pose().pushPose();
+         guiGraphics.pose().translate(0.0F, 0.0F, 100.0F);
          this.renderPartsSelectPanel(guiGraphics, mouseX, mouseY);
          this.renderConsumablePanel(guiGraphics, this.panelX, this.panelY + this.panelHeight + this.slotSize + 4);
          this.renderCargoPanel(guiGraphics);
          this.renderPlayerInventoryPanel(guiGraphics);
          this.renderCircuitInventoryPanel(guiGraphics);
-         guiGraphics.m_280168_().m_85849_();
-         guiGraphics.m_280168_().m_85836_();
-         guiGraphics.m_280168_().m_252880_(0.0F, 0.0F, 300.0F);
+         guiGraphics.pose().popPose();
+         guiGraphics.pose().pushPose();
+         guiGraphics.pose().translate(0.0F, 0.0F, 300.0F);
          this.renderSpecsPanel(guiGraphics);
-         guiGraphics.m_280168_().m_85849_();
-         if (((MechWorkbenchMenu)this.f_97732_).getMode() == MechWorkbenchMenu.MODE_ASSEMBLE) {
-            this.nameField.m_88315_(guiGraphics, mouseX, mouseY, partialTick);
+         guiGraphics.pose().popPose();
+         if (((MechWorkbenchMenu)this.menu).getMode() == MechWorkbenchMenu.MODE_ASSEMBLE) {
+            this.nameField.render(guiGraphics, mouseX, mouseY, partialTick);
          }
 
          if (!this.isDropdownOpen) {
-            this.m_280072_(guiGraphics, mouseX, mouseY);
+            this.renderTooltip(guiGraphics, mouseX, mouseY);
          }
 
          if (this.isDropdownOpen) {
@@ -410,10 +410,10 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
    private void rebuildVisibleParts() {
       this.visiblePartSlots.clear();
 
-      for (int i = 0; i < ((MechWorkbenchMenu)this.f_97732_).f_38839_.size(); i++) {
-         Slot slot = ((MechWorkbenchMenu)this.f_97732_).m_38853_(i);
-         ItemStack stack = slot.m_7993_();
-         if (!stack.m_41619_() && this.matchesCurrentTab(stack)) {
+      for (int i = 0; i < ((MechWorkbenchMenu)this.menu).slots.size(); i++) {
+         Slot slot = ((MechWorkbenchMenu)this.menu).getSlot(i);
+         ItemStack stack = slot.getItem();
+         if (!stack.isEmpty() && this.matchesCurrentTab(stack)) {
             this.visiblePartSlots.add(i);
          }
       }
@@ -423,7 +423,7 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
    }
 
    private boolean matchesCurrentTab(ItemStack stack) {
-      Item item = stack.m_41720_();
+      Item item = stack.getItem();
 
       return switch (this.currentTab) {
          case HEAD -> item instanceof BasePartsItem.Head;
@@ -473,7 +473,7 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
    private void renderPartList(GuiGraphics guiGraphics, int mouseX, int mouseY) {
       int startX = this.panelX + 4;
       int startY = this.panelY + 4;
-      guiGraphics.m_280588_(this.panelX, this.panelY, this.panelX + this.panelWidth, this.panelY + this.panelHeight);
+      guiGraphics.enableScissor(this.panelX, this.panelY, this.panelX + this.panelWidth, this.panelY + this.panelHeight);
       ItemStack hoverItem = null;
 
       for (int index = 0; index < this.visiblePartSlots.size(); index++) {
@@ -489,28 +489,28 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
             }
 
             Integer slotIndex = this.visiblePartSlots.get(index);
-            ItemStack stack = ItemStack.f_41583_;
+            ItemStack stack = ItemStack.EMPTY;
             if (slotIndex >= 0) {
-               stack = ((MechWorkbenchMenu)this.f_97732_).m_38853_(slotIndex).m_7993_();
+               stack = ((MechWorkbenchMenu)this.menu).getSlot(slotIndex).getItem();
             }
 
-            if (stack.m_41619_()) {
-               guiGraphics.m_280056_(this.f_96547_, "Empty", x + 10, y + 18, -1, false);
+            if (stack.isEmpty()) {
+               guiGraphics.drawString(this.font, "Empty", x + 10, y + 18, -1, false);
             } else {
                this.renderPartPreview(guiGraphics, stack, x + 24, y + 18, 2);
             }
 
             this.renderEquippedSlotTag(guiGraphics, slotIndex, x, y);
-            if (stack.m_41619_()) {
-               guiGraphics.m_280056_(this.f_96547_, "-", x + 4, y + 36 + 2, -1, false);
+            if (stack.isEmpty()) {
+               guiGraphics.drawString(this.font, "-", x + 4, y + 36 + 2, -1, false);
             } else {
-               String name = stack.m_41786_().getString();
+               String name = stack.getHoverName().getString();
                if (name.contains("(")) {
                   name = name.substring(0, name.indexOf(40));
                }
 
-               FormattedText seq = this.f_96547_.m_92854_(Component.m_237113_(name), 44);
-               guiGraphics.m_280056_(this.f_96547_, seq.getString(), x + 4, y + 36 + 2, -1, false);
+               FormattedText seq = this.font.substrByWidth(Component.literal(name), 44);
+               guiGraphics.drawString(this.font, seq.getString(), x + 4, y + 36 + 2, -1, false);
             }
 
             if (hover) {
@@ -519,11 +519,11 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
          }
       }
 
-      guiGraphics.m_280618_();
+      guiGraphics.disableScissor();
       if (hoverItem != null
-         && !hoverItem.m_41619_()
+         && !hoverItem.isEmpty()
          && this.mouseInRange(mouseX, mouseY, this.panelX, this.panelY, this.panelX + this.panelWidth, this.panelY + this.panelHeight)) {
-         guiGraphics.m_280153_(this.f_96547_, hoverItem, mouseX, mouseY);
+         guiGraphics.renderTooltip(this.font, hoverItem, mouseX, mouseY);
       }
    }
 
@@ -540,12 +540,12 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
             case 6, 8, 10 -> -8328961;
             default -> -25384;
          };
-         int textWidth = this.f_96547_.m_92895_(label);
+         int textWidth = this.font.width(label);
          int tagWidth = textWidth + 4;
          int tagX = cardX + 48 - tagWidth - 2;
          int tagY = cardY + 2;
-         guiGraphics.m_280509_(tagX, tagY, tagX + tagWidth, tagY + 11, -871360480);
-         guiGraphics.m_280056_(this.f_96547_, label, tagX + 2, tagY + 1, textColor, false);
+         guiGraphics.fill(tagX, tagY, tagX + tagWidth, tagY + 11, -871360480);
+         guiGraphics.drawString(this.font, label, tagX + 2, tagY + 1, textColor, false);
       }
    }
 
@@ -554,26 +554,26 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
    }
 
    private void renderPartPreview(GuiGraphics guiGraphics, ItemStack stack, int x, int y, int scale) {
-      guiGraphics.m_280168_().m_85836_();
-      guiGraphics.m_280168_().m_252880_(x, y, 50.0F);
+      guiGraphics.pose().pushPose();
+      guiGraphics.pose().translate(x, y, 50.0F);
       this.renderParts(guiGraphics, stack);
-      guiGraphics.m_280168_().m_85849_();
+      guiGraphics.pose().popPose();
    }
 
    private void renderParts(GuiGraphics guiGraphics, ItemStack stack) {
-      Minecraft mc = Minecraft.m_91087_();
-      ItemRenderer itemRenderer = mc.m_91291_();
-      PoseStack pose = guiGraphics.m_280168_();
-      pose.m_85836_();
-      if (!(stack.m_41720_() instanceof BasePartsItem.Weapon) && !(stack.m_41720_() instanceof BasePartsItem.Extension)) {
-         pose.m_252781_(Axis.f_252529_.m_252977_(-25.0F));
-         pose.m_252781_(Axis.f_252436_.m_252977_(45.0F));
+      Minecraft mc = Minecraft.getInstance();
+      ItemRenderer itemRenderer = mc.getItemRenderer();
+      PoseStack pose = guiGraphics.pose();
+      pose.pushPose();
+      if (!(stack.getItem() instanceof BasePartsItem.Weapon) && !(stack.getItem() instanceof BasePartsItem.Extension)) {
+         pose.mulPose(Axis.XP.rotationDegrees(-25.0F));
+         pose.mulPose(Axis.YP.rotationDegrees(45.0F));
       }
 
-      pose.m_85841_(36.0F, -36.0F, 36.0F);
-      BakedModel model = itemRenderer.m_174264_(stack, null, null, 0);
-      itemRenderer.m_115143_(stack, ItemDisplayContext.GUI, false, pose, guiGraphics.m_280091_(), 15728880, OverlayTexture.f_118083_, model);
-      pose.m_85849_();
+      pose.scale(36.0F, -36.0F, 36.0F);
+      BakedModel model = itemRenderer.getModel(stack, null, null, 0);
+      itemRenderer.render(stack, ItemDisplayContext.GUI, false, pose, guiGraphics.bufferSource(), 15728880, OverlayTexture.NO_OVERLAY, model);
+      pose.popPose();
    }
 
    private void renderPartList2(GuiGraphics guiGraphics, int mouseX, int mouseY) {
@@ -583,11 +583,11 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
       for (int i = 0; i < this.visiblePartSlots.size(); i++) {
          int y = startY + i * 22 - this.scrollOffset;
          if (y >= this.panelY && y <= this.panelY + this.panelHeight - 22) {
-            Slot slot = ((MechWorkbenchMenu)this.f_97732_).m_38853_(this.visiblePartSlots.get(i));
-            ItemStack stack = slot.m_7993_();
+            Slot slot = ((MechWorkbenchMenu)this.menu).getSlot(this.visiblePartSlots.get(i));
+            ItemStack stack = slot.getItem();
             boolean hover = mouseX >= startX && mouseX < startX + this.panelWidth - 12 && mouseY >= y && mouseY < y + 22;
             if (hover) {
-               guiGraphics.m_280153_(this.f_96547_, stack, mouseX, mouseY);
+               guiGraphics.renderTooltip(this.font, stack, mouseX, mouseY);
             }
 
             boolean equippedNow = this.currentTab.mechSlot == this.visiblePartSlots.get(i);
@@ -600,14 +600,14 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
                bg = -1440603614;
             }
 
-            guiGraphics.m_280509_(startX, y, startX + this.panelWidth - 12, y + 22, bg);
-            guiGraphics.m_280480_(stack, startX + 3, y + 3);
-            String name = stack.m_41786_().getString();
+            guiGraphics.fill(startX, y, startX + this.panelWidth - 12, y + 22, bg);
+            guiGraphics.renderItem(stack, startX + 3, y + 3);
+            String name = stack.getHoverName().getString();
             if (name.contains("(")) {
                name = name.substring(0, name.indexOf(40));
             }
 
-            guiGraphics.m_280614_(this.f_96547_, Component.m_237113_(name), startX + 24, y + 7, -1, false);
+            guiGraphics.drawString(this.font, Component.literal(name), startX + 24, y + 7, -1, false);
          }
       }
    }
@@ -631,7 +631,7 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
       for (int i = 0; i < 6; i++) {
          int x = startX + i * this.slotSize;
          this.renderBgTexture(TEXTURE_ITEM_CONTAINER, x + 1, y + 1, 16, 16, guiGraphics);
-         if (!((MechWorkbenchMenu)this.f_97732_).m_38853_(12 + i).m_6657_()) {
+         if (!((MechWorkbenchMenu)this.menu).getSlot(12 + i).hasItem()) {
             ResourceLocation icon;
             if (i == 4) {
                icon = TEXTURE_ICON_FUEL;
@@ -648,37 +648,37 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
 
    private void renderCargoPanel(GuiGraphics guiGraphics) {
       this.renderBgTexture(TEXTURE_PANEL_INV_MECH, this.cargoX, this.cargoY, this.cargoWidth, this.cargoHeight, guiGraphics);
-      guiGraphics.m_280488_(this.f_96547_, "Mech Cargo", this.cargoX + 18, this.cargoY + 4, -1);
+      guiGraphics.drawString(this.font, "Mech Cargo", this.cargoX + 18, this.cargoY + 4, -1);
    }
 
    private void renderPlayerInventoryPanel(GuiGraphics guiGraphics) {
       this.renderBgTexture(TEXTURE_PANEL_INV_PLAYER, this.playerInvX, this.playerInvY, this.playerInvWidth, this.playerInvHeight, guiGraphics);
-      guiGraphics.m_280488_(this.f_96547_, "Player Inventory", this.playerInvX + 18, this.playerInvY + 4, -1);
+      guiGraphics.drawString(this.font, "Player Inventory", this.playerInvX + 18, this.playerInvY + 4, -1);
    }
 
    private void renderCircuitInventoryPanel(GuiGraphics guiGraphics) {
       if (this.circuitInvActive) {
          this.renderBgTexture(TEXTURE_PANEL_CIRCUIT, this.specsX, this.cargoY, 180, 132, guiGraphics);
-         guiGraphics.m_280488_(this.f_96547_, "Additional Circuits", this.specsX + 18, this.cargoY + 4, -1);
+         guiGraphics.drawString(this.font, "Additional Circuits", this.specsX + 18, this.cargoY + 4, -1);
          int offX = this.specsX + 22;
          int offY = this.cargoY + 3;
          int rowH = 19;
-         guiGraphics.m_280488_(this.f_96547_, "- Balance", offX, offY + rowH, -1);
-         guiGraphics.m_280488_(this.f_96547_, "- Offence", offX, offY + rowH * 2, -1);
-         guiGraphics.m_280488_(this.f_96547_, "- Defence", offX, offY + rowH * 3, -1);
-         guiGraphics.m_280488_(this.f_96547_, "- Mobility", offX, offY + rowH * 4, -1);
-         guiGraphics.m_280488_(this.f_96547_, "- Energy", offX, offY + rowH * 5, -1);
-         guiGraphics.m_280488_(this.f_96547_, "- Utility", offX, offY + rowH * 6, -1);
+         guiGraphics.drawString(this.font, "- Balance", offX, offY + rowH, -1);
+         guiGraphics.drawString(this.font, "- Offence", offX, offY + rowH * 2, -1);
+         guiGraphics.drawString(this.font, "- Defence", offX, offY + rowH * 3, -1);
+         guiGraphics.drawString(this.font, "- Mobility", offX, offY + rowH * 4, -1);
+         guiGraphics.drawString(this.font, "- Energy", offX, offY + rowH * 5, -1);
+         guiGraphics.drawString(this.font, "- Utility", offX, offY + rowH * 6, -1);
       }
    }
 
    private void renderSpecsPanel(GuiGraphics guiGraphics) {
       this.renderBgTexture(TEXTURE_PANEL_SPEC, this.specsX, this.specsY, this.specsWidth, this.specsHeight, guiGraphics);
-      guiGraphics.m_280488_(this.f_96547_, "Specs", this.specsX + 18, this.specsY + 4, -1);
+      guiGraphics.drawString(this.font, "Specs", this.specsX + 18, this.specsY + 4, -1);
       int offsetX = this.specsX + 4;
       int offsetY = this.specsY + 20;
       this.drawParams(
-         0, offsetX, offsetY, "{text.pomkotsmechs.gui.mechworkbench.hp}", (int)this.mech.m_21223_() + "/" + this.mech.getDurability(), false, guiGraphics
+         0, offsetX, offsetY, "{text.pomkotsmechs.gui.mechworkbench.hp}", (int)this.mech.getHealth() + "/" + this.mech.getDurability(), false, guiGraphics
       );
       this.drawParams(
          1,
@@ -721,24 +721,24 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
       int yoff = offY;
       int color = alert ? 16711680 : 16777215;
       Component c = Utils.string2Component(paramName);
-      guiGraphics.m_280056_(this.f_96547_, c.getString(), xoff1 + 1, yoff + 12 * (row % 3), color, false);
-      guiGraphics.m_280056_(this.f_96547_, paramValue, xoff2 + 4, yoff + 12 * (row % 3), color, false);
+      guiGraphics.drawString(this.font, c.getString(), xoff1 + 1, yoff + 12 * (row % 3), color, false);
+      guiGraphics.drawString(this.font, paramValue, xoff2 + 4, yoff + 12 * (row % 3), color, false);
    }
 
-   public boolean m_6375_(double mouseX, double mouseY, int button) {
-      if (!this.nameField.m_5953_(mouseX, mouseY)) {
-         this.nameField.m_93692_(false);
+   public boolean mouseClicked(double mouseX, double mouseY, int button) {
+      if (!this.nameField.isMouseOver(mouseX, mouseY)) {
+         this.nameField.setFocused(false);
       }
 
       if (this.isDropdownOpen) {
-         int x = this.f_97735_ + 400;
-         int startY = this.f_97736_ + 15 + 14;
+         int x = this.leftPos + 400;
+         int startY = this.topPos + 15 + 14;
 
          for (int i = 0; i < this.options.size(); i++) {
             int y = startY + i * 14;
             if (mouseX >= x && mouseX <= x + 70 && mouseY >= y && mouseY <= y + 14) {
                this.selectedOption = this.options.get(i);
-               this.textureColorButton.m_93666_(Component.m_237113_(this.selectedOption));
+               this.textureColorButton.setMessage(Component.literal(this.selectedOption));
                this.sendTextureColor2Server(i);
                this.isDropdownOpen = false;
                return true;
@@ -780,7 +780,7 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
          }
       }
 
-      if (((MechWorkbenchMenu)this.f_97732_).getMode() == MechWorkbenchMenu.MODE_ASSEMBLE) {
+      if (((MechWorkbenchMenu)this.menu).getMode() == MechWorkbenchMenu.MODE_ASSEMBLE) {
          int startX = this.panelX + 6;
          int startY = this.panelY + 6;
 
@@ -821,15 +821,15 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
          this.lastMouseY = mouseY;
          return true;
       } else {
-         return super.m_6375_(mouseX, mouseY, button);
+         return super.mouseClicked(mouseX, mouseY, button);
       }
    }
 
    private boolean hasInventorySpace() {
-      Inventory inv = this.f_96541_.f_91074_.m_150109_();
+      Inventory inv = this.minecraft.player.getInventory();
 
-      for (int i = 0; i < inv.m_6643_(); i++) {
-         if (inv.m_8020_(i).m_41619_()) {
+      for (int i = 0; i < inv.getContainerSize(); i++) {
+         if (inv.getItem(i).isEmpty()) {
             return true;
          }
       }
@@ -837,29 +837,29 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
       return false;
    }
 
-   public boolean m_7979_(double mouseX, double mouseY, int button, double dragX, double dragY) {
+   public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
       if (this.draggingModel) {
          float dx = (float)(mouseX - this.lastMouseX);
          float dy = (float)(mouseY - this.lastMouseY);
          this.modelYaw -= dx * 1.2F;
          this.modelPitch -= dy * 0.7F;
-         this.modelPitch = Mth.m_14036_(this.modelPitch, -40.0F, 40.0F);
+         this.modelPitch = Mth.clamp(this.modelPitch, -40.0F, 40.0F);
          this.lastMouseX = mouseX;
          this.lastMouseY = mouseY;
          return true;
       } else {
-         return super.m_7979_(mouseX, mouseY, button, dragX, dragY);
+         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
       }
    }
 
-   public boolean m_6348_(double mouseX, double mouseY, int button) {
+   public boolean mouseReleased(double mouseX, double mouseY, int button) {
       this.draggingModel = false;
-      return super.m_6348_(mouseX, mouseY, button);
+      return super.mouseReleased(mouseX, mouseY, button);
    }
 
-   public boolean m_6050_(double mouseX, double mouseY, double delta) {
+   public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
       this.scrollOffset -= (int)(delta * 12.0);
-      this.scrollOffset = Mth.m_14045_(this.scrollOffset, 0, this.maxScroll);
+      this.scrollOffset = Mth.clamp(this.scrollOffset, 0, this.maxScroll);
       return true;
    }
 
@@ -877,54 +877,54 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
       Quaternionf baseRot = new Quaternionf().rotateZ((float) Math.PI);
       Quaternionf pitchRot = new Quaternionf().rotateX(pitch * (float) (Math.PI / 180.0));
       baseRot.mul(pitchRot);
-      float bodyRot = entity.f_20883_;
-      float yRot = entity.m_146908_();
-      float xRot = entity.m_146909_();
-      float headRotO = entity.f_20886_;
-      float headRot = entity.f_20885_;
-      entity.f_20883_ = 180.0F + yaw;
-      entity.m_146922_(180.0F + yaw);
-      entity.m_146926_(-pitch);
-      entity.f_20885_ = entity.m_146908_();
-      entity.f_20886_ = entity.m_146908_();
+      float bodyRot = entity.yBodyRot;
+      float yRot = entity.getYRot();
+      float xRot = entity.getXRot();
+      float headRotO = entity.yHeadRotO;
+      float headRot = entity.yHeadRot;
+      entity.yBodyRot = 180.0F + yaw;
+      entity.setYRot(180.0F + yaw);
+      entity.setXRot(-pitch);
+      entity.yHeadRot = entity.getYRot();
+      entity.yHeadRotO = entity.getYRot();
       renderEntityInInventory(guiGraphics, x, y, scale, baseRot, null, entity);
-      entity.f_20883_ = bodyRot;
-      entity.m_146922_(yRot);
-      entity.m_146926_(xRot);
-      entity.f_20886_ = headRotO;
-      entity.f_20885_ = headRot;
+      entity.yBodyRot = bodyRot;
+      entity.setYRot(yRot);
+      entity.setXRot(xRot);
+      entity.yHeadRotO = headRotO;
+      entity.yHeadRot = headRot;
    }
 
    public static void renderEntityInInventory(
       GuiGraphics guiGraphics, int i, int j, int k, Quaternionf quaternionf, @Nullable Quaternionf quaternionf2, LivingEntity livingEntity
    ) {
-      guiGraphics.m_280168_().m_85836_();
-      guiGraphics.m_280168_().m_85837_(i, j, 50.0);
-      guiGraphics.m_280168_().m_252931_(new Matrix4f().scaling(k, k, -k));
-      guiGraphics.m_280168_().m_252781_(quaternionf);
-      Lighting.m_166384_();
-      EntityRenderDispatcher entityRenderDispatcher = Minecraft.m_91087_().m_91290_();
+      guiGraphics.pose().pushPose();
+      guiGraphics.pose().translate(i, j, 50.0);
+      guiGraphics.pose().mulPoseMatrix(new Matrix4f().scaling(k, k, -k));
+      guiGraphics.pose().mulPose(quaternionf);
+      Lighting.setupForEntityInInventory();
+      EntityRenderDispatcher entityRenderDispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
       if (quaternionf2 != null) {
          quaternionf2.conjugate();
-         entityRenderDispatcher.m_252923_(quaternionf2);
+         entityRenderDispatcher.overrideCameraOrientation(quaternionf2);
       }
 
-      entityRenderDispatcher.m_114468_(false);
+      entityRenderDispatcher.setRenderShadow(false);
       RenderSystem.runAsFancy(
-         () -> entityRenderDispatcher.m_114384_(livingEntity, 0.0, 0.0, 0.0, 0.0F, 1.0F, guiGraphics.m_280168_(), guiGraphics.m_280091_(), 15728880)
+         () -> entityRenderDispatcher.render(livingEntity, 0.0, 0.0, 0.0, 0.0F, 1.0F, guiGraphics.pose(), guiGraphics.bufferSource(), 15728880)
       );
-      guiGraphics.m_280262_();
-      entityRenderDispatcher.m_114468_(true);
-      guiGraphics.m_280168_().m_85849_();
-      Lighting.m_84931_();
+      guiGraphics.flush();
+      entityRenderDispatcher.setRenderShadow(true);
+      guiGraphics.pose().popPose();
+      Lighting.setupFor3DItems();
    }
 
    private int modelAreaLeft() {
-      return this.f_97735_ + this.modelAreaX;
+      return this.leftPos + this.modelAreaX;
    }
 
    private int modelAreaTop() {
-      return this.f_97736_ + this.modelAreaY;
+      return this.topPos + this.modelAreaY;
    }
 
    private int modelAreaRight() {
@@ -936,29 +936,29 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
    }
 
    private void renderDropdown(GuiGraphics g, int mouseX, int mouseY) {
-      g.m_280168_().m_85836_();
-      g.m_280168_().m_252880_(0.0F, 0.0F, 400.0F);
-      int x = this.f_97735_ + 400;
-      int startY = this.f_97736_ + 15 + 14;
+      g.pose().pushPose();
+      g.pose().translate(0.0F, 0.0F, 400.0F);
+      int x = this.leftPos + 400;
+      int startY = this.topPos + 15 + 14;
 
       for (int i = 0; i < this.options.size(); i++) {
          int y = startY + i * 14;
          boolean hovered = mouseX >= x && mouseX <= x + 70 && mouseY >= y && mouseY <= y + 14;
          int bgColor = hovered ? -10066330 : -16777216;
-         g.m_280509_(x, y, x + 70, y + 14, bgColor);
-         g.m_280056_(this.f_96547_, this.options.get(i), x + 3, y + 4, 16777215, false);
+         g.fill(x, y, x + 70, y + 14, bgColor);
+         g.drawString(this.font, this.options.get(i), x + 3, y + 4, 16777215, false);
       }
 
-      g.m_280168_().m_85849_();
+      g.pose().popPose();
    }
 
-   protected void m_280003_(GuiGraphics guiGraphics, int i, int j) {
+   protected void renderLabels(GuiGraphics guiGraphics, int i, int j) {
    }
 
    private void sendServerEquip(int sourceSlot) {
       if (this.mech != null) {
          FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-         buf.writeInt(((MechWorkbenchMenu)this.f_97732_).f_38840_);
+         buf.writeInt(((MechWorkbenchMenu)this.menu).containerId);
          buf.writeInt(this.currentTab.mechSlot);
          buf.writeInt(sourceSlot);
          buf.writeInt(1);
@@ -969,7 +969,7 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
    private void sendServerUnequip() {
       if (this.mech != null) {
          FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-         buf.writeInt(((MechWorkbenchMenu)this.f_97732_).f_38840_);
+         buf.writeInt(((MechWorkbenchMenu)this.menu).containerId);
          buf.writeInt(this.currentTab.mechSlot);
          buf.writeInt(0);
          buf.writeInt(0);
@@ -980,7 +980,7 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
    private void sendTextureColor2Server(int color) {
       if (this.mech != null) {
          FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-         buf.m_130077_(this.mech.m_20148_());
+         buf.writeUUID(this.mech.getUUID());
          buf.writeInt(color);
          NetworkManager.sendToServer(PomkotsMechs.id("ctx"), buf);
       }
@@ -989,7 +989,7 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
    private void sendMechOperationAction(String message) {
       if (this.mech != null) {
          FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-         buf.m_130077_(this.mech.m_20148_());
+         buf.writeUUID(this.mech.getUUID());
          NetworkManager.sendToServer(PomkotsMechs.id(message), buf);
       }
    }
@@ -997,15 +997,15 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
    private void sendMechName(String mechName) {
       if (this.mech != null) {
          FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-         buf.m_130077_(this.mech.m_20148_());
-         buf.m_130070_(mechName);
+         buf.writeUUID(this.mech.getUUID());
+         buf.writeUtf(mechName);
          NetworkManager.sendToServer(PomkotsMechs.id("ccn"), buf);
       }
    }
 
-   protected void m_181908_() {
-      super.m_181908_();
-      int rev = ((MechWorkbenchMenu)this.f_97732_).getInventoryRevision();
+   protected void containerTick() {
+      super.containerTick();
+      int rev = ((MechWorkbenchMenu)this.menu).getInventoryRevision();
       if (rev != this.lastInventoryRevision) {
          this.lastInventoryRevision = rev;
          this.rebuildVisibleParts();
@@ -1013,24 +1013,24 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
    }
 
    private void renderCustomTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-      if (((MechWorkbenchMenu)this.f_97732_).m_142621_().m_41619_() && this.f_97734_ != null && this.f_97734_.m_6657_()) {
-         guiGraphics.m_280168_().m_85836_();
-         guiGraphics.m_280168_().m_252880_(0.0F, 0.0F, 400.0F);
-         ItemStack itemStack = this.f_97734_.m_7993_();
-         List<Component> lines = Screen.m_280152_(this.f_96541_, itemStack);
+      if (((MechWorkbenchMenu)this.menu).getCarried().isEmpty() && this.hoveredSlot != null && this.hoveredSlot.hasItem()) {
+         guiGraphics.pose().pushPose();
+         guiGraphics.pose().translate(0.0F, 0.0F, 400.0F);
+         ItemStack itemStack = this.hoveredSlot.getItem();
+         List<Component> lines = Screen.getTooltipFromItem(this.minecraft, itemStack);
          int padding = 4;
          int width = 0;
 
          for (Component line : lines) {
-            width = Math.max(width, this.f_96547_.m_92852_(line));
+            width = Math.max(width, this.font.width(line));
          }
 
          int lineHeight = 12;
          int height = lines.size() * lineHeight + padding * 2;
          int x = mouseX + 12;
          int y = mouseY - 12;
-         int screenW = this.f_96543_;
-         int screenH = this.f_96544_;
+         int screenW = this.width;
+         int screenH = this.height;
          if (x + width + padding * 2 > screenW) {
             x = screenW - width - padding * 2 - 4;
          }
@@ -1047,38 +1047,38 @@ public class MechWorkbenchScreen extends AbstractContainerScreen<MechWorkbenchMe
             y = 4;
          }
 
-         guiGraphics.m_280024_(x - padding, y - padding, x + width + padding, y + height, -300935136, -299881928);
-         guiGraphics.m_280637_(x - padding, y - padding, width + padding * 2, height + padding, -10040065);
+         guiGraphics.fillGradient(x - padding, y - padding, x + width + padding, y + height, -300935136, -299881928);
+         guiGraphics.renderOutline(x - padding, y - padding, width + padding * 2, height + padding, -10040065);
 
          for (int i = 0; i < lines.size(); i++) {
-            guiGraphics.m_280614_(this.f_96547_, lines.get(i), x, y + i * lineHeight, -1, false);
+            guiGraphics.drawString(this.font, lines.get(i), x, y + i * lineHeight, -1, false);
          }
 
-         guiGraphics.m_280168_().m_85849_();
+         guiGraphics.pose().popPose();
       }
    }
 
-   public boolean m_7933_(int keyCode, int scanCode, int modifiers) {
-      if (this.nameField.m_93696_()) {
+   public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+      if (this.nameField.isFocused()) {
          if (keyCode == 256) {
-            this.nameField.m_93692_(false);
+            this.nameField.setFocused(false);
             return true;
          }
 
-         if (this.nameField.m_7933_(keyCode, scanCode, modifiers)) {
+         if (this.nameField.keyPressed(keyCode, scanCode, modifiers)) {
             return true;
          }
 
-         if (this.f_96541_.f_91066_.f_92092_.m_90832_(keyCode, scanCode)) {
+         if (this.minecraft.options.keyInventory.matches(keyCode, scanCode)) {
             return true;
          }
       }
 
-      return super.m_7933_(keyCode, scanCode, modifiers);
+      return super.keyPressed(keyCode, scanCode, modifiers);
    }
 
-   public boolean m_5534_(char codePoint, int modifiers) {
-      return this.nameField.m_93696_() && this.nameField.m_5534_(codePoint, modifiers) ? true : super.m_5534_(codePoint, modifiers);
+   public boolean charTyped(char codePoint, int modifiers) {
+      return this.nameField.isFocused() && this.nameField.charTyped(codePoint, modifiers) ? true : super.charTyped(codePoint, modifiers);
    }
 
    public enum PartsTab {

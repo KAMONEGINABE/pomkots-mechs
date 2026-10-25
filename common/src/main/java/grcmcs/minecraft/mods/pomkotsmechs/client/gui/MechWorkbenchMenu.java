@@ -34,12 +34,12 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
    private MechWorkbenchMenu.ShortDataSlot entityId = new MechWorkbenchMenu.ShortDataSlot();
    private MechWorkbenchMenu.ShortDataSlot textureColor = new MechWorkbenchMenu.ShortDataSlot();
    private MechWorkbenchMenu.ShortDataSlot menuMode = new MechWorkbenchMenu.ShortDataSlot();
-   private final DataSlot inventoryRevision = DataSlot.m_39401_();
+   private final DataSlot inventoryRevision = DataSlot.standalone();
    private MechWorkbenchBlockEntity accessor = null;
    private boolean openedFromDatapad = false;
    private Pmvc01Entity mech;
    private Runnable inventoryChangedListener;
-   private NonNullList<ItemStack> lastSlots = NonNullList.m_122779_();
+   private NonNullList<ItemStack> lastSlots = NonNullList.create();
    public static final int CMD_EQUIP = 1;
    public static final int CMD_UNEQUIP = 0;
 
@@ -61,11 +61,11 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
       boolean openedFromDataPad
    ) {
       super((MenuType)PomkotsMechs.MECH_WORKBENCH_GUI.get(), id);
-      this.entityId = (MechWorkbenchMenu.ShortDataSlot)this.m_38895_(this.entityId);
-      this.textureColor = (MechWorkbenchMenu.ShortDataSlot)this.m_38895_(this.textureColor);
-      this.menuMode = (MechWorkbenchMenu.ShortDataSlot)this.m_38895_(this.menuMode);
+      this.entityId = (MechWorkbenchMenu.ShortDataSlot)this.addDataSlot(this.entityId);
+      this.textureColor = (MechWorkbenchMenu.ShortDataSlot)this.addDataSlot(this.textureColor);
+      this.menuMode = (MechWorkbenchMenu.ShortDataSlot)this.addDataSlot(this.menuMode);
       this.openedFromDatapad = openedFromDataPad;
-      this.m_38895_(this.inventoryRevision);
+      this.addDataSlot(this.inventoryRevision);
       int offsetX = 136;
       int offsetY = 210;
       this.addSlotInternal(0, offsetX, offsetY, mechInventory, item -> item instanceof BasePartsItem.Head, mode, false);
@@ -93,7 +93,7 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
 
       for (int row = 0; row < 4; row++) {
          for (int col = 0; col < 9; col++) {
-            this.m_38897_(new Slot(mechInventory, col + row * 9 + 27, var15 + col * 18, var17 + row * 18));
+            this.addSlot(new Slot(mechInventory, col + row * 9 + 27, var15 + col * 18, var17 + row * 18));
          }
       }
 
@@ -101,12 +101,12 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
 
       for (int row = 0; row < 3; row++) {
          for (int col = 0; col < 9; col++) {
-            this.m_38897_(new Slot(playerInventory, col + row * 9 + 9, var15 + col * 18, var17 + row * 18));
+            this.addSlot(new Slot(playerInventory, col + row * 9 + 9, var15 + col * 18, var17 + row * 18));
          }
       }
 
       for (int i = 0; i < 9; i++) {
-         this.m_38897_(new Slot(playerInventory, i, var15 + i * 18, var17 + 54 + 4));
+         this.addSlot(new Slot(playerInventory, i, var15 + i * 18, var17 + 54 + 4));
       }
 
       var15 = 228;
@@ -123,7 +123,7 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
          };
 
          for (int col = 0; col < 3; col++) {
-            this.m_38897_(
+            this.addSlot(
                new MechWorkbenchMenu.MechCircuitSlot(
                   mechInventory, col + row * 3 + 63, var15 + col * 18, var19 + row * 19, mode, false, true, col == 2, pref, item -> true
                )
@@ -131,8 +131,8 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
          }
       }
 
-      for (Slot slot : this.f_38839_) {
-         this.lastSlots.add(slot.m_7993_().m_41777_());
+      for (Slot slot : this.slots) {
+         this.lastSlots.add(slot.getItem().copy());
       }
 
       this.mech = mech;
@@ -141,7 +141,7 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
 
    private void addSlotInternal(int index, int offsetX, int offsetY, Container mechInventory, Predicate<Item> pred, int mode, boolean isModifiableOnViewMode) {
       Vec2 pos = getItemPosition(index, offsetX, offsetY);
-      this.m_38897_(new MechWorkbenchMenu.ViewOnlySlot(mechInventory, index, (int)pos.f_82470_, (int)pos.f_82471_, this));
+      this.addSlot(new MechWorkbenchMenu.ViewOnlySlot(mechInventory, index, (int)pos.x, (int)pos.y, this));
    }
 
    protected static Vec2 getItemPosition(int slotNum, int offsetX, int offsetY) {
@@ -154,8 +154,8 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
       int index, int offsetX, int offsetY, Container mechInventory, Predicate<Item> pred, int mode, boolean isModifiableOnViewMode
    ) {
       Vec2 pos = getItemPositionAmmo(index, offsetX, offsetY);
-      this.m_38897_(
-         new MechWorkbenchMenu.MechPartsCustomSlot(mechInventory, index, (int)pos.f_82470_, (int)pos.f_82471_, mode, isModifiableOnViewMode, true, pred)
+      this.addSlot(
+         new MechWorkbenchMenu.MechPartsCustomSlot(mechInventory, index, (int)pos.x, (int)pos.y, mode, isModifiableOnViewMode, true, pred)
       );
    }
 
@@ -165,51 +165,51 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
       return new Vec2(offsetX + col * 18, offsetY + row * 18);
    }
 
-   public ItemStack m_7648_(Player player, int index) {
-      ItemStack result = ItemStack.f_41583_;
-      Slot slot = (Slot)this.f_38839_.get(index);
-      if (slot != null && slot.m_6657_()) {
-         ItemStack stack = slot.m_7993_();
-         result = stack.m_41777_();
+   public ItemStack quickMoveStack(Player player, int index) {
+      ItemStack result = ItemStack.EMPTY;
+      Slot slot = (Slot)this.slots.get(index);
+      if (slot != null && slot.hasItem()) {
+         ItemStack stack = slot.getItem();
+         result = stack.copy();
          if (index >= 18 && index < 54) {
-            if (!this.quickMoveCircuitToMatchingSlot(stack) && !this.m_38903_(stack, 54, 90, false)) {
-               return ItemStack.f_41583_;
+            if (!this.quickMoveCircuitToMatchingSlot(stack) && !this.moveItemStackTo(stack, 54, 90, false)) {
+               return ItemStack.EMPTY;
             }
          } else if (index >= 54 && index < 90) {
-            if (!this.quickMoveCircuitToMatchingSlot(stack) && !this.m_38903_(stack, 18, 54, false)) {
-               return ItemStack.f_41583_;
+            if (!this.quickMoveCircuitToMatchingSlot(stack) && !this.moveItemStackTo(stack, 18, 54, false)) {
+               return ItemStack.EMPTY;
             }
-         } else if (!this.m_38903_(stack, 54, 90, false)) {
-            return ItemStack.f_41583_;
+         } else if (!this.moveItemStackTo(stack, 54, 90, false)) {
+            return ItemStack.EMPTY;
          }
 
-         if (stack.m_41619_()) {
-            slot.m_5852_(ItemStack.f_41583_);
+         if (stack.isEmpty()) {
+            slot.set(ItemStack.EMPTY);
          } else {
-            slot.m_6654_();
+            slot.setChanged();
          }
 
          return result;
       } else {
-         return ItemStack.f_41583_;
+         return ItemStack.EMPTY;
       }
    }
 
    private boolean quickMoveCircuitToMatchingSlot(ItemStack stack) {
-      if (!(stack.m_41720_() instanceof CircuitItem)) {
+      if (!(stack.getItem() instanceof CircuitItem)) {
          return false;
       }
 
       CircuitPrefix prefix = CircuitItemStackHelper.getPrefixOrDefault(stack);
 
-      for (Slot slot : this.f_38839_) {
+      for (Slot slot : this.slots) {
          if (slot instanceof MechWorkbenchMenu.CircuitPrefixSlot circuitSlot
             && circuitSlot.acceptsCircuitPrefix(prefix)
-            && !slot.m_6657_()
-            && slot.m_5857_(stack)) {
-            ItemStack moving = stack.m_41620_(1);
-            slot.m_5852_(moving);
-            slot.m_6654_();
+            && !slot.hasItem()
+            && slot.mayPlace(stack)) {
+            ItemStack moving = stack.split(1);
+            slot.set(moving);
+            slot.setChanged();
             return true;
          }
       }
@@ -217,12 +217,12 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
       return false;
    }
 
-   public boolean m_6875_(Player player) {
+   public boolean stillValid(Player player) {
       return true;
    }
 
-   public void m_6877_(Player player) {
-      super.m_6877_(player);
+   public void removed(Player player) {
+      super.removed(player);
    }
 
    public short getEntityId() {
@@ -230,7 +230,7 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
    }
 
    public void setEntityId(int id) {
-      this.m_7511_(0, (short)(id & 65535));
+      this.setData(0, (short)(id & 65535));
    }
 
    public short getTextureColor() {
@@ -238,7 +238,7 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
    }
 
    public void setTextureColor(int id) {
-      this.m_7511_(1, id);
+      this.setData(1, id);
    }
 
    public short getMode() {
@@ -246,7 +246,7 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
    }
 
    public void setMode(short id) {
-      this.m_7511_(2, id);
+      this.setData(2, id);
    }
 
    public void startMechRepair(Pmvc01Entity mech) {
@@ -257,7 +257,7 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
 
    public void setActivationForCircuitSlots(boolean flag) {
       for (int i = 90; i < 108; i++) {
-         if (this.m_38853_(i) instanceof MechWorkbenchMenu.MechPartsCustomSlot t) {
+         if (this.getSlot(i) instanceof MechWorkbenchMenu.MechPartsCustomSlot t) {
             t.setActive(flag);
          }
       }
@@ -267,15 +267,15 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
       this.inventoryChangedListener = listener;
    }
 
-   public void m_38946_() {
-      super.m_38946_();
+   public void broadcastChanges() {
+      super.broadcastChanges();
       boolean changed = false;
 
-      for (int i = 0; i < this.f_38839_.size(); i++) {
-         ItemStack current = ((Slot)this.f_38839_.get(i)).m_7993_();
+      for (int i = 0; i < this.slots.size(); i++) {
+         ItemStack current = ((Slot)this.slots.get(i)).getItem();
          ItemStack last = (ItemStack)this.lastSlots.get(i);
-         if (!ItemStack.m_41728_(current, last)) {
-            this.lastSlots.set(i, current.m_41777_());
+         if (!ItemStack.matches(current, last)) {
+            this.lastSlots.set(i, current.copy());
             changed = true;
          }
       }
@@ -294,24 +294,24 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
    }
 
    public boolean equipParts(int mechSlotIdx, int sourceSlotIdx) {
-      if (sourceSlotIdx >= this.f_38839_.size()) {
+      if (sourceSlotIdx >= this.slots.size()) {
          return false;
       }
 
-      if (this.isVallidPartsIndex(mechSlotIdx) && mechSlotIdx < this.f_38839_.size()) {
-         Slot sourceSlot = this.m_38853_(sourceSlotIdx);
-         if (!sourceSlot.m_6657_()) {
+      if (this.isVallidPartsIndex(mechSlotIdx) && mechSlotIdx < this.slots.size()) {
+         Slot sourceSlot = this.getSlot(sourceSlotIdx);
+         if (!sourceSlot.hasItem()) {
             return false;
          }
 
-         ItemStack source = sourceSlot.m_7993_();
-         Slot mechInvSlot = this.m_38853_(mechSlotIdx);
-         ItemStack equipped = mechInvSlot.m_7993_();
-         mechInvSlot.m_5852_(source.m_41777_());
-         sourceSlot.m_5852_(equipped);
-         sourceSlot.m_6654_();
-         mechInvSlot.m_6654_();
-         this.m_38946_();
+         ItemStack source = sourceSlot.getItem();
+         Slot mechInvSlot = this.getSlot(mechSlotIdx);
+         ItemStack equipped = mechInvSlot.getItem();
+         mechInvSlot.set(source.copy());
+         sourceSlot.set(equipped);
+         sourceSlot.setChanged();
+         mechInvSlot.setChanged();
+         this.broadcastChanges();
          return true;
       } else {
          return false;
@@ -319,23 +319,23 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
    }
 
    public boolean unequipPart(int mechSlot) {
-      Slot slot = this.m_38853_(mechSlot);
-      if (!slot.m_6657_()) {
+      Slot slot = this.getSlot(mechSlot);
+      if (!slot.hasItem()) {
          return false;
       }
 
-      ItemStack equipped = slot.m_7993_();
-      boolean moved = this.m_38903_(equipped, 27, this.f_38839_.size(), false);
+      ItemStack equipped = slot.getItem();
+      boolean moved = this.moveItemStackTo(equipped, 27, this.slots.size(), false);
       if (!moved) {
          return false;
       }
 
-      if (equipped.m_41619_()) {
-         slot.m_5852_(ItemStack.f_41583_);
+      if (equipped.isEmpty()) {
+         slot.set(ItemStack.EMPTY);
       }
 
-      slot.m_6654_();
-      this.m_38946_();
+      slot.setChanged();
+      this.broadcastChanges();
       return true;
    }
 
@@ -344,21 +344,21 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
       this.autoSupplyWeaponAmmo(7);
       this.autoSupplyWeaponAmmo(8);
       this.autoSupplyWeaponAmmo(9);
-      this.autoSupplySimpleItem(16, stack -> stack.m_41720_() instanceof BasePartsItem.Fuel);
+      this.autoSupplySimpleItem(16, stack -> stack.getItem() instanceof BasePartsItem.Fuel);
       if (this.getMode() == MODE_ASSEMBLE) {
-         this.autoSupplySimpleItem(17, stack -> stack.m_41720_() instanceof RepairKitItem);
+         this.autoSupplySimpleItem(17, stack -> stack.getItem() instanceof RepairKitItem);
       }
 
-      this.m_38946_();
+      this.broadcastChanges();
    }
 
    private void autoSupplyWeaponAmmo(int weaponSlotIndex) {
-      Slot weaponSlot = this.m_38853_(weaponSlotIndex);
-      if (weaponSlot.m_6657_()) {
-         ItemStack weaponStack = weaponSlot.m_7993_();
-         if (weaponStack.m_41720_() instanceof BasePartsItem.Weapon weapon) {
+      Slot weaponSlot = this.getSlot(weaponSlotIndex);
+      if (weaponSlot.hasItem()) {
+         ItemStack weaponStack = weaponSlot.getItem();
+         if (weaponStack.getItem() instanceof BasePartsItem.Weapon weapon) {
             int var6 = this.getAmmoSlotIdx(weaponSlotIndex);
-            this.fillTargetSlot(var6, stack -> stack.m_41720_() instanceof BasePartsItem.Magazine mag ? weapon.isMatchAmmo(mag) : false);
+            this.fillTargetSlot(var6, stack -> stack.getItem() instanceof BasePartsItem.Magazine mag ? weapon.isMatchAmmo(mag) : false);
          }
       }
    }
@@ -368,20 +368,20 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
    }
 
    private void fillTargetSlot(int targetSlotIndex, Predicate<ItemStack> matcher) {
-      Slot targetSlot = this.m_38853_(targetSlotIndex);
-      ItemStack target = targetSlot.m_7993_();
-      boolean targetInvalid = !target.m_41619_() && !matcher.test(target);
+      Slot targetSlot = this.getSlot(targetSlotIndex);
+      ItemStack target = targetSlot.getItem();
+      boolean targetInvalid = !target.isEmpty() && !matcher.test(target);
       int firstValidSlot = -1;
       int maxStack = 64;
 
-      for (int i = 0; i < this.f_38839_.size(); i++) {
+      for (int i = 0; i < this.slots.size(); i++) {
          if (i >= 27 && i != targetSlotIndex) {
-            Slot slot = this.m_38853_(i);
-            if (slot.m_6657_()) {
-               ItemStack stack = slot.m_7993_();
+            Slot slot = this.getSlot(i);
+            if (slot.hasItem()) {
+               ItemStack stack = slot.getItem();
                if (matcher.test(stack)) {
                   firstValidSlot = i;
-                  maxStack = stack.m_41741_();
+                  maxStack = stack.getMaxStackSize();
                   break;
                }
             }
@@ -393,55 +393,55 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
             return;
          }
 
-         Slot sourceSlot = this.m_38853_(firstValidSlot);
-         ItemStack source = sourceSlot.m_7993_();
-         sourceSlot.m_5852_(target);
-         targetSlot.m_5852_(source);
-         sourceSlot.m_6654_();
-         targetSlot.m_6654_();
+         Slot sourceSlot = this.getSlot(firstValidSlot);
+         ItemStack source = sourceSlot.getItem();
+         sourceSlot.set(target);
+         targetSlot.set(source);
+         sourceSlot.setChanged();
+         targetSlot.setChanged();
          target = source;
       }
 
-      if (firstValidSlot >= 0 || !target.m_41619_()) {
-         if (!target.m_41619_()) {
-            maxStack = target.m_41741_();
+      if (firstValidSlot >= 0 || !target.isEmpty()) {
+         if (!target.isEmpty()) {
+            maxStack = target.getMaxStackSize();
          }
 
-         int currentCount = target.m_41619_() ? 0 : target.m_41613_();
+         int currentCount = target.isEmpty() ? 0 : target.getCount();
          int needed = maxStack - currentCount;
          if (needed > 0) {
-            for (int i = 0; i < this.f_38839_.size(); i++) {
+            for (int i = 0; i < this.slots.size(); i++) {
                if (i >= 27 && i != targetSlotIndex) {
-                  Slot sourceSlot = this.m_38853_(i);
-                  if (sourceSlot.m_6657_()) {
-                     ItemStack source = sourceSlot.m_7993_();
+                  Slot sourceSlot = this.getSlot(i);
+                  if (sourceSlot.hasItem()) {
+                     ItemStack source = sourceSlot.getItem();
                      if (matcher.test(source)) {
-                        if (target.m_41619_()) {
-                           int move = Math.min(needed, source.m_41613_());
-                           ItemStack moved = source.m_41777_();
-                           moved.m_41764_(move);
-                           targetSlot.m_5852_(moved);
-                           source.m_41774_(move);
+                        if (target.isEmpty()) {
+                           int move = Math.min(needed, source.getCount());
+                           ItemStack moved = source.copy();
+                           moved.setCount(move);
+                           targetSlot.set(moved);
+                           source.shrink(move);
                            target = moved;
-                           maxStack = moved.m_41741_();
-                           needed = maxStack - target.m_41613_();
+                           maxStack = moved.getMaxStackSize();
+                           needed = maxStack - target.getCount();
                         } else {
-                           if (!ItemStack.m_150942_(target, source)) {
+                           if (!ItemStack.isSameItemSameTags(target, source)) {
                               continue;
                            }
 
-                           int move = Math.min(needed, source.m_41613_());
-                           target.m_41769_(move);
-                           source.m_41774_(move);
+                           int move = Math.min(needed, source.getCount());
+                           target.grow(move);
+                           source.shrink(move);
                            needed -= move;
                         }
 
-                        if (source.m_41619_()) {
-                           sourceSlot.m_5852_(ItemStack.f_41583_);
+                        if (source.isEmpty()) {
+                           sourceSlot.set(ItemStack.EMPTY);
                         }
 
-                        sourceSlot.m_6654_();
-                        targetSlot.m_6654_();
+                        sourceSlot.setChanged();
+                        targetSlot.setChanged();
                         if (needed <= 0) {
                            break;
                         }
@@ -454,21 +454,21 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
    }
 
    private void tryAutoLoadAmmo(int mechWeaponSlot) {
-      Slot weaponSlot = this.m_38853_(mechWeaponSlot);
-      if (weaponSlot.m_6657_()) {
+      Slot weaponSlot = this.getSlot(mechWeaponSlot);
+      if (weaponSlot.hasItem()) {
          if (this.isVallidWeaponIndex(mechWeaponSlot)) {
-            ItemStack weaponStack = weaponSlot.m_7993_();
-            if (weaponStack.m_41720_() instanceof BasePartsItem.Weapon weapon) {
+            ItemStack weaponStack = weaponSlot.getItem();
+            if (weaponStack.getItem() instanceof BasePartsItem.Weapon weapon) {
                int var12 = -1;
                int bestCount = -1;
 
-               for (int ammoSlotIdx = 0; ammoSlotIdx < this.f_38839_.size(); ammoSlotIdx++) {
+               for (int ammoSlotIdx = 0; ammoSlotIdx < this.slots.size(); ammoSlotIdx++) {
                   if (ammoSlotIdx >= 27) {
-                     Slot slot = this.m_38853_(ammoSlotIdx);
-                     if (slot.m_6657_()) {
-                        ItemStack stack = slot.m_7993_();
-                        if (stack.m_41720_() instanceof BasePartsItem.Magazine mag && weapon.isMatchAmmo(mag) && stack.m_41613_() > bestCount) {
-                           bestCount = stack.m_41613_();
+                     Slot slot = this.getSlot(ammoSlotIdx);
+                     if (slot.hasItem()) {
+                        ItemStack stack = slot.getItem();
+                        if (stack.getItem() instanceof BasePartsItem.Magazine mag && weapon.isMatchAmmo(mag) && stack.getCount() > bestCount) {
+                           bestCount = stack.getCount();
                            var12 = ammoSlotIdx;
                         }
                      }
@@ -477,14 +477,14 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
 
                if (var12 >= 0) {
                   int ammoSlotIdx = this.getAmmoSlotIdx(mechWeaponSlot);
-                  Slot sourceAmmoSlot = this.m_38853_(var12);
-                  Slot mechAmmoSlot = this.m_38853_(ammoSlotIdx);
-                  ItemStack sourceAmmo = sourceAmmoSlot.m_7993_();
-                  ItemStack equippedAmmo = mechAmmoSlot.m_7993_();
-                  mechAmmoSlot.m_5852_(sourceAmmo.m_41777_());
-                  sourceAmmoSlot.m_5852_(equippedAmmo);
-                  sourceAmmoSlot.m_6654_();
-                  mechAmmoSlot.m_6654_();
+                  Slot sourceAmmoSlot = this.getSlot(var12);
+                  Slot mechAmmoSlot = this.getSlot(ammoSlotIdx);
+                  ItemStack sourceAmmo = sourceAmmoSlot.getItem();
+                  ItemStack equippedAmmo = mechAmmoSlot.getItem();
+                  mechAmmoSlot.set(sourceAmmo.copy());
+                  sourceAmmoSlot.set(equippedAmmo);
+                  sourceAmmoSlot.setChanged();
+                  mechAmmoSlot.setChanged();
                }
             }
          }
@@ -503,17 +503,17 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
       return weaponInvIndex + 6;
    }
 
-   public void m_6199_(Container container) {
-      super.m_6199_(container);
+   public void slotsChanged(Container container) {
+      super.slotsChanged(container);
       this.updateInventoryRevision();
    }
 
    private void updateInventoryRevision() {
-      this.inventoryRevision.m_6422_(this.inventoryRevision.m_6501_() + 1);
+      this.inventoryRevision.set(this.inventoryRevision.get() + 1);
    }
 
    public int getInventoryRevision() {
-      return this.inventoryRevision.m_6501_();
+      return this.inventoryRevision.get();
    }
 
    public interface CircuitPrefixSlot {
@@ -555,12 +555,12 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
       }
 
       @Override
-      public boolean m_5857_(ItemStack stack) {
-         if (!super.m_5857_(stack) || this.isDisablePlace()) {
+      public boolean mayPlace(ItemStack stack) {
+         if (!super.mayPlace(stack) || this.isDisablePlace()) {
             return false;
          }
 
-         if (!(stack.m_41720_() instanceof CircuitItem)) {
+         if (!(stack.getItem() instanceof CircuitItem)) {
             return false;
          }
 
@@ -577,8 +577,8 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
          this.mode = mode;
       }
 
-      public boolean m_5857_(ItemStack stack) {
-         return this.mode == 1 ? true : stack.m_41720_() instanceof BasePartsItem.Fuel || stack.m_41720_() instanceof BasePartsItem.Magazine;
+      public boolean mayPlace(ItemStack stack) {
+         return this.mode == 1 ? true : stack.getItem() instanceof BasePartsItem.Fuel || stack.getItem() instanceof BasePartsItem.Magazine;
       }
    }
 
@@ -594,7 +594,7 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
          this.isActive = isActive;
       }
 
-      public boolean m_6659_() {
+      public boolean isActive() {
          return this.isActive;
       }
 
@@ -603,16 +603,16 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
       }
 
       @Override
-      public boolean m_5857_(ItemStack stack) {
-         if (super.m_5857_(stack)) {
-            Item item = stack.m_41720_();
+      public boolean mayPlace(ItemStack stack) {
+         if (super.mayPlace(stack)) {
+            Item item = stack.getItem();
             return this.p.test(item);
          } else {
             return false;
          }
       }
 
-      public boolean m_8010_(Player player) {
+      public boolean mayPickup(Player player) {
          return this.isModifiableOnViewMode || this.mode == MechWorkbenchMenu.MODE_ASSEMBLE;
       }
    }
@@ -624,11 +624,11 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
          super(container, index, x, y, mode, isModifiableOnViewMode, isActive, p);
       }
 
-      public int m_6641_() {
+      public int getMaxStackSize() {
          return 1;
       }
 
-      public int m_5866_(ItemStack stack) {
+      public int getMaxStackSize(ItemStack stack) {
          return 1;
       }
    }
@@ -636,11 +636,11 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
    public static class ShortDataSlot extends DataSlot {
       private short value;
 
-      public int m_6501_() {
+      public int get() {
          return this.value & 65535;
       }
 
-      public void m_6422_(int value) {
+      public void set(int value) {
          this.value = (short)value;
       }
 
@@ -656,11 +656,11 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
    private static class SimpleDataSlot extends DataSlot {
       private int val = 0;
 
-      public int m_6501_() {
+      public int get() {
          return this.val;
       }
 
-      public void m_6422_(int i) {
+      public void set(int i) {
          this.val = i;
       }
    }
@@ -673,15 +673,15 @@ public class MechWorkbenchMenu extends AbstractContainerMenu {
          this.menu = menu;
       }
 
-      public boolean m_6659_() {
+      public boolean isActive() {
          return false;
       }
 
-      public boolean m_5857_(ItemStack stack) {
+      public boolean mayPlace(ItemStack stack) {
          return false;
       }
 
-      public boolean m_8010_(Player player) {
+      public boolean mayPickup(Player player) {
          return false;
       }
    }

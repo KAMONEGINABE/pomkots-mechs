@@ -25,27 +25,27 @@ public class StructureSpawnerBlockEntity extends BlockEntity {
       super((BlockEntityType)PomkotsMechs.STRUCTURE_SPAWNER_BLOCK_ENTITY.get(), pos, state);
    }
 
-   public void m_142466_(CompoundTag tag) {
-      super.m_142466_(tag);
-      if (tag.m_128441_(PomkotsMechs.nbtName("StructureId"))) {
-         this.structureId = tag.m_128461_(PomkotsMechs.nbtName("StructureId"));
+   public void load(CompoundTag tag) {
+      super.load(tag);
+      if (tag.contains(PomkotsMechs.nbtName("StructureId"))) {
+         this.structureId = tag.getString(PomkotsMechs.nbtName("StructureId"));
       }
    }
 
-   protected void m_183515_(CompoundTag tag) {
-      super.m_183515_(tag);
-      tag.m_128359_(PomkotsMechs.nbtName("StructureId"), this.structureId);
+   protected void saveAdditional(CompoundTag tag) {
+      super.saveAdditional(tag);
+      tag.putString(PomkotsMechs.nbtName("StructureId"), this.structureId);
    }
 
    public static void tick(Level level, BlockPos pos, BlockState state, StructureSpawnerBlockEntity be) {
-      if (!level.f_46443_ && !be.generated && !"".equals(be.structureId) && !Utils.isMapEditingMode(level)) {
+      if (!level.isClientSide && !be.generated && !"".equals(be.structureId) && !Utils.isMapEditingMode(level)) {
          ServerLevel serverLevel = (ServerLevel)level;
-         StructureTemplateManager manager = serverLevel.m_215082_();
-         Optional<StructureTemplate> templateOpt = manager.m_230407_(new ResourceLocation(be.structureId));
+         StructureTemplateManager manager = serverLevel.getStructureManager();
+         Optional<StructureTemplate> templateOpt = manager.get(new ResourceLocation(be.structureId));
          if (templateOpt.isPresent()) {
             StructureTemplate template = templateOpt.get();
-            StructurePlaceSettings settings = new StructurePlaceSettings().m_74377_(Mirror.NONE).m_74379_(Rotation.NONE).m_74392_(false);
-            template.m_230328_(serverLevel, pos, pos, settings, serverLevel.f_46441_, 2);
+            StructurePlaceSettings settings = new StructurePlaceSettings().setMirror(Mirror.NONE).setRotation(Rotation.NONE).setIgnoreEntities(false);
+            template.placeInWorld(serverLevel, pos, pos, settings, serverLevel.random, 2);
          }
 
          be.generated = true;

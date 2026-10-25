@@ -254,17 +254,17 @@ public class PomkotsMechsClient {
          MenuRegistry.registerScreenFactory((MenuType)PomkotsMechs.POMKOTS_DATAPAD_GUI.get(), DataPadScreen::new);
          MenuRegistry.registerScreenFactory((MenuType)PomkotsMechs.POMKOTS_DATAPAD_KEYCARD_GUI.get(), DataPadKeyCardScreen::new);
          ColorHandlerRegistry.registerItemColors((stack, tintIndex) -> {
-            CompoundTag tag = stack.m_41783_();
+            CompoundTag tag = stack.getTag();
             if (tag == null) {
                return -1;
-            } else if (tintIndex == 0 && tag.m_128441_(PomkotsMechs.nbtName("PrimaryColor"))) {
-               return tag.m_128451_(PomkotsMechs.nbtName("PrimaryColor"));
+            } else if (tintIndex == 0 && tag.contains(PomkotsMechs.nbtName("PrimaryColor"))) {
+               return tag.getInt(PomkotsMechs.nbtName("PrimaryColor"));
             } else {
-               return tintIndex == 1 && tag.m_128441_(PomkotsMechs.nbtName("SecondaryColor")) ? tag.m_128451_(PomkotsMechs.nbtName("SecondaryColor")) : -1;
+               return tintIndex == 1 && tag.contains(PomkotsMechs.nbtName("SecondaryColor")) ? tag.getInt(PomkotsMechs.nbtName("SecondaryColor")) : -1;
             }
          }, new ItemLike[]{(ItemLike)PomkotsMechs.MECH_CAPSULE_ITEM.get()});
          ColorHandlerRegistry.registerItemColors((stack, tintIndex) -> {
-            if (!(stack.m_41720_() instanceof MechCapsule2Item)) {
+            if (!(stack.getItem() instanceof MechCapsule2Item)) {
                return -1;
             } else if (tintIndex == 0) {
                return -5395027;
@@ -314,7 +314,7 @@ public class PomkotsMechsClient {
       NetworkManager.registerReceiver(Side.S2C, PomkotsMechs.id("aroe"), (buf, context) -> ArenaCameraClient.endOpeningCamera());
       NetworkManager.registerReceiver(Side.S2C, PomkotsMechs.id("udp"), (buf, context) -> {
          try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(buf.m_130052_());
+            ByteArrayInputStream bais = new ByteArrayInputStream(buf.readByteArray());
             PomkotsDataPackManager.getInstance().deSerialize(bais);
             bais.close();
          } catch (Exception e) {
@@ -323,26 +323,26 @@ public class PomkotsMechsClient {
       });
       NetworkManager.registerReceiver(Side.S2C, PomkotsMechs.id("so"), (buf, context) -> {
          if (Platform.isForge()) {
-            Minecraft mc = Minecraft.m_91087_();
-            mc.m_6937_(() -> mc.m_91152_(new IntroNarrationScreen()));
+            Minecraft mc = Minecraft.getInstance();
+            mc.tell(() -> mc.setScreen(new IntroNarrationScreen()));
          } else {
             context.queue(() -> {
-               Minecraft mcx = Minecraft.m_91087_();
-               mcx.execute(() -> mcx.m_91152_(new IntroNarrationScreen()));
+               Minecraft mcx = Minecraft.getInstance();
+               mcx.execute(() -> mcx.setScreen(new IntroNarrationScreen()));
             });
          }
       });
       NetworkManager.registerReceiver(Side.S2C, PomkotsMechs.id("bs"), (buf, context) -> {
-         BGMState newState = (BGMState)buf.m_130066_(BGMState.class);
+         BGMState newState = (BGMState)buf.readEnum(BGMState.class);
          PomkotsBGMManager.setState(newState);
       });
       NetworkManager.registerReceiver(Side.S2C, PomkotsMechs.id("arr"), (buf, context) -> {
-         Minecraft mc = Minecraft.m_91087_();
-         if (mc.f_91074_ != null && mc.f_91074_.f_36096_ instanceof ArenaReceptionistMenu menu) {
+         Minecraft mc = Minecraft.getInstance();
+         if (mc.player != null && mc.player.containerMenu instanceof ArenaReceptionistMenu menu) {
             ArenaMenuData.Entry data = ArenaMenuData.read(buf);
             if (menu.getArenaId() != null && menu.getArenaId().equals(data.getArenaId())) {
                menu.setRankings(data.getRankings());
-               if (mc.f_91080_ instanceof ArenaReceptionistScreen screen) {
+               if (mc.screen instanceof ArenaReceptionistScreen screen) {
                   screen.refleshData();
                }
             }

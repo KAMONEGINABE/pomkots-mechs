@@ -30,19 +30,19 @@ public class PomkotsLeverBlockEntity extends BlockEntity implements GeoBlockEnti
    protected String command = "";
    private boolean playAnimation = false;
 
-   public void m_183515_(@NotNull CompoundTag tag) {
-      super.m_183515_(tag);
-      tag.m_128359_(PomkotsMechs.nbtName("Command"), this.command);
+   public void saveAdditional(@NotNull CompoundTag tag) {
+      super.saveAdditional(tag);
+      tag.putString(PomkotsMechs.nbtName("Command"), this.command);
    }
 
-   public void m_142466_(@NotNull CompoundTag tag) {
-      super.m_142466_(tag);
-      this.command = tag.m_128461_(PomkotsMechs.nbtName("Command"));
+   public void load(@NotNull CompoundTag tag) {
+      super.load(tag);
+      this.command = tag.getString(PomkotsMechs.nbtName("Command"));
    }
 
    @NotNull
-   public CompoundTag m_5995_() {
-      return this.m_187482_();
+   public CompoundTag getUpdateTag() {
+      return this.saveWithoutMetadata();
    }
 
    public PomkotsLeverBlockEntity(BlockPos pos, BlockState state) {
@@ -54,25 +54,25 @@ public class PomkotsLeverBlockEntity extends BlockEntity implements GeoBlockEnti
    }
 
    public ClientboundBlockEntityDataPacket getUpdatePacket() {
-      return ClientboundBlockEntityDataPacket.m_195640_(this);
+      return ClientboundBlockEntityDataPacket.create(this);
    }
 
    public void use(ServerLevel level, BlockPos pos) {
       if (this.command != null && !this.command.isEmpty()) {
          CommandSourceStack source = new CommandSourceStack(
-            CommandSource.f_80164_,
-            Vec3.m_82512_(pos),
-            Vec2.f_82462_,
+            CommandSource.NULL,
+            Vec3.atCenterOf(pos),
+            Vec2.ZERO,
             level,
             2,
             "command_block_once",
-            Component.m_237113_("command_block_once"),
-            level.m_7654_(),
+            Component.literal("command_block_once"),
+            level.getServer(),
             null
          );
 
          try {
-            level.m_7654_().m_129892_().m_230957_(source, this.command);
+            level.getServer().getCommands().performPrefixedCommand(source, this.command);
          } catch (Exception e) {
             PomkotsMechs.LOGGER.error("Failed to execute command: {}", this.command, e);
          }
@@ -80,7 +80,7 @@ public class PomkotsLeverBlockEntity extends BlockEntity implements GeoBlockEnti
    }
 
    public void playAnimation() {
-      if (this.f_58857_.f_46443_) {
+      if (this.level.isClientSide) {
          this.playAnimation = true;
       }
    }
@@ -101,20 +101,20 @@ public class PomkotsLeverBlockEntity extends BlockEntity implements GeoBlockEnti
                   soundKeyframeEvent -> {
                      String sound = soundKeyframeEvent.getKeyframeData().getSound();
                      if ("lever".equals(sound)) {
-                        BlockPos pos = this.m_58899_();
-                        Vec3 v = new Vec3(pos.m_123341_() + 0.5F, pos.m_123342_() + 0.5F, pos.m_123343_() + 0.5F);
-                        this.f_58857_
-                           .m_7785_(
-                              pos.m_123341_(),
-                              pos.m_123342_(),
-                              pos.m_123343_(),
+                        BlockPos pos = this.getBlockPos();
+                        Vec3 v = new Vec3(pos.getX() + 0.5F, pos.getY() + 0.5F, pos.getZ() + 0.5F);
+                        this.level
+                           .playLocalSound(
+                              pos.getX(),
+                              pos.getY(),
+                              pos.getZ(),
                               (SoundEvent)PomkotsMechs.SE_PILEBUNKER_EVENT.get(),
                               SoundSource.PLAYERS,
                               0.5F,
                               1.0F,
                               false
                            );
-                        ParticleUtil.addSparkParticles(v, this.f_58857_);
+                        ParticleUtil.addSparkParticles(v, this.level);
                      }
                   }
                )
@@ -127,6 +127,6 @@ public class PomkotsLeverBlockEntity extends BlockEntity implements GeoBlockEnti
    }
 
    public double getTick(Object blockEntity) {
-      return this.f_58857_ != null ? this.f_58857_.m_46467_() : 0.0;
+      return this.level != null ? this.level.getGameTime() : 0.0;
    }
 }

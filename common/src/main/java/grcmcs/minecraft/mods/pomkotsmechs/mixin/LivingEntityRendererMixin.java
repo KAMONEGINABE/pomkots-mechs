@@ -39,28 +39,28 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, M extend
    }
 
    private void renderHealthBar(PoseStack matrixStack, T entity, Quaternionf rotation, MultiBufferSource buffer) {
-      Minecraft client = Minecraft.m_91087_();
-      double distance = client.f_91063_.m_109153_().m_90583_().m_82554_(entity.m_20182_());
+      Minecraft client = Minecraft.getInstance();
+      double distance = client.gameRenderer.getMainCamera().getPosition().distanceTo(entity.position());
       if (!(distance > 4096.0)) {
-         matrixStack.m_85836_();
-         matrixStack.m_85837_(0.0, entity.m_20206_() + 0.5, 0.0);
-         matrixStack.m_85841_(-0.1F, 0.1F, 0.1F);
-         matrixStack.m_252781_(rotation);
+         matrixStack.pushPose();
+         matrixStack.translate(0.0, entity.getBbHeight() + 0.5, 0.0);
+         matrixStack.scale(-0.1F, 0.1F, 0.1F);
+         matrixStack.mulPose(rotation);
          int barWidth = 40;
          int barHeight = 6;
-         int maxHealth = (int)entity.m_21233_();
-         int currentHealth = (int)entity.m_21223_();
+         int maxHealth = (int)entity.getMaxHealth();
+         int currentHealth = (int)entity.getHealth();
          int healthBarWidth = (int)((float)currentHealth / maxHealth * barWidth);
-         Tesselator tesselator = Tesselator.m_85913_();
-         BufferBuilder bufferBuilder = tesselator.m_85915_();
-         bufferBuilder.m_166779_(Mode.QUADS, DefaultVertexFormat.f_85815_);
-         RenderSystem.setShader(GameRenderer::m_172811_);
+         Tesselator tesselator = Tesselator.getInstance();
+         BufferBuilder bufferBuilder = tesselator.getBuilder();
+         bufferBuilder.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+         RenderSystem.setShader(GameRenderer::getPositionColorShader);
          RenderSystem.enableBlend();
          RenderSystem.disableDepthTest();
          this.addQuad(bufferBuilder, matrixStack, -barWidth / 2, 0.0F, barWidth / 2, barHeight, 1431655850);
          this.addQuad(bufferBuilder, matrixStack, -barWidth / 2, 0.0F, -barWidth / 2 + healthBarWidth, barHeight, -16733441);
-         tesselator.m_85914_();
-         matrixStack.m_85849_();
+         tesselator.end();
+         matrixStack.popPose();
       }
    }
 
@@ -69,9 +69,9 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, M extend
       float r = (color >> 16 & 0xFF) / 255.0F;
       float g = (color >> 8 & 0xFF) / 255.0F;
       float b = (color & 0xFF) / 255.0F;
-      buffer.m_252986_(poseStack.m_85850_().m_252922_(), minX, minY, 0.0F).m_85950_(r, g, b, a).m_5752_();
-      buffer.m_252986_(poseStack.m_85850_().m_252922_(), minX, maxY, 0.0F).m_85950_(r, g, b, a).m_5752_();
-      buffer.m_252986_(poseStack.m_85850_().m_252922_(), maxX, maxY, 0.0F).m_85950_(r, g, b, a).m_5752_();
-      buffer.m_252986_(poseStack.m_85850_().m_252922_(), maxX, minY, 0.0F).m_85950_(r, g, b, a).m_5752_();
+      buffer.vertex(poseStack.last().pose(), minX, minY, 0.0F).color(r, g, b, a).endVertex();
+      buffer.vertex(poseStack.last().pose(), minX, maxY, 0.0F).color(r, g, b, a).endVertex();
+      buffer.vertex(poseStack.last().pose(), maxX, maxY, 0.0F).color(r, g, b, a).endVertex();
+      buffer.vertex(poseStack.last().pose(), maxX, minY, 0.0F).color(r, g, b, a).endVertex();
    }
 }

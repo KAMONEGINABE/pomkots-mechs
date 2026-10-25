@@ -26,32 +26,32 @@ public class GassanItem extends BasePartsItem.WeaponArm {
       if (isOnFire) {
          Entity driver = mechInterface.getDrivingPassenger();
          Vec3 pilePos1 = new Vec3(6.5 * mechInterface.isRight(), 4.0, 36.0)
-            .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-            .m_82549_(mechInterface.position());
+            .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+            .add(mechInterface.position());
          Vec3 pilePos2 = new Vec3(-2 * mechInterface.isRight(), -4.0, 28.0)
-            .m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
-            .m_82549_(mechInterface.position());
-         Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+            .yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()))
+            .add(mechInterface.position());
+         Vec3 kbVel = new Vec3(0.0, 0.0, -1.0).yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
 
-         for (Entity ent : world.m_45933_(null, new AABB(pilePos1, pilePos2))) {
+         for (Entity ent : world.getEntities(null, new AABB(pilePos1, pilePos2))) {
             if (!mechInterface.isSelf(ent) && ent instanceof LivingEntity le) {
-               if (!world.m_5776_()) {
-                  le.m_147240_(2.0, kbVel.f_82479_, kbVel.f_82481_);
+               if (!world.isClientSide()) {
+                  le.knockback(2.0, kbVel.x, kbVel.z);
                   DamageSource ds;
                   if (driver instanceof Player p) {
-                     ds = mechInterface.damageSources().m_269075_(p);
+                     ds = mechInterface.damageSources().playerAttack(p);
                   } else {
-                     ds = mechInterface.damageSources().m_269264_();
+                     ds = mechInterface.damageSources().generic();
                   }
 
-                  le.m_6469_(ds, this.getDamage(mechInterface.getItemStack()));
+                  le.hurt(ds, this.getDamage(mechInterface.getItemStack()));
                } else {
                   mechInterface.addHitParticles(le);
                }
             }
          }
 
-         if (world.f_46443_) {
+         if (world.isClientSide) {
             mechInterface.playSoundEffect((SoundEvent)PomkotsMechs.SE_PILEBUNKER_EVENT.get());
          }
       }

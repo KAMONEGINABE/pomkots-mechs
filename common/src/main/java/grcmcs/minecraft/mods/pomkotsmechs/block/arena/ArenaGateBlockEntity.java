@@ -17,25 +17,25 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class ArenaGateBlockEntity extends BlockEntity {
    private UUID elevatorUuid = null;
-   private BlockPos relativeDstBlockPos = BlockPos.f_121853_;
+   private BlockPos relativeDstBlockPos = BlockPos.ZERO;
 
    public ArenaGateBlockEntity(BlockPos pos, BlockState state) {
       super((BlockEntityType)PomkotsMechs.ARENA_GATE_BLOCK_ENTITY.get(), pos, state);
    }
 
    public static void tick(Level level, BlockPos pos, BlockState state, ArenaGateBlockEntity be) {
-      if (!level.m_5776_() && !Utils.isMapEditingMode(level)) {
-         if (level.m_46467_() % 200L == 0L) {
+      if (!level.isClientSide() && !Utils.isMapEditingMode(level)) {
+         if (level.getGameTime() % 200L == 0L) {
             be.ensureElevator();
          }
       }
    }
 
    public void ensureElevator() {
-      if (this.f_58857_ instanceof ServerLevel serverLevel) {
+      if (this.level instanceof ServerLevel serverLevel) {
          Entity var3 = null;
          if (this.elevatorUuid != null) {
-            var3 = serverLevel.m_8791_(this.elevatorUuid);
+            var3 = serverLevel.getEntity(this.elevatorUuid);
          }
 
          if (!(var3 instanceof ElevatorEntity)) {
@@ -45,10 +45,10 @@ public class ArenaGateBlockEntity extends BlockEntity {
    }
 
    public ElevatorEntity getElevator() {
-      if (this.f_58857_ instanceof ServerLevel serverLevel) {
+      if (this.level instanceof ServerLevel serverLevel) {
          Entity var4 = null;
          if (this.elevatorUuid != null) {
-            var4 = serverLevel.m_8791_(this.elevatorUuid);
+            var4 = serverLevel.getEntity(this.elevatorUuid);
          }
 
          return var4 instanceof ElevatorEntity e ? e : null;
@@ -58,11 +58,11 @@ public class ArenaGateBlockEntity extends BlockEntity {
    }
 
    public ElevatorEntity refreshElevator() {
-      if (this.f_58857_ instanceof ServerLevel serverLevel) {
+      if (this.level instanceof ServerLevel serverLevel) {
          if (this.elevatorUuid != null) {
-            Entity entity = serverLevel.m_8791_(this.elevatorUuid);
+            Entity entity = serverLevel.getEntity(this.elevatorUuid);
             if (entity instanceof ElevatorEntity) {
-               entity.m_146870_();
+               entity.discard();
                this.elevatorUuid = null;
             }
          }
@@ -74,46 +74,46 @@ public class ArenaGateBlockEntity extends BlockEntity {
    }
 
    private ElevatorEntity spawnElevator(ServerLevel level) {
-      ElevatorEntity elevator = (ElevatorEntity)((EntityType)PomkotsMechs.ELEVATOR.get()).m_20615_(level);
+      ElevatorEntity elevator = (ElevatorEntity)((EntityType)PomkotsMechs.ELEVATOR.get()).create(level);
       if (elevator == null) {
          return null;
       }
 
-      elevator.m_6027_(this.f_58858_.m_123341_() + 0.5, this.f_58858_.m_123342_() + 1.2, this.f_58858_.m_123343_() + 0.5);
-      BlockPos src = this.m_58899_();
+      elevator.moveTo(this.worldPosition.getX() + 0.5, this.worldPosition.getY() + 1.2, this.worldPosition.getZ() + 0.5);
+      BlockPos src = this.getBlockPos();
       BlockPos dstR = this.relativeDstBlockPos;
-      elevator.setSrcBlockPos(src.m_6630_(1));
-      elevator.setDstBlockPos(new BlockPos(src.m_123341_() + dstR.m_123341_(), src.m_123342_() + dstR.m_123342_(), src.m_123343_() + dstR.m_123343_()));
+      elevator.setSrcBlockPos(src.above(1));
+      elevator.setDstBlockPos(new BlockPos(src.getX() + dstR.getX(), src.getY() + dstR.getY(), src.getZ() + dstR.getZ()));
       elevator.setMode(ElevatorEntity.Mode.IDLE);
       elevator.setFixedYaw(this.getBlockYaw());
-      level.m_7967_(elevator);
-      this.elevatorUuid = elevator.m_20148_();
-      this.m_6596_();
+      level.addFreshEntity(elevator);
+      this.elevatorUuid = elevator.getUUID();
+      this.setChanged();
       return elevator;
    }
 
-   protected void m_183515_(CompoundTag tag) {
-      super.m_183515_(tag);
+   protected void saveAdditional(CompoundTag tag) {
+      super.saveAdditional(tag);
       if (this.elevatorUuid != null) {
-         tag.m_128362_(PomkotsMechs.nbtName("ElevatorUuid"), this.elevatorUuid);
+         tag.putUUID(PomkotsMechs.nbtName("ElevatorUuid"), this.elevatorUuid);
       }
 
       Utils.saveBlockPos(tag, "Dst", this.relativeDstBlockPos);
    }
 
-   public void m_142466_(CompoundTag tag) {
-      super.m_142466_(tag);
+   public void load(CompoundTag tag) {
+      super.load(tag);
       String nbtName = PomkotsMechs.nbtName("ElevatorUuid");
-      if (tag.m_128403_(nbtName)) {
-         this.elevatorUuid = tag.m_128342_(nbtName);
+      if (tag.hasUUID(nbtName)) {
+         this.elevatorUuid = tag.getUUID(nbtName);
       }
 
       this.relativeDstBlockPos = Utils.loadBlockPos("Dst", tag);
    }
 
    private float getBlockYaw() {
-      BlockState state = this.m_58900_();
-      Direction facing = (Direction)state.m_61143_(ArenaGateBlock.FACING);
+      BlockState state = this.getBlockState();
+      Direction facing = (Direction)state.getValue(ArenaGateBlock.FACING);
 
       return switch (facing) {
          case SOUTH -> 0.0F;
@@ -125,9 +125,9 @@ public class ArenaGateBlockEntity extends BlockEntity {
    }
 
    private void rotateEntity(Entity ent, float yaw) {
-      ent.m_146922_(yaw);
-      ent.f_19859_ = yaw;
-      ent.m_5616_(yaw);
-      ent.m_5618_(yaw);
+      ent.setYRot(yaw);
+      ent.yRotO = yaw;
+      ent.setYHeadRot(yaw);
+      ent.setYBodyRot(yaw);
    }
 }

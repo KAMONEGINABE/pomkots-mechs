@@ -34,7 +34,7 @@ public class ShinobazuItem extends BasePartsItem.WeaponArm {
             return;
          }
 
-         if (!world.m_5776_()) {
+         if (!world.isClientSide()) {
             BulletMachineEntity be = new BulletMachineEntity(
                (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_MACHINE.get(),
                world,
@@ -43,11 +43,11 @@ public class ShinobazuItem extends BasePartsItem.WeaponArm {
             );
             Vec3 offset = mechInterface.getOffset();
             Vec3 muzzlPos = new Vec3(1.8 * mechInterface.isRight(), 3.0, 6.5);
-            muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
-            be.m_146884_(offset.m_82549_(muzzlPos));
+            muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+            be.setPos(offset.add(muzzlPos));
             float[] angle = mechInterface.getShootingAngle(be, true);
-            be.m_37251_(be, angle[0], angle[1], mechInterface.getFallFlyingTicks(), 6.0F, 2.0F);
-            world.m_7967_(be);
+            be.shootFromRotation(be, angle[0], angle[1], mechInterface.getFallFlyingTicks(), 6.0F, 2.0F);
+            world.addFreshEntity(be);
          } else {
             ParticleUtil.spawnAttachedMuzzleFlash(
                (ClientLevel)world, mechInterface.getMechEntity(), mechInterface.getAttachPoint(), 10.0, new Vec3(1.8 * mechInterface.isRight(), 3.0, 6.5)

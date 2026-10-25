@@ -42,14 +42,14 @@ import net.minecraft.world.phys.AABB;
 
 public class ArenaUtil {
    public static Entity findEntity(ServerLevel level, UUID uuid) {
-      return level.m_8791_(uuid);
+      return level.getEntity(uuid);
    }
 
    public static Entity findEntity(ServerLevel level, UUID uuid, ArenaFighterData.FighterType type) {
       if (uuid == null) {
          return null;
       } else {
-         return (Entity)(type == ArenaFighterData.FighterType.PLAYER ? level.m_46003_(uuid) : level.m_8791_(uuid));
+         return (Entity)(type == ArenaFighterData.FighterType.PLAYER ? level.getPlayerByUUID(uuid) : level.getEntity(uuid));
       }
    }
 
@@ -62,14 +62,14 @@ public class ArenaUtil {
             return false;
          }
 
-         match.setChallengerEntityId(ent.m_20148_());
+         match.setChallengerEntityId(ent.getUUID());
       } else {
          BlockPos gatePos = match.getGatePosA();
          float yaw = getBlockYaw(gatePos, context.getLevel());
          MechPilotEntity npc = setupNpc(f1, gatePos, context.getLevel(), yaw);
-         match.setChallengerEntityId(npc.m_20148_());
+         match.setChallengerEntityId(npc.getUUID());
          Pmvc01Entity mech = setupNpcMech(f1, gatePos, context.getLevel(), yaw);
-         npc.m_20329_(mech);
+         npc.startRiding(mech);
       }
 
       ArenaFighterData f2 = context.arena().getFighter(match.getOpponentId());
@@ -79,16 +79,16 @@ public class ArenaUtil {
             return false;
          }
 
-         match.setOpponentEntityId(ent.m_20148_());
+         match.setOpponentEntityId(ent.getUUID());
       } else {
          BlockPos gatePos = match.getGatePosB();
          float yaw = getBlockYaw(gatePos, context.getLevel());
-         MechPilotEntity npc = setupNpc(f2, gatePos.m_6630_(1), context.getLevel(), yaw);
+         MechPilotEntity npc = setupNpc(f2, gatePos.above(1), context.getLevel(), yaw);
          rotateEntity(npc, yaw);
-         match.setOpponentEntityId(npc.m_20148_());
-         Pmvc01Entity mech = setupNpcMech(f2, gatePos.m_6630_(1), context.getLevel(), yaw);
+         match.setOpponentEntityId(npc.getUUID());
+         Pmvc01Entity mech = setupNpcMech(f2, gatePos.above(1), context.getLevel(), yaw);
          rotateEntity(mech, yaw);
-         npc.m_20329_(mech);
+         npc.startRiding(mech);
       }
 
       ArenaManager.update(context.server(), context.arena().getArenaId());
@@ -97,13 +97,13 @@ public class ArenaUtil {
 
    public static void supplyMechConsumables(Pmvc01Entity mech) {
       supplyConsumables(mech);
-      mech.m_21153_(mech.m_21233_());
-      mech.m_6596_();
+      mech.setHealth(mech.getMaxHealth());
+      mech.setChanged();
    }
 
    private static float getBlockYaw(BlockPos pos, ServerLevel level) {
-      BlockState state = level.m_8055_(pos);
-      Direction facing = (Direction)state.m_61143_(ArenaGateBlock.FACING);
+      BlockState state = level.getBlockState(pos);
+      Direction facing = (Direction)state.getValue(ArenaGateBlock.FACING);
 
       return switch (facing) {
          case SOUTH -> 0.0F;
@@ -115,10 +115,10 @@ public class ArenaUtil {
    }
 
    private static void rotateEntity(Entity ent, float yaw) {
-      ent.m_146922_(yaw);
-      ent.f_19859_ = yaw;
-      ent.m_5616_(yaw);
-      ent.m_5618_(yaw);
+      ent.setYRot(yaw);
+      ent.yRotO = yaw;
+      ent.setYHeadRot(yaw);
+      ent.setYBodyRot(yaw);
    }
 
    private static MechPilotEntity setupNpc(ArenaFighterData fighter, BlockPos pos, ServerLevel level, float yaw) {
@@ -127,11 +127,11 @@ public class ArenaUtil {
       npc.setTextureLocation(fighter.getTexture().toString());
       ItemStack licenseItem = getLicenseItem(fighter.getAiLevel());
       ItemStack roleItem = new ItemStack((ItemLike)PomkotsMechs.PILOT_ROLE_GLADIATOR_ITEM.get());
-      npc.m_21008_(InteractionHand.MAIN_HAND, licenseItem);
-      npc.m_21008_(InteractionHand.OFF_HAND, roleItem);
+      npc.setItemInHand(InteractionHand.MAIN_HAND, licenseItem);
+      npc.setItemInHand(InteractionHand.OFF_HAND, roleItem);
       npc.setShouldSave(false);
-      npc.m_20035_(pos, 0.0F, 0.0F);
-      level.m_7967_(npc);
+      npc.moveTo(pos, 0.0F, 0.0F);
+      level.addFreshEntity(npc);
       return npc;
    }
 
@@ -150,25 +150,25 @@ public class ArenaUtil {
    private static Pmvc01Entity setupNpcMech(ArenaFighterData fighter, BlockPos pos, ServerLevel level, float yaw) {
       Pmvc01Entity mech = new Pmvc01Entity((EntityType<? extends LivingEntity>)PomkotsMechs.PMVC01.get(), level);
       ArenaMechData mechDef = fighter.getMechData();
-      level.m_7967_(mech);
-      mech.m_6836_(0, (ItemStack)mechDef.getParts().get(0));
-      mech.m_6836_(1, (ItemStack)mechDef.getParts().get(1));
-      mech.m_6836_(2, (ItemStack)mechDef.getParts().get(2));
-      mech.m_6836_(3, (ItemStack)mechDef.getParts().get(3));
-      mech.m_6836_(4, (ItemStack)mechDef.getParts().get(4));
-      mech.m_6836_(5, (ItemStack)mechDef.getParts().get(5));
-      mech.m_6836_(6, (ItemStack)mechDef.getParts().get(6));
-      mech.m_6836_(7, (ItemStack)mechDef.getParts().get(7));
-      mech.m_6836_(8, (ItemStack)mechDef.getParts().get(8));
-      mech.m_6836_(9, (ItemStack)mechDef.getParts().get(9));
-      mech.m_6836_(10, (ItemStack)mechDef.getParts().get(10));
-      mech.m_6836_(11, (ItemStack)mechDef.getParts().get(11));
+      level.addFreshEntity(mech);
+      mech.setItem(0, (ItemStack)mechDef.getParts().get(0));
+      mech.setItem(1, (ItemStack)mechDef.getParts().get(1));
+      mech.setItem(2, (ItemStack)mechDef.getParts().get(2));
+      mech.setItem(3, (ItemStack)mechDef.getParts().get(3));
+      mech.setItem(4, (ItemStack)mechDef.getParts().get(4));
+      mech.setItem(5, (ItemStack)mechDef.getParts().get(5));
+      mech.setItem(6, (ItemStack)mechDef.getParts().get(6));
+      mech.setItem(7, (ItemStack)mechDef.getParts().get(7));
+      mech.setItem(8, (ItemStack)mechDef.getParts().get(8));
+      mech.setItem(9, (ItemStack)mechDef.getParts().get(9));
+      mech.setItem(10, (ItemStack)mechDef.getParts().get(10));
+      mech.setItem(11, (ItemStack)mechDef.getParts().get(11));
       mech.setTextureColor(mechDef.getTextureColor());
       supplyConsumables(mech);
-      mech.m_6596_();
+      mech.setChanged();
       mech.setShouldSave(false);
-      mech.m_21153_(mech.m_21233_());
-      mech.m_20035_(pos, 0.0F, 0.0F);
+      mech.setHealth(mech.getMaxHealth());
+      mech.moveTo(pos, 0.0F, 0.0F);
       return mech;
    }
 
@@ -177,30 +177,30 @@ public class ArenaUtil {
       supplyWeaponMagazines(mech, 7, 13);
       supplyWeaponMagazines(mech, 8, 14);
       supplyWeaponMagazines(mech, 9, 15);
-      mech.m_6836_(16, getItemStack((BasePartsItem)PomkotsMechs.PELLET.get(), 64));
+      mech.setItem(16, getItemStack((BasePartsItem)PomkotsMechs.PELLET.get(), 64));
    }
 
    private static void supplyWeaponMagazines(Pmvc01Entity mech, int weaponSlot, int magazineSlot) {
-      ItemStack itemStack = mech.m_8020_(weaponSlot);
-      if (itemStack.m_41720_() instanceof BasePartsItem.Weapon weapon) {
+      ItemStack itemStack = mech.getItem(weaponSlot);
+      if (itemStack.getItem() instanceof BasePartsItem.Weapon weapon) {
          if (weapon.getWeaponCategory() == BasePartsItem.WeaponCategory.RIFLE) {
-            mech.m_6836_(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.RIFLE_MAGAZINE.get(), 32));
+            mech.setItem(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.RIFLE_MAGAZINE.get(), 32));
          } else if (weapon.getWeaponCategory() == BasePartsItem.WeaponCategory.SHOT_GUN) {
-            mech.m_6836_(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.SHOTGUN_MAGAZINE.get(), 32));
+            mech.setItem(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.SHOTGUN_MAGAZINE.get(), 32));
          } else if (weapon.getWeaponCategory() == BasePartsItem.WeaponCategory.MACHINE_GUN) {
             if (weapon.isMatchAmmo((BasePartsItem.Magazine)PomkotsMechs.MACHINE_GUN_MAGAZINE.get())) {
-               mech.m_6836_(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.MACHINE_GUN_MAGAZINE.get(), 32));
+               mech.setItem(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.MACHINE_GUN_MAGAZINE.get(), 32));
             } else {
-               mech.m_6836_(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.GATLING_MAGAZINE.get(), 32));
+               mech.setItem(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.GATLING_MAGAZINE.get(), 32));
             }
          } else if (weapon.getWeaponCategory() == BasePartsItem.WeaponCategory.MISSILE) {
             if (weapon instanceof DodoItem) {
-               mech.m_6836_(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.MISSILE_LARGE_MAGAZINE.get(), 2));
+               mech.setItem(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.MISSILE_LARGE_MAGAZINE.get(), 2));
             } else {
-               mech.m_6836_(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.MISSILE_MAGAZINE.get(), 12));
+               mech.setItem(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.MISSILE_MAGAZINE.get(), 12));
             }
          } else if (weapon.getWeaponCategory() == BasePartsItem.WeaponCategory.GRENADE) {
-            mech.m_6836_(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.GRENADE_MAGAZINE.get(), 12));
+            mech.setItem(magazineSlot, getItemStack((BasePartsItem)PomkotsMechs.GRENADE_MAGAZINE.get(), 12));
          }
       }
    }
@@ -212,9 +212,9 @@ public class ArenaUtil {
    }
 
    public static boolean isNear(Entity entity, BlockPos center, double range) {
-      AABB area = new AABB(center.m_252807_(), center.m_252807_()).m_82400_(range);
-      System.out.println(center + ":" + entity + ":" + entity.m_20202_() + ":" + area.m_82390_(entity.m_20182_()));
-      return area.m_82390_(entity.m_20182_());
+      AABB area = new AABB(center.getCenter(), center.getCenter()).inflate(range);
+      System.out.println(center + ":" + entity + ":" + entity.getVehicle() + ":" + area.contains(entity.position()));
+      return area.contains(entity.position());
    }
 
    public static void setupCameras(ArenaMatchContext context) {
@@ -224,22 +224,22 @@ public class ArenaUtil {
 
    public static void setupCamera(ArenaMatchContext context, Entity self, Entity target) {
       if (self instanceof ServerPlayer player) {
-         ArenaCameraEntity camera = new ArenaCameraEntity((EntityType<? extends LivingEntity>)PomkotsMechs.ARENA_CAMERA.get(), player.m_9236_());
+         ArenaCameraEntity camera = new ArenaCameraEntity((EntityType<? extends LivingEntity>)PomkotsMechs.ARENA_CAMERA.get(), player.level());
          camera.initialize(player, target);
-         player.m_9236_().m_7967_(camera);
+         player.level().addFreshEntity(camera);
          sendCameraPacket("aros", player);
-         player.f_8906_.m_9829_(new ClientboundSetCameraPacket(camera));
-         context.runtime().put("camera_" + player.m_20148_(), camera);
+         player.connection.send(new ClientboundSetCameraPacket(camera));
+         context.runtime().put("camera_" + player.getUUID(), camera);
       }
    }
 
    public static void playSounds(SoundEvent se, ArenaMatchContext context) {
       if (context.getChallengerEntity() instanceof ServerPlayer sp1) {
-         sp1.m_6330_(se, SoundSource.MASTER, 1.0F, 0.7F);
+         sp1.playNotifySound(se, SoundSource.MASTER, 1.0F, 0.7F);
       }
 
       if (context.getOpponentMechEntity() instanceof ServerPlayer sp2) {
-         sp2.m_6330_(se, SoundSource.MASTER, 1.0F, 0.7F);
+         sp2.playNotifySound(se, SoundSource.MASTER, 1.0F, 0.7F);
       }
    }
 
@@ -250,9 +250,9 @@ public class ArenaUtil {
 
    public static void restoreCamera(ArenaMatchContext context, Entity self) {
       if (self instanceof ServerPlayer player) {
-         player.f_8906_.m_9829_(new ClientboundSetCameraPacket(player));
+         player.connection.send(new ClientboundSetCameraPacket(player));
          sendCameraPacket("aroe", player);
-         context.runtime().remove("camera_" + player.m_20148_());
+         context.runtime().remove("camera_" + player.getUUID());
       }
    }
 
@@ -296,7 +296,7 @@ public class ArenaUtil {
    public static void openResultScreen(ServerPlayer serverPlayer, ArenaMatchResultData.Entry data) {
       MenuRegistry.openExtendedMenu(
          serverPlayer,
-         new SimpleMenuProvider((id, inv, player) -> new ArenaBattleResultMenu(id, inv, serverPlayer, data), Component.m_237113_("Arena Result")),
+         new SimpleMenuProvider((id, inv, player) -> new ArenaBattleResultMenu(id, inv, serverPlayer, data), Component.literal("Arena Result")),
          buf -> ArenaMatchResultData.write(buf, data)
       );
    }
@@ -314,17 +314,17 @@ public class ArenaUtil {
          if (fighterInfo != null) {
             if (fighterInfo.getType() == ArenaFighterData.FighterType.NPC) {
                if (mechEntityId != null) {
-                  Entity ent = level.m_8791_(mechEntityId);
+                  Entity ent = level.getEntity(mechEntityId);
                   if (ent instanceof Pmvc01Entity) {
-                     ent.m_20153_();
-                     ent.m_146870_();
+                     ent.ejectPassengers();
+                     ent.discard();
                   }
                }
 
                if (fighterEntityId != null) {
-                  Entity ent = level.m_8791_(fighterEntityId);
+                  Entity ent = level.getEntity(fighterEntityId);
                   if (ent instanceof MechPilotEntity) {
-                     ent.m_146870_();
+                     ent.discard();
                   }
                }
             }
@@ -333,7 +333,7 @@ public class ArenaUtil {
    }
 
    private static void finalizeGate(BlockPos gatePos, ArenaMatchData match, ArenaInstance arena, ServerLevel level) {
-      if (gatePos != null && level.m_7702_(gatePos) instanceof ArenaGateBlockEntity ent) {
+      if (gatePos != null && level.getBlockEntity(gatePos) instanceof ArenaGateBlockEntity ent) {
          ent.refreshElevator();
       }
    }

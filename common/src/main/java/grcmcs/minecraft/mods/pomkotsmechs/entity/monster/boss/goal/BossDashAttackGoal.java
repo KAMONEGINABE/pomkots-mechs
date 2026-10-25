@@ -14,38 +14,38 @@ public class BossDashAttackGoal extends BossDashGoal {
    }
 
    @Override
-   public boolean m_8045_() {
-      return this.target == null || !this.target.m_6084_() ? false : this.dashTimer < this.maxDuration;
+   public boolean canContinueToUse() {
+      return this.target == null || !this.target.isAlive() ? false : this.dashTimer < this.maxDuration;
    }
 
    @Override
-   public void m_8056_() {
-      this.target = this.mob.m_5448_();
+   public void start() {
+      this.target = this.mob.getTarget();
       this.hasStarted = true;
       this.dashTimer = 0;
-      this.initialYaw = this.mob.m_146908_();
-      Vec3 toTarget = this.target.m_20182_().m_82546_(this.mob.m_20182_()).m_82541_();
-      this.dashDirection = new Vec3(toTarget.f_82479_, 0.0, toTarget.f_82481_).m_82541_();
+      this.initialYaw = this.mob.getYRot();
+      Vec3 toTarget = this.target.position().subtract(this.mob.position()).normalize();
+      this.dashDirection = new Vec3(toTarget.x, 0.0, toTarget.z).normalize();
       this.mob.triggerAnim("action_controller", "dash_attack");
    }
 
    @Override
-   public void m_8037_() {
-      super.m_8037_();
+   public void tick() {
+      super.tick();
       if (this.dashTimer % 10 == 0) {
          this.dealDashDamage();
       }
    }
 
    protected void dealDashDamage() {
-      Level level = this.mob.m_9236_();
-      AABB damageArea = this.mob.m_20191_().m_82400_(10.0);
+      Level level = this.mob.level();
+      AABB damageArea = this.mob.getBoundingBox().inflate(10.0);
 
-      for (LivingEntity entity : level.m_45976_(LivingEntity.class, damageArea)) {
-         if (!this.mob.isSelf(entity) && this.mob.m_20270_(entity) <= 20.0F) {
-            entity.m_6469_(this.mob.m_269291_().m_269333_(this.mob), this.mob.getMechData().meleeDamage);
-            Vec3 knockback = entity.m_20184_().m_82541_().m_82490_(3.0);
-            entity.m_147240_(10.0, -knockback.f_82479_, -knockback.f_82480_);
+      for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, damageArea)) {
+         if (!this.mob.isSelf(entity) && this.mob.distanceTo(entity) <= 20.0F) {
+            entity.hurt(this.mob.damageSources().mobAttack(this.mob), this.mob.getMechData().meleeDamage);
+            Vec3 knockback = entity.getDeltaMovement().normalize().scale(3.0);
+            entity.knockback(10.0, -knockback.x, -knockback.y);
          }
       }
    }

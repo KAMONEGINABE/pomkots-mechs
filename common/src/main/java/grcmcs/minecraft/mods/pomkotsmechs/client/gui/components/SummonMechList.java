@@ -21,16 +21,16 @@ public class SummonMechList extends AbstractPomkotsSelectionList<SummonMechList.
    }
 
    public void addTargets(List<Pair<UUID, String>> targets) {
-      this.m_93516_();
+      this.clearEntries();
 
       for (int i = 0; i < targets.size(); i++) {
          Pair<UUID, String> target = targets.get(i);
-         this.m_7085_(new SummonMechList.Entry(this.parent, (UUID)target.getFirst(), (String)target.getSecond(), i));
+         this.addEntry(new SummonMechList.Entry(this.parent, (UUID)target.getFirst(), (String)target.getSecond(), i));
       }
    }
 
    public int getSize() {
-      return this.m_5773_();
+      return this.getItemCount();
    }
 
    public static class Entry extends AbstractPomkotsSelectionList.PomkotsEntry<SummonMechList.Entry> {
@@ -49,12 +49,12 @@ public class SummonMechList extends AbstractPomkotsSelectionList<SummonMechList.
       }
 
       @Override
-      public void m_6311_(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovered, float partialTick) {
-         super.m_6311_(graphics, index, top, left, width, height, mouseX, mouseY, hovered, partialTick);
-         graphics.m_280056_(Minecraft.m_91087_().f_91062_, "Name : " + this.mechName + " / ID : " + this.mechId, left + 8, top + 7, 16777215, false);
+      public void render(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovered, float partialTick) {
+         super.render(graphics, index, top, left, width, height, mouseX, mouseY, hovered, partialTick);
+         graphics.drawString(Minecraft.getInstance().font, "Name : " + this.mechName + " / ID : " + this.mechId, left + 8, top + 7, 16777215, false);
       }
 
-      public boolean m_6375_(double mouseX, double mouseY, int button) {
+      public boolean mouseClicked(double mouseX, double mouseY, int button) {
          System.out.println(this.mechName);
          this.parent.setSelected(this.mechId);
          return true;

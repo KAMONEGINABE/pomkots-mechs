@@ -23,7 +23,7 @@ public abstract class MovePattern {
       this.pilot = pilot;
       this.mech = mech;
       this.preferredDistance = preferredDistance;
-      this.random = RandomSource.m_216327_();
+      this.random = RandomSource.create();
       this.controller = controller;
    }
 
@@ -35,9 +35,9 @@ public abstract class MovePattern {
    public abstract void tick(DriverInput var1);
 
    protected void lookAtYaw(float yaw) {
-      this.pilot.m_146922_(yaw);
-      this.pilot.m_5616_(yaw);
-      this.pilot.f_19859_ = yaw;
+      this.pilot.setYRot(yaw);
+      this.pilot.setYHeadRot(yaw);
+      this.pilot.yRotO = yaw;
    }
 
    public boolean shouldExit() {
@@ -45,12 +45,12 @@ public abstract class MovePattern {
    }
 
    protected double distanceToTarget() {
-      return this.pilot.m_20270_(this.target);
+      return this.pilot.distanceTo(this.target);
    }
 
    protected void setMove(float xxa, float zza, DriverInput input) {
-      this.pilot.f_20900_ = xxa;
-      this.pilot.f_20902_ = zza;
+      this.pilot.xxa = xxa;
+      this.pilot.zza = zza;
       input.setForwardPressed(zza > 0.0F);
       input.setBackPressed(zza < 0.0F);
       input.setLeftPressed(xxa > 0.0F);
@@ -66,7 +66,7 @@ public abstract class MovePattern {
       }
 
       private void initMovement() {
-         int dir = this.random.m_188503_(13);
+         int dir = this.random.nextInt(13);
          switch (dir) {
             case 0:
             case 1:
@@ -133,7 +133,7 @@ public abstract class MovePattern {
 
       @Override
       public boolean shouldExit() {
-         return (this.tick <= 10 || !this.mech.m_20096_()) && this.mech.getEnergy() != 0 ? super.shouldExit() : true;
+         return (this.tick <= 10 || !this.mech.onGround()) && this.mech.getEnergy() != 0 ? super.shouldExit() : true;
       }
    }
 
@@ -182,12 +182,12 @@ public abstract class MovePattern {
       }
 
       private Player findNearestPlayer() {
-         List<? extends Player> players = this.mech.m_9236_().m_6907_();
+         List<? extends Player> players = this.mech.level().players();
          double bestDistance = Double.MAX_VALUE;
          Player best = null;
 
          for (Player player : players) {
-            double distance = this.mech.m_20280_(player);
+            double distance = this.mech.distanceToSqr(player);
             if (distance < bestDistance) {
                bestDistance = distance;
                best = player;
@@ -202,8 +202,8 @@ public abstract class MovePattern {
          this.tick++;
          if (this.followTarget != null) {
             this.controller.updateRotation(this.followTarget);
-            double distance = this.mech.m_20270_(this.followTarget);
-            if (this.followTarget.m_20182_().f_82480_ - this.mech.m_20182_().f_82480_ > 10.0) {
+            double distance = this.mech.distanceTo(this.followTarget);
+            if (this.followTarget.position().y - this.mech.position().y > 10.0) {
                input.setJumpPressed(true);
             }
 
@@ -242,7 +242,7 @@ public abstract class MovePattern {
    }
 
    public static class KitePattern extends MovePattern {
-      private final boolean leftOrbit = this.random.m_188499_();
+      private final boolean leftOrbit = this.random.nextBoolean();
 
       public KitePattern(LivingEntity pilot, Pmvc01Entity mech, MechAutoController controller, float preferredDistance) {
          super(pilot, mech, controller, preferredDistance);
@@ -251,7 +251,7 @@ public abstract class MovePattern {
       @Override
       public void start(LivingEntity target) {
          super.start(target);
-         this.maxTicks = 80 + this.random.m_188503_(80);
+         this.maxTicks = 80 + this.random.nextInt(80);
       }
 
       @Override
@@ -281,7 +281,7 @@ public abstract class MovePattern {
       @Override
       public void start(LivingEntity target) {
          super.start(target);
-         this.maxTicks = 20 + this.random.m_188503_(40);
+         this.maxTicks = 20 + this.random.nextInt(40);
       }
 
       @Override
@@ -309,7 +309,7 @@ public abstract class MovePattern {
       @Override
       public void start(LivingEntity target) {
          super.start(target);
-         this.maxTicks = 20 + this.random.m_188503_(40);
+         this.maxTicks = 20 + this.random.nextInt(40);
       }
 
       @Override
@@ -346,27 +346,27 @@ public abstract class MovePattern {
       public void start(LivingEntity target) {
          super.start(target);
          this.controller.stopBoosting();
-         this.maxTicks = 20 + this.random.m_188503_(40);
+         this.maxTicks = 20 + this.random.nextInt(40);
          this.chooseDirection();
       }
 
       private void chooseDirection() {
-         this.moveYaw = this.random.m_188501_() * 360.0F;
+         this.moveYaw = this.random.nextFloat() * 360.0F;
          float rad = this.moveYaw * (float) (Math.PI / 180.0);
-         this.moveX = -Mth.m_14031_(rad);
-         this.moveZ = Mth.m_14089_(rad);
+         this.moveX = -Mth.sin(rad);
+         this.moveZ = Mth.cos(rad);
       }
 
       @Override
       public void tick(DriverInput input) {
          this.tick++;
          if (this.tick % 10 == 0) {
-            this.moveYaw = this.moveYaw + (this.random.m_188501_() * 20.0F - 10.0F);
+            this.moveYaw = this.moveYaw + (this.random.nextFloat() * 20.0F - 10.0F);
          }
 
          this.lookAtYaw(this.moveYaw);
          this.setMove(0.0F, 1.0F, input);
-         if (this.tick % 40 == 0 && this.random.m_188501_() < 0.3F) {
+         if (this.tick % 40 == 0 && this.random.nextFloat() < 0.3F) {
             this.chooseDirection();
          }
       }
@@ -380,7 +380,7 @@ public abstract class MovePattern {
       @Override
       public void start(LivingEntity target) {
          super.start(target);
-         this.maxTicks = 20 + this.random.m_188503_(40);
+         this.maxTicks = 20 + this.random.nextInt(40);
       }
 
       @Override
@@ -407,7 +407,7 @@ public abstract class MovePattern {
       @Override
       public void start(LivingEntity target) {
          super.start(target);
-         this.maxTicks = 80 + this.random.m_188503_(40);
+         this.maxTicks = 80 + this.random.nextInt(40);
       }
 
       @Override
@@ -427,7 +427,7 @@ public abstract class MovePattern {
             return true;
          }
 
-         double yDiff = Math.abs(this.target.m_20186_() - this.mech.m_20186_());
+         double yDiff = Math.abs(this.target.getY() - this.mech.getY());
          return yDiff < 10.0 ? true : super.shouldExit();
       }
    }

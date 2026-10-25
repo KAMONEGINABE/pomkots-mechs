@@ -29,7 +29,7 @@ public class PersonalPomkotsCubeBlockEntity extends ChestBlockEntity implements 
    public static final int CONTAINER_SIZE = 54;
    private static final String OWNER_TAG = PomkotsMechs.nbtName("PersonalPomkotsCubeOwner");
    private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
-   private NonNullList<ItemStack> items = NonNullList.m_122780_(54, ItemStack.f_41583_);
+   private NonNullList<ItemStack> items = NonNullList.withSize(54, ItemStack.EMPTY);
    private UUID ownerUuid;
    private float previousOpenness;
 
@@ -41,56 +41,56 @@ public class PersonalPomkotsCubeBlockEntity extends ChestBlockEntity implements 
       super(type, pos, state);
    }
 
-   public int m_6643_() {
+   public int getContainerSize() {
       return 54;
    }
 
-   protected NonNullList<ItemStack> m_7086_() {
+   protected NonNullList<ItemStack> getItems() {
       return this.items;
    }
 
-   protected void m_6520_(NonNullList<ItemStack> items) {
+   protected void setItems(NonNullList<ItemStack> items) {
       this.items = items;
    }
 
    public boolean isOwner(Player player) {
-      return this.ownerUuid != null && this.ownerUuid.equals(player.m_20148_());
+      return this.ownerUuid != null && this.ownerUuid.equals(player.getUUID());
    }
 
    public void setOwnerIfAbsent(UUID ownerUuid) {
       if (this.ownerUuid == null) {
          this.ownerUuid = ownerUuid;
-         this.m_6596_();
+         this.setChanged();
       }
    }
 
-   protected Component m_6820_() {
-      return Component.m_237115_("block.pomkotsmechs.personal_pomkots_cube");
+   protected Component getDefaultName() {
+      return Component.translatable("block.pomkotsmechs.personal_pomkots_cube");
    }
 
    @Nullable
-   public AbstractContainerMenu m_7208_(int id, Inventory inventory, Player player) {
-      if (this.isOwner(player) && this.m_7525_(player)) {
-         this.m_59640_(player);
-         return ChestMenu.m_39246_(id, inventory, this);
+   public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
+      if (this.isOwner(player) && this.canOpen(player)) {
+         this.unpackLootTable(player);
+         return ChestMenu.sixRows(id, inventory, this);
       } else {
          return null;
       }
    }
 
-   protected void m_183515_(@NotNull CompoundTag tag) {
-      super.m_183515_(tag);
-      ContainerHelper.m_18973_(tag, this.items);
+   protected void saveAdditional(@NotNull CompoundTag tag) {
+      super.saveAdditional(tag);
+      ContainerHelper.saveAllItems(tag, this.items);
       if (this.ownerUuid != null) {
-         tag.m_128362_(OWNER_TAG, this.ownerUuid);
+         tag.putUUID(OWNER_TAG, this.ownerUuid);
       }
    }
 
-   public void m_142466_(@NotNull CompoundTag tag) {
-      this.items = NonNullList.m_122780_(54, ItemStack.f_41583_);
-      super.m_142466_(tag);
-      ContainerHelper.m_18980_(tag, this.items);
-      this.ownerUuid = tag.m_128403_(OWNER_TAG) ? tag.m_128342_(OWNER_TAG) : null;
+   public void load(@NotNull CompoundTag tag) {
+      this.items = NonNullList.withSize(54, ItemStack.EMPTY);
+      super.load(tag);
+      ContainerHelper.loadAllItems(tag, this.items);
+      this.ownerUuid = tag.hasUUID(OWNER_TAG) ? tag.getUUID(OWNER_TAG) : null;
    }
 
    public void registerControllers(ControllerRegistrar controllers) {
@@ -99,7 +99,7 @@ public class PersonalPomkotsCubeBlockEntity extends ChestBlockEntity implements 
             new AnimationController(
                this,
                event -> {
-                  float openness = ((PersonalPomkotsCubeBlockEntity)event.getAnimatable()).m_6683_(event.getPartialTick());
+                  float openness = ((PersonalPomkotsCubeBlockEntity)event.getAnimatable()).getOpenNess(event.getPartialTick());
                   float oldOpenness = this.previousOpenness;
                   this.previousOpenness = openness;
                   if (oldOpenness == 0.0F && openness > 0.0F) {

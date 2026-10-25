@@ -48,7 +48,7 @@ public class ArenaMatchContext {
 
    public Entity getChallengerEntity() {
       Entity entity = this.runtime.getChallengerEntity();
-      if (entity != null && entity.m_6084_()) {
+      if (entity != null && entity.isAlive()) {
          return entity;
       }
 
@@ -59,7 +59,7 @@ public class ArenaMatchContext {
 
    public Entity getChallengerMechEntity() {
       Entity entity = this.runtime.getChallengerMech();
-      if (entity != null && entity.m_6084_()) {
+      if (entity != null && entity.isAlive()) {
          return entity;
       }
 
@@ -70,7 +70,7 @@ public class ArenaMatchContext {
 
    public Entity getOpponentEntity() {
       Entity entity = this.runtime.getOpponentEntity();
-      if (entity != null && entity.m_6084_()) {
+      if (entity != null && entity.isAlive()) {
          return entity;
       }
 
@@ -81,7 +81,7 @@ public class ArenaMatchContext {
 
    public Entity getOpponentMechEntity() {
       Entity entity = this.runtime.getOpponentMech();
-      if (entity != null && entity.m_6084_()) {
+      if (entity != null && entity.isAlive()) {
          return entity;
       }
 

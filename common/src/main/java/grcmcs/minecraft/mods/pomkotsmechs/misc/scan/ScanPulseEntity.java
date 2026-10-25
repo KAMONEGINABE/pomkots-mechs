@@ -22,51 +22,51 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 public class ScanPulseEntity extends Entity {
-   private static final EntityDataAccessor<Optional<UUID>> OWNER_UUID = SynchedEntityData.m_135353_(ScanPulseEntity.class, EntityDataSerializers.f_135041_);
-   private static final EntityDataAccessor<String> OWNER_TEAM = SynchedEntityData.m_135353_(ScanPulseEntity.class, EntityDataSerializers.f_135030_);
-   private static final EntityDataAccessor<Byte> VISIBILITY = SynchedEntityData.m_135353_(ScanPulseEntity.class, EntityDataSerializers.f_135027_);
-   private static final EntityDataAccessor<Float> MAX_RADIUS = SynchedEntityData.m_135353_(ScanPulseEntity.class, EntityDataSerializers.f_135029_);
-   private static final EntityDataAccessor<Integer> EXPANSION_TICKS = SynchedEntityData.m_135353_(ScanPulseEntity.class, EntityDataSerializers.f_135028_);
-   private static final EntityDataAccessor<Integer> HIGHLIGHT_TICKS = SynchedEntityData.m_135353_(ScanPulseEntity.class, EntityDataSerializers.f_135028_);
-   private static final EntityDataAccessor<Long> START_GAME_TIME = SynchedEntityData.m_135353_(ScanPulseEntity.class, EntityDataSerializers.f_244073_);
+   private static final EntityDataAccessor<Optional<UUID>> OWNER_UUID = SynchedEntityData.defineId(ScanPulseEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+   private static final EntityDataAccessor<String> OWNER_TEAM = SynchedEntityData.defineId(ScanPulseEntity.class, EntityDataSerializers.STRING);
+   private static final EntityDataAccessor<Byte> VISIBILITY = SynchedEntityData.defineId(ScanPulseEntity.class, EntityDataSerializers.BYTE);
+   private static final EntityDataAccessor<Float> MAX_RADIUS = SynchedEntityData.defineId(ScanPulseEntity.class, EntityDataSerializers.FLOAT);
+   private static final EntityDataAccessor<Integer> EXPANSION_TICKS = SynchedEntityData.defineId(ScanPulseEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> HIGHLIGHT_TICKS = SynchedEntityData.defineId(ScanPulseEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Long> START_GAME_TIME = SynchedEntityData.defineId(ScanPulseEntity.class, EntityDataSerializers.LONG);
 
    public ScanPulseEntity(EntityType<? extends ScanPulseEntity> type, Level level) {
       super(type, level);
-      this.f_19811_ = true;
-      this.f_19794_ = true;
-      this.m_20242_(true);
+      this.noCulling = true;
+      this.noPhysics = true;
+      this.setNoGravity(true);
    }
 
-   protected void m_8097_() {
-      this.f_19804_.m_135372_(OWNER_UUID, Optional.empty());
-      this.f_19804_.m_135372_(OWNER_TEAM, "");
-      this.f_19804_.m_135372_(VISIBILITY, ScanVisibility.OWNER.id());
-      this.f_19804_.m_135372_(MAX_RADIUS, 64.0F);
-      this.f_19804_.m_135372_(EXPANSION_TICKS, 60);
-      this.f_19804_.m_135372_(HIGHLIGHT_TICKS, 100);
-      this.f_19804_.m_135372_(START_GAME_TIME, 0L);
+   protected void defineSynchedData() {
+      this.entityData.define(OWNER_UUID, Optional.empty());
+      this.entityData.define(OWNER_TEAM, "");
+      this.entityData.define(VISIBILITY, ScanVisibility.OWNER.id());
+      this.entityData.define(MAX_RADIUS, 64.0F);
+      this.entityData.define(EXPANSION_TICKS, 60);
+      this.entityData.define(HIGHLIGHT_TICKS, 100);
+      this.entityData.define(START_GAME_TIME, 0L);
    }
 
    public void initialize(Player owner, ScanVisibility visibility, float maxRadius, int expansionTicks, int highlightTicks) {
-      this.setOwnerUUID(owner.m_20148_());
+      this.setOwnerUUID(owner.getUUID());
       this.setVisibility(visibility);
       this.setMaxRadius(maxRadius);
       this.setExpansionTicks(expansionTicks);
       this.setHighlightTicks(highlightTicks);
-      this.setOwnerTeam(owner.m_5647_() != null ? owner.m_5647_().m_5758_() : "");
-      this.setStartGameTime(this.m_9236_().m_46467_());
+      this.setOwnerTeam(owner.getTeam() != null ? owner.getTeam().getName() : "");
+      this.setStartGameTime(this.level().getGameTime());
    }
 
-   public void m_8119_() {
-      if (this.f_19803_ && this.m_9236_().f_46443_) {
+   public void tick() {
+      if (this.firstTick && this.level().isClientSide) {
          this.playSoundEffect((SoundEvent)PomkotsMechs.SE_SCAN2.get(), 0.7F);
       }
 
-      super.m_8119_();
-      if (!this.m_9236_().f_46443_) {
-         long elapsed = this.m_9236_().m_46467_() - this.getStartGameTime();
+      super.tick();
+      if (!this.level().isClientSide) {
+         long elapsed = this.level().getGameTime() - this.getStartGameTime();
          if (elapsed > this.getExpansionTicks() + 2L) {
-            this.m_146870_();
+            this.discard();
          }
       }
    }
@@ -78,35 +78,35 @@ public class ScanPulseEntity extends Entity {
    protected void playSoundEffect(SoundEvent event, float volume) {
       float soundEffectVolume = this.computeVolume(100.0);
       if (soundEffectVolume > 0.0F) {
-         this.m_9236_().m_7785_(this.m_20185_(), this.m_20186_(), this.m_20189_(), event, SoundSource.PLAYERS, volume * soundEffectVolume, 1.0F, false);
+         this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), event, SoundSource.PLAYERS, volume * soundEffectVolume, 1.0F, false);
       }
    }
 
    private float computeVolume(double maxDistance) {
-      Minecraft mc = Minecraft.m_91087_();
-      LocalPlayer player = mc.f_91074_;
+      Minecraft mc = Minecraft.getInstance();
+      LocalPlayer player = mc.player;
       if (player == null) {
          return 0.0F;
       }
 
-      double distance = player.m_20270_(this);
+      double distance = player.distanceTo(this);
       if (distance > maxDistance) {
          return 0.0F;
       }
 
       float volume = 1.0F - (float)(distance / maxDistance);
-      return Mth.m_14036_(volume, 0.0F, 1.0F);
+      return Mth.clamp(volume, 0.0F, 1.0F);
    }
 
    public float getRadius(float partialTick) {
-      double elapsed = (float)(this.m_9236_().m_46467_() - this.getStartGameTime()) + partialTick;
+      double elapsed = (float)(this.level().getGameTime() - this.getStartGameTime()) + partialTick;
       float progress = (float)Math.max(0.0, Math.min(1.0, elapsed / this.getExpansionTicks()));
       float eased = 1.0F - (1.0F - progress) * (1.0F - progress);
       return this.getMaxRadius() * eased;
    }
 
    public float getPreviousRadius() {
-      double elapsed = this.m_9236_().m_46467_() - this.getStartGameTime() - 1.0;
+      double elapsed = this.level().getGameTime() - this.getStartGameTime() - 1.0;
       float progress = (float)Math.max(0.0, Math.min(1.0, elapsed / this.getExpansionTicks()));
       float eased = 1.0F - (1.0F - progress) * (1.0F - progress);
       return this.getMaxRadius() * eased;
@@ -115,118 +115,118 @@ public class ScanPulseEntity extends Entity {
    public boolean isVisibleTo(Player player) {
       return switch (this.getVisibility()) {
          case ALL -> true;
-         case OWNER -> this.getOwnerUUID() != null && this.getOwnerUUID().equals(player.m_20148_());
+         case OWNER -> this.getOwnerUUID() != null && this.getOwnerUUID().equals(player.getUUID());
          case TEAM -> this.isOwnerOrSameTeam(player);
       };
    }
 
    private boolean isOwnerOrSameTeam(Player player) {
       UUID ownerUUID = this.getOwnerUUID();
-      if (ownerUUID != null && ownerUUID.equals(player.m_20148_())) {
+      if (ownerUUID != null && ownerUUID.equals(player.getUUID())) {
          return true;
       }
 
       String ownerTeam = this.getOwnerTeam();
-      return !ownerTeam.isEmpty() && player.m_5647_() != null && ownerTeam.equals(player.m_5647_().m_5758_());
+      return !ownerTeam.isEmpty() && player.getTeam() != null && ownerTeam.equals(player.getTeam().getName());
    }
 
    @Nullable
    public UUID getOwnerUUID() {
-      return (UUID)((Optional)this.f_19804_.m_135370_(OWNER_UUID)).orElse(null);
+      return (UUID)((Optional)this.entityData.get(OWNER_UUID)).orElse(null);
    }
 
    public void setOwnerUUID(@Nullable UUID uuid) {
-      this.f_19804_.m_135381_(OWNER_UUID, Optional.ofNullable(uuid));
+      this.entityData.set(OWNER_UUID, Optional.ofNullable(uuid));
    }
 
    public String getOwnerTeam() {
-      return (String)this.f_19804_.m_135370_(OWNER_TEAM);
+      return (String)this.entityData.get(OWNER_TEAM);
    }
 
    public void setOwnerTeam(String teamName) {
-      this.f_19804_.m_135381_(OWNER_TEAM, teamName != null ? teamName : "");
+      this.entityData.set(OWNER_TEAM, teamName != null ? teamName : "");
    }
 
    public ScanVisibility getVisibility() {
-      return ScanVisibility.fromId((Byte)this.f_19804_.m_135370_(VISIBILITY));
+      return ScanVisibility.fromId((Byte)this.entityData.get(VISIBILITY));
    }
 
    public void setVisibility(ScanVisibility visibility) {
-      this.f_19804_.m_135381_(VISIBILITY, visibility.id());
+      this.entityData.set(VISIBILITY, visibility.id());
    }
 
    public float getMaxRadius() {
-      return (Float)this.f_19804_.m_135370_(MAX_RADIUS);
+      return (Float)this.entityData.get(MAX_RADIUS);
    }
 
    public void setMaxRadius(float radius) {
-      this.f_19804_.m_135381_(MAX_RADIUS, Math.max(0.0F, radius));
+      this.entityData.set(MAX_RADIUS, Math.max(0.0F, radius));
    }
 
    public int getExpansionTicks() {
-      return (Integer)this.f_19804_.m_135370_(EXPANSION_TICKS);
+      return (Integer)this.entityData.get(EXPANSION_TICKS);
    }
 
    public void setExpansionTicks(int ticks) {
-      this.f_19804_.m_135381_(EXPANSION_TICKS, Math.max(1, ticks));
+      this.entityData.set(EXPANSION_TICKS, Math.max(1, ticks));
    }
 
    public int getHighlightTicks() {
-      return (Integer)this.f_19804_.m_135370_(HIGHLIGHT_TICKS);
+      return (Integer)this.entityData.get(HIGHLIGHT_TICKS);
    }
 
    public void setHighlightTicks(int ticks) {
-      this.f_19804_.m_135381_(HIGHLIGHT_TICKS, Math.max(1, ticks));
+      this.entityData.set(HIGHLIGHT_TICKS, Math.max(1, ticks));
    }
 
    public long getStartGameTime() {
-      return (Long)this.f_19804_.m_135370_(START_GAME_TIME);
+      return (Long)this.entityData.get(START_GAME_TIME);
    }
 
    public void setStartGameTime(long gameTime) {
-      this.f_19804_.m_135381_(START_GAME_TIME, gameTime);
+      this.entityData.set(START_GAME_TIME, gameTime);
    }
 
-   protected void m_7380_(CompoundTag tag) {
+   protected void addAdditionalSaveData(CompoundTag tag) {
       UUID ownerUUID = this.getOwnerUUID();
       if (ownerUUID != null) {
-         tag.m_128362_("OwnerUUID", ownerUUID);
+         tag.putUUID("OwnerUUID", ownerUUID);
       }
 
-      tag.m_128359_("OwnerTeam", this.getOwnerTeam());
-      tag.m_128344_("Visibility", this.getVisibility().id());
-      tag.m_128350_("MaxRadius", this.getMaxRadius());
-      tag.m_128405_("ExpansionTicks", this.getExpansionTicks());
-      tag.m_128405_("HighlightTicks", this.getHighlightTicks());
-      tag.m_128356_("StartGameTime", this.getStartGameTime());
+      tag.putString("OwnerTeam", this.getOwnerTeam());
+      tag.putByte("Visibility", this.getVisibility().id());
+      tag.putFloat("MaxRadius", this.getMaxRadius());
+      tag.putInt("ExpansionTicks", this.getExpansionTicks());
+      tag.putInt("HighlightTicks", this.getHighlightTicks());
+      tag.putLong("StartGameTime", this.getStartGameTime());
    }
 
-   protected void m_7378_(CompoundTag tag) {
-      if (tag.m_128403_("OwnerUUID")) {
-         this.setOwnerUUID(tag.m_128342_("OwnerUUID"));
+   protected void readAdditionalSaveData(CompoundTag tag) {
+      if (tag.hasUUID("OwnerUUID")) {
+         this.setOwnerUUID(tag.getUUID("OwnerUUID"));
       }
 
-      this.setOwnerTeam(tag.m_128461_("OwnerTeam"));
-      this.setVisibility(ScanVisibility.fromId(tag.m_128445_("Visibility")));
-      this.setMaxRadius(tag.m_128457_("MaxRadius"));
-      this.setExpansionTicks(tag.m_128451_("ExpansionTicks"));
-      this.setHighlightTicks(tag.m_128451_("HighlightTicks"));
-      this.setStartGameTime(tag.m_128454_("StartGameTime"));
+      this.setOwnerTeam(tag.getString("OwnerTeam"));
+      this.setVisibility(ScanVisibility.fromId(tag.getByte("Visibility")));
+      this.setMaxRadius(tag.getFloat("MaxRadius"));
+      this.setExpansionTicks(tag.getInt("ExpansionTicks"));
+      this.setHighlightTicks(tag.getInt("HighlightTicks"));
+      this.setStartGameTime(tag.getLong("StartGameTime"));
    }
 
-   public Packet<ClientGamePacketListener> m_5654_() {
+   public Packet<ClientGamePacketListener> getAddEntityPacket() {
       return NetworkManager.createAddEntityPacket(this);
    }
 
-   public boolean m_6087_() {
+   public boolean isPickable() {
       return false;
    }
 
-   public boolean m_6097_() {
+   public boolean isAttackable() {
       return false;
    }
 
-   public boolean m_6051_() {
+   public boolean displayFireAnimation() {
       return false;
    }
 }

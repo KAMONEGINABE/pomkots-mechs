@@ -33,14 +33,14 @@ public class Pmt03Entity extends BaseTurretEntity {
    @Override
    protected void registerTargetSelectorGoals() {
       super.registerTargetSelectorGoals();
-      this.f_21345_.m_25352_(1, new ContinuousAttackGoal(this, 0.8F, 41, 60, 20));
+      this.goalSelector.addGoal(1, new ContinuousAttackGoal(this, 0.8F, 41, 60, 20));
    }
 
    @Override
-   public void m_8119_() {
-      super.m_8119_();
-      LivingEntity target = this.m_5448_();
-      if (!this.m_9236_().f_46443_ && target != null) {
+   public void tick() {
+      super.tick();
+      LivingEntity target = this.getTarget();
+      if (!this.level().isClientSide && target != null) {
          this.rotateToTarget(target);
       }
    }
@@ -56,21 +56,21 @@ public class Pmt03Entity extends BaseTurretEntity {
 
    @Override
    public void doAttack() {
-      LivingEntity target = this.m_5448_();
+      LivingEntity target = this.getTarget();
       if (target != null) {
          BulletGrenadeLargeEntity be = new BulletGrenadeLargeEntity(
-            (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_GRENADE_LARGE.get(), this.m_9236_(), this, this.getMechData().grenadeDamage
+            (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_GRENADE_LARGE.get(), this.level(), this, this.getMechData().grenadeDamage
          );
          be.setExplosionScale((int)this.getMechData().grenadeExplosionScale);
-         be.m_20242_(true);
-         Vec3 offset = this.m_20182_();
+         be.setNoGravity(true);
+         Vec3 offset = this.position();
          Vec3 muzzlPos = new Vec3(0.0, 2.0, 4.0);
-         muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * this.m_146908_()));
-         be.m_146884_(offset.m_82549_(muzzlPos));
-         if (!Utils.isObstructed(this.m_9236_(), be, target)) {
+         muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * this.getYRot()));
+         be.setPos(offset.add(muzzlPos));
+         if (!Utils.isObstructed(this.level(), be, target)) {
             float[] angle = Utils.getShootingAngle(be, target, true);
-            be.m_37251_(be, angle[0], angle[1], this.m_21256_(), this.getMechData().grenadeSpeed, 0.0F);
-            this.m_9236_().m_7967_(be);
+            be.shootFromRotation(be, angle[0], angle[1], this.getFallFlyingTicks(), this.getMechData().grenadeSpeed, 0.0F);
+            this.level().addFreshEntity(be);
             this.triggerAnim("shoot_controller", "shoot");
          }
       }

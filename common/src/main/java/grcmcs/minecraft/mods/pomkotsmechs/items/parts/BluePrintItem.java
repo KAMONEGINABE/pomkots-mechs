@@ -15,10 +15,10 @@ public class BluePrintItem extends Item {
       super(properties);
    }
 
-   public void m_7373_(ItemStack itemStack, @Nullable Level level, List<Component> list, TooltipFlag tooltipFlag) {
+   public void appendHoverText(ItemStack itemStack, @Nullable Level level, List<Component> list, TooltipFlag tooltipFlag) {
       Item correspondingItem = Utils.getPartsClassFromBluePrint(itemStack);
       if (correspondingItem != null) {
-         correspondingItem.m_7373_(new ItemStack(correspondingItem), level, list, tooltipFlag);
+         correspondingItem.appendHoverText(new ItemStack(correspondingItem), level, list, tooltipFlag);
       }
    }
 }

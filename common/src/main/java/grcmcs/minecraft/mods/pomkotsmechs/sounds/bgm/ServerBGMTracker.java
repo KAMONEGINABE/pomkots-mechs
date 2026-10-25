@@ -19,27 +19,27 @@ public class ServerBGMTracker {
 
    public static void tick(ServerPlayer player) {
       if (PomkotsMechs.CONFIG.survivalModeEnabled) {
-         BGMState oldState = LAST.get(player.m_20148_());
+         BGMState oldState = LAST.get(player.getUUID());
          BGMState newState = computeState(player, oldState);
          if (newState != oldState) {
-            LAST.put(player.m_20148_(), newState);
+            LAST.put(player.getUUID(), newState);
             sendDataPack2Player(player, newState);
          }
       }
    }
 
    public static void forceSetBGMState(ServerPlayer player, BGMState state) {
-      FORCE.put(player.m_20148_(), state);
+      FORCE.put(player.getUUID(), state);
    }
 
    public static void forceUnsetBGMState(ServerPlayer player) {
-      FORCE.remove(player.m_20148_());
+      FORCE.remove(player.getUUID());
    }
 
    public static void sendDataPack2Player(ServerPlayer player, BGMState newState) {
       try {
          FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-         buf.m_130068_(newState);
+         buf.writeEnum(newState);
          NetworkManager.sendToPlayer(player, PomkotsMechs.id("bs"), buf);
       } catch (Exception e) {
          Narrator.LOGGER.error("Failed to send bgm event to client", e);
@@ -47,7 +47,7 @@ public class ServerBGMTracker {
    }
 
    private static BGMState computeState(ServerPlayer player, BGMState oldState) {
-      BGMState forceSound = FORCE.get(player.m_20148_());
+      BGMState forceSound = FORCE.get(player.getUUID());
       if (forceSound != null) {
          return forceSound;
       }
@@ -57,6 +57,6 @@ public class ServerBGMTracker {
    }
 
    private static boolean isBossNearby(Player player) {
-      return !player.m_9236_().m_45976_(BaseBossEntity.class, player.m_20191_().m_82400_(50.0)).isEmpty();
+      return !player.level().getEntitiesOfClass(BaseBossEntity.class, player.getBoundingBox().inflate(50.0)).isEmpty();
    }
 }

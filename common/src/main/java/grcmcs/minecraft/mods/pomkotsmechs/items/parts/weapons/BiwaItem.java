@@ -39,7 +39,7 @@ public class BiwaItem extends BasePartsItem.WeaponShoulder {
             return;
          }
 
-         if (!world.m_5776_()) {
+         if (!world.isClientSide()) {
             BulletGrenadeEntity be = new BulletGrenadeEntity(
                (EntityType<? extends ThrowableProjectile>)PomkotsMechs.BULLET_GRENADE.get(),
                world,
@@ -48,11 +48,11 @@ public class BiwaItem extends BasePartsItem.WeaponShoulder {
             );
             Vec3 offset = mechInterface.getOffset();
             Vec3 muzzlPos = new Vec3(1.6 * mechInterface.isRight(), 5.5, 4.0);
-            muzzlPos = muzzlPos.m_82524_((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
-            be.m_146884_(offset.m_82549_(muzzlPos));
+            muzzlPos = muzzlPos.yRot((float)Math.toRadians(-1.0 * mechInterface.getYRot()));
+            be.setPos(offset.add(muzzlPos));
             float[] angle = mechInterface.getShootingAngle(be, true);
-            be.m_37251_(be, angle[0], angle[1], mechInterface.getFallFlyingTicks(), 5.0F, 0.0F);
-            world.m_7967_(be);
+            be.shootFromRotation(be, angle[0], angle[1], mechInterface.getFallFlyingTicks(), 5.0F, 0.0F);
+            world.addFreshEntity(be);
             mechInterface.knockBack(5.0F);
          } else {
             ParticleUtil.spawnAttachedMuzzleFlash(
@@ -74,21 +74,21 @@ public class BiwaItem extends BasePartsItem.WeaponShoulder {
 
    @Override
    public void startUsing(ActionWeapon.WeaponMechInterface context) {
-      if (!context.getWorld().f_46443_ && context.getPlayer() != null && context.getItemStack() != null) {
+      if (!context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
          this.triggerAnim(context.getPlayer(), GeoItem.getOrAssignId(context.getItemStack(), (ServerLevel)context.getWorld()), "Activation", "use");
       }
    }
 
    @Override
    public void endUsing(ActionWeapon.WeaponMechInterface context) {
-      if (!context.getWorld().f_46443_ && context.getPlayer() != null && context.getItemStack() != null) {
+      if (!context.getWorld().isClientSide && context.getPlayer() != null && context.getItemStack() != null) {
          this.triggerAnim(context.getPlayer(), GeoItem.getOrAssignId(context.getItemStack(), (ServerLevel)context.getWorld()), "Activation", "stop");
       }
    }
 
-   public void m_6883_(ItemStack stack, Level level, Entity ent, int slotIndex, boolean bl) {
-      super.m_6883_(stack, level, ent, slotIndex, bl);
-      if (!level.f_46443_ && level instanceof ServerLevel serverLevel) {
+   public void inventoryTick(ItemStack stack, Level level, Entity ent, int slotIndex, boolean bl) {
+      super.inventoryTick(stack, level, ent, slotIndex, bl);
+      if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
          GeoItem.getOrAssignId(stack, serverLevel);
       }
    }

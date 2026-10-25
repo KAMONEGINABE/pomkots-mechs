@@ -13,29 +13,29 @@ public class CancelledProcessor implements IArenaMatchStateProcessor {
    @Override
    public void onEnter(ArenaMatchContext context) {
       if (context.runtime().getBossBar() != null) {
-         context.runtime().getBossBar().m_7706_();
+         context.runtime().getBossBar().removeAllPlayers();
       }
 
       this.processPilots(context.getChallengerEntity(), context);
       this.processPilots(context.getOpponentEntity(), context);
       this.ejectElevatorsPassengers(context);
       context.arena().setActiveMatch(null);
-      ArenaSavedData.get(context.server()).m_77762_();
+      ArenaSavedData.get(context.server()).setDirty();
    }
 
    private void processPilots(Entity pilot, ArenaMatchContext context) {
       if (pilot instanceof ServerPlayer player) {
          String reason = context.runtime().getCancelReason();
          if (reason != null) {
-            player.m_213846_(Component.m_237113_(reason));
+            player.sendSystemMessage(Component.literal(reason));
          }
       } else if (pilot != null) {
-         Entity mech = pilot.m_20202_();
+         Entity mech = pilot.getVehicle();
          if (mech != null) {
-            mech.m_146870_();
+            mech.discard();
          }
 
-         pilot.m_146870_();
+         pilot.discard();
       }
    }
 
@@ -57,7 +57,7 @@ public class CancelledProcessor implements IArenaMatchStateProcessor {
    }
 
    private void ejectElevator(Level level, BlockPos pos) {
-      if (level.m_7702_(pos) instanceof ArenaGateBlockEntity gateEntity) {
+      if (level.getBlockEntity(pos) instanceof ArenaGateBlockEntity gateEntity) {
          gateEntity.refreshElevator();
       }
    }

@@ -31,36 +31,36 @@ public class SimpleBossWalkGoal extends BaseBossGoal {
       super(mob);
       this.moveSpeed = speed;
       this.desiredDistance = desiredDistance;
-      this.m_7021_(EnumSet.of(Flag.MOVE));
+      this.setFlags(EnumSet.of(Flag.MOVE));
    }
 
    @Override
    public boolean canUseInternal() {
-      return this.mob.m_5448_() != null && this.mob.m_5448_().m_6084_();
+      return this.mob.getTarget() != null && this.mob.getTarget().isAlive();
    }
 
-   public boolean m_8045_() {
-      return this.ticksRemaining > 0 && this.target != null && this.target.m_6084_() && this.airTicks < 10;
+   public boolean canContinueToUse() {
+      return this.ticksRemaining > 0 && this.target != null && this.target.isAlive() && this.airTicks < 10;
    }
 
-   public void m_8056_() {
-      this.target = this.mob.m_5448_();
-      this.ticksRemaining = 20 + this.mob.m_217043_().m_188503_(10);
+   public void start() {
+      this.target = this.mob.getTarget();
+      this.ticksRemaining = 20 + this.mob.getRandom().nextInt(10);
       this.modeSwitchCooldown = 15;
       this.mode = SimpleBossWalkGoal.Mode.APPROACH;
-      this.circleDirection = this.mob.m_217043_().m_188499_() ? 1 : -1;
+      this.circleDirection = this.mob.getRandom().nextBoolean() ? 1 : -1;
       this.airTicks = 0;
-      this.mob.m_20242_(false);
+      this.mob.setNoGravity(false);
    }
 
-   public void m_8041_() {
+   public void stop() {
       this.target = null;
       this.ticksRemaining = 0;
-      Vec3 vel = this.mob.m_20184_();
-      this.mob.m_20334_(0.0, vel.f_82480_, 0.0);
+      Vec3 vel = this.mob.getDeltaMovement();
+      this.mob.setDeltaMovement(0.0, vel.y, 0.0);
    }
 
-   public void m_8037_() {
+   public void tick() {
       this.ticksRemaining--;
       if (this.target != null) {
          this.updateAirTicks();
@@ -71,7 +71,7 @@ public class SimpleBossWalkGoal extends BaseBossGoal {
    }
 
    private void updateAirTicks() {
-      if (!this.mob.m_20096_() && !this.mob.m_20069_() && !this.mob.m_20077_()) {
+      if (!this.mob.onGround() && !this.mob.isInWater() && !this.mob.isInLava()) {
          this.airTicks++;
       } else {
          this.airTicks = 0;
@@ -81,7 +81,7 @@ public class SimpleBossWalkGoal extends BaseBossGoal {
    private void updateMode() {
       this.modeSwitchCooldown--;
       if (this.modeSwitchCooldown <= 0) {
-         double distance = this.mob.m_20270_(this.target);
+         double distance = this.mob.distanceTo(this.target);
          if (this.mode == SimpleBossWalkGoal.Mode.APPROACH && distance <= this.desiredDistance) {
             this.mode = SimpleBossWalkGoal.Mode.CIRCLE;
             this.circleDirection *= -1;
@@ -91,32 +91,32 @@ public class SimpleBossWalkGoal extends BaseBossGoal {
             this.circleDirection *= -1;
          }
 
-         this.modeSwitchCooldown = 15 + this.mob.m_217043_().m_188503_(20);
+         this.modeSwitchCooldown = 15 + this.mob.getRandom().nextInt(20);
       }
    }
 
    private void performMovement() {
-      Vec3 currentPos = this.mob.m_20182_();
-      Vec3 toTarget = this.target.m_20182_().m_82546_(currentPos);
+      Vec3 currentPos = this.mob.position();
+      Vec3 toTarget = this.target.position().subtract(currentPos);
       Vec3 horizontalDir = this.calculateHorizontalDirection(toTarget);
-      double nextX = currentPos.f_82479_ + horizontalDir.f_82479_;
-      double nextZ = currentPos.f_82481_ + horizontalDir.f_82481_;
-      if (!this.canMoveToPosition(nextX, currentPos.f_82480_, nextZ)) {
+      double nextX = currentPos.x + horizontalDir.x;
+      double nextZ = currentPos.z + horizontalDir.z;
+      if (!this.canMoveToPosition(nextX, currentPos.y, nextZ)) {
          this.applyGravityOnly();
          this.ticksRemaining = 0;
       } else {
-         double yVelocity = this.calculateVerticalMovement(nextX, currentPos.f_82480_, nextZ);
-         this.mob.m_20334_(horizontalDir.f_82479_, yVelocity, horizontalDir.f_82481_);
+         double yVelocity = this.calculateVerticalMovement(nextX, currentPos.y, nextZ);
+         this.mob.setDeltaMovement(horizontalDir.x, yVelocity, horizontalDir.z);
       }
    }
 
    private Vec3 calculateHorizontalDirection(Vec3 toTarget) {
-      Vec3 horizontal = new Vec3(toTarget.f_82479_, 0.0, toTarget.f_82481_);
+      Vec3 horizontal = new Vec3(toTarget.x, 0.0, toTarget.z);
 
       return switch (this.mode) {
-         case APPROACH -> horizontal.m_82556_() < 0.01 ? Vec3.f_82478_ : horizontal.m_82541_().m_82490_(this.moveSpeed);
+         case APPROACH -> horizontal.lengthSqr() < 0.01 ? Vec3.ZERO : horizontal.normalize().scale(this.moveSpeed);
          case CIRCLE -> {
-            double angleToTarget = Math.atan2(horizontal.f_82481_, horizontal.f_82479_);
+            double angleToTarget = Math.atan2(horizontal.z, horizontal.x);
             double circleAngle = angleToTarget + this.circleDirection * Math.PI / 2.0;
             yield new Vec3(Math.cos(circleAngle) * this.moveSpeed, 0.0, Math.sin(circleAngle) * this.moveSpeed);
          }
@@ -124,16 +124,16 @@ public class SimpleBossWalkGoal extends BaseBossGoal {
    }
 
    private boolean isStandingInFluid() {
-      BlockPos startPos = this.mob.m_20183_().m_7494_();
+      BlockPos startPos = this.mob.blockPosition().above();
 
-      for (int y = startPos.m_123342_() + 5; y >= startPos.m_123342_() - 5; y--) {
-         BlockPos pos = new BlockPos(startPos.m_123341_(), y, startPos.m_123343_());
-         BlockState state = this.mob.m_9236_().m_8055_(pos);
-         if (state.m_280296_() && !state.m_60795_()) {
+      for (int y = startPos.getY() + 5; y >= startPos.getY() - 5; y--) {
+         BlockPos pos = new BlockPos(startPos.getX(), y, startPos.getZ());
+         BlockState state = this.mob.level().getBlockState(pos);
+         if (state.isSolid() && !state.isAir()) {
             return false;
          }
 
-         if (!state.m_60819_().m_76178_()) {
+         if (!state.getFluidState().isEmpty()) {
             return true;
          }
       }
@@ -142,21 +142,21 @@ public class SimpleBossWalkGoal extends BaseBossGoal {
    }
 
    private boolean canMoveToPosition(double x, double y, double z) {
-      Level level = this.mob.m_9236_();
-      boolean currentlyInFluid = this.mob.m_20069_() || this.mob.m_20077_();
+      Level level = this.mob.level();
+      boolean currentlyInFluid = this.mob.isInWater() || this.mob.isInLava();
       double groundY = this.findGroundY(x, y, z);
       if (groundY == Double.MIN_VALUE) {
          return false;
       } else {
-         BlockPos footPos = new BlockPos(Mth.m_14107_(x), Mth.m_14107_(groundY), Mth.m_14107_(z));
-         BlockState footState = level.m_8055_(footPos);
-         BlockPos footPosB = new BlockPos(Mth.m_14107_(x), Mth.m_14107_(groundY) + 1, Mth.m_14107_(z));
-         BlockState footStateB = level.m_8055_(footPosB);
-         BlockPos footPosC = new BlockPos(Mth.m_14107_(x), Mth.m_14107_(groundY) - 1, Mth.m_14107_(z));
-         BlockState footStateC = level.m_8055_(footPosC);
-         if (footState.m_60819_().m_76178_() && footStateB.m_60819_().m_76178_() && footStateC.m_60819_().m_76178_()) {
+         BlockPos footPos = new BlockPos(Mth.floor(x), Mth.floor(groundY), Mth.floor(z));
+         BlockState footState = level.getBlockState(footPos);
+         BlockPos footPosB = new BlockPos(Mth.floor(x), Mth.floor(groundY) + 1, Mth.floor(z));
+         BlockState footStateB = level.getBlockState(footPosB);
+         BlockPos footPosC = new BlockPos(Mth.floor(x), Mth.floor(groundY) - 1, Mth.floor(z));
+         BlockState footStateC = level.getBlockState(footPosC);
+         if (footState.getFluidState().isEmpty() && footStateB.getFluidState().isEmpty() && footStateC.getFluidState().isEmpty()) {
             double heightDiff = groundY - y;
-            double maxStep = this.mob.m_274421_() + 1.0;
+            double maxStep = this.mob.maxUpStep() + 1.0;
             return heightDiff > maxStep ? false : this.hasHeadroom(x, groundY, z);
          } else {
             return currentlyInFluid;
@@ -165,15 +165,15 @@ public class SimpleBossWalkGoal extends BaseBossGoal {
    }
 
    private double findGroundY(double x, double startY, double z) {
-      Level level = this.mob.m_9236_();
-      int searchUp = (int)Math.ceil(this.mob.m_274421_()) + 2;
+      Level level = this.mob.level();
+      int searchUp = (int)Math.ceil(this.mob.maxUpStep()) + 2;
       int searchDown = 30;
-      int startYInt = Mth.m_14107_(startY);
+      int startYInt = Mth.floor(startY);
 
       for (int y = startYInt + searchUp; y >= startYInt - searchDown; y--) {
-         BlockPos pos = new BlockPos(Mth.m_14107_(x), y, Mth.m_14107_(z));
-         BlockState state = level.m_8055_(pos);
-         if (state.m_60819_().m_76178_() && state.m_280296_() && !state.m_60795_()) {
+         BlockPos pos = new BlockPos(Mth.floor(x), y, Mth.floor(z));
+         BlockState state = level.getBlockState(pos);
+         if (state.getFluidState().isEmpty() && state.isSolid() && !state.isAir()) {
             return this.getBlockTopY(level, pos, state);
          }
       }
@@ -183,25 +183,25 @@ public class SimpleBossWalkGoal extends BaseBossGoal {
 
    private double getBlockTopY(Level level, BlockPos pos, BlockState state) {
       try {
-         VoxelShape shape = state.m_60812_(level, pos);
-         if (!shape.m_83281_()) {
-            return pos.m_123342_() + shape.m_83297_(Axis.Y);
+         VoxelShape shape = state.getCollisionShape(level, pos);
+         if (!shape.isEmpty()) {
+            return pos.getY() + shape.max(Axis.Y);
          }
       } catch (Exception var5) {
       }
 
-      return pos.m_123342_() + 1.0;
+      return pos.getY() + 1.0;
    }
 
    private boolean hasHeadroom(double x, double groundY, double z) {
-      Level level = this.mob.m_9236_();
-      double height = this.mob.m_20206_();
-      int checkHeight = Mth.m_14165_(height) + 1;
+      Level level = this.mob.level();
+      double height = this.mob.getBbHeight();
+      int checkHeight = Mth.ceil(height) + 1;
 
       for (int y = 0; y < checkHeight; y++) {
-         BlockPos pos = new BlockPos(Mth.m_14107_(x), Mth.m_14107_(groundY) + y, Mth.m_14107_(z));
-         BlockState state = level.m_8055_(pos);
-         if (state.m_280296_() && !state.m_60795_()) {
+         BlockPos pos = new BlockPos(Mth.floor(x), Mth.floor(groundY) + y, Mth.floor(z));
+         BlockState state = level.getBlockState(pos);
+         if (state.isSolid() && !state.isAir()) {
             return false;
          }
       }
@@ -218,7 +218,7 @@ public class SimpleBossWalkGoal extends BaseBossGoal {
          if (Math.abs(heightDiff) < 0.1) {
             return 0.0;
          } else if (heightDiff > 0.0) {
-            double maxStep = this.mob.m_274421_();
+            double maxStep = this.mob.maxUpStep();
             return heightDiff <= maxStep ? heightDiff : maxStep;
          } else {
             return this.applyGravity();
@@ -227,13 +227,13 @@ public class SimpleBossWalkGoal extends BaseBossGoal {
    }
 
    private double applyGravity() {
-      double currentVY = this.mob.m_20184_().f_82480_;
+      double currentVY = this.mob.getDeltaMovement().y;
       double gravity = 0.08;
-      return !this.mob.m_20096_() ? Math.max(currentVY - gravity, -3.0) : 0.0;
+      return !this.mob.onGround() ? Math.max(currentVY - gravity, -3.0) : 0.0;
    }
 
    private void applyGravityOnly() {
-      this.mob.m_20334_(0.0, this.applyGravity(), 0.0);
+      this.mob.setDeltaMovement(0.0, this.applyGravity(), 0.0);
    }
 
    private enum Mode {

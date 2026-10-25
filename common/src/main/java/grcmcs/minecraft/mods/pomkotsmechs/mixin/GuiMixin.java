@@ -63,8 +63,8 @@ public class GuiMixin {
    }
 
    private boolean shouldCancel(String hudName) {
-      Minecraft client = Minecraft.m_91087_();
-      LocalPlayer p = client.f_91074_;
-      return p != null && p.m_20202_() instanceof PomkotsVehicle v ? !v.shouldRenderDefaultHud(hudName) : false;
+      Minecraft client = Minecraft.getInstance();
+      LocalPlayer p = client.player;
+      return p != null && p.getVehicle() instanceof PomkotsVehicle v ? !v.shouldRenderDefaultHud(hudName) : false;
    }
 }

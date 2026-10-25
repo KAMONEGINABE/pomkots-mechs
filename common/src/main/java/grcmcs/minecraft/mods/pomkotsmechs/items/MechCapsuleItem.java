@@ -26,19 +26,19 @@ public class MechCapsuleItem extends Item {
       super(properties);
    }
 
-   public Component m_7626_(ItemStack stack) {
-      Component base = super.m_7626_(stack);
-      CompoundTag root = stack.m_41783_();
-      if (root != null && root.m_128441_(PomkotsMechs.nbtName("MechPreset"))) {
-         CompoundTag preset = root.m_128469_(PomkotsMechs.nbtName("MechPreset"));
-         if (!preset.m_128441_(PomkotsMechs.nbtName("ModelName"))) {
+   public Component getName(ItemStack stack) {
+      Component base = super.getName(stack);
+      CompoundTag root = stack.getTag();
+      if (root != null && root.contains(PomkotsMechs.nbtName("MechPreset"))) {
+         CompoundTag preset = root.getCompound(PomkotsMechs.nbtName("MechPreset"));
+         if (!preset.contains(PomkotsMechs.nbtName("ModelName"))) {
             return base;
          } else {
-            String no = preset.m_128461_(PomkotsMechs.nbtName("ModelName"));
+            String no = preset.getString(PomkotsMechs.nbtName("ModelName"));
             if (no.startsWith("Pmb")) {
-               return base.m_6881_().m_130946_(" (Boss: " + no + ")");
+               return base.copy().append(" (Boss: " + no + ")");
             } else {
-               return no.startsWith("Pms") ? base.m_6881_().m_130946_(" (Mob: " + no + ")") : base.m_6881_().m_130946_(" (Model: " + no + ")");
+               return no.startsWith("Pms") ? base.copy().append(" (Mob: " + no + ")") : base.copy().append(" (Model: " + no + ")");
             }
          }
       } else {
@@ -46,34 +46,34 @@ public class MechCapsuleItem extends Item {
       }
    }
 
-   public InteractionResultHolder<ItemStack> m_7203_(Level level, Player player, InteractionHand hand) {
-      ItemStack stack = player.m_21120_(hand);
-      if (!level.f_46443_) {
+   public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+      ItemStack stack = player.getItemInHand(hand);
+      if (!level.isClientSide) {
          MechCapsuleProjectileEntity projectile = new MechCapsuleProjectileEntity(level, player);
-         projectile.m_37446_(stack);
-         projectile.m_37251_(player, player.m_146909_(), player.m_146908_(), 0.0F, 1.5F, 1.0F);
-         level.m_7967_(projectile);
+         projectile.setItem(stack);
+         projectile.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, 1.5F, 1.0F);
+         level.addFreshEntity(projectile);
       }
 
-      player.m_36246_(Stats.f_12982_.m_12902_(this));
-      if (!player.m_150110_().f_35937_) {
-         stack.m_41774_(1);
+      player.awardStat(Stats.ITEM_USED.get(this));
+      if (!player.getAbilities().instabuild) {
+         stack.shrink(1);
       }
 
-      return InteractionResultHolder.m_19092_(stack, level.f_46443_);
+      return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
    }
 
    public static LivingEntity generateEntity(Level level, ItemStack deployItem) {
-      CompoundTag root = deployItem.m_41783_();
-      if (root != null && root.m_128441_(PomkotsMechs.nbtName("MechPreset"))) {
-         CompoundTag preset = root.m_128469_(PomkotsMechs.nbtName("MechPreset"));
-         if (!preset.m_128441_(PomkotsMechs.nbtName("EntityType"))) {
+      CompoundTag root = deployItem.getTag();
+      if (root != null && root.contains(PomkotsMechs.nbtName("MechPreset"))) {
+         CompoundTag preset = root.getCompound(PomkotsMechs.nbtName("MechPreset"));
+         if (!preset.contains(PomkotsMechs.nbtName("EntityType"))) {
             return null;
          }
 
-         String entityTypeId = preset.m_128461_(PomkotsMechs.nbtName("EntityType"));
+         String entityTypeId = preset.getString(PomkotsMechs.nbtName("EntityType"));
          EntityType<?> entType = getEntityType(new ResourceLocation(entityTypeId));
-         if (entType.m_20615_(level) instanceof LivingEntity livingEntity) {
+         if (entType.create(level) instanceof LivingEntity livingEntity) {
             if (livingEntity instanceof Pmvc01Entity mech) {
                applyPresetToCustomMech(preset, mech);
                return mech;
@@ -89,70 +89,70 @@ public class MechCapsuleItem extends Item {
    }
 
    public static EntityType<?> getEntityType(ResourceLocation id) {
-      return (EntityType<?>)BuiltInRegistries.f_256780_.m_7745_(id);
+      return (EntityType<?>)BuiltInRegistries.ENTITY_TYPE.get(id);
    }
 
    public static void applyPresetToCustomMech(CompoundTag preset, Pmvc01Entity mech) {
-      if (preset.m_128441_(PomkotsMechs.nbtName("Color"))) {
-         mech.setTextureColor(preset.m_128451_(PomkotsMechs.nbtName("Color")));
+      if (preset.contains(PomkotsMechs.nbtName("Color"))) {
+         mech.setTextureColor(preset.getInt(PomkotsMechs.nbtName("Color")));
       }
 
-      if (preset.m_128441_(PomkotsMechs.nbtName("Parts"))) {
-         for (Tag t : preset.m_128437_(PomkotsMechs.nbtName("Parts"), 10)) {
+      if (preset.contains(PomkotsMechs.nbtName("Parts"))) {
+         for (Tag t : preset.getList(PomkotsMechs.nbtName("Parts"), 10)) {
             CompoundTag p = (CompoundTag)t;
-            int slot = p.m_128451_(PomkotsMechs.nbtName("Slot"));
-            String itemId = p.m_128461_(PomkotsMechs.nbtName("Item"));
-            ItemStack partStack = ItemStack.f_41583_;
+            int slot = p.getInt(PomkotsMechs.nbtName("Slot"));
+            String itemId = p.getString(PomkotsMechs.nbtName("Item"));
+            ItemStack partStack = ItemStack.EMPTY;
             if (!PomkotsMechs.nbtName("empty").equals(itemId)) {
-               Item item = (Item)BuiltInRegistries.f_257033_.m_7745_(new ResourceLocation(itemId));
-               int count = p.m_128451_(PomkotsMechs.nbtName("Count"));
+               Item item = (Item)BuiltInRegistries.ITEM.get(new ResourceLocation(itemId));
+               int count = p.getInt(PomkotsMechs.nbtName("Count"));
                partStack = new ItemStack(item, count);
-               if (p.m_128441_(PomkotsMechs.nbtName("Tag"))) {
-                  partStack.m_41751_(p.m_128469_(PomkotsMechs.nbtName("Tag")).m_6426_());
+               if (p.contains(PomkotsMechs.nbtName("Tag"))) {
+                  partStack.setTag(p.getCompound(PomkotsMechs.nbtName("Tag")).copy());
                }
             }
 
-            mech.m_6836_(slot, partStack);
+            mech.setItem(slot, partStack);
          }
 
-         mech.m_6596_();
-         mech.m_21153_(mech.m_21233_());
+         mech.setChanged();
+         mech.setHealth(mech.getMaxHealth());
       }
    }
 
    public static CompoundTag createPresetTag(String modelName, ResourceLocation mechType, int color, List<MechCapsuleItem.PresetPart> parts) {
       CompoundTag root = new CompoundTag();
       CompoundTag preset = new CompoundTag();
-      preset.m_128359_(PomkotsMechs.nbtName("ModelName"), modelName);
-      preset.m_128359_(PomkotsMechs.nbtName("EntityType"), mechType.toString());
-      if (mechType.m_135815_().equals("pmvc01")) {
-         preset.m_128405_(PomkotsMechs.nbtName("Color"), color);
+      preset.putString(PomkotsMechs.nbtName("ModelName"), modelName);
+      preset.putString(PomkotsMechs.nbtName("EntityType"), mechType.toString());
+      if (mechType.getPath().equals("pmvc01")) {
+         preset.putInt(PomkotsMechs.nbtName("Color"), color);
          if (parts != null) {
             ListTag list = new ListTag();
 
             for (MechCapsuleItem.PresetPart p : parts) {
                CompoundTag t = new CompoundTag();
-               t.m_128405_(PomkotsMechs.nbtName("Slot"), p.slot());
-               t.m_128359_(PomkotsMechs.nbtName("Item"), p.item().toString());
-               t.m_128405_(PomkotsMechs.nbtName("Count"), p.count());
+               t.putInt(PomkotsMechs.nbtName("Slot"), p.slot());
+               t.putString(PomkotsMechs.nbtName("Item"), p.item().toString());
+               t.putInt(PomkotsMechs.nbtName("Count"), p.count());
                if (p.tag() != null) {
-                  t.m_128365_(PomkotsMechs.nbtName("Tag"), p.tag());
+                  t.put(PomkotsMechs.nbtName("Tag"), p.tag());
                }
 
                list.add(t);
             }
 
-            preset.m_128365_(PomkotsMechs.nbtName("Parts"), list);
+            preset.put(PomkotsMechs.nbtName("Parts"), list);
          }
       }
 
-      root.m_128365_(PomkotsMechs.nbtName("MechPreset"), preset);
+      root.put(PomkotsMechs.nbtName("MechPreset"), preset);
       return root;
    }
 
    private static CompoundTag levelTag(int lv) {
       CompoundTag t = new CompoundTag();
-      t.m_128405_(PomkotsMechs.nbtName("Level"), lv);
+      t.putInt(PomkotsMechs.nbtName("Level"), lv);
       return t;
    }
 
@@ -374,7 +374,7 @@ public class MechCapsuleItem extends Item {
       }
 
       if (preset != null) {
-         stack.m_41784_().m_128391_(preset);
+         stack.getOrCreateTag().merge(preset);
       }
    }
 

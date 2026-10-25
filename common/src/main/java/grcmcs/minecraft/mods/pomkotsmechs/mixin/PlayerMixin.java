@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Player.class)
 public abstract class PlayerMixin extends LivingEntity {
    @Shadow
-   public abstract Inventory m_150109_();
+   public abstract Inventory getInventory();
 
    protected PlayerMixin(EntityType<? extends LivingEntity> entityType, Level world) {
       super(entityType, world);
@@ -29,18 +29,18 @@ public abstract class PlayerMixin extends LivingEntity {
 
    @Inject(method = "dropEquipment", cancellable = true, at = @At("HEAD"))
    private void onDropEquipment(CallbackInfo ci) {
-      super.m_5907_();
-      Player entity = (Player)this;
-      if (!entity.m_9236_().m_46469_().m_46207_(GameRules.f_46133_)) {
-         Inventory inv = this.m_150109_();
+      super.dropEquipment();
+      Player entity = (Player)(Object)this;
+      if (!entity.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY)) {
+         Inventory inv = this.getInventory();
          this.destroyVanishingCursedItems(inv);
 
-         for (List<ItemStack> invItem : ImmutableList.of(inv.f_35974_, inv.f_35975_, inv.f_35976_)) {
+         for (List<ItemStack> invItem : ImmutableList.of(inv.items, inv.armor, inv.offhand)) {
             for (int i = 0; i < invItem.size(); i++) {
                ItemStack itemStack = invItem.get(i);
-               if (!itemStack.m_41619_() && this.isDropTarget(itemStack)) {
-                  inv.f_35978_.m_7197_(itemStack, true, false);
-                  invItem.set(i, ItemStack.f_41583_);
+               if (!itemStack.isEmpty() && this.isDropTarget(itemStack)) {
+                  inv.player.drop(itemStack, true, false);
+                  invItem.set(i, ItemStack.EMPTY);
                }
             }
          }
@@ -50,14 +50,14 @@ public abstract class PlayerMixin extends LivingEntity {
    }
 
    protected boolean isDropTarget(ItemStack stack) {
-      return !stack.m_150930_((Item)PomkotsMechs.KEYCARD_ITEM.get()) && !stack.m_150930_((Item)PomkotsMechs.POMKOTS_RADAR_ITEM.get());
+      return !stack.is((Item)PomkotsMechs.KEYCARD_ITEM.get()) && !stack.is((Item)PomkotsMechs.POMKOTS_RADAR_ITEM.get());
    }
 
    protected void destroyVanishingCursedItems(Inventory inventory) {
-      for (int i = 0; i < inventory.m_6643_(); i++) {
-         ItemStack itemStack = inventory.m_8020_(i);
-         if (!itemStack.m_41619_() && EnchantmentHelper.m_44924_(itemStack)) {
-            inventory.m_8016_(i);
+      for (int i = 0; i < inventory.getContainerSize(); i++) {
+         ItemStack itemStack = inventory.getItem(i);
+         if (!itemStack.isEmpty() && EnchantmentHelper.hasVanishingCurse(itemStack)) {
+            inventory.removeItemNoUpdate(i);
          }
       }
    }

@@ -21,49 +21,49 @@ public class PomkotsMechsSaveData extends SavedData {
    private final Map<UUID, PomkotsMechsSaveData.MechLocation> mechPositions = new HashMap<>();
 
    public static PomkotsMechsSaveData get(ServerLevel level) {
-      return (PomkotsMechsSaveData)level.m_7654_().m_129783_().m_8895_().m_164861_(PomkotsMechsSaveData::load, PomkotsMechsSaveData::new, DATA_NAME);
+      return (PomkotsMechsSaveData)level.getServer().overworld().getDataStorage().computeIfAbsent(PomkotsMechsSaveData::load, PomkotsMechsSaveData::new, DATA_NAME);
    }
 
    public static PomkotsMechsSaveData load(CompoundTag tag) {
       PomkotsMechsSaveData data = new PomkotsMechsSaveData();
 
-      for (Tag t : tag.m_128437_("mechs", 10)) {
+      for (Tag t : tag.getList("mechs", 10)) {
          CompoundTag entry = (CompoundTag)t;
-         UUID uuid = entry.m_128342_("uuid");
-         ResourceLocation dimId = new ResourceLocation(entry.m_128461_("dimension"));
-         ResourceKey<Level> dim = ResourceKey.m_135785_(Registries.f_256858_, dimId);
-         int x = entry.m_128451_("x");
-         int z = entry.m_128451_("z");
+         UUID uuid = entry.getUUID("uuid");
+         ResourceLocation dimId = new ResourceLocation(entry.getString("dimension"));
+         ResourceKey<Level> dim = ResourceKey.create(Registries.DIMENSION, dimId);
+         int x = entry.getInt("x");
+         int z = entry.getInt("z");
          data.mechPositions.put(uuid, new PomkotsMechsSaveData.MechLocation(dim, new ChunkPos(x, z)));
       }
 
       return data;
    }
 
-   public CompoundTag m_7176_(CompoundTag tag) {
+   public CompoundTag save(CompoundTag tag) {
       ListTag list = new ListTag();
 
       for (Entry<UUID, PomkotsMechsSaveData.MechLocation> e : this.mechPositions.entrySet()) {
          CompoundTag entry = new CompoundTag();
-         entry.m_128362_("uuid", e.getKey());
-         entry.m_128359_("dimension", e.getValue().dimension.m_135782_().toString());
-         entry.m_128405_("x", e.getValue().chunkPos.f_45578_);
-         entry.m_128405_("z", e.getValue().chunkPos.f_45579_);
+         entry.putUUID("uuid", e.getKey());
+         entry.putString("dimension", e.getValue().dimension.location().toString());
+         entry.putInt("x", e.getValue().chunkPos.x);
+         entry.putInt("z", e.getValue().chunkPos.z);
          list.add(entry);
       }
 
-      tag.m_128365_("mechs", list);
+      tag.put("mechs", list);
       return tag;
    }
 
    public void updateMech(UUID uuid, ResourceKey<Level> dim, ChunkPos pos) {
       this.mechPositions.put(uuid, new PomkotsMechsSaveData.MechLocation(dim, pos));
-      this.m_77762_();
+      this.setDirty();
    }
 
    public void removeMech(UUID uuid) {
       this.mechPositions.remove(uuid);
-      this.m_77762_();
+      this.setDirty();
    }
 
    public PomkotsMechsSaveData.MechLocation get(UUID uuid) {

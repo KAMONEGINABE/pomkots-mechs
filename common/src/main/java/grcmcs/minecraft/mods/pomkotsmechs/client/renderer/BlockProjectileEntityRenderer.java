@@ -17,28 +17,28 @@ public class BlockProjectileEntityRenderer extends EntityRenderer<BlockProjectil
 
    public BlockProjectileEntityRenderer(Context context) {
       super(context);
-      this.itemRenderer = context.m_174025_();
+      this.itemRenderer = context.getItemRenderer();
    }
 
    public void render(BlockProjectileEntity entity, float yaw, float partialTicks, PoseStack stack, MultiBufferSource source, int light) {
-      stack.m_85836_();
-      stack.m_85841_(1.0F, 1.0F, 1.0F);
+      stack.pushPose();
+      stack.scale(1.0F, 1.0F, 1.0F);
       this.itemRenderer
-         .m_269128_(
-            new ItemStack(entity.getBlockState().m_60734_()),
+         .renderStatic(
+            new ItemStack(entity.getBlockState().getBlock()),
             ItemDisplayContext.NONE,
             light,
-            OverlayTexture.f_118083_,
+            OverlayTexture.NO_OVERLAY,
             stack,
             source,
-            entity.m_9236_(),
-            entity.m_19879_()
+            entity.level(),
+            entity.getId()
          );
-      stack.m_85849_();
-      super.m_7392_(entity, yaw, partialTicks, stack, source, light);
+      stack.popPose();
+      super.render(entity, yaw, partialTicks, stack, source, light);
    }
 
    public ResourceLocation getTextureLocation(BlockProjectileEntity entity) {
-      return InventoryMenu.f_39692_;
+      return InventoryMenu.BLOCK_ATLAS;
    }
 }
