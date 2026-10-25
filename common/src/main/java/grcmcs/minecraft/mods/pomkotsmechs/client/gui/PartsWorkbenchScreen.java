@@ -388,7 +388,7 @@ public class PartsWorkbenchScreen extends AbstractContainerScreen<PartsWorkbench
          for (PartsWorkbenchScreen.Material mat : this.requiredMaterials) {
             Item item = (Item)mat.getFirst();
             int required = (Integer)mat.getSecond();
-            int has = Minecraft.getInstance().player.getInventory().countItem(item);
+            int has = PartsWorkbenchMenu.countMatchingMaterial(Minecraft.getInstance().player.getInventory(), item);
             gui.fill(x - 1, y - 1, x + slotSize + 1, y + slotSize + 1, -12566464);
             ItemStack stack = new ItemStack(item);
             gui.renderItem(stack, x + 1, y + 1);

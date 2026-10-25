@@ -8,6 +8,8 @@ import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
 import java.util.List;
 import java.util.function.Supplier;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
@@ -157,6 +159,29 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
          : dataPack.getPartsData(partsItem.getPartsSeriesName() + partsItem.getPartsCategory().getString());
    }
 
+   public static final TagKey<Item> FORGE_TITANIUM_INGOT = TagKey.create(Registries.ITEM, new ResourceLocation("forge", "ingots/titanium"));
+
+   public static boolean isMatchingMaterial(ItemStack stack, Item requiredItem) {
+      if (stack.is(requiredItem)) {
+         return true;
+      }
+      if (requiredItem == PomkotsMechs.P_TITANIUM_INGOT.get()) {
+         return stack.is(FORGE_TITANIUM_INGOT);
+      }
+      return false;
+   }
+
+   public static int countMatchingMaterial(Inventory inv, Item requiredItem) {
+      int count = 0;
+      for (int i = 0; i < inv.getContainerSize(); i++) {
+         ItemStack stack = inv.getItem(i);
+         if (isMatchingMaterial(stack, requiredItem)) {
+            count += stack.getCount();
+         }
+      }
+      return count;
+   }
+
    public static boolean isCraftable(Inventory inv, List<PomkotsDataPack.SerializablePair<String, Integer>> recipe) {
       for (PomkotsDataPack.SerializablePair<String, Integer> entry : recipe) {
          ResourceLocation id = new ResourceLocation(entry.getFirst());
@@ -165,7 +190,7 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
             return false;
          }
 
-         if (inv.countItem(requiredItem) < entry.getSecond()) {
+         if (countMatchingMaterial(inv, requiredItem) < entry.getSecond()) {
             return false;
          }
       }
@@ -185,7 +210,7 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
 
          for (int i = 0; i < inv.getContainerSize() && remaining > 0; i++) {
             ItemStack stack = inv.getItem(i);
-            if (stack.is(requiredItem)) {
+            if (isMatchingMaterial(stack, requiredItem)) {
                int take = Math.min(stack.getCount(), remaining);
                stack.shrink(take);
                remaining -= take;
