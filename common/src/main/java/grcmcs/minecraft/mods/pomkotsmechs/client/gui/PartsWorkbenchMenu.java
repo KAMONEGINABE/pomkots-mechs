@@ -10,6 +10,8 @@ import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
 import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -68,12 +70,31 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
     }
 
     public void craftItem(Item target, ServerPlayer player) {
-        if (target instanceof BasePartsItem parts && getSlot(0).getItem().isEmpty()) {
-            if (!getSlot(0).getItem().isEmpty()) {
-                sendMessage(player,"{text.pomkotsmechs.messages.partsworkbench.01}");
+        if (!getSlot(0).getItem().isEmpty()) {
+            sendMessage(player, "{text.pomkotsmechs.messages.partsworkbench.01}");
+            return;
+        }
+
+        if (target == PomkotsMechs.MECH_CAPSULE2_ITEM.get()) {
+            var dataPack = PomkotsDataPackManager.getInstance().getDataPack();
+            var partsData = dataPack != null ? dataPack.getPartsData("mech_frame") : null;
+            if (partsData == null || partsData.recipes.isEmpty() || partsData.recipes.get(0).isEmpty()) {
+                sendMessage(player, "{text.pomkotsmechs.messages.partsworkbench.02}");
                 return;
             }
 
+            if (PartsWorkbenchMenu.isCraftable(player.getInventory(), partsData.recipes.get(0))) {
+                ItemStack crafted = PomkotsMechs.createMechFrameCapsule();
+                consumeMaterials(player.getInventory(), partsData.recipes.get(0));
+                getSlot(0).set(crafted);
+                return;
+            } else {
+                sendMessage(player, "{text.pomkotsmechs.messages.partsworkbench.03}");
+                return;
+            }
+        }
+
+        if (target instanceof BasePartsItem parts) {
             var partsData = getPartsData(parts);
 
             if (partsData == null || partsData.recipes.isEmpty() || partsData.recipes.get(0).isEmpty()) {
@@ -215,6 +236,29 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
         }
     }
 
+    public static final TagKey<Item> FORGE_TITANIUM_INGOT = TagKey.create(Registries.ITEM, new ResourceLocation("forge", "ingots/titanium"));
+
+    public static boolean isMatchingMaterial(ItemStack stack, Item requiredItem) {
+        if (stack.is(requiredItem)) {
+            return true;
+        }
+        if (requiredItem == PomkotsMechs.P_TITANIUM_INGOT.get()) {
+            return stack.is(FORGE_TITANIUM_INGOT);
+        }
+        return false;
+    }
+
+    public static int countMatchingMaterial(Inventory inv, Item requiredItem) {
+        int count = 0;
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack stack = inv.getItem(i);
+            if (isMatchingMaterial(stack, requiredItem)) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
     public static boolean isCraftable(Inventory inv, List<PomkotsDataPack.SerializablePair<String, Integer>> recipe) {
         for (var entry : recipe) {
             ResourceLocation id = new ResourceLocation(entry.getFirst());
@@ -224,7 +268,7 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
                 return false;
             }
 
-            if (inv.countItem(requiredItem) < entry.getSecond()) {
+            if (countMatchingMaterial(inv, requiredItem) < entry.getSecond()) {
                 return false;
             }
         }
@@ -244,7 +288,7 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
 
             for (int i = 0; i < inv.getContainerSize() && remaining > 0; i++) {
                 ItemStack stack = inv.getItem(i);
-                if (stack.is(requiredItem)) {
+                if (isMatchingMaterial(stack, requiredItem)) {
                     int take = Math.min(stack.getCount(), remaining);
                     stack.shrink(take);
                     remaining -= take;

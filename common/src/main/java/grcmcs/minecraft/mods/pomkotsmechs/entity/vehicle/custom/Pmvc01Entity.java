@@ -2208,6 +2208,15 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
         return (int)this.energy;
     }
 
+    public void setEnergy(float energy) {
+        this.energy = energy;
+    }
+
+    public void setFuel(int fuel) {
+        this.fuel = fuel;
+        this.syncFuels();
+    }
+
     private void applyFlightUnitEvasion(DriverInput input) {
         Action evasion = this.actionController.getAction(ACT_EVASION);
         if (!input.isEvasionPressed() || evasion.isInAction() || evasion.isInCooltime()) return;

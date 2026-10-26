@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "T": {
+      "item": "minecraft:redstone_torch"
+    },
+    "I": {
+      "tag": "forge:ingots/titanium"
+    },
+    "E": {
+      "item": "minecraft:ender_pearl"
+    },
+    "C": {
+      "item": "pomkotsmechs:materials/heavy_mech_circuit_board"
+    }
+  },
+  "pattern": [
+    " T ",
+    "IEI",
+    "ICI"
+  ],
+  "result": {
+    "item": "pomkotsmechs:pomkots_datapad",
+    "count": 1
+  },
+  "show_notification": true
+}

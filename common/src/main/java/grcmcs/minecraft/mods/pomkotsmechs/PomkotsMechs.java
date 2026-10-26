@@ -138,6 +138,9 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.levelgen.Heightmap;
+import grcmcs.minecraft.mods.pomkotsmechs.worldgen.WreckedMechFeature;
+import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -802,6 +805,17 @@ public class PomkotsMechs {
 		return stack;
 	}
 
+	public static ItemStack createMechFrameCapsule() {
+		ItemStack stack = new ItemStack(MECH_CAPSULE2_ITEM.get());
+		CompoundTag storedMech = new CompoundTag();
+		storedMech.putInt("DataVersion", 1);
+		storedMech.putString("EntityType", id("pmvc01").toString());
+		storedMech.putBoolean("IsFrame", true);
+		storedMech.put("EntityData", new CompoundTag());
+		stack.getOrCreateTag().put("StoredMech", storedMech);
+		return stack;
+	}
+
 	public static final DeferredRegister<CreativeModeTab> ITEM_GROUPS = DeferredRegister.create(MODID, Registries.CREATIVE_MODE_TAB);
 	public static final RegistrySupplier<CreativeModeTab> BASE_TAB = ITEM_GROUPS.register(PomkotsMechs.id("item_group"), () -> CreativeModeTab.builder(CreativeModeTab.Row.TOP, -1)
 			.icon(() -> new ItemStack(POMKOTS_DATAPAD_ITEM.get()))
@@ -904,6 +918,7 @@ public class PomkotsMechs {
 			.icon(() -> new ItemStack(ALTAIR_BODY.get()))
 			.title(Component.translatable("itemGroup." + PomkotsMechs.MODID + ".parts"))
 			.displayItems((parameters, output) -> {
+				output.accept(createMechFrameCapsule());
 				output.accept(new ItemStack(RUSTY_HEAD.get()));
 				output.accept(new ItemStack(RUSTY_BODY.get()));
 				output.accept(new ItemStack(RUSTY_ARM.get()));
@@ -1399,6 +1414,11 @@ public class PomkotsMechs {
 					)
 			);
 
+	public static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create(MODID, Registries.FEATURE);
+	public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> WRECKED_MECH_FEATURE = FEATURES.register(
+			"wrecked_mech", () -> new WreckedMechFeature(NoneFeatureConfiguration.CODEC)
+	);
+
 	public static final GameRules.Key<GameRules.BooleanValue> RULE_MAP_EDIT = GameRules.register("pomkotsmechsMapEditMode", GameRules.Category.MISC, GameRules.BooleanValue.create(false));
 
 	public static void initialize() {
@@ -1501,6 +1521,7 @@ public class PomkotsMechs {
 		ITEM_GROUPS.register();
 		SOUNDS.register();
 		MENUS.register();
+		FEATURES.register();
 
 		SpawnPlacementsRegistry.register(PMS01, SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Pms01Entity::canSpawn);
 		SpawnPlacementsRegistry.register(PMS02, SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Pms02Entity::canSpawn);

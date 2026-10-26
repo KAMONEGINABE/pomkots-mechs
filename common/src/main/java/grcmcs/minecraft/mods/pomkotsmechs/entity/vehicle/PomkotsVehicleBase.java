@@ -831,6 +831,11 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
     }
 
     @Override
+    public boolean shouldRenderAtSqrDistance(double d) {
+        return true;
+    }
+
+    @Override
     public boolean shouldRenderDefaultHud(String hudName) {
         return false;
     }

@@ -94,6 +94,8 @@ public class PartsWorkbenchScreen  extends AbstractContainerScreen<PartsWorkbenc
     }
 
     private void registerAllParts() {
+        // フレーム
+        this.registerFramePart();
         // 仮のパーツデータ
         this.registerParts(PomkotsMechs.ALTAIR_HEAD);
         this.registerParts(PomkotsMechs.ALTAIR_BODY);
@@ -157,6 +159,15 @@ public class PartsWorkbenchScreen  extends AbstractContainerScreen<PartsWorkbenc
         this.registerParts(PomkotsMechs.HOVER_UNIT);
         this.registerParts(PomkotsMechs.RAIL_SLIDER);
         this.registerParts(PomkotsMechs.GLIDER_UNIT);
+    }
+
+    private void registerFramePart() {
+        var dataPack = PomkotsDataPackManager.getInstance().getDataPack();
+        var partsData = dataPack != null ? dataPack.getPartsData("mech_frame") : null;
+        if (partsData != null) {
+            ItemStack frameCapsule = PomkotsMechs.createMechFrameCapsule();
+            craftablePartsList.add(new PartEntry(PomkotsMechs.id("mech_frame"), partsData, frameCapsule));
+        }
     }
 
     private void registerParts(RegistrySupplier<Item> partsSupplier) {
@@ -235,6 +246,20 @@ public class PartsWorkbenchScreen  extends AbstractContainerScreen<PartsWorkbenc
                 buf.writeId(BuiltInRegistries.ITEM, parts);
                 NetworkManager.sendToServer(PomkotsMechs.id(PomkotsMechs.PACKET_PARTS_WKBNCH_CRAFT), buf);
 
+            } else {
+                displayMessage("{text.pomkotsmechs.messages.partsworkbench.03}");
+            }
+        } else if (previewItem.getItem() == PomkotsMechs.MECH_CAPSULE2_ITEM.get()) {
+            var partsData = PomkotsDataPackManager.getInstance().getDataPack().getPartsData("mech_frame");
+            if (partsData == null || partsData.recipes.isEmpty() || partsData.recipes.get(0).isEmpty()) {
+                displayMessage("{text.pomkotsmechs.messages.partsworkbench.02}");
+                return;
+            }
+
+            if (PartsWorkbenchMenu.isCraftable(Minecraft.getInstance().player.getInventory(), partsData.recipes.get(0))) {
+                FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+                buf.writeId(BuiltInRegistries.ITEM, PomkotsMechs.MECH_CAPSULE2_ITEM.get());
+                NetworkManager.sendToServer(PomkotsMechs.id(PomkotsMechs.PACKET_PARTS_WKBNCH_CRAFT), buf);
             } else {
                 displayMessage("{text.pomkotsmechs.messages.partsworkbench.03}");
             }
@@ -464,7 +489,7 @@ public class PartsWorkbenchScreen  extends AbstractContainerScreen<PartsWorkbenc
         for (Material mat : requiredMaterials) {
             Item item = mat.getFirst();
             int required = mat.getSecond();
-            int has = Minecraft.getInstance().player.getInventory().countItem(item);
+            int has = PartsWorkbenchMenu.countMatchingMaterial(Minecraft.getInstance().player.getInventory(), item);
 
             // アイテムスロット枠
             gui.fill(x - 1, y - 1, x + slotSize + 1, y + slotSize + 1, 0xFF404040);

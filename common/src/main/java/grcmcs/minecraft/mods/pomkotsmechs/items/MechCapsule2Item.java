@@ -182,6 +182,11 @@ public class MechCapsule2Item extends Item {
             return baseName;
         }
 
+        CompoundTag stored = getStoredMech(stack);
+        if (stored.contains("IsFrame") && stored.getBoolean("IsFrame")) {
+            return Component.literal("Mech Capsule (Frame)");
+        }
+
         return Component.empty()
                 .append(baseName)
                 .append(
