@@ -1083,6 +1083,7 @@ public class PomkotsMechs {
          .icon(() -> new ItemStack((ItemLike)ALTAIR_BODY.get()))
          .title(Component.translatable("itemGroup.pomkotsmechs.parts"))
          .displayItems((parameters, output) -> {
+            output.accept(createMechFrameCapsule());
             output.accept(new ItemStack((ItemLike)RUSTY_HEAD.get()));
             output.accept(new ItemStack((ItemLike)RUSTY_BODY.get()));
             output.accept(new ItemStack((ItemLike)RUSTY_ARM.get()));
@@ -1587,6 +1588,17 @@ public class PomkotsMechs {
       CompoundTag root = stack.getOrCreateTag();
       root.putInt(nbtName("PrimaryColor"), pColor);
       root.putInt(nbtName("SecondaryColor"), sColor);
+      return stack;
+   }
+
+   public static ItemStack createMechFrameCapsule() {
+      ItemStack stack = new ItemStack((ItemLike)MECH_CAPSULE2_ITEM.get());
+      CompoundTag storedMech = new CompoundTag();
+      storedMech.putInt("DataVersion", 1);
+      storedMech.putString("EntityType", id("pmvc01").toString());
+      storedMech.putBoolean("IsFrame", true);
+      storedMech.put("EntityData", new CompoundTag());
+      stack.getOrCreateTag().put("StoredMech", storedMech);
       return stack;
    }
 

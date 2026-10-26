@@ -102,10 +102,16 @@ public class MechCapsule2Item extends Item {
 
    public Component getName(ItemStack stack) {
       Component baseName = super.getName(stack);
-      return (Component)(!hasStoredMech(stack)
-         ? baseName
-         : Component.empty().append(baseName).append(Component.literal(" (Saved)").withStyle(ChatFormatting.GREEN)));
+      if (!hasStoredMech(stack)) {
+         return baseName;
+      }
+      CompoundTag stored = getStoredMech(stack);
+      if (stored.contains("IsFrame") && stored.getBoolean("IsFrame")) {
+         return Component.literal("Mech Capsule (Frame)");
+      }
+      return Component.empty().append(baseName).append(Component.literal(" (Saved)").withStyle(ChatFormatting.GREEN));
    }
+
 
    private void spawnStoredMech(ServerLevel level, ItemStack capsuleStack, Vec3 spawnPosition) {
       if (hasStoredMech(capsuleStack)) {
