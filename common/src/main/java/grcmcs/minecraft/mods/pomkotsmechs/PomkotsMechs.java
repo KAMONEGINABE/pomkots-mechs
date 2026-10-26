@@ -1,6 +1,9 @@
 package grcmcs.minecraft.mods.pomkotsmechs;
 
 import com.mojang.serialization.Codec;
+import grcmcs.minecraft.mods.pomkotsmechs.worldgen.WreckedMechFeature;
+import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import dev.architectury.core.item.ArchitecturySpawnEggItem;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
@@ -1524,6 +1527,10 @@ public class PomkotsMechs {
    public static final RegistrySupplier<MenuType<ArenaBattleResultMenu>> ARENA_RESULT_MENU = MENUS.register(
       "arena_result_menu", () -> MenuRegistry.ofExtended(ArenaBattleResultMenu::new)
    );
+   public static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create("pomkotsmechs", Registries.FEATURE);
+   public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> WRECKED_MECH_FEATURE = FEATURES.register(
+      "wrecked_mech", () -> new WreckedMechFeature(NoneFeatureConfiguration.CODEC)
+   );
    public static final Key<BooleanValue> RULE_MAP_EDIT = GameRules.register("pomkotsmechsMapEditMode", Category.MISC, BooleanValue.create(false));
    public static final String PACKET_UPDATE_DATAPACK = "udp";
    public static final String PACKET_DRIVER_INPUT = "kpm";
@@ -1666,6 +1673,7 @@ public class PomkotsMechs {
       ITEM_GROUPS.register();
       SOUNDS.register();
       MENUS.register();
+      FEATURES.register();
       SpawnPlacementsRegistry.register(PMS01, net.minecraft.world.entity.SpawnPlacements.Type.ON_GROUND, Types.MOTION_BLOCKING_NO_LEAVES, Pms01Entity::canSpawn);
       SpawnPlacementsRegistry.register(PMS02, net.minecraft.world.entity.SpawnPlacements.Type.ON_GROUND, Types.MOTION_BLOCKING_NO_LEAVES, Pms02Entity::canSpawn);
       SpawnPlacementsRegistry.register(PMS03, net.minecraft.world.entity.SpawnPlacements.Type.ON_GROUND, Types.MOTION_BLOCKING_NO_LEAVES, Pms03Entity::canSpawn);

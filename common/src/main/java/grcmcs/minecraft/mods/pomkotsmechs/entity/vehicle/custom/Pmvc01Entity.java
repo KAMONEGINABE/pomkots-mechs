@@ -1316,6 +1316,10 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       return (int)this.energy;
    }
 
+   public void setEnergy(float energy) {
+      this.energy = energy;
+   }
+
    public int getOverHeatCooltime() {
       return this.overHeatCooltime;
    }
