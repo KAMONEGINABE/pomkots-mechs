@@ -99,7 +99,7 @@ public class WreckedMechFeature extends Feature<NoneFeatureConfiguration> {
          mech.setFuel(200);
       } else {
          // 大破状態: パーツ欠損処理
-         float keepChance = isRusty ? 0.50F : 0.25F;
+         float keepChance = isRusty ? 0.30F : 0.15F;
          int[] partSlots = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11};
          for (int slot : partSlots) {
             if (random.nextFloat() >= keepChance) {
