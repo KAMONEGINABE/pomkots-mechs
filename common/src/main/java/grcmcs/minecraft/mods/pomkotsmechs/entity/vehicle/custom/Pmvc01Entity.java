@@ -1320,6 +1320,11 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
       this.energy = energy;
    }
 
+   public void setFuel(int fuel) {
+      this.fuel = fuel;
+      this.syncFuels();
+   }
+
    public int getOverHeatCooltime() {
       return this.overHeatCooltime;
    }

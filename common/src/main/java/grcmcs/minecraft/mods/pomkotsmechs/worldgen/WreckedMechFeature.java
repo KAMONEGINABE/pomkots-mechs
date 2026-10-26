@@ -96,6 +96,7 @@ public class WreckedMechFeature extends Feature<NoneFeatureConfiguration> {
          mech.setBroken(false);
          mech.setHealth(Math.max(1.0F, mech.getMaxHealth() * 0.2F));
          mech.setEnergy(mech.getMaxEnergy() * 0.4F);
+         mech.setFuel(200);
       } else {
          // 大破状態: パーツ欠損処理
          float keepChance = isRusty ? 0.50F : 0.25F;
@@ -109,6 +110,7 @@ public class WreckedMechFeature extends Feature<NoneFeatureConfiguration> {
          mech.setBroken(true);
          mech.setHealth(1.0F);
          mech.setEnergy(0.0F);
+         mech.setFuel(0);
 
       }
 
