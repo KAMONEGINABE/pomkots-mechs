@@ -1,5 +1,21 @@
 {
   "mech_parts": {
+    "mech_frame": {
+      "type": "frame",
+      "description": "Base Mech Chassis Frame",
+      "weight": 500,
+      "level_param": [
+        {"durability": 100}
+      ],
+      "recipes": [
+        {
+          "pomkotsmechs:p_titanium_ingot": 48,
+          "minecraft:iron_ingot": 48,
+          "minecraft:coal": 12,
+          "minecraft:redstone": 12
+        }
+      ]
+    },
     "rusty": {
       "type": "parts",
       "head": {

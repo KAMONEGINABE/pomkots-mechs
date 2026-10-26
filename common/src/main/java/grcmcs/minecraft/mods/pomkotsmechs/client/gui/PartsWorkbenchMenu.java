@@ -55,11 +55,31 @@ public class PartsWorkbenchMenu extends AbstractContainerMenu {
    }
 
    public void craftItem(Item target, ServerPlayer player) {
-      if (target instanceof BasePartsItem parts && this.getSlot(0).getItem().isEmpty()) {
-         if (!this.getSlot(0).getItem().isEmpty()) {
-            this.sendMessage(player, "{text.pomkotsmechs.messages.partsworkbench.01}");
+      if (!this.getSlot(0).getItem().isEmpty()) {
+         this.sendMessage(player, "{text.pomkotsmechs.messages.partsworkbench.01}");
+         return;
+      }
+
+      if (target == PomkotsMechs.MECH_CAPSULE2_ITEM.get()) {
+         PomkotsDataPack dataPack = PomkotsDataPackManager.getInstance().getDataPack();
+         PomkotsDataPack.PartsData partsData = dataPack != null ? dataPack.getPartsData("mech_frame") : null;
+         if (partsData == null || partsData.recipes.isEmpty() || partsData.recipes.get(0).isEmpty()) {
+            this.sendMessage(player, "{text.pomkotsmechs.messages.partsworkbench.02}");
             return;
          }
+
+         if (isCraftable(player.getInventory(), partsData.recipes.get(0))) {
+            ItemStack crafted = PomkotsMechs.createMechFrameCapsule();
+            consumeMaterials(player.getInventory(), partsData.recipes.get(0));
+            this.getSlot(0).set(crafted);
+            return;
+         } else {
+            this.sendMessage(player, "{text.pomkotsmechs.messages.partsworkbench.03}");
+            return;
+         }
+      }
+
+      if (target instanceof BasePartsItem parts) {
 
          PomkotsDataPack.PartsData partsData = getPartsData(parts);
          if (partsData == null || partsData.recipes.isEmpty() || partsData.recipes.get(0).isEmpty()) {
