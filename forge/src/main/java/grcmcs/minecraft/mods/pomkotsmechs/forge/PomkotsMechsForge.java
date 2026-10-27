@@ -19,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
@@ -27,6 +28,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
+import grcmcs.minecraft.mods.pomkotsmechs.forge.worldgen.LostCitiesMechSpawner;
 import software.bernie.geckolib.renderer.GeoArmorRenderer;
 
 import java.util.function.BiConsumer;
@@ -115,6 +117,7 @@ public final class PomkotsMechsForge {
         if (ModList.get().isLoaded("lostcities")) {
             PomkotsMechs.LOGGER.info("Lost Cities is loaded. enabled specific sound system");
             ServerBGMTracker.lostCitiesAccessor = new LostCitiesCompatibleForge();
+            MinecraftForge.EVENT_BUS.register(LostCitiesMechSpawner.class);
         }
 
         DistExecutor.unsafeRunWhenOn(
