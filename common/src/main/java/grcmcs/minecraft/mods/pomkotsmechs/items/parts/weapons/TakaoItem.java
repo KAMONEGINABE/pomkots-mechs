@@ -35,29 +35,29 @@ public class TakaoItem extends BasePartsItem.WeaponArm {
             var kbVel = new Vec3(0, 0, -1F).yRot((float) Math.toRadians((-1.0) * mechInterface.getYRot()));
             var baseDamage = mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory());
 
+            DamageSource ds;
+            if (driver instanceof Player p) {
+                ds = mechInterface.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, mechInterface.getMechEntity(), p);
+            } else {
+                ds = mechInterface.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, mechInterface.getMechEntity());
+            }
+
             for (var ent : world.getEntities(null, new AABB(pilePos1, pilePos2))) {
                 if (mechInterface.isSelf(ent)) {
                     continue;
                 }
 
+                int sbModifier = mechInterface.isSuperBoost()? 2: 1;
+                var chargeModifier = 1;
+                if (tick > 60) {
+                    chargeModifier = 3;
+                } else if (tick > 40) {
+                    chargeModifier = 2;
+                }
+
                 if (ent instanceof LivingEntity le) {
                     if (!world.isClientSide()) {
-                        int sbModifier = mechInterface.isSuperBoost()? 2: 1;
                         le.knockback(sbModifier * 4, sbModifier * kbVel.x, sbModifier * kbVel.z);
-
-                        DamageSource ds;
-                        if (driver instanceof Player p) {
-                            ds = mechInterface.damageSources().playerAttack(p);
-                        } else {
-                            ds = mechInterface.damageSources().generic();
-                        }
-
-                        var chargeModifier = 1;
-                        if (tick > 60) {
-                            chargeModifier = 3;
-                        } else if (tick > 40) {
-                            chargeModifier = 2;
-                        }
 
                         if (le instanceof BossHitBoxEntity hit) {
                             hit.addStunPoint(10 * chargeModifier);
@@ -65,6 +65,12 @@ public class TakaoItem extends BasePartsItem.WeaponArm {
                         le.hurt(ds, baseDamage * chargeModifier * sbModifier);
                     } else {
                         mechInterface.addHitParticles(le);
+                    }
+                } else if (ent.isAttackable()) {
+                    if (!world.isClientSide()) {
+                        ent.hurt(ds, baseDamage * chargeModifier * sbModifier);
+                    } else {
+                        mechInterface.addHitParticles(ent);
                     }
                 }
             }

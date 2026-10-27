@@ -2,6 +2,7 @@ package grcmcs.minecraft.mods.pomkotsmechs.items.parts.weapons;
 
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import grcmcs.minecraft.mods.pomkotsmechs.client.renderer.parts.weapons.GassanItemRenderer;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.custom.ActionWeapon;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.custom.Motion;
 import grcmcs.minecraft.mods.pomkotsmechs.items.parts.BasePartsItem;
@@ -27,6 +28,16 @@ public class GassanItem extends BasePartsItem.WeaponArm {
             var pilePos2 = new Vec3(-2 * mechInterface.isRight(), -4F, 28F).yRot((float) Math.toRadians((-1.0) * mechInterface.getYRot())).add(mechInterface.position());
 
             var kbVel = new Vec3(0, 0, -1F).yRot((float) Math.toRadians((-1.0) * mechInterface.getYRot()));
+            DamageSource ds;
+            if (driver instanceof Player p) {
+                ds = mechInterface.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, mechInterface.getMechEntity(), p);
+            } else {
+                ds = mechInterface.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, mechInterface.getMechEntity());
+            }
+
+            var baseDamage = mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory());
+            var sbModifier = mechInterface.isSuperBoost() ? 2F : 1F;
+
             for (var ent : world.getEntities(null, new AABB(pilePos1, pilePos2))) {
                 if (mechInterface.isSelf(ent)) {
                     continue;
@@ -34,17 +45,20 @@ public class GassanItem extends BasePartsItem.WeaponArm {
 
                 if (ent instanceof LivingEntity le) {
                     if (!world.isClientSide()) {
-                        le.knockback(2, kbVel.x, kbVel.z);
-
-                        DamageSource ds;
-                        if (driver instanceof Player p) {
-                            ds = mechInterface.damageSources().playerAttack(p);
-                        } else {
-                            ds = mechInterface.damageSources().generic();
+                        le.knockback(2 * sbModifier, kbVel.x * sbModifier, kbVel.z * sbModifier);
+                        var targetDamage = baseDamage;
+                        if (le instanceof Pmvc01Entity) {
+                            targetDamage *= 1.5F;
                         }
-                        le.hurt(ds, this.getDamage(mechInterface.getItemStack()));
+                        le.hurt(ds, targetDamage * sbModifier);
                     } else {
                         mechInterface.addHitParticles(le);
+                    }
+                } else if (ent.isAttackable()) {
+                    if (!world.isClientSide()) {
+                        ent.hurt(ds, baseDamage * sbModifier);
+                    } else {
+                        mechInterface.addHitParticles(ent);
                     }
                 }
             }

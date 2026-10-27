@@ -115,7 +115,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.PackType;
@@ -161,6 +163,15 @@ public class PomkotsMechs {
 	public static String nbtName(String name) {
 		return MODID + name;
 	}
+
+	public static final ResourceKey<DamageType> ANTI_ARMOR_DAMAGE_TYPE = ResourceKey.create(
+			Registries.DAMAGE_TYPE,
+			new ResourceLocation(MODID, "anti_armor")
+	);
+	public static final ResourceKey<DamageType> HEAVY_MISSILE_DAMAGE_TYPE = ResourceKey.create(
+			Registries.DAMAGE_TYPE,
+			new ResourceLocation(MODID, "heavy_missile")
+	);
 
 	// ENTITIES -------------------------------------------------------------------------------------------
 

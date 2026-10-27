@@ -1,5 +1,7 @@
 package grcmcs.minecraft.mods.pomkotsmechs.entity.projectile;
 
+import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.MissileGenericLargeEntity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.PomkotsVehicle;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.PomkotsVehicleBase;
 import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
@@ -68,7 +70,11 @@ public class ProjectileUtil {
             if (rootCause == null) {
                 rootCause = prj;
             }
-            ds = target.damageSources().thrown(prj, rootCause);
+            if (prj instanceof MissileGenericLargeEntity || prj instanceof MissileEnemyLargeEntity) {
+                ds = target.damageSources().source(PomkotsMechs.HEAVY_MISSILE_DAMAGE_TYPE, prj, rootCause);
+            } else {
+                ds = target.damageSources().thrown(prj, rootCause);
+            }
         }
 
         target.hurt(ds, damage);

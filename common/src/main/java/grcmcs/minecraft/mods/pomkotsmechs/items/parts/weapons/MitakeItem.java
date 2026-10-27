@@ -45,6 +45,13 @@ public class MitakeItem extends BasePartsItem.WeaponShoulder {
             );
             var damage = mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory());
 
+            DamageSource ds;
+            if (driver instanceof Player p) {
+                ds = mechInterface.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, mechInterface.getMechEntity(), p);
+            } else {
+                ds = mechInterface.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, mechInterface.getMechEntity());
+            }
+
             for (var ent : world.getEntities(null, box)) {
                 if (mechInterface.isSelf(ent)) {
                     continue;
@@ -55,12 +62,6 @@ public class MitakeItem extends BasePartsItem.WeaponShoulder {
                         Vec3 kbVel = ent.position().subtract(pos).normalize();
                         le.knockback(4, -kbVel.x * 2, -kbVel.z * 2);
 
-                        DamageSource ds;
-                        if (driver instanceof Player p) {
-                            ds = mechInterface.damageSources().playerAttack(p);
-                        } else {
-                            ds = mechInterface.damageSources().generic();
-                        }
                         var baseDamage = damage;
 
                         if (le instanceof BossHitBoxEntity hit) {
@@ -72,6 +73,12 @@ public class MitakeItem extends BasePartsItem.WeaponShoulder {
                         le.hurt(ds, mechInterface.isSuperBoost()? baseDamage * 2F: baseDamage);
                     } else {
                         mechInterface.addHitParticles(le);
+                    }
+                } else if (ent.isAttackable()) {
+                    if (!world.isClientSide()) {
+                        ent.hurt(ds, mechInterface.isSuperBoost() ? damage * 2F : damage);
+                    } else {
+                        mechInterface.addHitParticles(ent);
                     }
                 }
             }

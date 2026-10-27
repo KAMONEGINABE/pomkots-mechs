@@ -795,5 +795,9 @@
   "block.pomkotsmechs.gate_horizontal_controller": "水平ゲート制御ブロック",
   "item.pomkotsmechs.flightunit": "Flight Unit (Extension)",
   "message.pomkotsmechs.flight.requires_airborne": "飛行形態への変形には空中で一定以上の速度が必要です",
-  "message.pomkotsmechs.flight.weapon_blocked": "この武器は飛行形態では使用できません"
+  "message.pomkotsmechs.flight.weapon_blocked": "この武器は飛行形態では使用できません",
+  "death.attack.pomkotsmechs.anti_armor": "%1$s は %2$s に粉砕された",
+  "death.attack.pomkotsmechs.anti_armor.player": "%1$s は %2$s の対装甲兵器によって粉砕された",
+  "death.attack.pomkotsmechs.heavy_missile": "%1$s は %2$s に吹き飛ばされた",
+  "death.attack.pomkotsmechs.heavy_missile.player": "%1$s は %2$s の大型ミサイルによって吹き飛ばされた"
 }

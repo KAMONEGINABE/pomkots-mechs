@@ -41,22 +41,24 @@ public class KagenobuItem extends BasePartsItem.WeaponArm {
             var kbVel = new Vec3(0, 0, -1F).yRot((float) Math.toRadians((-1.0) * mechInterface.getYRot()));
             var damage = mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory());
 
+            DamageSource ds;
+            if (driver instanceof Player p) {
+                ds = mechInterface.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, mechInterface.getMechEntity(), p);
+            } else {
+                ds = mechInterface.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, mechInterface.getMechEntity());
+            }
+
             for (var ent : world.getEntities(null, new AABB(pilePos1, pilePos2))) {
                 if (mechInterface.isSelf(ent)) {
                     continue;
                 }
 
+                int sbModifier = mechInterface.isSuperBoost()? 2: 1;
+
                 if (ent instanceof LivingEntity le) {
                     if (!world.isClientSide()) {
-                        int sbModifier = mechInterface.isSuperBoost()? 2: 1;
                         le.knockback(sbModifier * 4, sbModifier * kbVel.x, sbModifier * kbVel.z);
 
-                        DamageSource ds;
-                        if (driver instanceof Player p) {
-                            ds = mechInterface.damageSources().playerAttack(p);
-                        } else {
-                            ds = mechInterface.damageSources().generic();
-                        }
                         var baseDamage = damage;
 
                         if (le instanceof BossHitBoxEntity hit) {
@@ -68,6 +70,12 @@ public class KagenobuItem extends BasePartsItem.WeaponArm {
                         le.hurt(ds, sbModifier * baseDamage);
                     } else {
                         mechInterface.addHitParticles(le);
+                    }
+                } else if (ent.isAttackable()) {
+                    if (!world.isClientSide()) {
+                        ent.hurt(ds, sbModifier * damage);
+                    } else {
+                        mechInterface.addHitParticles(ent);
                     }
                 }
             }

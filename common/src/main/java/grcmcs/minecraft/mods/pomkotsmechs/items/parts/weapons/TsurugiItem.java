@@ -55,6 +55,13 @@ public class TsurugiItem extends BasePartsItem.WeaponArm {
             var kbVel = new Vec3(0, 0, -1F).yRot((float) Math.toRadians((-1.0) * mechInterface.getYRot()));
             var damage = mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory());
 
+            DamageSource ds;
+            if (driver instanceof Player p) {
+                ds = mechInterface.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, mechInterface.getMechEntity(), p);
+            } else {
+                ds = mechInterface.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, mechInterface.getMechEntity());
+            }
+
             for (var ent : world.getEntities(null, new AABB(pilePos1, pilePos2))) {
                 if (mechInterface.isSelf(ent)) {
                     continue;
@@ -63,13 +70,6 @@ public class TsurugiItem extends BasePartsItem.WeaponArm {
                 if (ent instanceof LivingEntity le) {
                     if (!world.isClientSide()) {
                         le.knockback(2, kbVel.x, kbVel.z);
-
-                        DamageSource ds;
-                        if (driver instanceof Player p) {
-                            ds = mechInterface.damageSources().playerAttack(p);
-                        } else {
-                            ds = mechInterface.damageSources().generic();
-                        }
 
                         float baseDamage = damage;
 
@@ -82,6 +82,12 @@ public class TsurugiItem extends BasePartsItem.WeaponArm {
                         le.hurt(ds, baseDamage);
                     } else {
                         mechInterface.addHitParticles(le);
+                    }
+                } else if (ent.isAttackable()) {
+                    if (!world.isClientSide()) {
+                        ent.hurt(ds, damage);
+                    } else {
+                        mechInterface.addHitParticles(ent);
                     }
                 }
             }
