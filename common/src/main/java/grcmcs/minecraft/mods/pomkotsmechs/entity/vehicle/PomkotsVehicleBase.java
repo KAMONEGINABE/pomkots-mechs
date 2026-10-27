@@ -178,6 +178,9 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
 
     protected void startEvasion() {
         if (isServerSide()) {
+            LivingEntity pilot = this.getDrivingPassenger();
+            float yaw = pilot != null ? pilot.getYRot() : this.getYRot();
+
             Vec3 vel;
             if (forwardIntention == 0 && sidewayIntention == 0) {
                 vel = new Vec3(0, 0, 1);
@@ -185,11 +188,12 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
                 vel = new Vec3(sidewayIntention, 0, forwardIntention).normalize();
             }
 
-            vel = vel.yRot((float) Math.toRadians((-1.0) * this.getYRot()));
+            vel = vel.yRot((float) Math.toRadians((-1.0) * yaw));
             var distance = getHorizontalBoostAcceleration();
             vel = vel.scale(distance);
 
-            this.push(vel.x, vel.y, vel.z);
+            this.setDeltaMovement(vel.x, this.getDeltaMovement().y, vel.z);
+            this.hasImpulse = true;
         }
     }
 
