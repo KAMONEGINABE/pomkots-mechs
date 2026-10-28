@@ -23,6 +23,8 @@ public class PomkotsConfig implements ConfigData {
     public boolean targetLockPlayers = true;
     public boolean targetLockPomkotsVehicles = true;
 
+    public float lostCityMechSpawnChance = 0.008F;
+
     @ConfigEntry.Gui.Excluded
     public String flightControlType = "SUPER_BOOST_STYLE";
 

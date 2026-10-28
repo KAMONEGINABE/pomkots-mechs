@@ -47,6 +47,10 @@ public class WreckedMechFeature extends Feature<NoneFeatureConfiguration> {
          return false;
       }
 
+      return spawnWreckedMech(level, surfacePos, random);
+   }
+
+   public static boolean spawnWreckedMech(WorldGenLevel level, BlockPos surfacePos, RandomSource random) {
       Pmvc01Entity mech = (Pmvc01Entity)PomkotsMechs.PMVC01.get().create(level.getLevel());
       if (mech == null) {
          return false;
