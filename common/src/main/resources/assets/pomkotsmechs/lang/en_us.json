@@ -541,4 +541,8 @@
 , "death.attack.pomkotsmechs.anti_armor.player": "%1$s was crushed by %2$s wielding an anti-armor weapon"
 , "death.attack.pomkotsmechs.heavy_missile": "%1$s was blown away by %2$s"
 , "death.attack.pomkotsmechs.heavy_missile.player": "%1$s was blown away by %2$s's heavy missile"
+, "death.attack.pomkotsmechs.energy_beam": "%1$s was vaporized by %2$s"
+, "death.attack.pomkotsmechs.energy_beam.player": "%1$s was vaporized by %2$s's high-energy beam"
+, "death.attack.pomkotsmechs.grenade": "%1$s was blasted by %2$s"
+, "death.attack.pomkotsmechs.grenade.player": "%1$s was blasted by %2$s's grenade"
 }

@@ -1,8 +1,7 @@
 package grcmcs.minecraft.mods.pomkotsmechs.entity.projectile;
 
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
-import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.MissileGenericLargeEntity;
-import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.PomkotsVehicle;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.*;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.PomkotsVehicleBase;
 import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
 import net.minecraft.world.damagesource.DamageSource;
@@ -34,12 +33,23 @@ public class ProjectileUtil {
         return hitResult;
     }
 
+    public static boolean isSuperbWarfareVehicle(Entity target) {
+        if (target == null) {
+            return false;
+        }
+        return target.getClass().getName().contains("superbwarfare.entity.vehicle");
+    }
+
     public static void hurt(Entity target, PomkotsThrowableProjectile prj, Entity cause, float damage) {
+        hurt(target, (Entity) prj, cause, damage);
+    }
+
+    public static void hurt(Entity target, Entity projectileOrNull, Entity cause, float damage) {
         if (target instanceof PomkotsVehicleBase v1 && cause instanceof PomkotsVehicleBase v2) {
             var d1 = v1.getDrivingPassenger();
             var d2 = v2.getDrivingPassenger();
 
-            if (d1 != null && d2 !=null && d1.isAlliedTo(d2)) {
+            if (d1 != null && d2 != null && d1.isAlliedTo(d2)) {
                 if (d1.getTeam() != null && !d1.getTeam().isAllowFriendlyFire()) {
                     return;
                 }
@@ -47,7 +57,7 @@ public class ProjectileUtil {
         }
 
         Entity rootCause = null;
-        if (cause instanceof  PomkotsVehicleBase vehicle) {
+        if (cause instanceof PomkotsVehicleBase vehicle) {
             var driver = vehicle.getDrivingPassenger();
             if (driver != null) {
                 rootCause = driver;
@@ -58,9 +68,51 @@ public class ProjectileUtil {
             rootCause = cause;
         }
 
+        boolean isVehicle = isSuperbWarfareVehicle(target);
+        float vehicleMultiplier = 1.0F;
         DamageSource ds;
 
-        if (prj == null) {
+        if (projectileOrNull instanceof BulletBeamEntity || projectileOrNull instanceof ReusableLaserEntity) {
+            // ビーム・レーザー兵器: 対車両30%
+            vehicleMultiplier = 0.3F;
+            if (rootCause != null) {
+                ds = target.damageSources().source(PomkotsMechs.ENERGY_BEAM_DAMAGE_TYPE, projectileOrNull, rootCause);
+            } else {
+                ds = target.damageSources().source(PomkotsMechs.ENERGY_BEAM_DAMAGE_TYPE, projectileOrNull);
+            }
+        } else if (projectileOrNull instanceof GiantTomahawkEntity) {
+            // 投擲斧: 対車両30%
+            vehicleMultiplier = 0.3F;
+            if (rootCause != null) {
+                ds = target.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, projectileOrNull, rootCause);
+            } else {
+                ds = target.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, projectileOrNull);
+            }
+        } else if (projectileOrNull instanceof BulletRifleEntity) {
+            // スナイパーライフル: 対車両30%
+            vehicleMultiplier = 0.3F;
+            if (rootCause != null) {
+                ds = target.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, projectileOrNull, rootCause);
+            } else {
+                ds = target.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, projectileOrNull);
+            }
+        } else if (projectileOrNull instanceof BulletGrenadeEntity) {
+            // グレネード弾: 対車両100%
+            vehicleMultiplier = 1.0F;
+            if (rootCause != null) {
+                ds = target.damageSources().source(PomkotsMechs.GRENADE_DAMAGE_TYPE, projectileOrNull, rootCause);
+            } else {
+                ds = target.damageSources().source(PomkotsMechs.GRENADE_DAMAGE_TYPE, projectileOrNull);
+            }
+        } else if (projectileOrNull instanceof MissileGenericLargeEntity) {
+            // 大型ミサイル: 対車両100%
+            vehicleMultiplier = 1.0F;
+            if (rootCause != null) {
+                ds = target.damageSources().source(PomkotsMechs.HEAVY_MISSILE_DAMAGE_TYPE, projectileOrNull, rootCause);
+            } else {
+                ds = target.damageSources().source(PomkotsMechs.HEAVY_MISSILE_DAMAGE_TYPE, projectileOrNull);
+            }
+        } else if (projectileOrNull == null) {
             if (rootCause instanceof Player p) {
                 ds = cause.damageSources().playerAttack(p);
             } else {
@@ -68,15 +120,14 @@ public class ProjectileUtil {
             }
         } else {
             if (rootCause == null) {
-                rootCause = prj;
+                rootCause = projectileOrNull;
             }
-            if (prj instanceof MissileGenericLargeEntity || prj instanceof MissileEnemyLargeEntity) {
-                ds = target.damageSources().source(PomkotsMechs.HEAVY_MISSILE_DAMAGE_TYPE, prj, rootCause);
-            } else {
-                ds = target.damageSources().thrown(prj, rootCause);
-            }
+            ds = target.damageSources().thrown(projectileOrNull, rootCause);
         }
 
-        target.hurt(ds, damage);
+        float finalDamage = isVehicle ? (damage * vehicleMultiplier) : damage;
+        if (finalDamage > 0.0F) {
+            target.hurt(ds, finalDamage);
+        }
     }
 }

@@ -168,6 +168,8 @@ public class PomkotsMechs {
 			Registries.DAMAGE_TYPE,
 			new ResourceLocation(MODID, "anti_armor")
 	);
+	public static final ResourceKey<DamageType> ENERGY_BEAM_DAMAGE_TYPE = ResourceKey.create(Registries.DAMAGE_TYPE, new ResourceLocation(MODID, "energy_beam"));
+	public static final ResourceKey<DamageType> GRENADE_DAMAGE_TYPE = ResourceKey.create(Registries.DAMAGE_TYPE, new ResourceLocation(MODID, "grenade"));
 	public static final ResourceKey<DamageType> HEAVY_MISSILE_DAMAGE_TYPE = ResourceKey.create(
 			Registries.DAMAGE_TYPE,
 			new ResourceLocation(MODID, "heavy_missile")
