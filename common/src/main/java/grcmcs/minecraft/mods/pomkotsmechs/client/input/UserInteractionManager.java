@@ -155,11 +155,9 @@ public class UserInteractionManager {
                     }
 
                     float cameraYaw = client.gameRenderer.getMainCamera().getYRot();
-                    boolean yawChanged = Float.isNaN(this.prevCameraYaw) || Math.abs(net.minecraft.util.Mth.wrapDegrees(cameraYaw - this.prevCameraYaw)) > 2.0F;
 
                     if (this.prevDriverInput != keyPressStatus
-                            || this.prevFlightEvasionDirection != flightEvasionDirection
-                            || yawChanged) {
+                            || this.prevFlightEvasionDirection != flightEvasionDirection) {
                         sendDriverInput2Server(keyPressStatus, flightEvasionDirection, cameraYaw);
                         this.prevDriverInput = keyPressStatus;
                         this.prevFlightEvasionDirection = flightEvasionDirection;
