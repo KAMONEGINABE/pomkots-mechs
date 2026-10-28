@@ -1919,8 +1919,7 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
     protected void startEvasion(float modifier) {
         if (isServerSide()) {
-            LivingEntity pilot = this.getDrivingPassenger();
-            float yaw = pilot != null ? pilot.getYRot() : this.getYRot();
+            float yaw = this.getControllingYaw();
 
             Vec3 vel;
             if (forwardIntention == 0 && sidewayIntention == 0) {
@@ -5129,11 +5128,12 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
 
             if (pilot != null) {
                 if (!(this.getVehicle() instanceof ElevatorEntity elv)) {
-                    this.setYRot(pilot.getYRot());
+                    float targetYaw = this.getControllingYaw();
+                    this.setYRot(targetYaw);
                     this.setXRot(pilot.getXRot() * 0.5F);
 
-                    this.setYBodyRot(this.getYRot());
-                    this.setYHeadRot(this.getYRot());
+                    this.setYBodyRot(targetYaw);
+                    this.setYHeadRot(targetYaw);
 
                 } else {
                     this.setYRot(elv.getFixedYaw());
@@ -5143,8 +5143,15 @@ public class Pmvc01Entity extends PomkotsVehicleBase implements HasCustomInvento
                     this.setYHeadRot(elv.getFixedYaw());
                 }
 
-                float strafe = pilot.xxa * 0.5F;
-                float forward = pilot.zza * 0.5F;
+                float strafe;
+                float forward;
+                if (this.driverInput != null) {
+                    strafe = (this.driverInput.isLeftPressed() ? 1.0F : (this.driverInput.isRightPressed() ? -1.0F : 0.0F)) * 0.5F;
+                    forward = (this.driverInput.isForwardPressed() ? 1.0F : (this.driverInput.isBackPressed() ? -1.0F : 0.0F)) * 0.5F;
+                } else {
+                    strafe = pilot.xxa * 0.5F;
+                    forward = pilot.zza * 0.5F;
+                }
 
                 if (!this.level().isClientSide) {
                     if (this.actionController.isBoost()) {

@@ -3,24 +3,43 @@ package grcmcs.minecraft.mods.pomkotsmechs.client.input;
 public class DriverInput {
     private short keyPressStatus = 0;
     private final byte flightEvasionDirection;
+    private final float cameraYaw;
     private DriverInput prevInput = null;
+    public static final float NO_CAMERA_YAW = Float.NaN;
 
     public DriverInput(short st) {
-        this(st, null);
+        this(st, (byte) 0, NO_CAMERA_YAW, null);
     }
 
     public DriverInput(short st, DriverInput prev) {
-        this(st, (byte) 0, prev);
+        this(st, (byte) 0, NO_CAMERA_YAW, prev);
     }
 
     public DriverInput(short st, byte flightEvasionDirection) {
-        this(st, flightEvasionDirection, null);
+        this(st, flightEvasionDirection, NO_CAMERA_YAW, null);
     }
 
     public DriverInput(short st, byte flightEvasionDirection, DriverInput prev) {
+        this(st, flightEvasionDirection, NO_CAMERA_YAW, prev);
+    }
+
+    public DriverInput(short st, byte flightEvasionDirection, float cameraYaw) {
+        this(st, flightEvasionDirection, cameraYaw, null);
+    }
+
+    public DriverInput(short st, byte flightEvasionDirection, float cameraYaw, DriverInput prev) {
         this.keyPressStatus = st;
         this.flightEvasionDirection = flightEvasionDirection;
+        this.cameraYaw = cameraYaw;
         this.prevInput = prev;
+    }
+
+    public float getCameraYaw() {
+        return cameraYaw;
+    }
+
+    public boolean hasCameraYaw() {
+        return !Float.isNaN(cameraYaw);
     }
 
     public short getStatus() {

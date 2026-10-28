@@ -20,6 +20,15 @@ public class MechCameraHandler {
             mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
         }
 
+        // 搭乗中：パイロットの体向きをカメラの水平Yawに同期
+        if (riding && mc.gameRenderer != null && mc.gameRenderer.getMainCamera() != null) {
+            float cameraYaw = mc.gameRenderer.getMainCamera().getYRot();
+            mc.player.setYRot(cameraYaw);
+            mc.player.yRotO = cameraYaw;
+            mc.player.setYHeadRot(cameraYaw);
+            mc.player.setYBodyRot(cameraYaw);
+        }
+
         // 降りた瞬間
         if (!riding && wasRiding) {
             if (prevCamera != null) {

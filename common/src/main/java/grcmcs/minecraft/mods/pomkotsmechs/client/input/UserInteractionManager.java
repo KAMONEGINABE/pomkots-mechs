@@ -69,6 +69,7 @@ public class UserInteractionManager {
     private final TargetLocker targetLocker = TargetLocker.getInstance();
     private short prevDriverInput = 0;
     private byte prevFlightEvasionDirection = 0;
+    private float prevCameraYaw = Float.NaN;
     private final float[] lastSentAimPitch = {
             Float.NaN, Float.NaN, Float.NaN, Float.NaN
     };
@@ -152,15 +153,21 @@ public class UserInteractionManager {
                                 keyPressStatus, client.player.input.forwardImpulse,
                                 client.player.input.leftImpulse, prevFlightEvasionDirection);
                     }
+
+                    float cameraYaw = client.gameRenderer.getMainCamera().getYRot();
+                    boolean yawChanged = Float.isNaN(this.prevCameraYaw) || Math.abs(net.minecraft.util.Mth.wrapDegrees(cameraYaw - this.prevCameraYaw)) > 2.0F;
+
                     if (this.prevDriverInput != keyPressStatus
-                            || this.prevFlightEvasionDirection != flightEvasionDirection) {
-                        sendDriverInput2Server(keyPressStatus, flightEvasionDirection);
+                            || this.prevFlightEvasionDirection != flightEvasionDirection
+                            || yawChanged) {
+                        sendDriverInput2Server(keyPressStatus, flightEvasionDirection, cameraYaw);
                         this.prevDriverInput = keyPressStatus;
                         this.prevFlightEvasionDirection = flightEvasionDirection;
+                        this.prevCameraYaw = cameraYaw;
                     }
 
                     if (client.player.getVehicle() instanceof PomkotsVehicle bot) {
-                        var driverInput = new DriverInput(keyPressStatus);
+                        var driverInput = new DriverInput(keyPressStatus, flightEvasionDirection, cameraYaw);
                         targetLocker.tick(driverInput, bot);
                     }
                     if (client.player.getVehicle() instanceof Pmvc01Entity mech) {
@@ -193,12 +200,12 @@ public class UserInteractionManager {
         return (byte)vertical;
     }
 
-    private void sendDriverInput2Server(short keyPressStatus, byte flightEvasionDirection) {
+    private void sendDriverInput2Server(short keyPressStatus, byte flightEvasionDirection, float cameraYaw) {
         FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
         buf.writeShort(keyPressStatus);
         buf.writeByte(flightEvasionDirection);
+        buf.writeFloat(cameraYaw);
         NetworkManager.sendToServer(PomkotsMechs.id(PomkotsMechs.PACKET_DRIVER_INPUT), buf);
-
     }
 
     private void sendAimPitchIfNeeded(Pmvc01Entity mech) {

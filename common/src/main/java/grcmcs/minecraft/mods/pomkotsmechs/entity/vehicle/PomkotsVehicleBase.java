@@ -176,10 +176,17 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
         }
     }
 
+    public float getControllingYaw() {
+        if (this.driverInput != null && this.driverInput.hasCameraYaw()) {
+            return this.driverInput.getCameraYaw();
+        }
+        LivingEntity pilot = this.getDrivingPassenger();
+        return pilot != null ? pilot.getYRot() : this.getYRot();
+    }
+
     protected void startEvasion() {
         if (isServerSide()) {
-            LivingEntity pilot = this.getDrivingPassenger();
-            float yaw = pilot != null ? pilot.getYRot() : this.getYRot();
+            float yaw = this.getControllingYaw();
 
             Vec3 vel;
             if (forwardIntention == 0 && sidewayIntention == 0) {
@@ -569,7 +576,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
     /**
      * キー入力関係の処理群
      */
-    private DriverInput driverInput = new DriverInput((short)0);
+    protected DriverInput driverInput = new DriverInput((short)0);
 
     public static final SerializableDataTicket<Short> DRIVER_INPUT_SERIALIZABLE_DATA_TICKET =
             GeckoLibUtil.addDataTicket(
