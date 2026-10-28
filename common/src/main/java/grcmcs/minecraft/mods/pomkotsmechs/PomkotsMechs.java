@@ -1744,12 +1744,13 @@ public class PomkotsMechs {
 			Player player = context.getPlayer();
 			short keyPressStatus = buf.readShort();
 			byte flightEvasionDirection = buf.readByte();
+			float cameraYaw = buf.isReadable() ? buf.readFloat() : DriverInput.NO_CAMERA_YAW;
 
 			context.queue(() -> {
 				if (Utils.isRidingPomkotsControllable(player)) {
 					Entity vehicle = player.getVehicle();
 					((PomkotsControllable) vehicle).setDriverInput(
-							new DriverInput(keyPressStatus, flightEvasionDirection));
+							new DriverInput(keyPressStatus, flightEvasionDirection, cameraYaw));
 				}
 			});
 		});
