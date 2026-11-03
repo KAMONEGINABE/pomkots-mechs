@@ -7,6 +7,7 @@ import me.shedaniel.autoconfig.annotation.ConfigEntry;
 
 @Config(name = PomkotsMechs.MODID)
 public class PomkotsConfig implements ConfigData {
+    public boolean enableChestLootInjection = true;
     public boolean enableEntityBlockDestruction = false;
     public boolean enablePlayerVehicleBlockDestruction = true;
     public String nonDestructiveBlocks = "minecraft:bedrock,minecraft:structure_void,minecraft:structure_block";
