@@ -105,7 +105,7 @@
         },
         {
           "type": "minecraft:item",
-          "name": "pomkotsmechs:magazinemissile_large",
+          "name": "pomkotsmechs:magazinemissilelarge",
           "weight": 3,
           "functions": [
             {
@@ -126,7 +126,7 @@
         {
           "type": "minecraft:item",
           "name": "pomkotsmechs:p_titanium_nugget",
-          "weight": 14,
+          "weight": 15,
           "functions": [
             {
               "function": "minecraft:set_count",
@@ -139,33 +139,8 @@
         },
         {
           "type": "minecraft:item",
-          "name": "pomkotsmechs:consumable_fuel_pellet",
+          "name": "pomkotsmechs:p_titanium_ingot",
           "weight": 10,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": {
-                "min": 2.0,
-                "max": 5.0
-              }
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "pomkotsmechs:consumable_repair_kit",
-          "weight": 8,
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 1.0
-            }
-          ]
-        },
-        {
-          "type": "minecraft:item",
-          "name": "pomkotsmechs:consumable_cube_key",
-          "weight": 6,
           "functions": [
             {
               "function": "minecraft:set_count",
@@ -177,13 +152,37 @@
           ]
         },
         {
+          "type": "minecraft:loot_table",
+          "name": "pomkotsmechs:gameplay/low_tier_debris",
+          "weight": 25
+        },
+        {
+          "type": "minecraft:loot_table",
+          "name": "pomkotsmechs:gameplay/high_tier_debris",
+          "weight": 20
+        },
+        {
           "type": "minecraft:item",
-          "name": "pomkotsmechs:p_titanium_ingot",
-          "weight": 3,
+          "name": "pomkotsmechs:repairkit",
+          "weight": 10,
           "functions": [
             {
               "function": "minecraft:set_count",
               "count": 1.0
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "pomkotsmechs:cubekey",
+          "weight": 8,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "min": 1.0,
+                "max": 2.0
+              }
             }
           ]
         }
@@ -265,7 +264,7 @@
         },
         {
           "type": "minecraft:item",
-          "name": "pomkotsmechs:blue_print_proto_sb_unit",
+          "name": "pomkotsmechs:blue_print_proto_super_boost_unit",
           "weight": 1,
           "functions": [
             {
@@ -287,7 +286,7 @@
         },
         {
           "type": "minecraft:item",
-          "name": "pomkotsmechs:consumable_cube_key_purple",
+          "name": "pomkotsmechs:cubekey_purple",
           "weight": 1,
           "functions": [
             {
