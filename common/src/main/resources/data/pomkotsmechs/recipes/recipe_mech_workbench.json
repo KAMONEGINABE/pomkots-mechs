@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "T": {
+      "item": "minecraft:redstone_torch"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "C": {
+      "item": "pomkotsmechs:materials/heavy_mech_circuit_board"
+    },
+    "D": {
+      "item": "pomkotsmechs:materials/heavy_mech_construction_unit_debris"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "pattern": [
+    "TRT",
+    "CDC",
+    "III"
+  ],
+  "result": {
+    "item": "pomkotsmechs:mechworkbench_block_item",
+    "count": 1
+  },
+  "show_notification": true
+}

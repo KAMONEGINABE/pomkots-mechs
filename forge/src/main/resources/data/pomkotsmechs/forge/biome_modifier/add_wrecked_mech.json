@@ -1,0 +1,6 @@
+{
+  "type": "forge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": "pomkotsmechs:wrecked_mech",
+  "step": "vegetal_decoration"
+}

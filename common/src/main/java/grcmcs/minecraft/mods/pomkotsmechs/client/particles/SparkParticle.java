@@ -17,13 +17,12 @@ public class SparkParticle extends TextureSheetParticle {
     protected SparkParticle(ClientLevel level, double x, double y, double z, double vx, double vy, double vz, SpriteSet spriteSet) {
         super(level, x, y, z, vx, vy, vz);
         this.spriteSet = spriteSet;
-        this.lifetime = 20; // パーティクルの寿命（20ティック＝1秒）
-        this.gravity = 0.9F; // 重力の影響を受けない
-        this.quadSize *= 2F; // パーティクルサイズの調整
-        this.setSpriteFromAge(spriteSet); // スプライトシートのアニメーション
-        this.hasPhysics = false; // パーティクルが物理エンティティに影響されない
+        this.lifetime = 20;
+        this.gravity = 0.9F;
+        this.quadSize *= 2F;
+        this.setSpriteFromAge(spriteSet);
+        this.hasPhysics = false;
     }
-
 
     @Override
     public ParticleRenderType getRenderType() {
@@ -39,19 +38,7 @@ public class SparkParticle extends TextureSheetParticle {
 
     @Override
     public int getLightColor(float f) {
-//        float g = ((float)this.age + f) / (float)this.lifetime;
-        float g = (float)this.lifetime / ((float)this.age + f);
-        g = Mth.clamp(g, 0.0F, 1.0F);
-        int i = super.getLightColor(f);
-        int j = i & 255;
-        int k = i >> 16 & 255;
-        j += (int)(g * 15.0F * 16.0F);
-        if (j > 240) {
-            j = 240;
-        }
-
-        return j | k << 16;
-        // return 15728880;
+        return 0xF000F0;
     }
 
     public static class Provider implements ParticleProvider<SimpleParticleType> {
@@ -63,7 +50,15 @@ public class SparkParticle extends TextureSheetParticle {
 
         public Particle createParticle(SimpleParticleType typeIn, ClientLevel worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
             Particle p = new SparkParticle(worldIn, x, y, z, xSpeed, ySpeed, zSpeed, this.spriteSet);
-//            p.scale(4.0F);
+
+            if (typeIn == PomkotsMechs.SPARK_RED.get()) {
+                p.setColor(1.0f, 0.1f, 0.0f);
+            } else if (typeIn == PomkotsMechs.SPARK_ORANGE.get()) {
+                p.setColor(1.0f, 0.5f, 0.0f);
+            } else {
+                p.setColor(1.0f, 1.0f, 0.0f);
+            }
+
             p.setLifetime(20);
             return p;
         }

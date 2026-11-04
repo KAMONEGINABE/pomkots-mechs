@@ -8,50 +8,66 @@ public class BossActionController {
     public static class BossAction {
         public int maxCoolTick;
         public int maxActionTick;
-        public int maxActionTickPerLoop;
-        public int actualActionTick;
-        public int actionLoopNum;
 
         public int currentCoolTick = 0;
         public int currentActionTick = 0;
 
-        public boolean isOnEnd = false;
+        private int currentLoopNum = 0;
 
-        private Consumer<Void> startAction;
-        private Consumer<Void> actualAction;
+        private boolean continueFlag = false;
+        private final boolean controlsMovement;
 
+        Consumer<BossAction> tickInAction;
 
-        BossAction(int maxCoolTick, int maxActionTick, int actualActionTick, Consumer<Void> startAction, Consumer<Void> actualAction) {
-            this(maxCoolTick, maxActionTick, actualActionTick, 1,  startAction, actualAction);
+        BossAction(int maxCoolTick, int maxActionTick, Consumer<BossAction> tickInAction) {
+            this(maxCoolTick, maxActionTick, true, tickInAction);
         }
 
-        BossAction(int maxCoolTick, int maxActionTick, int actualActionTick, int actionLoopNum, Consumer<Void> startAction, Consumer<Void> actualAction) {
-            this.maxCoolTick = maxCoolTick;
-            this.maxActionTick = maxActionTick * actionLoopNum;
-            this.maxActionTickPerLoop = maxActionTick;
-            this.actionLoopNum = actionLoopNum;
-            this.startAction = startAction;
-            this.actualActionTick = actualActionTick;
-            this.actualAction = actualAction;
+        BossAction(int maxCoolTick, int maxActionTick, boolean controlsMovement,
+                   Consumer<BossAction> tickInAction) {
+            this.currentCoolTick = this.maxCoolTick = maxCoolTick;
+            this.maxActionTick = maxActionTick;
+            this.controlsMovement = controlsMovement;
+            this.tickInAction = tickInAction;
+        }
+
+        public boolean controlsMovement() {
+            return controlsMovement;
         }
 
         public void tick() {
             if (currentCoolTick > 0) {
                 currentCoolTick--;
+
+                return;
             }
 
             if (currentActionTick > 0) {
+                this.tickInAction.accept(this);
                 currentActionTick++;
 
-                if (currentActionTick % maxActionTickPerLoop == actualActionTick) {
-                    actualAction.accept(null);
-                }
+            }
 
-                if (currentActionTick == maxActionTick) {
+            if (currentActionTick == maxActionTick + 1) {
+                if (consumeContinueFlag()) {
+                    currentActionTick = 1;
+                    currentLoopNum++;
+                } else {
                     currentActionTick = 0;
-                    isOnEnd = true;
+                    currentCoolTick = maxCoolTick;
                 }
             }
+        }
+
+        private boolean consumeContinueFlag() {
+            var tmp = continueFlag;
+            continueFlag = false;
+
+            return tmp;
+        }
+
+        public void setContinue() {
+            this.continueFlag = true;
         }
 
         public boolean isInAction() {
@@ -60,6 +76,18 @@ public class BossActionController {
 
         public boolean isInCooltime() {
             return currentCoolTick > 0;
+        }
+
+        public boolean onStartOfAction() {
+            return currentActionTick == 1;
+        }
+
+        public boolean onEndOfAction() {
+            return currentActionTick == maxActionTick - 1;
+        }
+
+        public boolean isFirstLoop() {
+            return currentLoopNum == 0;
         }
 
         public boolean tryAction() {
@@ -75,20 +103,28 @@ public class BossActionController {
             return !isInAction() && !isInCooltime();
         }
 
-        private void startAction() {
+        public void startAction() {
             currentActionTick = 1;
-            currentCoolTick = maxCoolTick;
-            startAction.accept(null);
+            continueFlag = false;
+            currentLoopNum = 0;
         }
 
         private void reset() {
             currentActionTick = 0;
             currentCoolTick = 0;
+            continueFlag = false;
+            currentLoopNum = 0;
         }
 
+        public void stopAction() {
+            currentActionTick = -1;
+            currentCoolTick = maxCoolTick;
+            continueFlag = false;
+            currentLoopNum = 0;
+        }
     }
 
-    private Map<String, BossAction> actionMap = new HashMap<>();
+    private final Map<String, BossAction> actionMap = new HashMap<>();
 
     public void registerAction(String name, BossAction action) {
         actionMap.put(name, action);
@@ -113,6 +149,15 @@ public class BossActionController {
     public boolean isInActionAll() {
         for(BossAction action: actionMap.values()) {
             if (action.isInAction()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isMovementControlledActionInProgress() {
+        for (BossAction action : actionMap.values()) {
+            if (action.isInAction() && action.controlsMovement()) {
                 return true;
             }
         }

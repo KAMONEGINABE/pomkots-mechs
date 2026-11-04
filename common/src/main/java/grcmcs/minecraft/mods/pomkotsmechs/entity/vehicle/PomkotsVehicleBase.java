@@ -4,10 +4,14 @@ import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import grcmcs.minecraft.mods.pomkotsmechs.client.input.DriverInput;
 import grcmcs.minecraft.mods.pomkotsmechs.client.particles.ParticleUtil;
 import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.custom.Pmvc01Entity;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.LockTargets;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.Action;
 import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.ActionController;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.ActionController2;
 import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.FriendlyByteBuf;
@@ -16,6 +20,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -51,12 +56,14 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
     }
 
     // ロボ君のアクションの状態（サーバと他クライアントにも同期する）
-    public ActionController actionController = new ActionController();
+    public ActionController actionController = new ActionController2(this);
 
     // 搭乗してから操作開始するまでの間のティック
     protected short rideCoolTick = 0;
 
-    private boolean onGroundPrev = true;
+    protected boolean onGroundPrev = true;
+
+    private float soundEffectVolume = -1;
 
     abstract protected String getMechName();
 
@@ -65,7 +72,10 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
 
         this.noCulling = true;
         this.setYRot(0F);
-        this.setNoGravity(false);
+
+        if (this.isServerSide()) {
+            this.setNoGravity(false);
+        }
 
 //        this.setSpeed(2);
 
@@ -77,7 +87,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
     protected static final int ACT_JUMP = 1;
 
     protected void registerActions() {
-        this.actionController.registerAction(ACT_EVASION, new Action(10, 0, 10), ActionController.ActionType.BASE);
+        this.actionController.registerAction(ACT_EVASION, new Action(15, 0, 10), ActionController.ActionType.BASE);
         this.actionController.registerAction(ACT_JUMP, new Action(10, 6, 4), ActionController.ActionType.BASE);
     }
 
@@ -85,15 +95,22 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
         this.setMaxUpStep(2.0F);
     }
 
+    private DriverInput prevDriverInput = new DriverInput((short)0);
+
     @Override
     public void tick() {
         this.updatePosHistory(this.position());
+        this.soundEffectVolume = -1;
+
+        if (!isClientSide() && !isVehicle() && isBoost()) {
+            setBoost(false);
+        }
 
         super.tick();
 
         this.actionController.tick();
 
-        if (this.isAlive() && this.isVehicle()) {
+        if (this.isAlive() && this.isVehicle() && this.canWork()) {
             if (rideCoolTick > 0) {
                 rideCoolTick--;
 
@@ -106,7 +123,10 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
                     if (b == null) {
                         b = 0;
                     }
-                    driverInput = new DriverInput(b);
+                    driverInput = new DriverInput(b, prevDriverInput);
+                } else if (driverInput != null){
+                    driverInput = new DriverInput(driverInput.getStatus(),
+                            driverInput.getFlightEvasionDirection(), prevDriverInput);
                 }
 
                 if (driverInput != null) {
@@ -121,7 +141,12 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
 
         }
 
+        this.prevDriverInput = this.driverInput;
         this.onGroundPrev = this.onGround();
+    }
+
+    public boolean canWork() {
+        return true;
     }
 
     protected void applyPlayerInput(DriverInput driverInput) {
@@ -151,8 +176,18 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
         }
     }
 
+    public float getControllingYaw() {
+        if (this.driverInput != null && this.driverInput.hasCameraYaw()) {
+            return this.driverInput.getCameraYaw();
+        }
+        LivingEntity pilot = this.getDrivingPassenger();
+        return pilot != null ? pilot.getYRot() : this.getYRot();
+    }
+
     protected void startEvasion() {
         if (isServerSide()) {
+            float yaw = this.getControllingYaw();
+
             Vec3 vel;
             if (forwardIntention == 0 && sidewayIntention == 0) {
                 vel = new Vec3(0, 0, 1);
@@ -160,11 +195,12 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
                 vel = new Vec3(sidewayIntention, 0, forwardIntention).normalize();
             }
 
-            vel = vel.yRot((float) Math.toRadians((-1.0) * this.getYRot()));
-            var distance = 0.475 * 15;
+            vel = vel.yRot((float) Math.toRadians((-1.0) * yaw));
+            var distance = getHorizontalBoostAcceleration();
             vel = vel.scale(distance);
 
-            this.push(vel.x, vel.y, vel.z);
+            this.setDeltaMovement(vel.x, this.getDeltaMovement().y, vel.z);
+            this.hasImpulse = true;
         }
     }
 
@@ -174,7 +210,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
         }
         if (this.actionController.getAction(ACT_JUMP).isOnFire()) {
             if (isServerSide()) {
-                this.push(0, 2, 0);
+                this.push(0, this.getJumpSpeed(), 0);
             }
         }
     }
@@ -184,11 +220,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
             if (driverInput.isJumpPressed()) {
                 this.setNoGravity(true);
 
-                if (useEnergy(5)) {
-                    if (isServerSide() && this.getDeltaMovement().y() < 0.7) {
-                        this.push(0, 0.3, 0);
-                    }
-                } else {
+                if (!tryVerticalBoost()) {
                     if (isServerSide()) {
                         this.push(0, -0.18 * 0.9800000190734863D, 0);
                     }
@@ -199,6 +231,16 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
         } else {
             this.setNoGravity(false);
         }
+    }
+
+    protected boolean tryVerticalBoost() {
+        if (useEnergy(5)) {
+            if (isServerSide() && this.getDeltaMovement().y() < getVerticalBoostMaxSpeed()) {
+                this.push(0, getVerticalBoostAcceleration(), 0);
+                return true;
+            }
+        }
+        return false;
     }
 
     protected void fireWeapons() {
@@ -213,7 +255,9 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
         if (useLockTarget && lockTarget != null) {
             Vec3 positionA = bullet.position();
             // エンティティBの位置を取得
-            Vec3 positionB = lockTarget.getBoundingBox().getCenter();
+            Vec3 positionB = lockTarget instanceof grcmcs.minecraft.mods.pomkotsmechs.entity.monster.boss.BossHitBoxEntity hitBox
+                    ? hitBox.getStableAimPosition(false)
+                    : lockTarget.getBoundingBox().getCenter();
 
             // エンティティAからエンティティBへの相対ベクトル
             double deltaX = positionB.x - positionA.x;
@@ -259,7 +303,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
 
     @Override
     public void travel(Vec3 pos) {
-        if (this.isAlive() && this.isVehicle()) {
+        if (this.isAlive() && this.isVehicle() && this.canWork()) {
             var pilot = this.getDrivingPassenger();
 
             // ROTATE Vehicle
@@ -274,23 +318,33 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
             float f1 = pilot.zza * 0.5F;
 
             // BOOST
-            if (isServerSide()) {
-                if (this.actionController.isBoost()) {
-                    this.setSpeed(1.5F);
-                } else {
-                    this.setSpeed(0.5F);
-                }
+            if (this.actionController.isBoost()) {
+                this.setSpeed(this.getRunSpeed());
+            } else {
+                this.setSpeed(this.getWalkSpeed());
             }
 
-            super.travel(new Vec3(f, pos.y, f1));
             this.hasImpulse = true;
+            super.travel(new Vec3(f, pos.y, f1));
         } else {
             super.travel(pos);
         }
     }
 
+    protected void travelBypass(Vec3 pos) {
+        super.travel(pos);
+    }
+
+    protected float getWalkSpeed(){
+        return 0.5F;
+    }
+
+    protected float getRunSpeed() {
+        return 1.5F;
+    }
+
     @Override protected float getFlyingSpeed() {
-        if (isNoGravity() && isServerSide()) {
+        if (isServerSide() && isNoGravity()) {
             if (this.actionController.isBoost()) {
                 return 0.4f;
             } else {
@@ -301,12 +355,28 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
         }
     }
 
+    protected float getHorizontalBoostAcceleration() {
+        return 0.475F * 15F;
+    }
+
+    protected float getVerticalBoostAcceleration() {
+        return 0.3F;
+    }
+
+    protected float getVerticalBoostMaxSpeed() {
+        return 0.7F;
+    }
+
+    protected float getJumpSpeed() {
+        return 2F;
+    }
+
     @Override
     public boolean hurt(DamageSource ds, float a) {
         if (ds.getEntity() != null && ds.getEntity().equals(this.getDrivingPassenger())) {
             return false;
         } else {
-            if (this.isClientSide()) {
+            if (this.isClientSide() && !(this instanceof Pmvc01Entity)) {
                 this.playSoundEffect(PomkotsMechs.SE_HIT_EVENT.get());
                 ParticleUtil.addParticles(ds,this);
             }
@@ -324,6 +394,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
             if (player.isDeadOrDying()) {
                 player.getAbilities().mayfly = true;
             }
+            player.invulnerableTime = 40;
         }
 
         lockTargets.clearLockTargets();
@@ -334,7 +405,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
         if (this.getDrivingPassenger() == null) {
-            if (isServerSide()) {
+            if (isServerSide() && player.getVehicle() == null) {
                 player.setYRot(this.getYRot());
                 player.setXRot(this.getXRot());
                 player.startRiding(this);
@@ -342,9 +413,11 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
 
             this.rideCoolTick = 3;
             this.actionController.reset();
+
+            return InteractionResult.SUCCESS;
         }
 
-        return InteractionResult.sidedSuccess(this.level().isClientSide);
+        return super.interact(player, hand);
     }
 
     @Override
@@ -354,7 +427,17 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
 
     // 運転手さんを取得する（getControllingPassengerをオーバーライドするとなんか変な感じになるので独自メソッド）
     public LivingEntity getDrivingPassenger() {
-        return this.getPassengers().isEmpty() ? null : (LivingEntity) this.getPassengers().get(0);
+        if (this.getPassengers().isEmpty()) {
+            return null;
+        }
+
+        var driver = this.getPassengers().get(0);
+
+        if (driver instanceof LivingEntity le) {
+            return le;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -387,13 +470,13 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
             this.registerAnimationSoundHandlers(soundKeyframeEvent);
         }));
 
-        controllers.add(new AnimationController<>(this, "fly", 0, event -> {
+        controllers.add(new AnimationController<>(this, "fly", 1, event -> {
             return controllAnimationFlyingMotion(event);
         }).setSoundKeyframeHandler(soundKeyframeEvent -> {
             this.registerAnimationSoundHandlers(soundKeyframeEvent);
         }));
 
-        controllers.add(new AnimationController<>(this, "rotation", 3, event -> {
+        controllers.add(new AnimationController<>(this, "rotation", 0, event -> {
             return controllAnimationRotation(event);
         }));
 
@@ -442,7 +525,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
 
     protected PlayState controllAnimationFlyingMotion(AnimationState<PomkotsVehicleBase> event) {
         if (justLanded(event.getAnimatable())) {
-//            event.getController().forceAnimationReset();
+            event.getController().forceAnimationReset();
             return event.setAndContinue(RawAnimation.begin().thenPlay("animation." + getMechName() + ".onground"));
         } else if (event.getAnimatable().onGround()) {
             return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + getMechName() + ".nop"));
@@ -471,7 +554,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
                 } else if (sidewayIntention > 0) {
                     return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + getMechName() + ".left"));
                 } else {
-                    return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + getMechName() + ".nop"));
+                    return event.setAndContinue(RawAnimation.begin().thenPlayAndHold("animation." + getMechName() + ".forward"));
                 }
             }
         } else {
@@ -493,7 +576,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
     /**
      * キー入力関係の処理群
      */
-    private DriverInput driverInput = null;
+    protected DriverInput driverInput = new DriverInput((short)0);
 
     public static final SerializableDataTicket<Short> DRIVER_INPUT_SERIALIZABLE_DATA_TICKET =
             GeckoLibUtil.addDataTicket(
@@ -519,6 +602,7 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
             );
 
     public void setDriverInput(DriverInput di) {
+//        this.driverInput = new DriverInput(di.getStatus(), this.driverInput);
         this.driverInput = di;
 
         if (!level().isClientSide) {
@@ -537,11 +621,13 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
      * モード関係の処理群
      */
     private static final EntityDataAccessor<Boolean> MODE = SynchedEntityData.defineId(PomkotsVehicleBase.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Boolean> IS_BOOST = SynchedEntityData.defineId(Pmvc01Entity.class, EntityDataSerializers.BOOLEAN);
 
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(MODE, true); // 初期値を設定
+        this.entityData.define(IS_BOOST, false); // 初期値を設定
     }
 
     private void setMainMode(boolean value) {
@@ -554,6 +640,14 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
 
     public boolean isSubMode() {
         return !this.entityData.get(MODE);
+    }
+
+    public boolean isBoost() {
+        return this.entityData.get(IS_BOOST);
+    }
+
+    public void setBoost(boolean broken) {
+        this.entityData.set(IS_BOOST, broken);
     }
 
     /**
@@ -571,6 +665,10 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
      */
     private static final int MAX_ENERGY = 100;
     private int energy = MAX_ENERGY;
+
+    public int getMaxEnergy () {
+        return MAX_ENERGY;
+    }
 
     public int getEnergy() {
         return this.energy;
@@ -652,7 +750,34 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
      * 音声関連の処理群
      */
     protected void playSoundEffect(SoundEvent event) {
-        this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), event, SoundSource.PLAYERS, 1.0F, 1.0F, false);
+        this.playSoundEffect(event, 1.0F);
+    }
+
+    protected void playSoundEffect(SoundEvent event, float volume) {
+        if (this.soundEffectVolume < 0) {
+            this.soundEffectVolume = computeVolume(100);
+        }
+
+        if (this.soundEffectVolume > 0) {
+            this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), event, SoundSource.PLAYERS, volume * this.soundEffectVolume, 1.0F, false);
+        }
+    }
+
+    public void playSoundPublic(SoundEvent event) {
+        this.playSoundEffect(event);
+    }
+
+    private float computeVolume(double maxDistance) {
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
+        if (player == null) return 0f;
+
+        double distance = player.distanceTo(this);
+        if (distance > maxDistance) return 0f;
+
+        float volume = 1.0f - (float)(distance / maxDistance);
+
+        return Mth.clamp(volume, 0f, 1f);
     }
 
     @Override
@@ -714,6 +839,11 @@ public abstract class PomkotsVehicleBase extends LivingEntity implements GeoEnti
 
     protected boolean isClientSide() {
         return this.level().isClientSide();
+    }
+
+    @Override
+    public boolean shouldRenderAtSqrDistance(double d) {
+        return true;
     }
 
     @Override

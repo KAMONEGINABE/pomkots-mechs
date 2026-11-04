@@ -4,14 +4,32 @@
   "compatibilityLevel": "JAVA_17",
   "minVersion": "0.8",
   "mixins": [
+    "ElevatorCollisionMixin",
     "LivingEntityMixin",
-    "CameraAccessor"
+    "CameraAccessor",
+    "PlayerEntityMixin",
+    "PlayerMixin",
+    "AttributesMixin"
   ],
   "client": [
     "GuiMixin",
+    "CameraMixin",
+    "FlightFovMixin",
     "BotDriverRenderer",
+    "MusicManagerMixin",
     "LivingEntityRendererMixin",
-    "TurnToLockonTarget"
+    "TurnToLockonTarget",
+    "ItemRendererMixin",
+    "PlayerRendererMixin",
+    "LocalPlayerMixin",
+    "LocalPlayerAccessor",
+    "MultiPlayerGameModeMixin",
+    "LevelRendererMixin",
+    "SoundBufferLibraryMixin",
+    "EntityScanHighlightMixin",
+    "EntityScanColorMixin",
+    "EntityRenderDispatcherMixin"
+    ,"EntityFlightTurnMixin"
   ],
   "injectors": {
     "defaultRequire": 1

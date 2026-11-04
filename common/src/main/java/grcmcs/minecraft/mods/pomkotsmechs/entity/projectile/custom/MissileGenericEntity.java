@@ -1,0 +1,545 @@
+package grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom;
+
+import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
+import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.mob.BaseSmallMonsterEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.ThrowableProjectile;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.*;
+
+public class MissileGenericEntity extends PomkotsCustomThrowableProjectile {
+    /** falseにすると旧追尾処理へ即座に戻せる。 */
+    private static final boolean USE_ADAPTIVE_HOMING = true;
+    private static final float PLAYER_TURN_RATE_DEG = 3.0F;
+    private static final float MOB_TURN_RATE_DEG = 7.0F;
+    private static final float SMALL_MOB_TURN_RATE_DEG = 9.0F;
+    protected float speed;
+    protected float maxRotationAnglePerTick = 3;
+
+    protected LivingEntity target = null;
+
+    protected int switchTick;
+    private int remainingTicks = 40;
+    private boolean terminalPhase =  false;
+    private boolean straight = false;
+
+    private Vec3 prevClientPos = null;
+    private Vec3 clientInterpolationTarget = null;
+    private int clientInterpolationSteps = 0;
+    private static final double CLIENT_SNAP_DISTANCE_SQR = 32.0D * 32.0D;
+    private static final float CLIENT_ROTATION_SMOOTHING = 0.45F;
+    private static final double SMOKE_FULL_DISTANCE_SQR = 200.0D * 200.0D;
+    private static final double SMOKE_MAX_DISTANCE_SQR = 250.0D * 250.0D;
+
+    private float totalRotatedDeg = 0f;        // 累積回転角
+    private Vec3 lastDirection = null;          // 前tickの方向
+    private float maxTotalRotationDeg = 200f;
+    private boolean rotationLimitReached = false;
+
+    public MissileGenericEntity(EntityType<? extends ThrowableProjectile> entityType, Level level) {
+        this(entityType, level, null, null);
+    }
+
+    public MissileGenericEntity(EntityType<? extends ThrowableProjectile> entityType, Level level, LivingEntity shooter, LivingEntity target) {
+        this(entityType, level, shooter, target, BattleBalance.MECH_MISSILE_DAMAGE, 1F);
+    }
+
+    public MissileGenericEntity(EntityType<? extends ThrowableProjectile> entityType, Level level, LivingEntity shooter, LivingEntity target, float damage, float speed) {
+        this(entityType, level, shooter, target, damage, speed, 80, 2);
+    }
+
+    public MissileGenericEntity(EntityType<? extends ThrowableProjectile> entityType, Level level, LivingEntity shooter, LivingEntity target, float damage, float speed, int maxLifeTicks, int stun) {
+        super(entityType, level, shooter,
+                maxLifeTicks, damage, stun);
+
+        this.setNoGravity(true);
+        this.shooter = shooter;
+        this.target = target;
+        this.damage = damage;
+        this.speed = speed;
+    }
+
+    public float getScale() {
+        return 1.0F;
+    }
+
+    @Override
+    public void tick() {
+        this.setOldPosAndRot();
+
+        if (level().isClientSide) {
+            clientTick();
+            return;
+        }
+
+        if (this.lifeTicks++ >= this.maxLifeTicks) {
+            this.createExplosion(this.position());
+            this.discard();
+            return;
+        }
+
+        this.checkInsideBlocks();
+
+        if (!performSubStepMovement()) {
+            return;
+        }
+
+        if (target == null || !target.isAlive() || straight) {
+            moveStraight();
+            this.setPos(this.position().add(this.getDeltaMovement()));
+            this.hasImpulse = true;
+
+            return;
+        }
+
+        if (lifeTicks > 3) {
+            if (USE_ADAPTIVE_HOMING) {
+                adaptiveHomingUpdate();
+            } else {
+                legacyHomingUpdate();
+            }
+        }
+
+        this.setPos(this.position().add(this.getDeltaMovement()));
+
+        this.hasImpulse = true;
+    }
+
+    @Override
+    protected void setPosInSubStep(Vec3 pos) {
+    }
+
+    public void setStraight(boolean value) {
+        this.straight = value;
+    }
+
+    public boolean getStraight() {
+        return this.straight;
+    }
+
+    private void moveStraight() {
+        Vec3 velocity = this.getDeltaMovement();
+
+        if (velocity.lengthSqr() < 1e-4) {
+            float yaw = this.getYRot();
+            float pitch = this.getXRot();
+
+            Vec3 forward = Vec3.directionFromRotation(pitch, yaw);
+            velocity = forward.scale(1.2);
+        }
+
+        double maxSpeed = getSpeed();
+        if (velocity.length() > maxSpeed) {
+            velocity = velocity.normalize().scale(maxSpeed);
+        }
+
+        this.setDeltaMovement(velocity);
+
+        updateRotationFromVelocity(velocity);
+    }
+
+    /**
+     * Aims only at the target's current position. Difficulty is controlled solely
+     * by the maximum turn angle per tick, avoiding unnatural predictive deviation.
+     */
+    private void adaptiveHomingUpdate() {
+        Vec3 velocity = this.getDeltaMovement();
+
+        if (rotationLimitReached || isRotationLimitExceeded(velocity)) {
+            rotationLimitReached = true;
+            moveStraight();
+            return;
+        }
+
+        if (lifeTicks > 60) {
+            terminalPhase = true;
+        }
+
+        if (!terminalPhase || target instanceof BaseSmallMonsterEntity) {
+            Vec3 targetPosition = getHomingTargetPosition();
+            double missileSpeed = Math.max(getSpeed(), 0.05D);
+            Vec3 desiredDirection = targetPosition.subtract(this.position());
+
+            if (desiredDirection.lengthSqr() > 1.0E-6D) {
+                Vec3 currentDirection = velocity.lengthSqr() > 1.0E-6D
+                        ? velocity.normalize()
+                        : desiredDirection.normalize();
+                float turnRate = getAdaptiveTurnRate();
+                Vec3 steeredDirection = rotateTowards(currentDirection, desiredDirection.normalize(), turnRate);
+                velocity = steeredDirection.scale(missileSpeed);
+            }
+        }
+
+        if (velocity.length() > getSpeed()) {
+            velocity = velocity.normalize().scale(getSpeed());
+        }
+
+        this.setDeltaMovement(velocity);
+        updateRotationFromVelocity(velocity);
+        remainingTicks--;
+    }
+
+    private Vec3 getHomingTargetPosition() {
+        if (target instanceof grcmcs.minecraft.mods.pomkotsmechs.entity.monster.boss.BossHitBoxEntity hitBox) {
+            return hitBox.getStableAimPosition(false);
+        }
+        return target.getBoundingBox().getCenter();
+    }
+
+    private float getAdaptiveTurnRate() {
+        float configuredRate = getMaxRotationAnglePerTick();
+        if (isPlayerControlledTarget()) {
+            return Math.max(configuredRate, PLAYER_TURN_RATE_DEG);
+        }
+        if (target instanceof BaseSmallMonsterEntity) {
+            return Math.max(configuredRate, SMALL_MOB_TURN_RATE_DEG);
+        }
+        return Math.max(configuredRate, MOB_TURN_RATE_DEG);
+    }
+
+    private boolean isPlayerControlledTarget() {
+        if (target instanceof Player) {
+            return true;
+        }
+        return target.getPassengers().stream().anyMatch(Player.class::isInstance);
+    }
+
+    private static Vec3 rotateTowards(Vec3 current, Vec3 desired, float maxDegrees) {
+        double dot = Mth.clamp(current.dot(desired), -1.0D, 1.0D);
+        double angle = Math.acos(dot);
+        double maxRadians = Math.toRadians(maxDegrees);
+        if (angle <= maxRadians || angle < 1.0E-6D) {
+            return desired;
+        }
+
+        double ratio = maxRadians / angle;
+        double sinAngle = Math.sin(angle);
+        if (Math.abs(sinAngle) < 1.0E-6D) {
+            return current.scale(1.0D - ratio).add(desired.scale(ratio)).normalize();
+        }
+
+        double currentWeight = Math.sin((1.0D - ratio) * angle) / sinAngle;
+        double desiredWeight = Math.sin(ratio * angle) / sinAngle;
+        return current.scale(currentWeight).add(desired.scale(desiredWeight)).normalize();
+    }
+
+    /** Original homing implementation retained for quick rollback. */
+    private void legacyHomingUpdate() {
+        Vec3 position = this.position();
+        Vec3 velocity = this.getDeltaMovement();
+
+        Vec3 targetPos = target.getBoundingBox().getCenter();
+        Vec3 diff = targetPos.subtract(position);
+
+        // 回転制限チェック
+        if (rotationLimitReached || isRotationLimitExceeded(velocity)) {
+            rotationLimitReached = true;
+            moveStraight();
+            return;
+        }
+        // ★ 近距離で誘導終了
+//        double distance = diff.length();
+//        double terminalDistance = 10;
+//        if (distance < terminalDistance) {
+//            terminalPhase = true;
+//        }
+        if (lifeTicks > 60) {
+            terminalPhase = true;
+        }
+
+        if (!terminalPhase || target instanceof BaseSmallMonsterEntity) {
+            float period = Math.max(remainingTicks / 20.0f, 0.05f);
+
+            float homingRate = 2.0F;
+            if (target instanceof BaseSmallMonsterEntity) {
+                homingRate = 7;
+            }
+
+            Vec3 acceleration = diff
+                    .subtract(velocity.scale(period))
+                    .scale(homingRate / (period * period));
+
+            double maxAcc = getSpeed() * 8.0;
+
+            if (acceleration.length() > maxAcc) {
+                acceleration = acceleration.normalize().scale(maxAcc);
+            }
+
+            double dt = 1.0 / 20.0;
+            velocity = velocity.add(acceleration.scale(dt));
+        }
+
+        double maxSpeed = getSpeed();
+
+        if (velocity.length() > maxSpeed) {
+            velocity = velocity.normalize().scale(maxSpeed);
+        }
+
+        this.setDeltaMovement(velocity);
+
+        updateRotationFromVelocity(velocity);
+
+        remainingTicks--;
+    }
+
+    private boolean isRotationLimitExceeded(Vec3 currentVelocity) {
+        if (currentVelocity.lengthSqr() < 1e-4) return false;
+
+        Vec3 currentDir = currentVelocity.normalize();
+
+        if (lastDirection != null) {
+            double dot = Mth.clamp(lastDirection.dot(currentDir), -1.0, 1.0);
+            float deltaDeg = (float) Math.toDegrees(Math.acos(dot));
+            totalRotatedDeg += deltaDeg;
+        }
+
+        lastDirection = currentDir;
+
+        return totalRotatedDeg >= maxTotalRotationDeg;
+    }
+
+    protected void updateRotationFromVelocity(Vec3 vel) {
+        Vec3 velocity = this.getDeltaMovement();
+
+        if (!velocity.equals(Vec3.ZERO)) {
+            double yaw = Math.toDegrees(Math.atan2(velocity.x, velocity.z));
+            this.setYRot((float) yaw);
+
+            double horizontalDistance = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+            double pitch = Math.toDegrees(Math.atan2(velocity.y, horizontalDistance));
+            this.setXRot((float) pitch);
+
+            // Do not collapse old/current rotation here. The client renderer needs
+            // both values to interpolate homing turns between game ticks.
+        }
+    }
+
+    @Override
+    protected void onHitEntity(EntityHitResult entityHitResult) {
+        super.onHitEntity(entityHitResult);
+        this.createExplosion(this.position());
+
+        this.discard();
+    }
+
+    @Override
+    protected void onHitBlock(BlockHitResult blockHitResult) {
+        this.createExplosion(this.position());
+        this.discard();
+    }
+
+    public void clientTick() {
+        advanceClientVisualPosition();
+        updateClientVisualRotation();
+
+        Vec3 currentPos = this.position();
+
+        if (prevClientPos != null) {
+            spawnSmokeBetween(prevClientPos, currentPos);
+        }
+
+        prevClientPos = currentPos;
+    }
+
+    @Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot,
+                       int lerpSteps, boolean teleport) {
+        if (!this.level().isClientSide || this.tickCount == 0) {
+            super.lerpTo(x, y, z, yRot, xRot, lerpSteps, teleport);
+            return;
+        }
+
+        int steps = Math.max(1, lerpSteps);
+        Vec3 serverPosition = new Vec3(x, y, z);
+        Vec3 velocity = this.getDeltaMovement();
+
+        // The received position represents an already elapsed server state. Aim at
+        // where that state will be after the interpolation window, avoiding a visible
+        // pull backwards while still remaining anchored to server updates.
+        this.clientInterpolationTarget = serverPosition.add(velocity.scale(steps));
+        this.clientInterpolationSteps = steps;
+
+        if (this.position().distanceToSqr(serverPosition) > CLIENT_SNAP_DISTANCE_SQR) {
+            this.setPos(serverPosition);
+            this.clientInterpolationTarget = serverPosition.add(velocity.scale(steps));
+        }
+    }
+
+    private void advanceClientVisualPosition() {
+        if (clientInterpolationTarget != null && clientInterpolationSteps > 0) {
+            Vec3 remaining = clientInterpolationTarget.subtract(this.position());
+            this.setPos(this.position().add(remaining.scale(1.0D / clientInterpolationSteps)));
+            clientInterpolationSteps--;
+            if (clientInterpolationSteps == 0) {
+                clientInterpolationTarget = null;
+            }
+            return;
+        }
+
+        Vec3 velocity = this.getDeltaMovement();
+        if (velocity.lengthSqr() > 1.0E-10D) {
+            this.setPos(this.position().add(velocity));
+        }
+    }
+
+    private void updateClientVisualRotation() {
+        Vec3 velocity = this.getDeltaMovement();
+        if (velocity.lengthSqr() <= 1.0E-10D) {
+            return;
+        }
+
+        float targetYaw = (float) Math.toDegrees(Math.atan2(velocity.x, velocity.z));
+        double horizontal = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+        float targetPitch = (float) Math.toDegrees(Math.atan2(velocity.y, horizontal));
+        this.setYRot(Mth.rotLerp(CLIENT_ROTATION_SMOOTHING, this.getYRot(), targetYaw));
+        this.setXRot(Mth.lerp(CLIENT_ROTATION_SMOOTHING, this.getXRot(), targetPitch));
+    }
+
+    private void spawnSmokeBetween(Vec3 from, Vec3 to) {
+        Level level = this.level();
+
+        double nearestPlayerDistanceSqr = Double.MAX_VALUE;
+        for (Player player : level.players()) {
+            nearestPlayerDistanceSqr = Math.min(nearestPlayerDistanceSqr, player.distanceToSqr(this));
+        }
+        if (nearestPlayerDistanceSqr >= SMOKE_MAX_DISTANCE_SQR) {
+            return;
+        }
+
+        Vec3 diff = to.subtract(from);
+        double length = diff.length();
+
+        if (length < 0.001) return;
+
+        Vec3 dir = diff.normalize();
+
+        // ★ 間隔（ブロック単位）
+        boolean distant = nearestPlayerDistanceSqr > SMOKE_FULL_DISTANCE_SQR;
+        double spacing = distant ? 2.0D : 1.0D;
+        int maxParticles = distant ? 1 : 2;
+        int count = Math.min(maxParticles, Math.max(1, (int)Math.ceil(length / spacing)));
+
+        for (int i = 1; i <= count; i++) {
+            double d = length * i / count;
+            Vec3 pos = from.add(dir.scale(d));
+
+            level.addAlwaysVisibleParticle(
+                    PomkotsMechs.MISSILE_SMOKE.get(),
+                    true,
+                    pos.x, pos.y, pos.z,
+                    0.0, 0.0, 0.0);
+        }
+    }
+
+    protected void createExplosion(Vec3 pos) {
+        Level world = level();
+        if (world.isClientSide) {
+            addParticles(4F, this.position());
+        } else {
+            if (Utils.isBlockDestructionAllowed(shooter)) {
+                Utils.explode(this,  pos.x, pos.y, pos.z, BattleBalance.MECH_MISSILE_EXPLOSION, false, Level.ExplosionInteraction.BLOCK, this.level());
+            } else {
+                Utils.explode(this,  pos.x, pos.y, pos.z, BattleBalance.MECH_MISSILE_EXPLOSION, false, Level.ExplosionInteraction.NONE, this.level());
+            }
+        }
+    }
+
+    protected void addParticles(float scale, Vec3 offset) {
+        var level = this.level();
+
+        if (!(scale < 2.0F)) {
+            level.addParticle(ParticleTypes.EXPLOSION_EMITTER, offset.x, offset.y, offset.z, 1.0, 0.0, 0.0);
+        } else {
+            level.addParticle(ParticleTypes.EXPLOSION, offset.x, offset.y, offset.z, 1.0, 0.0, 0.0);
+        }
+
+//        Level world = level();
+//        for (int i = 0; i < 3; i++) {
+//            int rad = Math.abs(i - 3);
+//
+//            for (int j = 0; j < 3 - rad; j++) {
+//                for (int k = 0; k < 3 - rad; k++) {
+//                    world.addParticle(
+//                            ParticleTypes.EXPLOSION,
+//                            offset.x - (k - (1 - rad/2)) * 2,
+//                            offset.y - (i - 1) * 2,
+//                            offset.z - (j - (1 - rad/2)) * 2,
+//                            0,0,0);
+//                }
+//            }
+//        }
+    }
+
+    @Override
+    public void onClientRemoval() {
+        if (this.level().isClientSide) {
+            addParticles(1F, this.position());
+        }
+    }
+
+    public LivingEntity getShooter() {
+        return shooter;
+    }
+
+    @Override
+    protected void defineSynchedData() {
+    }
+
+    public float getHitDamage() {
+        return this.getDamage();
+    }
+
+    protected int getSwitchTick() {
+        return switchTick;
+    }
+
+    public void setSwitchTick(int val) {
+        switchTick = val;
+    }
+
+    protected double getSpeed() {
+        return this.speed;
+    }
+
+    protected int getSeekRange() {
+        return 100;
+    }
+
+    protected float getMaxRotationAnglePerTick() {
+        if (lifeTicks == getSwitchTick() + 1) {
+            return 90;
+        }
+
+        return maxRotationAnglePerTick;
+    }
+
+    public float setMaxRotationAnglePerTick(float angle) {
+        return maxRotationAnglePerTick = angle;
+    }
+
+    protected float getDamage() {
+        return damage;
+    }
+
+    protected int getMaxLifeTicks() {
+        return maxLifeTicks;
+    }
+
+    public void setMaxLifeTick(int maxLifeTick) {
+        this.maxLifeTicks = maxLifeTick;
+    }
+
+    protected Vec3 getNonTargetVelocity() {
+        return this.getDeltaMovement();
+    }
+
+    protected Class getTargetClass() {
+        return LivingEntity.class;
+    }
+}

@@ -1,0 +1,137 @@
+package grcmcs.minecraft.mods.pomkotsmechs.items.parts.weapons;
+
+import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
+import grcmcs.minecraft.mods.pomkotsmechs.client.renderer.parts.weapons.TakaoItemRenderer;
+import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.monster.boss.BossHitBoxEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.custom.ActionWeapon;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.custom.Motion;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.BasePartsItem;
+import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+
+public class TakaoItem extends BasePartsItem.WeaponArm {
+    private static final ShoulderStowTransform SHOULDER_STOW_TRANSFORM =
+            new ShoulderStowTransform(0.0D, 0.0D, 10.0D, 90.0F, 180.0F, 0.0F);
+
+    public TakaoItem(Properties properties) {
+        super(properties);
+    }
+
+    public void tickWeaponInAction(ActionWeapon.WeaponMechInterface mechInterface, int tick, boolean isOnFire) {
+        var world = mechInterface.getWorld();
+
+        if (isOnFire) {
+            Entity driver = mechInterface.getDrivingPassenger();
+            var pilePos1 = new Vec3(6.5 * mechInterface.isRight(), 4.0F, 18F).yRot((float) Math.toRadians((-1.0) * mechInterface.getYRot())).add(mechInterface.position());
+            var pilePos2 = new Vec3(-6.5 * mechInterface.isRight(), -4F, -4F).yRot((float) Math.toRadians((-1.0) * mechInterface.getYRot())).add(mechInterface.position());
+
+            var kbVel = new Vec3(0, 0, -1F).yRot((float) Math.toRadians((-1.0) * mechInterface.getYRot()));
+            var baseDamage = mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory());
+
+            DamageSource ds;
+            if (driver instanceof Player p) {
+                ds = mechInterface.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, mechInterface.getMechEntity(), p);
+            } else {
+                ds = mechInterface.damageSources().source(PomkotsMechs.ANTI_ARMOR_DAMAGE_TYPE, mechInterface.getMechEntity());
+            }
+
+            for (var ent : world.getEntities(null, new AABB(pilePos1, pilePos2))) {
+                if (mechInterface.isSelf(ent)) {
+                    continue;
+                }
+
+                int sbModifier = mechInterface.isSuperBoost()? 2: 1;
+                var chargeModifier = 1;
+                if (tick > 60) {
+                    chargeModifier = 3;
+                } else if (tick > 40) {
+                    chargeModifier = 2;
+                }
+
+                if (ent instanceof LivingEntity le) {
+                    if (!world.isClientSide()) {
+                        le.knockback(sbModifier * 4, sbModifier * kbVel.x, sbModifier * kbVel.z);
+
+                        if (le instanceof BossHitBoxEntity hit) {
+                            hit.addStunPoint(10 * chargeModifier);
+                        }
+                        le.hurt(ds, baseDamage * chargeModifier * sbModifier);
+                    } else {
+                        mechInterface.addHitParticles(le);
+                    }
+                } else if (ent.isAttackable()) {
+                    if (!world.isClientSide()) {
+                        ent.hurt(ds, baseDamage * chargeModifier * sbModifier);
+                    } else {
+                        mechInterface.addHitParticles(ent);
+                    }
+                }
+            }
+
+            if (world.isClientSide) {
+                mechInterface.playSoundEffect(PomkotsMechs.SE_PILEBUNKER_EVENT.get());
+
+            } else if (Utils.isBlockDestructionAllowed(mechInterface.getMechEntity())) {
+                int rad = 5;
+                if (tick > 60) {
+                    rad = 15;
+                } else if (tick > 40) {
+                    rad = 10;
+                }
+
+                if (mechInterface.onGround()) {
+                    mechInterface.breakBlocksCube(rad);
+                } else {
+                    mechInterface.breakBlockSphere(rad, new Vec3(0,0,5));
+                }
+            }
+        }
+    }
+
+    @Override
+    public TakaoItemRenderer newRenderer() {
+        return new TakaoItemRenderer();
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+
+    }
+
+    @Override
+    public WeaponAttachPoint getWeaponAttachPoint() {
+        return WeaponAttachPoint.ATTACH_POINT_HAND;
+    }
+
+    @Override
+    public ShoulderStowTransform getShoulderStowTransform(AttachSide side) {
+        return SHOULDER_STOW_TRANSFORM;
+    }
+
+    @Override
+    public WeaponCategory getWeaponCategory() {
+        return WeaponCategory.MELEE;
+    }
+
+    @Override
+    public Motion getMotion() {
+        return Motion.CHARGE_HUMMER;
+    }
+
+    @Override
+    public int getCoolTime() {
+        return 60;
+    }
+
+    @Override
+    public String getPartsSeriesName() {
+        return "takao";
+    }
+}

@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "K": {
+      "item": "pomkotsmechs:mech_capsule2"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "C": {
+      "item": "pomkotsmechs:materials/heavy_mech_circuit_board"
+    },
+    "E": {
+      "item": "minecraft:ender_eye"
+    },
+    "T": {
+      "tag": "forge:ingots/titanium"
+    }
+  },
+  "pattern": [
+    "KRK",
+    "CEC",
+    "TTT"
+  ],
+  "result": {
+    "item": "pomkotsmechs:mechsalvager_block_item",
+    "count": 1
+  },
+  "show_notification": true
+}

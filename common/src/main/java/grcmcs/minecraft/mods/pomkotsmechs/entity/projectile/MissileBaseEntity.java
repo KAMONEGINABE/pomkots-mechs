@@ -2,10 +2,12 @@ package grcmcs.minecraft.mods.pomkotsmechs.entity.projectile;
 
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
+import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -22,6 +24,8 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public abstract class MissileBaseEntity extends PomkotsThrowableProjectile implements GeoEntity, GeoAnimatable {
+    private static final double SMOKE_FULL_DISTANCE_SQR = 200.0D * 200.0D;
+    private static final double SMOKE_MAX_DISTANCE_SQR = 250.0D * 250.0D;
     protected final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
     protected int lifeTicks = 0;
 
@@ -35,7 +39,7 @@ public abstract class MissileBaseEntity extends PomkotsThrowableProjectile imple
     }
 
     public MissileBaseEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter, LivingEntity target) {
-        super(entityType, world);
+        super(entityType, shooter, world);
         this.setNoGravity(true);
         this.shooter = shooter;
         this.target = target;
@@ -181,10 +185,25 @@ public abstract class MissileBaseEntity extends PomkotsThrowableProjectile imple
     }
 
     protected void generateSmokeParticles() {
-        Vec3 velocity = this.getDeltaMovement();
-        Vec3 directionBackwards = velocity.normalize().scale(-0.2);
+        double nearestPlayerDistanceSqr = Double.MAX_VALUE;
+        for (Player player : this.level().players()) {
+            nearestPlayerDistanceSqr = Math.min(nearestPlayerDistanceSqr, player.distanceToSqr(this));
+        }
+        if (nearestPlayerDistanceSqr >= SMOKE_MAX_DISTANCE_SQR) {
+            return;
+        }
 
-        for (int i = 0; i < 10; i++) {
+        Vec3 velocity = this.getDeltaMovement();
+        if (velocity.lengthSqr() < 1.0E-8D) {
+            return;
+        }
+
+        boolean distant = nearestPlayerDistanceSqr > SMOKE_FULL_DISTANCE_SQR;
+        double spacing = distant ? 2.0D : 1.0D;
+        int count = distant ? 1 : 2;
+        Vec3 directionBackwards = velocity.normalize().scale(-spacing);
+
+        for (int i = 0; i < count; i++) {
             Vec3 particlePos = this.position().add(directionBackwards.scale(i));
             this.level().addAlwaysVisibleParticle(PomkotsMechs.MISSILE_SMOKE.get(), true, particlePos.x, particlePos.y, particlePos.z, 0.0, 0.0, 0.0);
         }
@@ -197,8 +216,8 @@ public abstract class MissileBaseEntity extends PomkotsThrowableProjectile imple
             if (entity.equals(shooter)) {
                 return;
             }
-            entity.hurt(entity.damageSources().thrown(this, this.getOwner() != null ? this.getOwner() : this), getDamage());
             entity.invulnerableTime = 0;
+            entity.hurt(entity.damageSources().thrown(this, this.getOwner() != null ? this.getOwner() : this), getDamage());
         }
         this.createExplosion(this.position());
 
@@ -214,7 +233,7 @@ public abstract class MissileBaseEntity extends PomkotsThrowableProjectile imple
     protected void createExplosion(Vec3 pos) {
         Level world = level();
         if (!world.isClientSide) {
-            world.explode(this,  pos.x, pos.y, pos.z, BattleBalance.MECH_MISSILE_EXPLOSION, false, Level.ExplosionInteraction.NONE);
+            Utils.explode(this,  pos.x, pos.y, pos.z, BattleBalance.MECH_MISSILE_EXPLOSION, false, Level.ExplosionInteraction.NONE, this.level());
         } else {
             addParticles(this.position());
         }
@@ -227,7 +246,7 @@ public abstract class MissileBaseEntity extends PomkotsThrowableProjectile imple
         }
     }
 
-    private void addParticles(Vec3 offset) {
+    protected void addParticles(Vec3 offset) {
         Level world = level();
         for (int i = 0; i < 3; i++) {
             int rad = Math.abs(i - 3);
@@ -243,6 +262,10 @@ public abstract class MissileBaseEntity extends PomkotsThrowableProjectile imple
                 }
             }
         }
+    }
+
+    public LivingEntity getShooter() {
+        return shooter;
     }
 
     @Override

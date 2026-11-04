@@ -2,6 +2,7 @@ package grcmcs.minecraft.mods.pomkotsmechs.entity.projectile;
 
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
 import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
+import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
@@ -21,7 +22,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class GrenadeLargeEntity extends PomkotsThrowableProjectile implements GeoEntity, GeoAnimatable {
     private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
-    private static final float DAMAGE = BattleBalance.BOSS_GRENADE_DAMAGE;
+    private static final float DAMAGE = 10;
     private static final int MAX_LIFE_TICKS = 80;
     private int lifeTicks = 0;
     private float explosionScale = 0;
@@ -36,7 +37,7 @@ public class GrenadeLargeEntity extends PomkotsThrowableProjectile implements Ge
     }
 
     public GrenadeLargeEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter, float exprosionScale) {
-        super(entityType, world);
+        super(entityType, shooter, world);
         this.shooter = shooter;
         this.explosionScale = exprosionScale;
     }
@@ -84,9 +85,9 @@ public class GrenadeLargeEntity extends PomkotsThrowableProjectile implements Ge
         Level world = level();
         if (!world.isClientSide) {
             if (ProjectileUtil.isDestructionAllowed(this)) {
-                world.explode(this,  pos.x, pos.y, pos.z, explosionScale, false, Level.ExplosionInteraction.BLOCK);
+                Utils.explode(this,  pos.x, pos.y, pos.z, explosionScale, false, Level.ExplosionInteraction.BLOCK, this.level());
             } else {
-                world.explode(this,  pos.x, pos.y, pos.z, explosionScale, false, Level.ExplosionInteraction.NONE);
+                Utils.explode(this,  pos.x, pos.y, pos.z, explosionScale, false, Level.ExplosionInteraction.NONE, this.level());
             }
 
             ExplosionEntity e = new ExplosionEntity(PomkotsMechs.EXPLOSION.get(), world);

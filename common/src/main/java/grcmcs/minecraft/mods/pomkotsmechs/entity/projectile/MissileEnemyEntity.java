@@ -10,20 +10,31 @@ import net.minecraft.world.phys.Vec3;
 
 public class MissileEnemyEntity extends MissileBaseEntity {
 
+    private float damage;
+    private float speed;
 
     public MissileEnemyEntity(EntityType<? extends ThrowableProjectile> entityType, Level world) {
-        super(entityType, world);
+        this(entityType, world, null, 20, 3);
     }
 
-    public MissileEnemyEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter) {
+    public MissileEnemyEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter, float damage, float speed) {
         super(entityType, world, shooter, null);
+        this.damage = damage;
+        this.speed = speed;
     }
+
+    public MissileEnemyEntity(EntityType<? extends ThrowableProjectile> entityType, Level world, LivingEntity shooter, LivingEntity target, float damage, float speed) {
+        super(entityType, world, shooter, target);
+        this.damage = damage;
+        this.speed = speed;
+    }
+
     protected int getSwitchTick() {
         return 4;
     }
 
     protected double getSpeed() {
-        return 2;
+        return speed;
     }
 
     protected int getSeekRange() {
@@ -46,7 +57,7 @@ public class MissileEnemyEntity extends MissileBaseEntity {
 
     @Override
     protected float getDamage() {
-        return BattleBalance.MOB_MISSILE_EXPLOSION;
+        return damage;
     }
 
     @Override

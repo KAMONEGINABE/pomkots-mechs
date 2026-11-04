@@ -1,0 +1,136 @@
+package grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom;
+
+import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.PomkotsThrowableProjectile;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.ProjectileUtil;
+import grcmcs.minecraft.mods.pomkotsmechs.util.Utils;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.ThrowableProjectile;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+
+public class BulletGrenadeEntity extends PomkotsCustomThrowableProjectile {
+    private int explosionScale = 2;
+
+    public BulletGrenadeEntity(EntityType<? extends ThrowableProjectile> entityType, Level level) {
+        this(entityType, level, null, 80, BattleBalance.MECH_BULLET_GRENADE_DAMAGE, 15);
+    }
+
+    public BulletGrenadeEntity(EntityType<? extends ThrowableProjectile> entityType, Level level, LivingEntity shooter, float damage) {
+        this(entityType, level, shooter, 80, damage, 20);
+    }
+
+    public BulletGrenadeEntity(EntityType<? extends ThrowableProjectile> entityType, Level level, LivingEntity shooter, int maxLifeTicks, float damage, int stun) {
+        super(entityType, level, shooter,
+                maxLifeTicks, damage,stun);
+        // Fast client-predicted projectiles can temporarily outrun Forge's
+        // interpolated culling box. Keep grenade rendering consistent with the
+        // rifle and machine-gun projectiles.
+        this.noCulling = true;
+    }
+
+    @Override
+    public boolean shouldRender(double cameraX, double cameraY, double cameraZ) {
+        return true;
+    }
+
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        return true;
+    }
+
+    public void setExplosionScale(int scale) {
+        this.explosionScale = scale;
+    }
+
+    @Override
+    protected boolean usesClientLinearPrediction() {
+        return true;
+    }
+
+    @Override
+    protected double getWaterImpactIntensity() {
+        return 2.2D;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        this.hasImpulse = true;
+    }
+
+    @Override
+    protected void onHitEntity(EntityHitResult entityHitResult) {
+        this.createExplosion(entityHitResult.getLocation());
+        entityHitResult.getEntity().invulnerableTime = 0;
+
+        super.onHitEntity(entityHitResult);
+    }
+
+    @Override
+    protected void onHitBlock(BlockHitResult blockHitResult) {
+        this.createExplosion(blockHitResult.getLocation());
+        super.onHitBlock(blockHitResult);
+    }
+
+    private void createExplosion(Vec3 pos) {
+        Level world = level();
+
+        if (Utils.isBlockDestructionAllowed(shooter)) {
+            Utils.explode(this,  pos.x, pos.y, pos.z, explosionScale, false, Level.ExplosionInteraction.BLOCK, this.level());
+        } else {
+            Utils.explode(this,  pos.x, pos.y, pos.z, explosionScale, false, Level.ExplosionInteraction.NONE, this.level());
+        }
+
+        //        if (!world.isClientSide) {
+//            if (Utils.isBlockDestructionAllowed(shooter)) {
+//                Utils.explode(this,  pos.x, pos.y, pos.z, explosionScale, false, Level.ExplosionInteraction.BLOCK, this.level());
+//            } else {
+//                Utils.explode(this,  pos.x, pos.y, pos.z, explosionScale, false, Level.ExplosionInteraction.NONE, this.level());
+//            }
+//        } else {
+//            addParticles(this.position());
+//        }
+    }
+
+    @Override
+    public void onClientRemoval() {
+        if (this.level().isClientSide) {
+            var pos = this.position();
+            if (!(this.explosionScale < 2.0F)) {
+                this.level().addParticle(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
+            } else {
+                this.level().addParticle(ParticleTypes.EXPLOSION, pos.x, pos.y, pos.z, 1.0, 0.0, 0.0);
+            }
+        }
+    }
+
+    private void addParticles(Vec3 offset) {
+        Level world = level();
+        for (int i = 0; i < 5; i++) {
+            int rad = Math.abs(i - 3);
+
+            for (int j = 0; j < 5 - rad; j++) {
+                for (int k = 0; k < 5 - rad; k++) {
+                    world.addParticle(
+                            ParticleTypes.EXPLOSION,
+                            offset.x - (k - (3 - rad/2)) * 2,
+                            offset.y - (i - 3) * 2,
+                            offset.z - (j - (3 - rad/2)) * 2,
+                            0,0,0);
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void defineSynchedData() {
+        defineLinearPredictionData();
+    }
+
+}

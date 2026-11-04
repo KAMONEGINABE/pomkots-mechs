@@ -2,33 +2,126 @@ package grcmcs.minecraft.mods.pomkotsmechs.client.input;
 
 public class DriverInput {
     private short keyPressStatus = 0;
+    private final byte flightEvasionDirection;
+    private final float cameraYaw;
+    private DriverInput prevInput = null;
+    public static final float NO_CAMERA_YAW = Float.NaN;
 
     public DriverInput(short st) {
+        this(st, (byte) 0, NO_CAMERA_YAW, null);
+    }
+
+    public DriverInput(short st, DriverInput prev) {
+        this(st, (byte) 0, NO_CAMERA_YAW, prev);
+    }
+
+    public DriverInput(short st, byte flightEvasionDirection) {
+        this(st, flightEvasionDirection, NO_CAMERA_YAW, null);
+    }
+
+    public DriverInput(short st, byte flightEvasionDirection, DriverInput prev) {
+        this(st, flightEvasionDirection, NO_CAMERA_YAW, prev);
+    }
+
+    public DriverInput(short st, byte flightEvasionDirection, float cameraYaw) {
+        this(st, flightEvasionDirection, cameraYaw, null);
+    }
+
+    public DriverInput(short st, byte flightEvasionDirection, float cameraYaw, DriverInput prev) {
         this.keyPressStatus = st;
+        this.flightEvasionDirection = flightEvasionDirection;
+        this.cameraYaw = cameraYaw;
+        this.prevInput = prev;
+    }
+
+    public float getCameraYaw() {
+        return cameraYaw;
+    }
+
+    public boolean hasCameraYaw() {
+        return !Float.isNaN(cameraYaw);
     }
 
     public short getStatus() {
         return keyPressStatus;
     }
 
+    public byte getFlightEvasionDirection() {
+        return flightEvasionDirection;
+    }
+
     public boolean isWeaponRightHandPressed() {
         return (this.keyPressStatus & UserInteractionManager.Keys.WEAPON_ARM_R.getKeyID()) != 0;
+    }
+
+    public boolean isWeaponRightHandReleased() {
+        if (this.prevInput != null) {
+            return ((this.prevInput.keyPressStatus & UserInteractionManager.Keys.WEAPON_ARM_R.getKeyID()) != 0)
+                    && ((this.keyPressStatus & UserInteractionManager.Keys.WEAPON_ARM_R.getKeyID()) == 0);
+        } else {
+            return false;
+        }
     }
 
     public boolean isWeaponLeftHandPressed() {
         return (this.keyPressStatus & UserInteractionManager.Keys.WEAPON_ARM_L.getKeyID()) != 0;
     }
 
+    public boolean isWeaponLeftHandReleased() {
+        if (this.prevInput != null) {
+            return ((this.prevInput.keyPressStatus & UserInteractionManager.Keys.WEAPON_ARM_L.getKeyID()) != 0)
+                    && ((this.keyPressStatus & UserInteractionManager.Keys.WEAPON_ARM_L.getKeyID()) == 0);
+        } else {
+            return false;
+        }
+    }
+
     public boolean isWeaponRightShoulderPressed() {
         return (this.keyPressStatus & UserInteractionManager.Keys.WEAPON_SHOULDER_R.getKeyID()) != 0;
+    }
+
+    public boolean isWeaponRightShoulderJustPressed() {
+        return isWeaponRightShoulderPressed()
+                && (this.prevInput == null
+                || (this.prevInput.keyPressStatus & UserInteractionManager.Keys.WEAPON_SHOULDER_R.getKeyID()) == 0);
+    }
+
+    public boolean isWeaponRightShoulderReleased() {
+        if (this.prevInput != null) {
+            return ((this.prevInput.keyPressStatus & UserInteractionManager.Keys.WEAPON_SHOULDER_R.getKeyID()) != 0)
+                    && ((this.keyPressStatus & UserInteractionManager.Keys.WEAPON_SHOULDER_R.getKeyID()) == 0);
+        } else {
+            return false;
+        }
     }
 
     public boolean isWeaponLeftShoulderPressed() {
         return (this.keyPressStatus & UserInteractionManager.Keys.WEAPON_SHOULDER_L.getKeyID()) != 0;
     }
 
+    public boolean isWeaponLeftShoulderJustPressed() {
+        return isWeaponLeftShoulderPressed()
+                && (this.prevInput == null
+                || (this.prevInput.keyPressStatus & UserInteractionManager.Keys.WEAPON_SHOULDER_L.getKeyID()) == 0);
+    }
+
+    public boolean isWeaponLeftShoulderReleased() {
+        if (this.prevInput != null) {
+            return ((this.prevInput.keyPressStatus & UserInteractionManager.Keys.WEAPON_SHOULDER_L.getKeyID()) != 0)
+                    && ((this.keyPressStatus & UserInteractionManager.Keys.WEAPON_SHOULDER_L.getKeyID()) == 0);
+        } else {
+            return false;
+        }
+    }
+
     public boolean isLockPressed() {
         return (this.keyPressStatus & UserInteractionManager.Keys.LOCK.getKeyID()) != 0;
+    }
+
+    public boolean isLockJustPressed() {
+        return isLockPressed()
+                && (this.prevInput == null
+                || (this.prevInput.keyPressStatus & UserInteractionManager.Keys.LOCK.getKeyID()) == 0);
     }
 
     public boolean isEvasionPressed() {
@@ -57,6 +150,167 @@ public class DriverInput {
 
     public boolean isJumpPressed() {
         return (this.keyPressStatus & UserInteractionManager.Keys.JUMP.getKeyID()) != 0;
+    }
+
+    public boolean isExtension1Pressed() {
+        return (this.keyPressStatus & UserInteractionManager.Keys.EXT1.getKeyID()) != 0;
+    }
+
+    public boolean isExtension1Released() {
+        if (this.prevInput != null) {
+            return ((this.prevInput.keyPressStatus & UserInteractionManager.Keys.EXT1.getKeyID()) != 0)
+                    && ((this.keyPressStatus & UserInteractionManager.Keys.EXT1.getKeyID()) == 0);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isExtension2Pressed() {
+        return (this.keyPressStatus & UserInteractionManager.Keys.EXT2.getKeyID()) != 0;
+    }
+
+    public boolean isExtension2Released() {
+        if (this.prevInput != null) {
+            return ((this.prevInput.keyPressStatus & UserInteractionManager.Keys.EXT2.getKeyID()) != 0)
+                    && ((this.keyPressStatus & UserInteractionManager.Keys.EXT2.getKeyID()) == 0);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isReloadPressed() {
+        return (this.keyPressStatus & UserInteractionManager.Keys.RELOAD.getKeyID()) != 0;
+    }
+
+    public boolean isReloadReleased() {
+        if (this.prevInput != null) {
+            return ((this.prevInput.keyPressStatus & UserInteractionManager.Keys.RELOAD.getKeyID()) != 0)
+                    && ((this.keyPressStatus & UserInteractionManager.Keys.RELOAD.getKeyID()) == 0);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isRepairReleased() {
+        if (this.prevInput != null) {
+            return ((this.prevInput.keyPressStatus & UserInteractionManager.Keys.REPAIR.getKeyID()) != 0)
+                    && ((this.keyPressStatus & UserInteractionManager.Keys.REPAIR.getKeyID()) == 0);
+        } else {
+            return false;
+        }
+    }
+
+    private void setKey(int keyId, boolean pressed) {
+        if (pressed) {
+            keyPressStatus |= keyId;
+        } else {
+            keyPressStatus &= ~keyId;
+        }
+    }
+
+    public void setWeaponRightHandPressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.WEAPON_ARM_R.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setWeaponLeftHandPressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.WEAPON_ARM_L.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setWeaponRightShoulderPressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.WEAPON_SHOULDER_R.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setWeaponLeftShoulderPressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.WEAPON_SHOULDER_L.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setForwardPressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.FORWARD.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setBackPressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.BACK.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setRightPressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.RIGHT.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setLeftPressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.LEFT.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setJumpPressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.JUMP.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setEvasionPressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.EVASION.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setLockPressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.LOCK.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setModeChangePressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.MODE.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setReloadPressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.RELOAD.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setExtension1Pressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.EXT1.getKeyID(),
+                pressed
+        );
+    }
+
+    public void setExtension2Pressed(boolean pressed) {
+        setKey(
+                UserInteractionManager.Keys.EXT2.getKeyID(),
+                pressed
+        );
     }
 
     @Override

@@ -1,0 +1,115 @@
+package grcmcs.minecraft.mods.pomkotsmechs.items.parts.weapons;
+
+import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
+import grcmcs.minecraft.mods.pomkotsmechs.client.particles.ParticleUtil;
+import grcmcs.minecraft.mods.pomkotsmechs.client.renderer.parts.weapons.KagamiItemRenderer;
+import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.BulletGrenadeEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.custom.ActionWeapon;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.custom.Motion;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.BasePartsItem;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.magazine.MagazineGrenadeItem;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.phys.Vec3;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+
+public class KagamiItem extends BasePartsItem.WeaponArm {
+    private static final ShoulderStowTransform SHOULDER_STOW_TRANSFORM =
+            new ShoulderStowTransform(0.0D, 0.0D, 30.0D, 45.0F, 0.0F, 0.0F);
+
+    @Override public boolean usesArmPitchAiming() { return true; }
+    public KagamiItem(Properties properties) {
+        super(properties);
+    }
+
+    @Override
+    public KagamiItemRenderer newRenderer() {
+        return new KagamiItemRenderer();
+    }
+
+    public void tickWeaponInAction(ActionWeapon.WeaponMechInterface mechInterface, int tick, boolean isOnFire) {
+        var world = mechInterface.getWorld();
+
+        if (isOnFire) {
+            if (!mechInterface.consumeAmmo(1)) {
+                return;
+            }
+
+            if (!world.isClientSide()) {
+                BulletGrenadeEntity be = new BulletGrenadeEntity(
+                        PomkotsMechs.BULLET_GRENADE.get(),
+                        world, mechInterface.getMechEntity(),
+                        mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory())
+                );
+
+                var offset = mechInterface.getOffset();
+
+                // オフセット位置から大体の銃口の座標を決める（モデル位置からとるとクラサバ同期がめんどい…）
+                var muzzlPos = new Vec3(1.6 * mechInterface.isRight(), 5.2, 4F);
+                muzzlPos = mechInterface.getAimAdjustedMuzzleOffset(muzzlPos,
+                        new Vec3(1.6 * mechInterface.isRight(), 5.2, 0.0F));
+                be.setPos(offset.add(muzzlPos));
+
+                float[] angle = mechInterface.getShootingAngle(be, true);
+
+                be.shootFromRotation(be, angle[0], angle[1], mechInterface.getFallFlyingTicks(), 5, 0F);
+
+                world.addFreshEntity(be);
+
+                mechInterface.knockBack(5F);
+            } else {
+
+                ParticleUtil.spawnAttachedMuzzleFlash(
+                        (ClientLevel) world,
+                        mechInterface.getMechEntity(),
+                        mechInterface.getAttachPoint(),
+                        20.0D,
+                        mechInterface.getAimAdjustedLocalMuzzleOffset(
+                                new Vec3(1.6 * mechInterface.isRight(), 5.2, 4F),
+                                new Vec3(1.6 * mechInterface.isRight(), 5.2, 0.0F))
+                );
+                mechInterface.playSoundEffect(PomkotsMechs.SE_GRENADE_EVENT.get());
+            }
+        }
+    }
+
+    @Override
+    public boolean isMatchAmmo(Magazine mag) {
+        return mag instanceof MagazineGrenadeItem;
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+
+    }
+
+    @Override
+    public WeaponAttachPoint getWeaponAttachPoint() {
+        return WeaponAttachPoint.ATTACH_POINT_HAND;
+    }
+
+    @Override
+    public ShoulderStowTransform getShoulderStowTransform(AttachSide side) {
+        return SHOULDER_STOW_TRANSFORM;
+    }
+
+    @Override
+    public WeaponCategory getWeaponCategory() {
+        return WeaponCategory.GRENADE;
+    }
+
+    @Override
+    public Motion getMotion() {
+        return Motion.GRENADE_HAND;
+    }
+
+    @Override
+    public int getCoolTime() {
+        return 100;
+    }
+
+    @Override
+    public String getPartsSeriesName() {
+        return "kagami";
+    }
+}

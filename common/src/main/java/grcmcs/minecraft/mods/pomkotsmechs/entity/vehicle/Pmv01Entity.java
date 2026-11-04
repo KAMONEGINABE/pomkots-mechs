@@ -130,16 +130,16 @@ public class Pmv01Entity extends PomkotsVehicleBase {
 
             for (int i = 0; i < 4; i++) {
                 for (var v : Utils.circlePosRad9) {
-                    world.destroyBlock(new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() + v.getY() + i, tgtOffset.getZ() + v.getZ()), false);
+                    Utils.destroyBlock(world, new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() + v.getY() + i, tgtOffset.getZ() + v.getZ()), false);
                 }
             }
 
             for (var v : Utils.circlePosRad7) {
-                world.destroyBlock(new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() + v.getY() + 4, tgtOffset.getZ() + v.getZ()), false);
+                Utils.destroyBlock(world, new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() + v.getY() + 4, tgtOffset.getZ() + v.getZ()), false);
             }
 
             for (var v : Utils.circlePosRad5) {
-                world.destroyBlock(new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() + v.getY() + 5, tgtOffset.getZ() + v.getZ()), false);
+                Utils.destroyBlock(world, new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() + v.getY() + 5, tgtOffset.getZ() + v.getZ()), false);
             }
         }
     }
@@ -152,19 +152,19 @@ public class Pmv01Entity extends PomkotsVehicleBase {
             BlockPos tgtOffset = new BlockPos(curBP.getX() + (int) vec.x, curBP.getY() + (int) vec.y, +curBP.getZ() + (int) vec.z);
 
             for (var v : Utils.circlePosRad9) {
-                world.destroyBlock(new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() - 0, tgtOffset.getZ() + v.getZ()), false);
+                Utils.destroyBlock(world, new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() - 0, tgtOffset.getZ() + v.getZ()), false);
             }
 
             for (var v : Utils.circlePosRad9) {
-                world.destroyBlock(new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() - 1, tgtOffset.getZ() + v.getZ()), false);
+                Utils.destroyBlock(world, new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() - 1, tgtOffset.getZ() + v.getZ()), false);
             }
 
             for (var v : Utils.circlePosRad7) {
-                world.destroyBlock(new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() - 2, tgtOffset.getZ() + v.getZ()), false);
+                Utils.destroyBlock(world, new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() - 2, tgtOffset.getZ() + v.getZ()), false);
             }
 
             for (var v : Utils.circlePosRad5) {
-                world.destroyBlock(new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() - 3, tgtOffset.getZ() + v.getZ()), false);
+                Utils.destroyBlock(world, new BlockPos(tgtOffset.getX() + v.getX(), tgtOffset.getY() - 3, tgtOffset.getZ() + v.getZ()), false);
             }
         }
     }
@@ -292,7 +292,7 @@ public class Pmv01Entity extends PomkotsVehicleBase {
 
     private void fireGrenade(Level world) {
         if (!world.isClientSide()) {
-            GrenadeEntity be = new GrenadeEntity(PomkotsMechs.GRENADE.get(), world, this, BattleBalance.MECH_GRENADE_EXPLOSION);
+            GrenadeEntity be = new GrenadeEntity(PomkotsMechs.GRENADE.get(), world, this, BattleBalance.MECH_GRENADE_DAMAGE, BattleBalance.MECH_GRENADE_EXPLOSION);
 
             // 原因不明なんだけど、getPosした時の座標と、レンダリングされてる座標で3tick分ぐらい乖離がある気配がする
             // ので、3tick前の座標をオフセットにする

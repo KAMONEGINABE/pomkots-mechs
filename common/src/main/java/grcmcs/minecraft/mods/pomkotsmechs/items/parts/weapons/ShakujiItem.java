@@ -1,0 +1,112 @@
+package grcmcs.minecraft.mods.pomkotsmechs.items.parts.weapons;
+
+import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
+import grcmcs.minecraft.mods.pomkotsmechs.client.particles.ParticleUtil;
+import grcmcs.minecraft.mods.pomkotsmechs.client.renderer.parts.weapons.ShakujiItemRenderer;
+import grcmcs.minecraft.mods.pomkotsmechs.config.BattleBalance;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.BulletRifleEntity;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.projectile.custom.PomkotsCustomThrowableProjectile;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.custom.ActionWeapon;
+import grcmcs.minecraft.mods.pomkotsmechs.entity.vehicle.equipment.action.custom.Motion;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.BasePartsItem;
+import grcmcs.minecraft.mods.pomkotsmechs.items.parts.magazine.MagazineRifleItem;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.phys.Vec3;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+
+public class ShakujiItem extends BasePartsItem.WeaponArm {
+    @Override public boolean usesArmPitchAiming() { return true; }
+    public ShakujiItem(Properties properties) {
+        super(properties);
+    }
+
+    @Override
+    public ShakujiItemRenderer newRenderer() {
+        return new ShakujiItemRenderer();
+    }
+
+    public void tickWeaponInAction(ActionWeapon.WeaponMechInterface mechInterface, int tick, boolean isOnFire) {
+        var world = mechInterface.getWorld();
+
+        if (isOnFire) {
+            if (!mechInterface.consumeAmmo(1)) {
+                return;
+            }
+
+            if (!world.isClientSide()) {
+                BulletRifleEntity be = new BulletRifleEntity(
+                        PomkotsMechs.BULLET_RIFLE.get(),
+                        world,
+                        mechInterface.getMechEntity(),
+                        mechInterface.applySkillDamageModifier(this.getDamage(mechInterface.getItemStack()), this.getWeaponCategory())
+                );
+                var offset = mechInterface.getOffset();
+
+                // オフセット位置から大体の銃口の座標を決める（モデル位置からとるとクラサバ同期がめんどい…）
+                var muzzlPos = new Vec3(1.8 * mechInterface.isRight(), 3.0F, 6.5F);
+                muzzlPos = mechInterface.getAimAdjustedMuzzleOffset(muzzlPos,
+                        new Vec3(1.8 * mechInterface.isRight(), 3.0F, 0.0F));
+                be.setPos(offset.add(muzzlPos));
+
+                float[] angle = mechInterface.getShootingAngle(be, true);
+
+                be.shootFromRotation(be, angle[0], angle[1], mechInterface.getFallFlyingTicks(), 7, 0);
+
+                world.addFreshEntity(be);
+
+            } else {
+                ParticleUtil.spawnAttachedMuzzleFlash(
+                    (ClientLevel) world,
+                    mechInterface.getMechEntity(),
+                    mechInterface.getAttachPoint(),
+                    16.0D,
+                    mechInterface.getAimAdjustedLocalMuzzleOffset(
+                            new Vec3(1.8 * mechInterface.isRight(), 3.0F, 6.5F),
+                            new Vec3(1.8 * mechInterface.isRight(), 3.0F, 0.0F))
+                );
+
+                mechInterface.playSoundEffect(PomkotsMechs.SE_GUN_2.get());
+            }
+        }
+    }
+
+    @Override
+    public PomkotsCustomThrowableProjectile.RangeCategory getCurrentRange(int distance) {
+        return BulletRifleEntity.calcRangeCategoryStatic(distance);
+    }
+
+    @Override
+    public boolean isMatchAmmo(Magazine mag) {
+        return mag instanceof MagazineRifleItem;
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+
+    }
+
+    @Override
+    public WeaponAttachPoint getWeaponAttachPoint() {
+        return WeaponAttachPoint.ATTACH_POINT_HAND;
+    }
+
+    @Override
+    public WeaponCategory getWeaponCategory() {
+        return WeaponCategory.RIFLE;
+    }
+
+    @Override
+    public Motion getMotion() {
+        return Motion.RIFLE;
+    }
+
+    @Override
+    public int getCoolTime() {
+        return 20;
+    }
+
+    @Override
+    public String getPartsSeriesName() {
+        return "shakuji";
+    }
+}
