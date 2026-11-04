@@ -273,7 +273,7 @@ public final class ReusableLaserEntity extends Entity implements GeoEntity {
             if (hitEntity != actualTarget && hitEntity instanceof LivingEntity livingHitBox) {
                 livingHitBox.invulnerableTime = 0;
             }
-            ProjectileUtil.hurt(hitEntity, null, owner == null ? this : owner, damage);
+            ProjectileUtil.hurt(hitEntity, this, owner == null ? this : owner, damage);
         }
     }
 
@@ -339,6 +339,7 @@ public final class ReusableLaserEntity extends Entity implements GeoEntity {
 
     private boolean isLaserDamageCandidate(Entity entity) {
         if (entity instanceof SmallMobHitBoxEntity) return true;
+        if (ProjectileUtil.isSuperbWarfareVehicle(entity) || entity.isAttackable()) return true;
         if (!(entity instanceof LivingEntity)) return false;
         // These entities expose separate, larger damage hitboxes. Waiting for
         // those avoids double hits and ensures boss damage is forwarded properly.
@@ -356,6 +357,7 @@ public final class ReusableLaserEntity extends Entity implements GeoEntity {
         if (target == owner || target.getRootVehicle() == owner) return false;
         if (owner != null && owner.getRootVehicle() == target.getRootVehicle()) return false;
         if (owner instanceof BaseBossEntity boss && boss.isSelf(target)) return false;
+        if (ProjectileUtil.isSuperbWarfareVehicle(target)) return true;
         return !(owner instanceof LivingEntity living)
                 || !(target instanceof LivingEntity targetLiving)
                 || living.canAttack(targetLiving);

@@ -28,6 +28,13 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -278,11 +285,56 @@ public abstract class GenericPomkotsMonster extends Monster {
 
     protected abstract int getMaxAttackCooltime();
 
+    public static final TagKey<EntityType<?>> PMS_SERIES_TAG = TagKey.create(
+            Registries.ENTITY_TYPE,
+            new ResourceLocation(PomkotsMechs.MODID, "pms_series")
+    );
+
     public static boolean canSpawnCommon(EntityType<? extends GenericPomkotsMonster> type, ServerLevelAccessor world, MobSpawnType reason, BlockPos pos, RandomSource random) {
+        if (reason == MobSpawnType.NATURAL || reason == MobSpawnType.CHUNK_GENERATION) {
+            if (!PomkotsMechs.CONFIG.enableWildMechSpawn) {
+                return false;
+            }
+
+            if (world.getDifficulty() == Difficulty.PEACEFUL) {
+                return false;
+            }
+
+            // 地表（Surface）のみ: 空が見え、かつ最高ブロック位置以上
+            if (!world.canSeeSky(pos)) {
+                return false;
+            }
+            if (pos.getY() < world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ())) {
+                return false;
+            }
+
+            // 暗さ・夜間判定
+            if (world.getBrightness(LightLayer.BLOCK, pos) > 0) {
+                return false;
+            }
+            if (world.getBrightness(LightLayer.SKY, pos) - world.getSkyDarken() >= 8) {
+                return false;
+            }
+
+            // 足場判定
+            BlockPos below = pos.below();
+            BlockState state = world.getBlockState(below);
+            if (!state.isValidSpawn(world, below, type) && !state.isFaceSturdy(world, below, Direction.UP)) {
+                return false;
+            }
+            if (!state.getFluidState().isEmpty()) {
+                return false;
+            }
+
+            // 中型機（PMSシリーズ）の自然スポーン間引き（ウィッチの約1/5の出現率に抑制）
+            if (type.is(PMS_SERIES_TAG)) {
+                if (random.nextFloat() >= PomkotsMechs.CONFIG.wildMediumMechPassRatio) {
+                    return false;
+                }
+            }
+        }
+
         return true;
-        //        return Monster.checkMonsterSpawnRules(type, world, reason, pos, random)
-        //                && world.getBlockState(pos.below()).isSolidRender(world, pos.below())
-        //                && world.getRawBrightness(pos, 0) < 8;
     }
 
     @Override

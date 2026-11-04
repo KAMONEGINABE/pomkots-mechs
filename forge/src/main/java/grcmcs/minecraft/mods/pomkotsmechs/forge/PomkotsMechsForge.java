@@ -28,10 +28,13 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 import grcmcs.minecraft.mods.pomkotsmechs.PomkotsMechs;
-import grcmcs.minecraft.mods.pomkotsmechs.forge.worldgen.LostCitiesMechSpawner;
 import grcmcs.minecraft.mods.pomkotsmechs.forge.loot.AddLootTableModifier;
-import net.minecraftforge.common.loot.IGlobalLootModifier;
+import grcmcs.minecraft.mods.pomkotsmechs.forge.worldgen.LostCitiesEnemySpawner;
+import grcmcs.minecraft.mods.pomkotsmechs.forge.worldgen.LostCitiesMechSpawner;
+import grcmcs.minecraft.mods.pomkotsmechs.forge.worldgen.PomkotsSpawnBiomeModifier;
 import com.mojang.serialization.Codec;
+import net.minecraftforge.common.loot.IGlobalLootModifier;
+import net.minecraftforge.common.world.BiomeModifier;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -47,6 +50,13 @@ public final class PomkotsMechsForge {
 
     public static final RegistryObject<Codec<AddLootTableModifier>> ADD_LOOT_TABLE_MODIFIER =
             LOOT_MODIFIER_SERIALIZERS.register("add_loot_table", () -> AddLootTableModifier.CODEC);
+
+    public static final DeferredRegister<Codec<? extends BiomeModifier>> BIOME_MODIFIER_SERIALIZERS =
+            DeferredRegister.create(ForgeRegistries.Keys.BIOME_MODIFIER_SERIALIZERS, PomkotsMechs.MODID);
+
+    public static final RegistryObject<Codec<PomkotsSpawnBiomeModifier>> POMKOTS_SPAWN_MODIFIER =
+            BIOME_MODIFIER_SERIALIZERS.register("pomkots_spawns", () -> PomkotsSpawnBiomeModifier.CODEC);
+
     public PomkotsMechsForge() {
         BasePartsItem.regForForge = new BiConsumer<Consumer<Object>, BasePartsItem>() {
             @Override
@@ -123,6 +133,7 @@ public final class PomkotsMechsForge {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
 
         LOOT_MODIFIER_SERIALIZERS.register(bus);
+        BIOME_MODIFIER_SERIALIZERS.register(bus);
         EventBuses.registerModEventBus(PomkotsMechs.MODID, bus);
         PomkotsMechs.initialize();
 
@@ -130,6 +141,7 @@ public final class PomkotsMechsForge {
             PomkotsMechs.LOGGER.info("Lost Cities is loaded. enabled specific sound system");
             ServerBGMTracker.lostCitiesAccessor = new LostCitiesCompatibleForge();
             MinecraftForge.EVENT_BUS.register(LostCitiesMechSpawner.class);
+            MinecraftForge.EVENT_BUS.register(LostCitiesEnemySpawner.class);
         }
 
         DistExecutor.unsafeRunWhenOn(

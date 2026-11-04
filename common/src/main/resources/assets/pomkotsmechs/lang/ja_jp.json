@@ -799,5 +799,9 @@
   "death.attack.pomkotsmechs.anti_armor": "%1$s は %2$s に粉砕された",
   "death.attack.pomkotsmechs.anti_armor.player": "%1$s は %2$s の対装甲兵器によって粉砕された",
   "death.attack.pomkotsmechs.heavy_missile": "%1$s は %2$s に吹き飛ばされた",
-  "death.attack.pomkotsmechs.heavy_missile.player": "%1$s は %2$s の大型ミサイルによって吹き飛ばされた"
+  "death.attack.pomkotsmechs.heavy_missile.player": "%1$s は %2$s の大型ミサイルによって吹き飛ばされた",
+  "death.attack.pomkotsmechs.energy_beam": "%1$s は %2$s に消滅させられた",
+  "death.attack.pomkotsmechs.energy_beam.player": "%1$s は %2$s の高エネルギービームによって消滅させられた",
+  "death.attack.pomkotsmechs.grenade": "%1$s は %2$s に爆破された",
+  "death.attack.pomkotsmechs.grenade.player": "%1$s は %2$s のグレネード弾によって爆破された"
 }

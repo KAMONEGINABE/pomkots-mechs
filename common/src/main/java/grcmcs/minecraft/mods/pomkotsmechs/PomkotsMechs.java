@@ -168,6 +168,8 @@ public class PomkotsMechs {
 			Registries.DAMAGE_TYPE,
 			new ResourceLocation(MODID, "anti_armor")
 	);
+	public static final ResourceKey<DamageType> ENERGY_BEAM_DAMAGE_TYPE = ResourceKey.create(Registries.DAMAGE_TYPE, new ResourceLocation(MODID, "energy_beam"));
+	public static final ResourceKey<DamageType> GRENADE_DAMAGE_TYPE = ResourceKey.create(Registries.DAMAGE_TYPE, new ResourceLocation(MODID, "grenade"));
 	public static final ResourceKey<DamageType> HEAVY_MISSILE_DAMAGE_TYPE = ResourceKey.create(
 			Registries.DAMAGE_TYPE,
 			new ResourceLocation(MODID, "heavy_missile")
@@ -1539,6 +1541,15 @@ public class PomkotsMechs {
 		SpawnPlacementsRegistry.register(PMS03, SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Pms03Entity::canSpawn);
 		SpawnPlacementsRegistry.register(PMS04, SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Pms04Entity::canSpawn);
 		SpawnPlacementsRegistry.register(PMS05, SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Pms05Entity::canSpawn);
+		SpawnPlacementsRegistry.register(PMS06, SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Pms06Entity::canSpawn);
+		SpawnPlacementsRegistry.register(PMS07, SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Pms07Entity::canSpawn);
+		SpawnPlacementsRegistry.register(PMS08, SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Pms08Entity::canSpawn);
+		SpawnPlacementsRegistry.register(PMS09, SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Pms09Entity::canSpawn);
+		SpawnPlacementsRegistry.register(PMS10, SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Pms10Entity::canSpawn);
+
+		SpawnPlacementsRegistry.register(PMSS01, SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Pmss01Entity::canSpawn);
+		SpawnPlacementsRegistry.register(PMSS02, SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Pmss02Entity::canSpawn);
+		SpawnPlacementsRegistry.register(PMSS03, SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Pmss03Entity::canSpawn);
 
 		CommandRegistrationEvent.EVENT.register((dispatcher, registryAccess, environment) -> {
 			PomkotsCommands.register(dispatcher);

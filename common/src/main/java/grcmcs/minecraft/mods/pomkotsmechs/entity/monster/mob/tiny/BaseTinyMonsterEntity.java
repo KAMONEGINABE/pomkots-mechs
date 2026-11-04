@@ -92,7 +92,7 @@ public abstract class BaseTinyMonsterEntity extends BaseSmallMonsterEntity {
 
     }
 
-    public static boolean canSpawn(EntityType<Pmss01Entity> type, ServerLevelAccessor world, MobSpawnType reason, BlockPos pos, RandomSource random) {
+    public static boolean canSpawn(EntityType<? extends BaseTinyMonsterEntity> type, ServerLevelAccessor world, MobSpawnType reason, BlockPos pos, RandomSource random) {
         return GenericPomkotsMonster.canSpawnCommon(type, world, reason, pos, random);
     }
 

@@ -2,6 +2,8 @@
   "replace": false,
   "values": [
     "pomkotsmechs:anti_armor",
-    "pomkotsmechs:heavy_missile"
+    "pomkotsmechs:heavy_missile",
+    "pomkotsmechs:energy_beam",
+    "pomkotsmechs:grenade"
   ]
 }
