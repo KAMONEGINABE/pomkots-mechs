@@ -10,6 +10,9 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import grcmcs.minecraft.mods.pomkotsmechs.forge.command.CitySpawnCommand;
+import net.minecraftforge.event.RegisterCommandsEvent;
+
 @Mod.EventBusSubscriber(modid = PomkotsMechs.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ServerModEvents {
     @SubscribeEvent
@@ -20,5 +23,10 @@ public class ServerModEvents {
                 SurvivalInitActions.onPlayerJoin(serverPlayer);
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onRegisterCommands(RegisterCommandsEvent event) {
+        CitySpawnCommand.register(event.getDispatcher());
     }
 }
