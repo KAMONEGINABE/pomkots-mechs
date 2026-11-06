@@ -258,7 +258,9 @@ public abstract class GenericPomkotsMonster extends Monster {
         if (isServerSide()) {
             var level = this.level();
             ExplosionEntity e = new ExplosionEntity(PomkotsMechs.EXPLOSION.get(), level);
-            e.setPos(this.position());
+            // 1.20.1 Forge SRG環境には Entity.setPos(Vec3) が存在せずランタイムで NoSuchMethodError になるため、
+            // 1.20.1 に存在する setPos(double, double, double) を呼び出す
+            e.setPos(this.getX(), this.getY(), this.getZ());
             level.addFreshEntity(e);
         }
     }

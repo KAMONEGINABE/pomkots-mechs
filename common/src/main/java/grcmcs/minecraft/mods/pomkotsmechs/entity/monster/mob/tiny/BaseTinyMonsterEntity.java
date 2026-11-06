@@ -105,8 +105,10 @@ public abstract class BaseTinyMonsterEntity extends BaseSmallMonsterEntity {
     }
 
     private void generateLava() {
-        if (this.level().isClientSide) {
-            RandomSource random = this.level().getRandom();
+        // 基底クラス GenericPomkotsMonster で定義済みの isClientSide() を使用し、未難読化 level() 参照重複を回避
+        if (this.isClientSide()) {
+            Level level = this.level();
+            RandomSource random = level.getRandom();
 
             // 100個のLavaパーティクルをバラまく
             for (int i = 0; i < 50; i++) {
@@ -116,7 +118,7 @@ public abstract class BaseTinyMonsterEntity extends BaseSmallMonsterEntity {
                 double velocityZ = random.nextDouble() * 3.0 - 1;
 
                 // パーティクルをクライアント側で発生させる
-                this.level().addAlwaysVisibleParticle(ParticleTypes.LAVA, true,
+                level.addAlwaysVisibleParticle(ParticleTypes.LAVA, true,
                         this.getX(), this.getY(), this.getZ(), // 位置
                         velocityX, velocityY, velocityZ // 速度
                 );
